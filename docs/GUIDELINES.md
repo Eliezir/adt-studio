@@ -1,0 +1,1088 @@
+# Guidelines for ADT Studio
+
+This document provides comprehensive guidelines for AI coding agents working on the ADT Studio codebase. It enforces architectural consistency, security best practices, and frontend development standards.
+
+---
+
+## Table of Contents
+
+1. [Core Principles](#core-principles)
+2. [Architecture Overview](#architecture-overview)
+3. [Code Organization](#code-organization)
+4. [Security Requirements](#security-requirements)
+5. [Frontend Development](#frontend-development)
+6. [Backend Development](#backend-development)
+7. [Type Safety & Validation](#type-safety--validation)
+8. [Testing Requirements](#testing-requirements)
+9. [Common Patterns](#common-patterns)
+10. [Anti-Patterns to Avoid](#anti-patterns-to-avoid)
+11. [Checklist Before Submitting](#checklist-before-submitting)
+
+---
+
+## Core Principles
+
+### CRITICAL: Read Before Any Code Change
+
+These principles are non-negotiable and must guide every decision:
+
+
+1. **Book Level Storage**: All book data must be isolated to a single directory that can be zipped and shared. Never store book-specific data outside the book's directory.
+
+2. **Entity Level Versioning**: NEVER overwrite entities. Always create new versions with incremented version numbers. Users must be able to roll back.
+
+3. **LLM Level Caching**: Cache at the LLM call level only. Hash all ordered inputs to create cache keys. Pipeline reruns should be fast if parameters unchanged.
+
+4. **Maximum Transparency**: All LLM calls, prompts, and responses must be inspectable by users. No black boxes.
+
+5. **Minimize Dependencies**: If you can avoid adding a new dependency, do so. Flat files > database when sufficient. In-memory queues > external queue services.
+
+---
+
+## Architecture Overview
+
+### Monorepo Structure
+
+```
+adt/
+├── packages/           # Shared libraries (MUST be reused)
+│   ├── types/         # Zod schemas - ALL types defined here
+│   ├── pipeline/      # Extraction & generation - pure functions
+│   ├── llm/           # LLM client, prompts, caching, cost tracking
+│   ├── pdf/           # PDF extraction only
+│   └── output/        # Bundle packaging only
+│
+├── apps/              # Application tier
+│   ├── api/           # Hono HTTP server
+│   ├── studio/        # React SPA (Vite)
+│   └── desktop/       # Tauri wrapper
+│
+├── templates/         # Layout templates
+├── config/            # Global configuration
+└── docs/              # Architecture documentation
+```
+
+### Layer Dependencies
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                    apps/studio (React)                   │
+│                    apps/desktop (Tauri)                  │
+└─────────────────────────┬───────────────────────────────┘
+                          │ HTTP only
+                          ▼
+┌─────────────────────────────────────────────────────────┐
+│                     apps/api (Hono)                      │
+└─────────────────────────┬───────────────────────────────┘
+                          │ Direct imports
+                          ▼
+┌─────────────────────────────────────────────────────────┐
+│  packages/pipeline  │  packages/llm  │  packages/output  │
+└─────────────────────────┬───────────────────────────────┘
+                          │
+                          ▼
+┌─────────────────────────────────────────────────────────┐
+│           packages/types  │  packages/pdf               │
+└─────────────────────────────────────────────────────────┘
+```
+
+**RULE**: Frontend apps MUST NOT import directly from packages. All data flows through the API.
+
+---
+
+## Code Organization
+
+### Where to Put New Code
+
+| Type of Code | Location | Notes |
+|--------------|----------|-------|
+| Zod schemas, TypeScript interfaces | `packages/types/src/` | Export from index.ts |
+| LLM prompts, calls, caching | `packages/llm/src/` | Use existing client |
+| PDF extraction logic | `packages/pdf/src/` | Pure functions |
+| Pipeline steps | `packages/pipeline/src/` | Use functional approach |
+| Bundle/export logic | `packages/output/src/` | Archive creation |
+| API endpoints | `apps/api/src/index.ts` | Hono routes |
+| React components | `apps/studio/src/components/` | Reuse existing |
+| React pages | `apps/studio/src/pages/` | One per route |
+| API client methods | `apps/studio/src/api/client.ts` | Single file |
+| Utility functions | Within relevant package | Not a utils folder |
+
+### File Naming Conventions
+
+```
+kebab-case.ts          # All source files
+kebab-case.test.ts     # Test files (co-located)
+ComponentName.tsx      # React components (PascalCase)
+```
+
+### Import Order (Enforced)
+
+```typescript
+// 1. Node built-ins
+import { readFile } from "fs/promises"
+import path from "path"
+
+// 2. External dependencies
+import { z } from "zod"
+import { Hono } from "hono"
+
+// 3. Internal packages (workspace)
+import { PipelineConfig } from "@adt/types"
+import { createLLMClient } from "@adt/llm"
+
+// 4. Relative imports (current package)
+import { localHelper } from "./helpers.js"
+```
+
+---
+
+## Security Requirements
+
+### API Key Handling
+
+**NEVER**:
+- Log API keys to console or files
+- Include API keys in error messages
+- Store API keys in git, localStorage on web without encryption consideration
+- Send API keys in URL parameters
+- Expose API keys in client-side bundle
+
+**ALWAYS**:
+```typescript
+// Correct: Header-based authentication
+const key = c.req.header("X-OpenAI-Key")
+
+// Correct: Environment variable (Tauri sidecar)
+const key = process.env["OPENAI_API_KEY"]
+
+// Correct: Validate before use
+function requireOpenAIKey(c: Context): string {
+  const key = getOpenAIKey(c)
+  if (!key) {
+    throw new HTTPException(401, {
+      message: "OpenAI API key required. Set it in Settings."
+    })
+  }
+  return key
+}
+```
+
+### Input Validation
+
+**ALL user input MUST be validated with Zod**:
+
+```typescript
+// CORRECT: Validate with Zod schema
+const CreateJobSchema = z.object({
+  name: z.string().min(1).max(255),
+  pdfPath: z.string(),
+  config: PipelineConfig.optional()
+})
+
+app.post("/jobs", async (c) => {
+  const body = await c.req.json()
+  const result = CreateJobSchema.safeParse(body)
+
+  if (!result.success) {
+    throw new HTTPException(400, {
+      message: `Validation error: ${result.error.message}`
+    })
+  }
+
+  // Use result.data - guaranteed to be valid
+  const job = await createJob(result.data)
+  return c.json(job)
+})
+```
+
+### Path Traversal Prevention
+
+```typescript
+// NEVER: Direct path concatenation
+const filePath = `${baseDir}/${userInput}`  // VULNERABLE
+
+// ALWAYS: Validate and normalize paths
+import path from "path"
+
+function getSafePath(baseDir: string, userPath: string): string {
+  const normalized = path.normalize(userPath)
+  const resolved = path.resolve(baseDir, normalized)
+
+  // Ensure resolved path is within baseDir
+  if (!resolved.startsWith(path.resolve(baseDir))) {
+    throw new Error("Path traversal attempt detected")
+  }
+
+  return resolved
+}
+```
+
+### SQL Injection Prevention
+
+```typescript
+// NEVER: String concatenation in SQL
+db.prepare(`SELECT * FROM entities WHERE id = '${id}'`)  // VULNERABLE
+
+// ALWAYS: Parameterized queries
+db.prepare("SELECT * FROM entities WHERE id = ?").get(id)
+```
+
+### XSS Prevention
+
+```typescript
+// NEVER: Render raw HTML from user input
+<div dangerouslySetInnerHTML={{ __html: userContent }} />  // VULNERABLE
+
+// ALWAYS: Sanitize if HTML rendering is required
+import DOMPurify from "dompurify"
+<div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(userContent) }} />
+
+// PREFER: Text content (React auto-escapes)
+<div>{userContent}</div>  // Safe by default
+```
+
+### CORS Configuration
+
+```typescript
+// Only for development or controlled environments
+app.use("*", cors({
+  origin: ["http://localhost:5173"],  // Explicit origins
+  credentials: true
+}))
+
+// NEVER: Allow all origins in production
+app.use("*", cors({ origin: "*" }))  // DANGEROUS
+```
+
+---
+
+## Frontend Development
+
+### Component Structure
+
+```typescript
+// Standard component template
+import { useState, useEffect, useCallback } from "react"
+import { useNavigate, useParams } from "react-router-dom"
+import { api } from "../api/client"
+import type { Job } from "@adt/types"
+
+interface ComponentNameProps {
+  initialData?: Job
+  onSave?: (job: Job) => void
+}
+
+export default function ComponentName({ initialData, onSave }: ComponentNameProps) {
+  // 1. Hooks at the top
+  const navigate = useNavigate()
+  const { id } = useParams()
+
+  // 2. State declarations
+  const [data, setData] = useState<Job | null>(initialData ?? null)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  // 3. Effects
+  useEffect(() => {
+    if (id && !initialData) {
+      fetchData(id)
+    }
+  }, [id, initialData])
+
+  // 4. Callbacks (memoized when passed to children)
+  const fetchData = useCallback(async (jobId: string) => {
+    try {
+      setLoading(true)
+      setError(null)
+      const result = await api.getJob(jobId)
+      setData(result)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to fetch")
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  // 5. Event handlers
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!data) return
+
+    try {
+      setLoading(true)
+      await api.updateJob(data.id, data)
+      onSave?.(data)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to save")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // 6. Early returns for loading/error states
+  if (loading && !data) {
+    return <div className="p-4">Loading...</div>
+  }
+
+  if (error) {
+    return <div className="p-4 text-red-600">{error}</div>
+  }
+
+  // 7. Main render
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      {/* Component JSX */}
+    </form>
+  )
+}
+```
+
+### State Management Rules
+
+**DO**:
+- Use local `useState` for component-specific state
+- Use `useEffect` for data fetching with cleanup
+- Use polling for real-time updates (5-second intervals)
+- Implement optimistic updates for better UX
+
+**DON'T**:
+- Add Redux, Zustand, or other state management libraries
+- Create global state stores
+- Share state between unrelated components via context
+- Use useReducer for simple state
+
+```typescript
+// CORRECT: Polling pattern
+useEffect(() => {
+  const fetchJobs = async () => {
+    const jobs = await api.getJobs()
+    setJobs(jobs)
+  }
+
+  fetchJobs()
+  const interval = setInterval(fetchJobs, 5000)
+
+  return () => clearInterval(interval)
+}, [])
+
+// CORRECT: Optimistic update
+const handleDelete = async (id: string) => {
+  const previousJobs = jobs
+  setJobs(prev => prev.filter(j => j.id !== id))  // Optimistic
+
+  try {
+    await api.deleteJob(id)
+  } catch (err) {
+    setJobs(previousJobs)  // Rollback on failure
+    setError(err.message)
+  }
+}
+```
+
+### Styling with Tailwind
+
+**ALWAYS use Tailwind utility classes**:
+
+```typescript
+// CORRECT: Tailwind utilities
+<div className="flex items-center justify-between p-4 bg-white rounded-lg shadow">
+  <h2 className="text-lg font-semibold text-gray-900">Title</h2>
+  <button className="px-4 py-2 text-white bg-blue-600 rounded hover:bg-blue-700">
+    Action
+  </button>
+</div>
+
+// CORRECT: Conditional classes with clsx
+import clsx from "clsx"
+
+<div className={clsx(
+  "p-4 rounded-lg",
+  isActive && "bg-blue-100 border-blue-500",
+  isError && "bg-red-100 border-red-500",
+  !isActive && !isError && "bg-gray-100"
+)}>
+```
+
+**NEVER**:
+- Create CSS modules
+- Use styled-components or CSS-in-JS
+- Add inline styles (except for dynamic values)
+- Create custom CSS files
+
+### API Client Usage
+
+**All API calls go through `apps/studio/src/api/client.ts`**:
+
+```typescript
+// CORRECT: Use the api client
+import { api } from "../api/client"
+
+const jobs = await api.getJobs()
+const job = await api.createJob({ name, pdfPath, config })
+await api.deleteJob(id)
+
+// Adding a new endpoint? Add it to client.ts:
+export const api = {
+  // ... existing methods
+
+  newEndpoint: async (data: NewType): Promise<ResponseType> => {
+    return request<ResponseType>("/new-endpoint", {
+      method: "POST",
+      body: JSON.stringify(data)
+    })
+  }
+}
+```
+
+**NEVER**:
+- Call fetch() directly in components
+- Create separate API modules per feature
+- Duplicate request logic
+
+### Component Reuse Requirements
+
+**Before creating a new component**:
+
+1. Check if a similar component exists in `apps/studio/src/components/`
+2. Check if the component can be composed from existing components
+3. If creating new, ensure it's generic enough for reuse
+
+**Existing components to reuse**:
+- `Layout.tsx` - Main app layout with navigation
+- `SettingsModal.tsx` - Modal for settings/configuration
+
+```typescript
+// PREFER: Composition over new components
+<div className="card">  {/* Use utility classes, not new component */}
+  <CardHeader />
+  <CardBody />
+</div>
+
+// AVOID: Creating near-duplicate components
+// Bad: JobCard.tsx, BookCard.tsx, TemplateCard.tsx (with 90% same code)
+// Good: Card.tsx with props for customization
+```
+
+### Error Handling in UI
+
+```typescript
+// CORRECT: Consistent error handling pattern
+const [error, setError] = useState<string | null>(null)
+
+const handleAction = async () => {
+  try {
+    setError(null)
+    await api.action()
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "An error occurred"
+    setError(message)
+    // Log for debugging but don't expose internals to user
+    console.error("Action failed:", err)
+  }
+}
+
+// Display errors consistently
+{error && (
+  <div className="p-4 text-red-700 bg-red-100 rounded-lg">
+    {error}
+  </div>
+)}
+```
+
+### Navigation
+
+```typescript
+// CORRECT: React Router navigation
+import { useNavigate, Link } from "react-router-dom"
+
+function Component() {
+  const navigate = useNavigate()
+
+  // Programmatic navigation
+  const handleClick = () => {
+    navigate(`/jobs/${id}`)
+  }
+
+  // Declarative navigation
+  return <Link to={`/jobs/${id}`}>View Job</Link>
+}
+```
+
+---
+
+## Backend Development
+
+### API Endpoint Structure
+
+```typescript
+// Standard endpoint pattern
+app.post("/resource", async (c) => {
+  // 1. Authentication
+  const apiKey = requireOpenAIKey(c)
+
+  // 2. Input validation
+  const body = await c.req.json()
+  const result = RequestSchema.safeParse(body)
+  if (!result.success) {
+    throw new HTTPException(400, {
+      message: `Validation error: ${result.error.message}`
+    })
+  }
+
+  // 3. Business logic (delegate to service/package)
+  const resource = await createResource(result.data, apiKey)
+
+  // 4. Response
+  return c.json(resource, 201)
+})
+```
+
+### Error Handling
+
+```typescript
+// Use HTTPException for API errors
+import { HTTPException } from "hono/http-exception"
+
+// 400 - Bad Request (validation errors)
+throw new HTTPException(400, { message: "Invalid input" })
+
+// 401 - Unauthorized
+throw new HTTPException(401, { message: "API key required" })
+
+// 404 - Not Found
+throw new HTTPException(404, { message: "Job not found" })
+
+// 500 - Internal Error (let unexpected errors propagate)
+// Don't catch and re-throw as 500 unless adding context
+```
+
+### Storage Operations
+
+```typescript
+// ALWAYS use the storage module with locking
+import { withLock, loadJobs, saveJobs } from "./storage"
+
+// CORRECT: Atomic read-modify-write
+await withLock(async () => {
+  const jobs = await loadJobs()
+  jobs.push(newJob)
+  await saveJobs(jobs)
+})
+
+// NEVER: Read and write without lock
+const jobs = await loadJobs()  // Another process could modify here
+jobs.push(newJob)
+await saveJobs(jobs)  // Could overwrite other changes
+```
+
+### Database Operations (SQLite)
+
+```typescript
+// Use better-sqlite3 with parameterized queries
+import Database from "better-sqlite3"
+
+const db = new Database(dbPath)
+
+// CORRECT: Parameterized query
+const stmt = db.prepare(`
+  SELECT * FROM versions
+  WHERE resource_type = ? AND resource_id = ?
+  ORDER BY created_at DESC
+`)
+const versions = stmt.all(resourceType, resourceId)
+
+// CORRECT: Transactions for multiple operations
+const insertMany = db.transaction((items: Item[]) => {
+  const insert = db.prepare("INSERT INTO items (id, data) VALUES (?, ?)")
+  for (const item of items) {
+    insert.run(item.id, JSON.stringify(item.data))
+  }
+})
+insertMany(items)
+```
+
+### Pipeline Functions
+
+```typescript
+// Pipeline functions MUST be pure
+// - No side effects
+// - Same input = same output
+// - All dependencies passed as parameters
+
+// CORRECT: Pure pipeline function
+export async function classifyText(
+  text: string,
+  options: ClassifyOptions,
+  llmClient: LLMClient
+): Promise<Classification> {
+  const prompt = buildClassificationPrompt(text, options)
+  const result = await llmClient.complete(prompt)
+  return parseClassification(result)
+}
+
+// WRONG: Side effects, hidden dependencies
+export async function classifyText(text: string) {
+  const options = globalConfig.classification  // Hidden dependency
+  console.log("Classifying:", text)  // Side effect
+  const result = await globalLLMClient.complete(...)  // Hidden dependency
+  saveToCache(result)  // Side effect
+  return result
+}
+```
+
+---
+
+## Type Safety & Validation
+
+### Zod Schema Requirements
+
+**ALL data structures MUST have Zod schemas in `packages/types`**:
+
+```typescript
+// packages/types/src/job.ts
+import { z } from "zod"
+
+export const JobStatus = z.enum(["pending", "processing", "completed", "failed"])
+export type JobStatus = z.infer<typeof JobStatus>
+
+export const Job = z.object({
+  id: z.string().uuid(),
+  name: z.string().min(1).max(255),
+  status: JobStatus,
+  pdfPath: z.string(),
+  outputDir: z.string(),
+  config: PipelineConfig,
+  createdAt: z.string().datetime(),
+  updatedAt: z.string().datetime()
+})
+export type Job = z.infer<typeof Job>
+
+// Export from index.ts
+export { Job, JobStatus } from "./job.js"
+```
+
+### Validation Patterns
+
+```typescript
+// API input validation
+const result = Schema.safeParse(input)
+if (!result.success) {
+  // Handle validation error
+  throw new HTTPException(400, {
+    message: result.error.issues.map(i => i.message).join(", ")
+  })
+}
+// Use result.data (typed correctly)
+
+// Configuration with defaults
+const config = PipelineConfig.parse(userConfig)  // Applies defaults
+
+// Type guards
+if (Job.safeParse(data).success) {
+  // data is Job
+}
+```
+
+### Type Inference
+
+```typescript
+// CORRECT: Infer types from schemas
+export const Job = z.object({ ... })
+export type Job = z.infer<typeof Job>
+
+// WRONG: Duplicate type definitions
+export interface Job { ... }  // Don't duplicate!
+export const JobSchema = z.object({ ... })
+```
+
+---
+
+## Testing Requirements
+
+### Test File Location
+
+```
+packages/types/src/config.ts       # Source
+packages/types/src/config.test.ts  # Test (co-located)
+```
+
+### Unit Test Structure
+
+```typescript
+import { describe, it, expect, beforeEach, vi } from "vitest"
+import { functionToTest } from "./module.js"
+
+describe("functionToTest", () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it("should handle valid input", () => {
+    const result = functionToTest(validInput)
+    expect(result).toEqual(expectedOutput)
+  })
+
+  it("should throw on invalid input", () => {
+    expect(() => functionToTest(invalidInput)).toThrow("Expected error message")
+  })
+
+  it("should apply defaults", () => {
+    const result = functionToTest({})
+    expect(result.optionalField).toBe("default")
+  })
+})
+```
+
+### What to Test
+
+**MUST test**:
+- Zod schema validation (valid/invalid inputs, defaults)
+- Pure pipeline functions (input -> output)
+- API endpoint request/response validation
+- Error handling paths
+- Edge cases (empty arrays, null values, etc.)
+
+**SHOULD test**:
+- React component rendering
+- User interactions
+- API client methods
+
+**Coverage targets**:
+- `packages/*`: 80% minimum
+- `apps/api`: 70% minimum
+- `apps/studio`: 50% minimum (UI testing is harder)
+
+### Mocking
+
+```typescript
+// Mock LLM calls for tests
+vi.mock("@adt/llm", () => ({
+  createLLMClient: () => ({
+    complete: vi.fn().mockResolvedValue("mocked response")
+  })
+}))
+
+// Mock file system
+vi.mock("fs/promises", () => ({
+  readFile: vi.fn().mockResolvedValue("file contents"),
+  writeFile: vi.fn().mockResolvedValue(undefined)
+}))
+```
+
+---
+
+## Common Patterns
+
+### Entity Versioning
+
+```typescript
+// ALWAYS create new versions, NEVER overwrite
+interface VersionedEntity {
+  id: string           // Unique entity ID
+  version: number      // Incrementing version
+  data: unknown        // Entity-specific data
+  createdAt: string    // ISO timestamp
+  createdBy?: string   // User or "system"
+  inputVersions?: Record<string, number>  // Dependencies
+}
+
+// Creating a new version
+async function saveNewVersion(
+  db: Database,
+  entityId: string,
+  data: unknown,
+  createdBy?: string
+): Promise<VersionedEntity> {
+  const current = await getLatestVersion(db, entityId)
+  const newVersion = (current?.version ?? 0) + 1
+
+  const entity: VersionedEntity = {
+    id: entityId,
+    version: newVersion,
+    data,
+    createdAt: new Date().toISOString(),
+    createdBy
+  }
+
+  await insertVersion(db, entity)
+  return entity
+}
+```
+
+### LLM Call Caching
+
+```typescript
+// All LLM calls go through the cached client
+import { createCachedLLMClient } from "@adt/llm"
+
+const client = createCachedLLMClient({
+  apiKey,
+  cacheDir: path.join(bookDir, ".cache")
+})
+
+// Cache key is hash of: model + prompt + all parameters
+const result = await client.complete({
+  model: "gpt-4o",
+  messages: [...],
+  temperature: 0  // Must be deterministic for caching
+})
+```
+
+### Progress Reporting
+
+```typescript
+// Jobs report progress via the standard pattern
+interface Progress {
+  step: string      // Human-readable step name
+  percent: number   // 0-100
+}
+
+// Update progress during pipeline
+async function runPipeline(jobId: string, onProgress: (p: Progress) => void) {
+  onProgress({ step: "Extracting PDF", percent: 10 })
+  await extractPdf(...)
+
+  onProgress({ step: "Classifying text", percent: 30 })
+  await classifyText(...)
+
+  // ...
+  onProgress({ step: "Complete", percent: 100 })
+}
+```
+
+### Platform Detection
+
+```typescript
+// Detect Tauri vs Web environment
+export function isTauri(): boolean {
+  return typeof window !== "undefined" && "__TAURI_INTERNALS__" in window
+}
+
+// Use for platform-specific behavior
+const apiBase = isTauri() ? "http://localhost:3000/api" : "/api"
+```
+
+---
+
+## Anti-Patterns to Avoid
+
+### Code Duplication
+
+```typescript
+// WRONG: Duplicating logic
+// In file1.ts
+const validateJob = (job) => { ... }
+
+// In file2.ts
+const checkJob = (job) => { ... }  // Same logic, different name!
+
+// CORRECT: Single source of truth
+// In packages/types/src/job.ts
+export const Job = z.object({ ... })
+// Use Job.parse() or Job.safeParse() everywhere
+```
+
+### Bypassing the API
+
+```typescript
+// WRONG: Direct package import in frontend
+import { runPipeline } from "@adt/pipeline"  // NO!
+
+// CORRECT: Always go through API
+import { api } from "../api/client"
+await api.createJob({ ... })
+```
+
+### Global State
+
+```typescript
+// WRONG: Global mutable state
+let currentJob: Job | null = null
+export function setCurrentJob(job: Job) { currentJob = job }
+
+// CORRECT: Component-local state or pass as parameters
+const [currentJob, setCurrentJob] = useState<Job | null>(null)
+```
+
+### Hardcoded Values
+
+```typescript
+// WRONG: Hardcoded configuration
+const MODEL = "gpt-4o"
+const MAX_TOKENS = 4096
+
+// CORRECT: Use configuration
+import { PipelineConfig } from "@adt/types"
+const config = PipelineConfig.parse(userConfig)
+const model = config.defaultModel
+```
+
+### Silent Error Swallowing
+
+```typescript
+// WRONG: Silent catch
+try {
+  await riskyOperation()
+} catch {
+  // Silently ignored!
+}
+
+// CORRECT: Handle or rethrow
+try {
+  await riskyOperation()
+} catch (err) {
+  console.error("Operation failed:", err)
+  throw err  // Or handle appropriately
+}
+```
+
+### Unnecessary Abstraction
+
+```typescript
+// WRONG: Over-engineering
+class JobManagerFactory {
+  createJobManager(config: Config): JobManager { ... }
+}
+
+class JobManager {
+  constructor(private repository: JobRepository) {}
+  async create(data: JobData): Promise<Job> { ... }
+}
+
+// CORRECT: Simple functions
+export async function createJob(data: JobData): Promise<Job> {
+  const job = { id: crypto.randomUUID(), ...data }
+  await saveJob(job)
+  return job
+}
+```
+
+### Adding Dependencies Without Justification
+
+Before adding ANY new dependency:
+1. Check if functionality exists in Node.js built-ins
+2. Check if existing dependencies provide the functionality
+3. Justify the addition with clear benefits
+4. Prefer smaller, focused packages over large frameworks
+
+---
+
+## Checklist Before Submitting
+
+### Code Quality
+
+- [ ] TypeScript strict mode passes (`pnpm typecheck`)
+- [ ] No `any` types (use `unknown` if truly unknown)
+- [ ] All new types have Zod schemas in `packages/types`
+- [ ] No console.log in production code (use proper logging)
+- [ ] No commented-out code
+- [ ] No TODO comments without linked issues
+
+### Security
+
+- [ ] All user input validated with Zod
+- [ ] No API keys logged or exposed
+- [ ] No hardcoded secrets or credentials
+- [ ] Path traversal prevention for file operations
+- [ ] Parameterized queries for all SQL
+- [ ] No `dangerouslySetInnerHTML` without sanitization
+
+### Architecture
+
+- [ ] Code placed in correct package/app
+- [ ] No direct package imports in frontend
+- [ ] Reused existing components/utilities
+- [ ] Pure functions for pipeline logic
+- [ ] Entity versioning (no overwrites)
+- [ ] LLM calls go through cached client
+
+### Testing
+
+- [ ] Tests written for new functionality
+- [ ] Tests pass (`pnpm test`)
+- [ ] Coverage maintained or improved
+
+### Frontend
+
+- [ ] Used Tailwind utilities only (no custom CSS)
+- [ ] Error states handled and displayed
+- [ ] Loading states for async operations
+- [ ] API calls through `api/client.ts`
+- [ ] No new state management libraries
+
+### Documentation
+
+- [ ] Complex logic has explanatory comments
+- [ ] Public APIs have JSDoc comments
+- [ ] README updated if new features added
+
+---
+
+## Quick Reference
+
+### Commands
+
+```bash
+# Install dependencies
+pnpm install
+
+# Run development servers
+pnpm dev
+
+# Type checking
+pnpm typecheck
+
+# Run tests
+pnpm test
+
+# Run tests with coverage
+pnpm test:coverage
+
+# Build all packages
+pnpm build
+
+# Lint
+pnpm lint
+```
+
+### Key Files
+
+| Purpose | Location |
+|---------|----------|
+| API routes | `apps/api/src/index.ts` |
+| API client | `apps/studio/src/api/client.ts` |
+| Type schemas | `packages/types/src/` |
+| Pipeline steps | `packages/pipeline/src/` |
+| LLM client | `packages/llm/src/client.ts` |
+| Global config | `config/` |
+| Templates | `templates/` |
+
+### Common Imports
+
+```typescript
+// Types
+import { Job, PipelineConfig, BundleConfig } from "@adt/types"
+
+// API client (frontend)
+import { api } from "../api/client"
+
+// LLM (backend)
+import { createLLMClient, createCostTracker } from "@adt/llm"
+
+// Validation
+import { z } from "zod"
+
+// Routing (frontend)
+import { useNavigate, useParams, Link } from "react-router-dom"
+
+// HTTP errors (backend)
+import { HTTPException } from "hono/http-exception"
+```
+
+---
+
+## Version History
+
+| Version | Date | Changes |
+|---------|------|---------|
+| 0.1.0 | 2025-02-04 | Initial comprehensive guidelines |
