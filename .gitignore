@@ -1,6 +1,43 @@
+# Dependencies
 node_modules/
+
+# Build output
 dist/
+.output/
 *.tsbuildinfo
 
 # Reference project
 adt-studio/
+
+# Environment & secrets
+.env
+.env.*
+!.env.example
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE / editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Claude Code (personal settings only — .claude/settings.json is shared)
+.claude/settings.local.json
+
+# Tauri build output
+src-tauri/target/
+
+# Vitest
+coverage/
+
+# Logs
+*.log
+
+# Turbo
+.turbo/
+
+# pnpm
+.pnpm-store/
