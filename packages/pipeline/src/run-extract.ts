@@ -19,7 +19,7 @@ export async function runExtract(
   progress.emit({ type: "step-start", step: "extract" })
 
   try {
-    const pdfBuffer = Buffer.from(fs.readFileSync(pdfPath))
+    const pdfBuffer = fs.readFileSync(pdfPath)
 
     const result = await extractPdf(
       { pdfBuffer, startPage, endPage },

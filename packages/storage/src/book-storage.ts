@@ -2,7 +2,7 @@ import fs from "node:fs"
 import path from "node:path"
 import type sqlite from "node-sqlite3-wasm"
 import type { ExtractedPage, ExtractedImage, PdfMetadata } from "@adt/pdf"
-import { BookLabel } from "@adt/types"
+import { parseBookLabel } from "@adt/types"
 import type { Storage, PageData, NodeDataRow } from "./storage.js"
 import { openBookDb } from "./db.js"
 
@@ -13,7 +13,7 @@ export interface BookPaths {
 }
 
 export function resolveBookPaths(label: string, booksRoot: string): BookPaths {
-  const safeLabel = validateLabel(label)
+  const safeLabel = parseBookLabel(label)
   const resolvedRoot = path.resolve(booksRoot)
   const bookDir = path.resolve(resolvedRoot, safeLabel)
 
@@ -36,23 +36,8 @@ export function createBookStorage(label: string, booksRoot: string): Storage {
 
   return {
     clearExtractedData(): void {
-      db.exec("BEGIN IMMEDIATE")
-      try {
-        db.run("DELETE FROM images")
-        db.run("DELETE FROM pages")
-        db.exec("COMMIT")
-      } catch (err) {
-        db.exec("ROLLBACK")
-        throw err
-      }
-
-      const imageFiles = fs.readdirSync(paths.imagesDir)
-      for (const file of imageFiles) {
-        fs.rmSync(path.join(paths.imagesDir, file), {
-          recursive: true,
-          force: true,
-        })
-      }
+      clearImageFiles(paths.imagesDir)
+      clearExtractedRows(db)
     },
 
     putPdfMetadata(data: PdfMetadata): void {
@@ -99,7 +84,8 @@ export function createBookStorage(label: string, booksRoot: string): Storage {
       if (rows.length === 0) {
         throw new Error(`No page image found for ${pageId}`)
       }
-      const filePath = path.join(paths.bookDir, rows[0].path)
+      const filePath = path.resolve(paths.bookDir, rows[0].path)
+      ensureWithinRoot(filePath, paths.bookDir)
       return fs.readFileSync(filePath).toString("base64")
     },
 
@@ -141,6 +127,28 @@ export function createBookStorage(label: string, booksRoot: string): Storage {
   }
 }
 
+function clearImageFiles(imagesDir: string): void {
+  const imageFiles = fs.readdirSync(imagesDir)
+  for (const file of imageFiles) {
+    fs.rmSync(path.join(imagesDir, file), {
+      recursive: true,
+      force: true,
+    })
+  }
+}
+
+function clearExtractedRows(db: sqlite.Database): void {
+  db.exec("BEGIN IMMEDIATE")
+  try {
+    db.run("DELETE FROM images")
+    db.run("DELETE FROM pages")
+    db.exec("COMMIT")
+  } catch (err) {
+    db.exec("ROLLBACK")
+    throw err
+  }
+}
+
 function writeImage(
   db: sqlite.Database,
   imagesDir: string,
@@ -172,14 +180,6 @@ function writeImage(
       source,
     ]
   )
-}
-
-function validateLabel(label: string): string {
-  const parsed = BookLabel.safeParse(label)
-  if (!parsed.success) {
-    throw new Error("Invalid book label: label must be filesystem-safe")
-  }
-  return parsed.data
 }
 
 function ensureWithinRoot(target: string, root: string): void {

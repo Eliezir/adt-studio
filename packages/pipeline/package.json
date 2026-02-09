@@ -3,11 +3,12 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "types": "./dist/index.d.ts",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./dist/index.js"
   },
   "bin": {
-    "pipeline": "./src/cli.ts"
+    "pipeline": "./dist/cli.js"
   },
   "dependencies": {
     "@adt/pdf": "workspace:*",

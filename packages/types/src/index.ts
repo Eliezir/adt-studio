@@ -8,7 +8,7 @@ export {
 
 export { StepName, ProgressEvent } from "./progress.js"
 
-export { BookLabel } from "./book.js"
+export { BookLabel, parseBookLabel } from "./book.js"
 
 export {
   StepConfig,

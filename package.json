@@ -5,8 +5,9 @@
   "type": "module",
   "packageManager": "pnpm@10.18.1",
   "scripts": {
+    "pretest": "pnpm build",
     "test": "vitest run",
-    "test:watch": "vitest",
+    "test:watch": "pnpm build && vitest",
     "typecheck": "tsc --build",
     "lint": "eslint",
     "build": "tsc --build",

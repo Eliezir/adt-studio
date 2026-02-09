@@ -1,4 +1,4 @@
-import { describe, it, expect, afterEach } from "vitest"
+import { describe, it, expect, afterEach, vi } from "vitest"
 import fs from "node:fs"
 import os from "node:os"
 import path from "node:path"
@@ -12,6 +12,7 @@ function makeTempDir(): string {
 
 const dirs: string[] = []
 afterEach(() => {
+  vi.restoreAllMocks()
   for (const dir of dirs) {
     fs.rmSync(dir, { recursive: true, force: true })
   }
@@ -207,6 +208,29 @@ describe("createBookStorage", () => {
     storage.close()
   })
 
+  it("does not clear DB rows when image cleanup fails", () => {
+    const { storage, paths } = createTempStorage()
+
+    storage.putExtractedPage(makePage(1))
+    storage.putExtractedPage(makePage(2))
+
+    vi.spyOn(fs, "readdirSync").mockImplementationOnce(() => {
+      throw new Error("simulated filesystem failure")
+    })
+
+    expect(() => storage.clearExtractedData()).toThrow(
+      "simulated filesystem failure"
+    )
+
+    const db = openBookDb(paths.dbPath)
+    const pageRows = db.all("SELECT page_id FROM pages ORDER BY page_number")
+    const imageRows = db.all("SELECT image_id FROM images ORDER BY image_id")
+    expect(pageRows).toHaveLength(2)
+    expect(imageRows).toHaveLength(4)
+    db.close()
+    storage.close()
+  })
+
   it("rejects unsafe labels", () => {
     const booksRoot = makeTempDir()
     dirs.push(booksRoot)
@@ -258,6 +282,24 @@ describe("getPageImageBase64", () => {
     const { storage } = createTempStorage()
     expect(() => storage.getPageImageBase64("pg999")).toThrow(
       "No page image found"
+    )
+    storage.close()
+  })
+
+  it("rejects image paths that escape the book directory", () => {
+    const { storage, paths } = createTempStorage()
+
+    storage.putExtractedPage(makePage(1))
+
+    const db = openBookDb(paths.dbPath)
+    db.run("UPDATE images SET path = ? WHERE image_id = ?", [
+      "../outside.png",
+      "pg001_page",
+    ])
+    db.close()
+
+    expect(() => storage.getPageImageBase64("pg001")).toThrow(
+      "Resolved path escapes books root"
     )
     storage.close()
   })

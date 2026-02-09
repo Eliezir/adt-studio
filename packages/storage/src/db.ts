@@ -7,6 +7,7 @@ const SCHEMA_SQL = `
 PRAGMA journal_mode = WAL;
 
 CREATE TABLE IF NOT EXISTS schema_version (
+  id INTEGER PRIMARY KEY CHECK (id = 1),
   version INTEGER NOT NULL
 );
 
@@ -63,13 +64,15 @@ function initSchema(db: sqlite.Database): void {
     "SELECT name FROM sqlite_master WHERE type='table' AND name='schema_version'"
   )
 
+  db.exec(SCHEMA_SQL)
+
   if (tables.length === 0) {
-    db.exec(SCHEMA_SQL)
-    db.run("INSERT INTO schema_version (version) VALUES (?)", [SCHEMA_VERSION])
+    upsertSchemaVersion(db, SCHEMA_VERSION)
     return
   }
 
-  const rows = db.all("SELECT version FROM schema_version LIMIT 1") as Array<{
+  migrateLegacySchemaVersionTable(db)
+  const rows = db.all("SELECT version FROM schema_version WHERE id = 1") as Array<{
     version: number
   }>
   const existing = rows[0]?.version ?? 0
@@ -79,5 +82,48 @@ function initSchema(db: sqlite.Database): void {
     throw new Error(
       `Schema version mismatch: found v${existing}, expected v${SCHEMA_VERSION}`
     )
+  }
+}
+
+function upsertSchemaVersion(db: sqlite.Database, version: number): void {
+  db.run(
+    `INSERT INTO schema_version (id, version) VALUES (1, ?)
+     ON CONFLICT (id) DO UPDATE SET version = excluded.version`,
+    [version]
+  )
+}
+
+function migrateLegacySchemaVersionTable(db: sqlite.Database): void {
+  const columns = db.all("PRAGMA table_info(schema_version)") as Array<{
+    name: string
+  }>
+  const hasIdColumn = columns.some((column) => column.name === "id")
+  if (hasIdColumn) {
+    return
+  }
+
+  db.exec("BEGIN IMMEDIATE")
+  try {
+    const rows = db.all("SELECT version FROM schema_version") as Array<{
+      version: number
+    }>
+    const latestVersion = rows.reduce(
+      (maxVersion, row) => Math.max(maxVersion, row.version),
+      0
+    )
+
+    db.run("ALTER TABLE schema_version RENAME TO schema_version_legacy")
+    db.run(
+      `CREATE TABLE schema_version (
+        id INTEGER PRIMARY KEY CHECK (id = 1),
+        version INTEGER NOT NULL
+      )`
+    )
+    upsertSchemaVersion(db, latestVersion)
+    db.run("DROP TABLE schema_version_legacy")
+    db.exec("COMMIT")
+  } catch (err) {
+    db.exec("ROLLBACK")
+    throw err
   }
 }
