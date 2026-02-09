@@ -523,7 +523,9 @@ function quadraticBezierBounds(
 }
 
 /**
- * Compute the exact bounding box of an elliptical arc.
+ * Compute the exact bounding box of an elliptical arc using SVG arc
+ * center-parameterization. Finds extrema by evaluating at cardinal
+ * angles (0, pi/2, pi, 3pi/2) that fall within the swept range.
  */
 function arcBounds(
   x0: number, y0: number,
@@ -542,23 +544,110 @@ function arcBounds(
   // Handle degenerate cases
   if (rx === 0 || ry === 0) return [minX, minY, maxX, maxY];
 
-  // Sample the arc at multiple points for a reasonable approximation
-  const cos = Math.cos(rotation * Math.PI / 180);
-  const sin = Math.sin(rotation * Math.PI / 180);
-  const samples = 16;
+  // Ensure radii are positive
+  rx = Math.abs(rx);
+  ry = Math.abs(ry);
 
-  for (let i = 1; i < samples; i++) {
-    const t = i / samples;
-    const angle = t * Math.PI * (largeArc ? 2 : 1) * (sweep ? 1 : -1);
-    const px = rx * Math.cos(angle);
-    const py = ry * Math.sin(angle);
-    // Rotate
-    const x = x0 + (x1 - x0) * t + (cos * px - sin * py) * (1 - Math.abs(2 * t - 1));
-    const y = y0 + (y1 - y0) * t + (sin * px + cos * py) * (1 - Math.abs(2 * t - 1));
-    minX = Math.min(minX, x);
-    maxX = Math.max(maxX, x);
-    minY = Math.min(minY, y);
-    maxY = Math.max(maxY, y);
+  const phi = rotation * Math.PI / 180;
+  const cosPhi = Math.cos(phi);
+  const sinPhi = Math.sin(phi);
+
+  // Step 1: Compute (x1', y1') — midpoint in rotated frame
+  const dx = (x0 - x1) / 2;
+  const dy = (y0 - y1) / 2;
+  const x1p = cosPhi * dx + sinPhi * dy;
+  const y1p = -sinPhi * dx + cosPhi * dy;
+
+  // Step 2: Correct radii if too small
+  let lambda = (x1p * x1p) / (rx * rx) + (y1p * y1p) / (ry * ry);
+  if (lambda > 1) {
+    const sqrtLambda = Math.sqrt(lambda);
+    rx *= sqrtLambda;
+    ry *= sqrtLambda;
+  }
+
+  // Step 3: Compute center point (cx', cy') in rotated frame
+  const rxSq = rx * rx;
+  const rySq = ry * ry;
+  const x1pSq = x1p * x1p;
+  const y1pSq = y1p * y1p;
+
+  let sq = (rxSq * rySq - rxSq * y1pSq - rySq * x1pSq) /
+           (rxSq * y1pSq + rySq * x1pSq);
+  if (sq < 0) sq = 0;
+  let sign = (largeArc === sweep) ? -1 : 1;
+  const cxp = sign * Math.sqrt(sq) * (rx * y1p / ry);
+  const cyp = sign * Math.sqrt(sq) * -(ry * x1p / rx);
+
+  // Step 4: Compute center in original coordinates
+  const midX = (x0 + x1) / 2;
+  const midY = (y0 + y1) / 2;
+  const cx = cosPhi * cxp - sinPhi * cyp + midX;
+  const cy = sinPhi * cxp + cosPhi * cyp + midY;
+
+  // Step 5: Compute start angle and sweep angle
+  const vectorAngle = (ux: number, uy: number, vx: number, vy: number): number => {
+    const dot = ux * vx + uy * vy;
+    const len = Math.sqrt(ux * ux + uy * uy) * Math.sqrt(vx * vx + vy * vy);
+    let angle = Math.acos(Math.max(-1, Math.min(1, dot / len)));
+    if (ux * vy - uy * vx < 0) angle = -angle;
+    return angle;
+  };
+
+  const theta1 = vectorAngle(1, 0, (x1p - cxp) / rx, (y1p - cyp) / ry);
+  let dtheta = vectorAngle(
+    (x1p - cxp) / rx, (y1p - cyp) / ry,
+    (-x1p - cxp) / rx, (-y1p - cyp) / ry
+  );
+
+  if (!sweep && dtheta > 0) dtheta -= 2 * Math.PI;
+  if (sweep && dtheta < 0) dtheta += 2 * Math.PI;
+
+  const theta2 = theta1 + dtheta;
+
+  // Step 6: Check if cardinal angles fall within the swept range
+  // At angle t on the ellipse, point = center + rotate(phi) * (rx*cos(t), ry*sin(t))
+  // Extrema in x occur at t = atan2(-ry*sin(phi), rx*cos(phi)) + n*pi
+  // Extrema in y occur at t = atan2(ry*cos(phi), rx*sin(phi)) + n*pi
+
+  const angleInSweep = (angle: number): boolean => {
+    // Normalize angle relative to theta1
+    let a = angle - theta1;
+    // Normalize to [0, 2pi) or (-2pi, 0]
+    if (dtheta > 0) {
+      a = ((a % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
+      return a <= dtheta + 1e-10;
+    } else {
+      a = ((a % (2 * Math.PI)) - 2 * Math.PI) % (2 * Math.PI);
+      return a >= dtheta - 1e-10;
+    }
+  };
+
+  const evalPoint = (t: number): [number, number] => {
+    const cosT = Math.cos(t);
+    const sinT = Math.sin(t);
+    return [
+      cx + cosPhi * rx * cosT - sinPhi * ry * sinT,
+      cy + sinPhi * rx * cosT + cosPhi * ry * sinT,
+    ];
+  };
+
+  // X extrema angles
+  const txBase = Math.atan2(-ry * sinPhi, rx * cosPhi);
+  // Y extrema angles
+  const tyBase = Math.atan2(ry * cosPhi, rx * sinPhi);
+
+  for (const base of [txBase, tyBase]) {
+    for (let n = -2; n <= 2; n++) {
+      const angle = base + n * Math.PI;
+      if (angleInSweep(angle)) {
+        const [px, py] = evalPoint(angle);
+        minX = Math.min(minX, px);
+        maxX = Math.max(maxX, px);
+        minY = Math.min(minY, py);
+        maxY = Math.max(maxY, py);
+      }
+    }
   }
 
   return [minX, minY, maxX, maxY];
