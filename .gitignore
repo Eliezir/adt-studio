@@ -1,6 +1,7 @@
 node_modules/
 dist/
 *.tsbuildinfo
+books/
 
 # Reference project
 adt-studio/

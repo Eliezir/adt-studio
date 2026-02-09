@@ -10,7 +10,8 @@
     "typecheck": "tsc --build",
     "lint": "eslint",
     "build": "tsc --build",
-    "pdf-extract": "tsx packages/pdf/src/cli.ts"
+    "pdf-extract": "tsx packages/pdf/src/cli.ts",
+    "pipeline": "tsx packages/pipeline/src/cli.ts"
   },
   "devDependencies": {
     "@types/node": "^20",
