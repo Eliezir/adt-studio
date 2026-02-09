@@ -2,6 +2,7 @@ node_modules/
 dist/
 *.tsbuildinfo
 books/
+.DS_Store
 
 # Reference project
 adt-studio/
