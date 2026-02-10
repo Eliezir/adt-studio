@@ -6,6 +6,7 @@ import { errorHandler } from "./middleware/error-handler.js"
 import { healthRoutes } from "./routes/health.js"
 import { createBookRoutes } from "./routes/books.js"
 import { createPipelineRoutes } from "./routes/pipeline.js"
+import { createPageRoutes } from "./routes/pages.js"
 import { createPipelineService } from "./services/pipeline-service.js"
 import { createPipelineRunner } from "./services/pipeline-runner.js"
 
@@ -29,5 +30,6 @@ app.onError(errorHandler)
 app.route("/api", healthRoutes)
 app.route("/api", createBookRoutes(booksDir))
 app.route("/api", createPipelineRoutes(pipelineService, booksDir, promptsDir))
+app.route("/api", createPageRoutes(booksDir))
 
 export default app
