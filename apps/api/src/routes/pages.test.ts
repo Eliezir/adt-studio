@@ -1,0 +1,188 @@
+import { describe, it, expect, beforeEach, afterEach } from "vitest"
+import fs from "node:fs"
+import path from "node:path"
+import os from "node:os"
+import { Hono } from "hono"
+import { createBookStorage } from "@adt/storage"
+import { errorHandler } from "../middleware/error-handler.js"
+import { createPageRoutes } from "./pages.js"
+
+describe("Page routes", () => {
+  let tmpDir: string
+  let app: Hono
+  const label = "test-book"
+
+  beforeEach(() => {
+    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "pages-routes-"))
+
+    // Create a book with extracted pages and pipeline data
+    const storage = createBookStorage(label, tmpDir)
+    try {
+      // Simulate extracted pages
+      const fakeImage = {
+        imageId: `${label}_p1_page`,
+        pngBuffer: Buffer.from("fake-png-data"),
+        hash: "abc123",
+        width: 800,
+        height: 600,
+      }
+      storage.putExtractedPage({
+        pageId: `${label}_p1`,
+        pageNumber: 1,
+        text: "Page one text content",
+        pageImage: fakeImage,
+        images: [],
+      })
+
+      const fakeImage2 = {
+        imageId: `${label}_p2_page`,
+        pngBuffer: Buffer.from("fake-png-data-2"),
+        hash: "def456",
+        width: 800,
+        height: 600,
+      }
+      storage.putExtractedPage({
+        pageId: `${label}_p2`,
+        pageNumber: 2,
+        text: "Page two text content",
+        pageImage: fakeImage2,
+        images: [],
+      })
+
+      // Simulate pipeline output for page 1
+      storage.putNodeData("text-classification", `${label}_p1`, {
+        reasoning: "test reasoning",
+        groups: [
+          {
+            groupId: "g1",
+            groupType: "body",
+            texts: [
+              { textType: "paragraph", text: "Hello world", isPruned: false },
+            ],
+          },
+        ],
+      })
+      storage.putNodeData("image-classification", `${label}_p1`, {
+        images: [],
+      })
+      storage.putNodeData("page-sectioning", `${label}_p1`, {
+        reasoning: "sectioned",
+        sections: [
+          {
+            sectionType: "content",
+            partIds: ["g1"],
+            backgroundColor: "#ffffff",
+            textColor: "#000000",
+            pageNumber: 1,
+            isPruned: false,
+          },
+        ],
+      })
+      storage.putNodeData("web-rendering", `${label}_p1`, {
+        sections: [
+          {
+            sectionIndex: 0,
+            sectionType: "content",
+            reasoning: "rendered",
+            html: "<div>Hello world</div>",
+          },
+        ],
+      })
+    } finally {
+      storage.close()
+    }
+
+    const routes = createPageRoutes(tmpDir)
+    app = new Hono()
+    app.onError(errorHandler)
+    app.route("/api", routes)
+  })
+
+  afterEach(() => {
+    fs.rmSync(tmpDir, { recursive: true, force: true })
+  })
+
+  describe("GET /api/books/:label/pages", () => {
+    it("returns list of pages", async () => {
+      const res = await app.request(`/api/books/${label}/pages`)
+
+      expect(res.status).toBe(200)
+      const body = await res.json()
+      expect(body).toHaveLength(2)
+      expect(body[0].pageId).toBe(`${label}_p1`)
+      expect(body[0].pageNumber).toBe(1)
+      expect(body[0].hasRendering).toBe(true)
+      expect(body[1].pageId).toBe(`${label}_p2`)
+      expect(body[1].pageNumber).toBe(2)
+      expect(body[1].hasRendering).toBe(false)
+    })
+
+    it("returns 404 for nonexistent book", async () => {
+      const res = await app.request("/api/books/no-such-book/pages")
+      expect(res.status).toBe(404)
+    })
+  })
+
+  describe("GET /api/books/:label/pages/:pageId", () => {
+    it("returns full page data with pipeline outputs", async () => {
+      const res = await app.request(
+        `/api/books/${label}/pages/${label}_p1`
+      )
+
+      expect(res.status).toBe(200)
+      const body = await res.json()
+      expect(body.pageId).toBe(`${label}_p1`)
+      expect(body.pageNumber).toBe(1)
+      expect(body.text).toBe("Page one text content")
+      expect(body.textClassification).toBeTruthy()
+      expect(body.textClassification.groups).toHaveLength(1)
+      expect(body.imagClassification).toBeFalsy // typo check
+      expect(body.imageClassification).toBeTruthy()
+      expect(body.sectioning).toBeTruthy()
+      expect(body.sectioning.sections).toHaveLength(1)
+      expect(body.rendering).toBeTruthy()
+      expect(body.rendering.sections[0].html).toBe(
+        "<div>Hello world</div>"
+      )
+    })
+
+    it("returns page without pipeline data if not processed", async () => {
+      const res = await app.request(
+        `/api/books/${label}/pages/${label}_p2`
+      )
+
+      expect(res.status).toBe(200)
+      const body = await res.json()
+      expect(body.pageId).toBe(`${label}_p2`)
+      expect(body.textClassification).toBeNull()
+      expect(body.rendering).toBeNull()
+    })
+
+    it("returns 404 for nonexistent page", async () => {
+      const res = await app.request(
+        `/api/books/${label}/pages/fake-page`
+      )
+      expect(res.status).toBe(404)
+    })
+  })
+
+  describe("GET /api/books/:label/pages/:pageId/image", () => {
+    it("returns page image as base64 JSON", async () => {
+      const res = await app.request(
+        `/api/books/${label}/pages/${label}_p1/image`
+      )
+
+      expect(res.status).toBe(200)
+      const body = await res.json()
+      expect(body.imageBase64).toBeTruthy()
+      expect(typeof body.imageBase64).toBe("string")
+    })
+
+    it("returns 404 for nonexistent page image", async () => {
+      const res = await app.request(
+        `/api/books/${label}/pages/fake-page/image`
+      )
+      expect(res.status).toBe(404)
+    })
+  })
+})

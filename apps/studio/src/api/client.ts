@@ -53,6 +53,54 @@ export interface RunPipelineOptions {
   concurrency?: number
 }
 
+export interface PageSummaryItem {
+  pageId: string
+  pageNumber: number
+  hasRendering: boolean
+}
+
+export interface SectionRendering {
+  sectionIndex: number
+  sectionType: string
+  reasoning: string
+  html: string
+}
+
+export interface PageDetail {
+  pageId: string
+  pageNumber: number
+  text: string
+  textClassification: {
+    reasoning: string
+    groups: Array<{
+      groupId: string
+      groupType: string
+      texts: Array<{ textType: string; text: string; isPruned: boolean }>
+    }>
+  } | null
+  imageClassification: {
+    images: Array<{
+      imageId: string
+      isPruned: boolean
+      reason?: string
+    }>
+  } | null
+  sectioning: {
+    reasoning: string
+    sections: Array<{
+      sectionType: string
+      partIds: string[]
+      backgroundColor: string
+      textColor: string
+      pageNumber: number | null
+      isPruned: boolean
+    }>
+  } | null
+  rendering: {
+    sections: SectionRendering[]
+  } | null
+}
+
 export const api = {
   getBooks: () => request<BookSummary[]>("/books"),
 
@@ -90,4 +138,13 @@ export const api = {
 
   getPipelineStatus: (label: string) =>
     request<PipelineStatus>(`/books/${label}/pipeline/status`),
+
+  getPages: (label: string) =>
+    request<PageSummaryItem[]>(`/books/${label}/pages`),
+
+  getPage: (label: string, pageId: string) =>
+    request<PageDetail>(`/books/${label}/pages/${pageId}`),
+
+  getPageImage: (label: string, pageId: string) =>
+    request<{ imageBase64: string }>(`/books/${label}/pages/${pageId}/image`),
 }

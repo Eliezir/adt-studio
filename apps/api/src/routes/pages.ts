@@ -1,0 +1,170 @@
+import fs from "node:fs"
+import path from "node:path"
+import { Hono } from "hono"
+import { HTTPException } from "hono/http-exception"
+import { parseBookLabel } from "@adt/types"
+import { openBookDb } from "@adt/storage"
+import { createBookStorage } from "@adt/storage"
+
+interface PageSummary {
+  pageId: string
+  pageNumber: number
+  hasRendering: boolean
+}
+
+interface PageDetail {
+  pageId: string
+  pageNumber: number
+  text: string
+  textClassification: unknown | null
+  imageClassification: unknown | null
+  sectioning: unknown | null
+  rendering: unknown | null
+}
+
+function getDbPath(label: string, booksDir: string): string {
+  const safeLabel = parseBookLabel(label)
+  return path.join(path.resolve(booksDir), safeLabel, `${safeLabel}.db`)
+}
+
+export function createPageRoutes(booksDir: string): Hono {
+  const app = new Hono()
+
+  // GET /books/:label/pages — List pages with pipeline status
+  app.get("/books/:label/pages", (c) => {
+    const { label } = c.req.param()
+    const safeLabel = parseBookLabel(label)
+    const dbPath = getDbPath(safeLabel, booksDir)
+
+    if (!fs.existsSync(dbPath)) {
+      throw new HTTPException(404, {
+        message: `Book not found or not yet extracted: ${safeLabel}`,
+      })
+    }
+
+    const db = openBookDb(dbPath)
+    try {
+      const pages = db.all(
+        "SELECT page_id, page_number FROM pages ORDER BY page_number"
+      ) as Array<{ page_id: string; page_number: number }>
+
+      // Check which pages have web-rendering output
+      const rendered = new Set<string>()
+      const renderRows = db.all(
+        "SELECT DISTINCT item_id FROM node_data WHERE node = ?",
+        ["web-rendering"]
+      ) as Array<{ item_id: string }>
+      for (const row of renderRows) {
+        rendered.add(row.item_id)
+      }
+
+      const result: PageSummary[] = pages.map((p) => ({
+        pageId: p.page_id,
+        pageNumber: p.page_number,
+        hasRendering: rendered.has(p.page_id),
+      }))
+
+      return c.json(result)
+    } finally {
+      db.close()
+    }
+  })
+
+  // GET /books/:label/pages/:pageId — Full page data with pipeline outputs
+  app.get("/books/:label/pages/:pageId", (c) => {
+    const { label, pageId } = c.req.param()
+    const safeLabel = parseBookLabel(label)
+    const dbPath = getDbPath(safeLabel, booksDir)
+
+    if (!fs.existsSync(dbPath)) {
+      throw new HTTPException(404, {
+        message: `Book not found: ${safeLabel}`,
+      })
+    }
+
+    const db = openBookDb(dbPath)
+    try {
+      // Get page data
+      const pageRows = db.all(
+        "SELECT page_id, page_number, text FROM pages WHERE page_id = ?",
+        [pageId]
+      ) as Array<{ page_id: string; page_number: number; text: string }>
+
+      if (pageRows.length === 0) {
+        throw new HTTPException(404, {
+          message: `Page not found: ${pageId}`,
+        })
+      }
+
+      const page = pageRows[0]
+
+      // Get pipeline outputs
+      const getNodeData = (node: string): unknown | null => {
+        const rows = db.all(
+          "SELECT data FROM node_data WHERE node = ? AND item_id = ? ORDER BY version DESC LIMIT 1",
+          [node, pageId]
+        ) as Array<{ data: string }>
+        if (rows.length === 0) return null
+        return JSON.parse(rows[0].data)
+      }
+
+      const result: PageDetail = {
+        pageId: page.page_id,
+        pageNumber: page.page_number,
+        text: page.text,
+        textClassification: getNodeData("text-classification"),
+        imageClassification: getNodeData("image-classification"),
+        sectioning: getNodeData("page-sectioning"),
+        rendering: getNodeData("web-rendering"),
+      }
+
+      return c.json(result)
+    } finally {
+      db.close()
+    }
+  })
+
+  // GET /books/:label/pages/:pageId/image — Page image as base64
+  app.get("/books/:label/pages/:pageId/image", (c) => {
+    const { label, pageId } = c.req.param()
+    const safeLabel = parseBookLabel(label)
+    const resolvedDir = path.resolve(booksDir)
+    const bookDir = path.join(resolvedDir, safeLabel)
+    const dbPath = path.join(bookDir, `${safeLabel}.db`)
+
+    if (!fs.existsSync(dbPath)) {
+      throw new HTTPException(404, {
+        message: `Book not found: ${safeLabel}`,
+      })
+    }
+
+    const db = openBookDb(dbPath)
+    try {
+      // Look up the page image path
+      const imageId = `${pageId}_page`
+      const rows = db.all(
+        "SELECT path FROM images WHERE image_id = ?",
+        [imageId]
+      ) as Array<{ path: string }>
+
+      if (rows.length === 0) {
+        throw new HTTPException(404, {
+          message: `Page image not found: ${pageId}`,
+        })
+      }
+
+      const imagePath = path.resolve(bookDir, rows[0].path)
+      // Verify path doesn't escape book directory
+      if (!imagePath.startsWith(bookDir + path.sep) && imagePath !== bookDir) {
+        throw new HTTPException(400, { message: "Invalid image path" })
+      }
+
+      const imageBase64 = fs.readFileSync(imagePath).toString("base64")
+      return c.json({ imageBase64 })
+    } finally {
+      db.close()
+    }
+  })
+
+  return app
+}
