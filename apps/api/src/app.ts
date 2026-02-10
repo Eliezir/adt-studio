@@ -10,8 +10,15 @@ import { createPageRoutes } from "./routes/pages.js"
 import { createPipelineService } from "./services/pipeline-service.js"
 import { createPipelineRunner } from "./services/pipeline-runner.js"
 
-const booksDir = path.resolve(process.env.BOOKS_DIR ?? "books")
-const promptsDir = path.resolve(process.env.PROMPTS_DIR ?? "prompts")
+// Resolve paths relative to monorepo root (2 levels up from apps/api/)
+const projectRoot = path.resolve(
+  process.env.PROJECT_ROOT ?? path.join(process.cwd(), "../..")
+)
+const booksDir = path.resolve(process.env.BOOKS_DIR ?? path.join(projectRoot, "books"))
+const promptsDir = path.resolve(process.env.PROMPTS_DIR ?? path.join(projectRoot, "prompts"))
+const configPath = path.resolve(
+  process.env.CONFIG_PATH ?? path.join(projectRoot, "config.yaml")
+)
 
 const pipelineRunner = createPipelineRunner()
 const pipelineService = createPipelineService(pipelineRunner)
@@ -29,7 +36,7 @@ app.onError(errorHandler)
 
 app.route("/api", healthRoutes)
 app.route("/api", createBookRoutes(booksDir))
-app.route("/api", createPipelineRoutes(pipelineService, booksDir, promptsDir))
+app.route("/api", createPipelineRoutes(pipelineService, booksDir, promptsDir, configPath))
 app.route("/api", createPageRoutes(booksDir))
 
 export default app

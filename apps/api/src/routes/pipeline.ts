@@ -6,7 +6,8 @@ import type { PipelineService } from "../services/pipeline-service.js"
 export function createPipelineRoutes(
   service: PipelineService,
   booksDir: string,
-  promptsDir: string
+  promptsDir: string,
+  configPath?: string
 ): Hono {
   const app = new Hono()
 
@@ -52,6 +53,7 @@ export function createPipelineRoutes(
         booksDir,
         apiKey,
         promptsDir,
+        configPath,
         startPage,
         endPage,
         concurrency,
