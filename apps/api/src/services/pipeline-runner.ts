@@ -100,12 +100,7 @@ export function createPipelineRunner(): PipelineRunner {
           cacheDir,
           promptEngine,
           rateLimiter,
-          onLog: (entry) =>
-            storage.appendLlmLog(
-              entry.taskType,
-              entry.pageId ?? "",
-              entry
-            ),
+          onLog: (entry) => storage.appendLlmLog(entry),
         })
 
         const pages = storage.getPages()
@@ -136,12 +131,7 @@ export function createPipelineRunner(): PipelineRunner {
           cacheDir,
           promptEngine,
           rateLimiter,
-          onLog: (entry) =>
-            storage.appendLlmLog(
-              entry.taskType,
-              entry.pageId ?? "",
-              entry
-            ),
+          onLog: (entry) => storage.appendLlmLog(entry),
         })
 
         const effectiveConcurrency =
@@ -161,6 +151,7 @@ export function createPipelineRunner(): PipelineRunner {
           async (page: PageData) => {
             try {
               await processPage(
+                label,
                 page,
                 storage,
                 {
@@ -272,6 +263,7 @@ interface PageCallbacks {
 }
 
 async function processPage(
+  label: string,
   page: PageData,
   storage: Storage,
   configs: StepConfigs,
@@ -358,6 +350,7 @@ async function processPage(
 
   const renderResult = await renderPage(
     {
+      label,
       pageId: page.pageId,
       pageImageBase64,
       sectioning,

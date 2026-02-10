@@ -137,6 +137,6 @@ export function buildClassifyConfig(appConfig: AppConfig): ClassifyConfig {
     textGroupTypes,
     prunedTextTypes: appConfig.pruned_text_types ?? [],
     promptName: appConfig.text_classification?.prompt ?? "text_classification",
-    modelId: appConfig.text_classification?.model ?? "openai:gpt-4o",
+    modelId: appConfig.text_classification?.model ?? "openai:gpt-5.2",
   }
 }

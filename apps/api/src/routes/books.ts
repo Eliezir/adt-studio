@@ -1,5 +1,9 @@
+import fs from "node:fs"
+import path from "node:path"
 import { Hono } from "hono"
 import { HTTPException } from "hono/http-exception"
+import { parseBookLabel } from "@adt/types"
+import { openBookDb } from "@adt/storage"
 import {
   listBooks,
   getBook,
@@ -70,6 +74,54 @@ export function createBookRoutes(booksDir: string): Hono {
         throw new HTTPException(404, { message })
       }
       throw new HTTPException(400, { message })
+    }
+  })
+
+  // GET /books/:label/images/:imageId — Serve extracted image as PNG
+  app.get("/books/:label/images/:imageId", (c) => {
+    const { label, imageId } = c.req.param()
+    const safeLabel = parseBookLabel(label)
+    const resolvedDir = path.resolve(booksDir)
+    const bookDir = path.join(resolvedDir, safeLabel)
+    const dbPath = path.join(bookDir, `${safeLabel}.db`)
+
+    if (!fs.existsSync(dbPath)) {
+      throw new HTTPException(404, {
+        message: `Book not found: ${safeLabel}`,
+      })
+    }
+
+    const db = openBookDb(dbPath)
+    try {
+      const rows = db.all(
+        "SELECT path FROM images WHERE image_id = ?",
+        [imageId]
+      ) as Array<{ path: string }>
+
+      if (rows.length === 0) {
+        throw new HTTPException(404, {
+          message: `Image not found: ${imageId}`,
+        })
+      }
+
+      const imagePath = path.resolve(bookDir, rows[0].path)
+      // Verify path doesn't escape book directory
+      if (!imagePath.startsWith(bookDir + path.sep) && imagePath !== bookDir) {
+        throw new HTTPException(400, { message: "Invalid image path" })
+      }
+
+      if (!fs.existsSync(imagePath)) {
+        throw new HTTPException(404, {
+          message: `Image file not found: ${imageId}`,
+        })
+      }
+
+      const imageBuffer = fs.readFileSync(imagePath)
+      c.header("Content-Type", "image/png")
+      c.header("Cache-Control", "public, max-age=86400")
+      return c.body(imageBuffer)
+    } finally {
+      db.close()
     }
   })
 

@@ -28,6 +28,7 @@ export interface ImageInput {
 }
 
 export interface RenderPageInput {
+  label: string
   pageId: string
   pageImageBase64: string
   sectioning: PageSectioningOutput
@@ -110,6 +111,7 @@ export async function renderPage(
 
     const rendering = await renderSection(
       {
+        label: input.label,
         pageId: input.pageId,
         pageImageBase64: input.pageImageBase64,
         sectionIndex: i,
@@ -128,6 +130,7 @@ export async function renderPage(
 }
 
 export interface RenderSectionInput {
+  label: string
   pageId: string
   pageImageBase64: string
   sectionIndex: number
@@ -151,6 +154,7 @@ export async function renderSection(
     schema: webRenderingLLMSchema,
     prompt: config.promptName,
     context: {
+      label: input.label,
       page_image_base64: input.pageImageBase64,
       section_type: input.sectionType,
       texts: input.texts.map((t) => ({
@@ -187,12 +191,14 @@ function validateWebRendering(
   context: Record<string, unknown>
 ): ValidationResult {
   const r = result as { reasoning: string; content: string }
+  const label = context.label as string
   const texts = context.texts as Array<{ text_id: string }>
   const images = context.images as Array<{ image_id: string }>
   const allowedTextIds = texts.map((t) => t.text_id)
   const allowedImageIds = images.map((img) => img.image_id)
+  const imageUrlPrefix = `/api/books/${label}/images`
 
-  const check = validateSectionHtml(r.content, allowedTextIds, allowedImageIds)
+  const check = validateSectionHtml(r.content, allowedTextIds, allowedImageIds, imageUrlPrefix)
   if (check.valid && check.sectionHtml) {
     return {
       valid: true,
@@ -209,8 +215,8 @@ function validateWebRendering(
 export function buildRenderConfig(appConfig: AppConfig): RenderConfig {
   return {
     promptName: appConfig.web_rendering?.prompt ?? "web_generation_html",
-    modelId: appConfig.web_rendering?.model ?? "openai:gpt-4o",
-    maxRetries: appConfig.web_rendering?.max_retries ?? 8,
+    modelId: appConfig.web_rendering?.model ?? "openai:gpt-5.2",
+    maxRetries: appConfig.web_rendering?.max_retries ?? 25,
     timeoutMs: (appConfig.web_rendering?.timeout ?? 180) * 1000,
   }
 }

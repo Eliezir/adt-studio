@@ -1,4 +1,5 @@
 import type { ExtractedPage } from "@adt/pdf"
+import type { LlmLogEntry } from "@adt/llm"
 
 export interface PageData {
   pageId: string
@@ -29,7 +30,7 @@ export interface Storage {
   putNodeData(node: string, itemId: string, data: unknown): number
   getLatestNodeData(node: string, itemId: string): NodeDataRow | null
 
-  appendLlmLog(step: string, itemId: string, entry: unknown): void
+  appendLlmLog(entry: LlmLogEntry): void
 
   close(): void
 }

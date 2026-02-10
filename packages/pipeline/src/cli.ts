@@ -129,7 +129,7 @@ async function main(): Promise<void> {
       modelId: metadataConfig.modelId,
       cacheDir,
       promptEngine,
-      onLog: (entry) => storage.appendLlmLog(entry.taskType, entry.pageId ?? "", entry),
+      onLog: (entry) => storage.appendLlmLog(entry),
     })
 
     const pages = storage.getPages()
@@ -164,7 +164,7 @@ async function main(): Promise<void> {
       modelId: textClassifyConfig.modelId,
       cacheDir,
       promptEngine,
-      onLog: (entry) => storage.appendLlmLog(entry.taskType, entry.pageId ?? "", entry),
+      onLog: (entry) => storage.appendLlmLog(entry),
     })
 
     const effectiveConcurrency =
@@ -198,6 +198,7 @@ async function main(): Promise<void> {
         effectiveConcurrency,
         async (page) => {
           await processPage(
+            label,
             page,
             stepBars,
             storage,
@@ -229,6 +230,7 @@ interface StepConfigs {
 }
 
 async function processPage(
+  label: string,
   page: PageData,
   bars: StepBars,
   storage: Storage,
@@ -305,6 +307,7 @@ async function processPage(
 
   const renderResult = await renderPage(
     {
+      label,
       pageId: page.pageId,
       pageImageBase64,
       sectioning,

@@ -2,6 +2,7 @@ import fs from "node:fs"
 import path from "node:path"
 import type sqlite from "node-sqlite3-wasm"
 import type { ExtractedPage, ExtractedImage } from "@adt/pdf"
+import type { LlmLogEntry } from "@adt/llm"
 import { parseBookLabel } from "@adt/types"
 import type { Storage, PageData, ImageData, NodeDataRow } from "./storage.js"
 import { openBookDb } from "./db.js"
@@ -131,10 +132,18 @@ export function createBookStorage(label: string, booksRoot: string): Storage {
       }
     },
 
-    appendLlmLog(step: string, itemId: string, entry: unknown): void {
+    appendLlmLog(entry: LlmLogEntry): void {
       db.run(
-        "INSERT INTO llm_log (timestamp, step, item_id, data) VALUES (?, ?, ?, ?)",
-        [new Date().toISOString(), step, itemId, JSON.stringify(entry)]
+        "INSERT INTO llm_log (request_id, timestamp, step, item_id, success, error_count, data) VALUES (?, ?, ?, ?, ?, ?, ?)",
+        [
+          entry.requestId,
+          entry.timestamp,
+          entry.taskType,
+          entry.pageId ?? "",
+          entry.success ? 1 : 0,
+          entry.errorCount,
+          JSON.stringify(entry),
+        ]
       )
     },
 

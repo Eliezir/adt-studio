@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest"
 import fs from "node:fs"
 import os from "node:os"
 import path from "node:path"
-import { openBookDb } from "@adt/storage"
+import { openBookDb, createBookStorage } from "@adt/storage"
 import { createBookRoutes } from "./books.js"
 
 let tmpDir: string
@@ -192,6 +192,53 @@ describe("DELETE /books/:label", () => {
   it("returns 404 for missing book", async () => {
     const app = createBookRoutes(tmpDir)
     const res = await app.request("/books/ghost", { method: "DELETE" })
+    expect(res.status).toBe(404)
+  })
+})
+
+describe("GET /books/:label/images/:imageId", () => {
+  function createBookWithImage(label: string): void {
+    const storage = createBookStorage(label, tmpDir)
+    try {
+      storage.putExtractedPage({
+        pageId: `${label}_p1`,
+        pageNumber: 1,
+        text: "Page one",
+        pageImage: {
+          imageId: `${label}_p1_page`,
+          pngBuffer: Buffer.from("fake-png-data"),
+          hash: "abc123",
+          width: 800,
+          height: 600,
+        },
+        images: [],
+      })
+    } finally {
+      storage.close()
+    }
+  }
+
+  it("returns image as PNG binary", async () => {
+    createBookWithImage("img-book")
+    const app = createBookRoutes(tmpDir)
+    const res = await app.request("/books/img-book/images/img-book_p1_page")
+
+    expect(res.status).toBe(200)
+    expect(res.headers.get("Content-Type")).toBe("image/png")
+    const buf = await res.arrayBuffer()
+    expect(Buffer.from(buf).toString()).toBe("fake-png-data")
+  })
+
+  it("returns 404 for nonexistent image", async () => {
+    createBookWithImage("img-book2")
+    const app = createBookRoutes(tmpDir)
+    const res = await app.request("/books/img-book2/images/no-such-image")
+    expect(res.status).toBe(404)
+  })
+
+  it("returns 404 for nonexistent book", async () => {
+    const app = createBookRoutes(tmpDir)
+    const res = await app.request("/books/no-such-book/images/some-image")
     expect(res.status).toBe(404)
   })
 })

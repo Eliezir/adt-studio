@@ -28,7 +28,7 @@ describe("validateSectionHtml", () => {
     )
   })
 
-  it("detects duplicate data-id", () => {
+  it("allows duplicate data-id", () => {
     const html = `
       <section>
         <p data-id="pg001_gp001">Hello</p>
@@ -36,10 +36,8 @@ describe("validateSectionHtml", () => {
       </section>
     `
     const result = validateSectionHtml(html, ["pg001_gp001"], [])
-    expect(result.valid).toBe(false)
-    expect(result.errors).toContainEqual(
-      expect.stringContaining('Duplicate data-id: "pg001_gp001"')
-    )
+    expect(result.valid).toBe(true)
+    expect(result.errors).toHaveLength(0)
   })
 
   it("detects text nodes outside data-id elements", () => {
@@ -118,6 +116,39 @@ describe("validateSectionHtml", () => {
     `
     const result = validateSectionHtml(html, ["pg001_gp001"], [])
     expect(result.valid).toBe(true)
+  })
+
+  it("rewrites image src to server URL when imageUrlPrefix provided", () => {
+    const html = `
+      <section>
+        <p data-id="pg001_gp001">Hello</p>
+        <img data-id="pg001_im001" src="placeholder" alt="test" />
+      </section>
+    `
+    const result = validateSectionHtml(
+      html,
+      ["pg001_gp001"],
+      ["pg001_im001"],
+      "/api/books/my-book/images"
+    )
+    expect(result.valid).toBe(true)
+    expect(result.sectionHtml).toContain('src="/api/books/my-book/images/pg001_im001"')
+    expect(result.sectionHtml).not.toContain('src="placeholder"')
+  })
+
+  it("does not rewrite image src when no imageUrlPrefix", () => {
+    const html = `
+      <section>
+        <img data-id="pg001_im001" src="placeholder" alt="test" />
+      </section>
+    `
+    const result = validateSectionHtml(
+      html,
+      [],
+      ["pg001_im001"]
+    )
+    expect(result.valid).toBe(true)
+    expect(result.sectionHtml).toContain('src="placeholder"')
   })
 
   it("returns sectionHtml with outer section tag", () => {

@@ -29,8 +29,8 @@ describe("buildRenderConfig", () => {
 
     const config = buildRenderConfig(appConfig)
     expect(config.promptName).toBe("web_generation_html")
-    expect(config.modelId).toBe("openai:gpt-4o")
-    expect(config.maxRetries).toBe(8)
+    expect(config.modelId).toBe("openai:gpt-5.2")
+    expect(config.maxRetries).toBe(25)
   })
 })
 
@@ -51,6 +51,7 @@ describe("renderPage", () => {
 
     const result = await renderPage(
       {
+        label: "test-book",
         pageId: "pg001",
         pageImageBase64: "base64img",
         sectioning: {
@@ -126,6 +127,7 @@ describe("renderPage", () => {
 
     const result = await renderPage(
       {
+        label: "test-book",
         pageId: "pg001",
         pageImageBase64: "base64img",
         sectioning: {
@@ -186,6 +188,7 @@ describe("renderPage", () => {
 
     await renderPage(
       {
+        label: "test-book",
         pageId: "pg001",
         pageImageBase64: "base64img",
         sectioning: {
@@ -238,6 +241,7 @@ describe("renderPage", () => {
 
     await renderPage(
       {
+        label: "test-book",
         pageId: "pg001",
         pageImageBase64: "base64img",
         sectioning: {
@@ -301,6 +305,7 @@ describe("renderPage", () => {
 
     await renderPage(
       {
+        label: "test-book",
         pageId: "pg001",
         pageImageBase64: "base64img",
         sectioning: {
@@ -357,6 +362,7 @@ describe("renderPage", () => {
 
     const result = await renderPage(
       {
+        label: "test-book",
         pageId: "pg001",
         pageImageBase64: "base64img",
         sectioning: {

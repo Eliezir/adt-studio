@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto"
 import { generateObject, APICallError, NoObjectGeneratedError, type LanguageModel, type CoreMessage } from "ai"
 import { openai } from "@ai-sdk/openai"
 import type {
@@ -13,7 +14,7 @@ import { computeHash, readCache, writeCache, bustCache } from "./cache.js"
 import { sanitizeMessages, type LlmLogEntry } from "./log.js"
 
 export interface CreateLLMModelOptions {
-  modelId: string // "openai:gpt-4o" format
+  modelId: string // "openai:gpt-5.2" format
   cacheDir?: string
   promptEngine?: PromptEngine
   onLog?: (entry: LlmLogEntry) => void
@@ -61,6 +62,7 @@ export function createLLMModel(options: CreateLLMModelOptions): LLMModel {
 
       const maxRetries = opts.maxRetries ?? 0
       const t0 = Date.now()
+      const requestId = randomUUID()
 
       let currentMessages = messages
       let allErrors: string[] = []
@@ -130,6 +132,29 @@ export function createLLMModel(options: CreateLLMModelOptions): LLMModel {
               console.log(
                 `[LLM] ${label} | validation failed (attempt ${attempt + 1}/${maxRetries + 1}) | retrying`
               )
+              if (opts.log && onLog) {
+                onLog({
+                  requestId,
+                  timestamp: new Date().toISOString(),
+                  taskType: opts.log.taskType,
+                  pageId: opts.log.pageId,
+                  promptName: opts.log.promptName,
+                  modelId,
+                  cacheHit: lastCacheHit,
+                  success: false,
+                  errorCount: allErrors.length,
+                  attempt,
+                  durationMs: Date.now() - t0,
+                  usage:
+                    totalUsage.inputTokens > 0 || totalUsage.outputTokens > 0
+                      ? totalUsage
+                      : undefined,
+                  validationErrors: allErrors.length > 0 ? allErrors : undefined,
+                  messages: sanitizeMessages(
+                    buildLogMessages(system, currentMessages, null)
+                  ),
+                })
+              }
               continue
             }
             if (check.cleaned !== undefined) {
@@ -150,12 +175,15 @@ export function createLLMModel(options: CreateLLMModelOptions): LLMModel {
           // Log and return
           if (opts.log && onLog) {
             onLog({
+              requestId,
               timestamp: new Date().toISOString(),
               taskType: opts.log.taskType,
               pageId: opts.log.pageId,
               promptName: opts.log.promptName,
               modelId,
               cacheHit: lastCacheHit,
+              success: true,
+              errorCount: allErrors.length,
               attempt,
               durationMs: Date.now() - t0,
               usage:
@@ -163,8 +191,9 @@ export function createLLMModel(options: CreateLLMModelOptions): LLMModel {
                   ? totalUsage
                   : undefined,
               validationErrors: allErrors.length > 0 ? allErrors : undefined,
-              system,
-              messages: sanitizeMessages(currentMessages),
+              messages: sanitizeMessages(
+                buildLogMessages(system, currentMessages, result)
+              ),
             })
           }
 
@@ -183,6 +212,29 @@ export function createLLMModel(options: CreateLLMModelOptions): LLMModel {
             console.error(
               `[LLM] ${label} | error (attempt ${attempt + 1}/${maxRetries + 1}) | ${errMsg} | retrying in ${delayMs}ms`
             )
+            if (opts.log && onLog) {
+              onLog({
+                requestId,
+                timestamp: new Date().toISOString(),
+                taskType: opts.log.taskType,
+                pageId: opts.log.pageId,
+                promptName: opts.log.promptName,
+                modelId,
+                cacheHit: false,
+                success: false,
+                errorCount: allErrors.length,
+                attempt,
+                durationMs: Date.now() - t0,
+                usage:
+                  totalUsage.inputTokens > 0 || totalUsage.outputTokens > 0
+                    ? totalUsage
+                    : undefined,
+                validationErrors: allErrors,
+                messages: sanitizeMessages(
+                  buildLogMessages(system, currentMessages, null)
+                ),
+              })
+            }
             await sleep(delayMs)
             continue
           }
@@ -193,12 +245,15 @@ export function createLLMModel(options: CreateLLMModelOptions): LLMModel {
 
           if (opts.log && onLog) {
             onLog({
+              requestId,
               timestamp: new Date().toISOString(),
               taskType: opts.log.taskType,
               pageId: opts.log.pageId,
               promptName: opts.log.promptName,
               modelId,
               cacheHit: false,
+              success: false,
+              errorCount: allErrors.length,
               attempt,
               durationMs: Date.now() - t0,
               usage:
@@ -206,8 +261,9 @@ export function createLLMModel(options: CreateLLMModelOptions): LLMModel {
                   ? totalUsage
                   : undefined,
               validationErrors: allErrors,
-              system,
-              messages: sanitizeMessages(currentMessages),
+              messages: sanitizeMessages(
+                buildLogMessages(system, currentMessages, null)
+              ),
             })
           }
           throw err
@@ -235,6 +291,9 @@ function resolveModel(modelId: string): LanguageModel {
 }
 
 function formatError(err: unknown): string {
+  if (err instanceof DOMException && err.name === "TimeoutError") {
+    return `Timeout: ${err.message}`
+  }
   if (APICallError.isInstance(err)) {
     const status = err.statusCode ? `HTTP ${err.statusCode}` : "no status"
     return `${status}: ${err.message}`
@@ -321,6 +380,25 @@ function convertMessages(messages: Message[]): CoreMessage[] {
     }
   }
   return result
+}
+
+function buildLogMessages(
+  system: string | undefined,
+  messages: Message[],
+  finalResult: unknown | null
+): Message[] {
+  const log: Message[] = []
+  if (system) {
+    log.push({ role: "system", content: system })
+  }
+  log.push(...messages)
+  if (finalResult !== null) {
+    log.push({
+      role: "assistant",
+      content: JSON.stringify(finalResult, null, 2),
+    })
+  }
+  return log
 }
 
 function appendValidationFeedback(

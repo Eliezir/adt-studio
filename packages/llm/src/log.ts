@@ -2,17 +2,19 @@ import { createHash } from "node:crypto"
 import type { Message, TokenUsage } from "./types.js"
 
 export interface LlmLogEntry {
+  requestId: string
   timestamp: string
   taskType: string
   pageId?: string
   promptName: string
   modelId: string
   cacheHit: boolean
+  success: boolean
+  errorCount: number
   attempt: number
   durationMs: number
   usage?: TokenUsage
   validationErrors?: string[]
-  system?: string
   messages: LlmLogMessage[]
 }
 
