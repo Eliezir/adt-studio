@@ -1,29 +1,59 @@
-import { parseDocument } from "htmlparser2"
+import { parseDocument, DomUtils } from "htmlparser2"
 
 export interface HtmlValidationResult {
   valid: boolean
   errors: string[]
+  /** The cleaned HTML (section inner HTML if a <section> tag was found) */
+  sectionHtml?: string
 }
 
 const EXEMPT_TAGS = new Set(["style", "script"])
 
+/**
+ * Find the first <section> element in the parsed document.
+ * Returns null if no <section> tag exists.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function findSectionElement(doc: any): any | null {
+  return DomUtils.findOne(
+    (el) => el.type === "tag" && el.name === "section",
+    doc.children ?? [],
+    true
+  )
+}
+
 export function validateSectionHtml(
   html: string,
   allowedTextIds: string[],
-  allowedImageIds: string[]
+  allowedImageIds: string[],
+  imageUrlPrefix?: string
 ): HtmlValidationResult {
   const allowedIds = new Set([...allowedTextIds, ...allowedImageIds])
+  const imageIdSet = new Set(allowedImageIds)
   const errors: string[] = []
-  const seenIds = new Set<string>()
   const doc = parseDocument(html)
 
-  walkNode(doc, allowedIds, seenIds, errors)
+  const section = findSectionElement(doc)
+  if (!section) {
+    errors.push("No <section> tag found in HTML output")
+    return { valid: false, errors }
+  }
 
-  return { valid: errors.length === 0, errors }
+  walkNode(section, allowedIds, errors)
+
+  if (imageUrlPrefix) {
+    rewriteImageSrcs(section, imageIdSet, imageUrlPrefix)
+  }
+
+  return {
+    valid: errors.length === 0,
+    errors,
+    sectionHtml: DomUtils.getOuterHTML(section),
+  }
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function walkNode(node: any, allowedIds: Set<string>, seenIds: Set<string>, errors: string[]): void {
+function walkNode(node: any, allowedIds: Set<string>, errors: string[]): void {
   if (node.type === "text") {
     if (node.data.trim().length > 0) {
       if (isInsideExemptTag(node)) return
@@ -37,20 +67,32 @@ function walkNode(node: any, allowedIds: Set<string>, seenIds: Set<string>, erro
 
   if (node.type === "tag") {
     const dataId = node.attribs?.["data-id"]
-    if (dataId !== undefined) {
-      if (!allowedIds.has(dataId)) {
-        errors.push(`Unknown data-id: "${dataId}"`)
-      } else if (seenIds.has(dataId)) {
-        errors.push(`Duplicate data-id: "${dataId}"`)
-      } else {
-        seenIds.add(dataId)
-      }
+    if (dataId !== undefined && !allowedIds.has(dataId)) {
+      errors.push(`Unknown data-id: "${dataId}"`)
     }
   }
 
   if (node.children) {
     for (const child of node.children) {
-      walkNode(child, allowedIds, seenIds, errors)
+      walkNode(child, allowedIds, errors)
+    }
+  }
+}
+
+/**
+ * Rewrite src attributes on elements whose data-id matches an image ID.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function rewriteImageSrcs(node: any, imageIds: Set<string>, urlPrefix: string): void {
+  if (node.type === "tag") {
+    const dataId = node.attribs?.["data-id"]
+    if (dataId !== undefined && imageIds.has(dataId)) {
+      node.attribs.src = `${urlPrefix}/${dataId}`
+    }
+  }
+  if (node.children) {
+    for (const child of node.children) {
+      rewriteImageSrcs(child, imageIds, urlPrefix)
     }
   }
 }

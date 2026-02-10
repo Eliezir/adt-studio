@@ -74,8 +74,7 @@ export async function reRenderPage(
       modelId: renderConfig.modelId,
       cacheDir,
       promptEngine,
-      onLog: (entry) =>
-        storage.appendLlmLog(entry.taskType, entry.pageId ?? "", entry),
+      onLog: (entry) => storage.appendLlmLog(entry),
     })
 
     // Get page image
@@ -84,6 +83,7 @@ export async function reRenderPage(
     // Render page
     const renderResult = await renderPage(
       {
+        label,
         pageId,
         pageImageBase64,
         sectioning,

@@ -13,6 +13,7 @@ export interface RenderConfig {
   promptName: string
   modelId: string
   maxRetries: number
+  timeoutMs: number
 }
 
 export interface TextInput {
@@ -27,6 +28,7 @@ export interface ImageInput {
 }
 
 export interface RenderPageInput {
+  label: string
   pageId: string
   pageImageBase64: string
   sectioning: PageSectioningOutput
@@ -109,6 +111,7 @@ export async function renderPage(
 
     const rendering = await renderSection(
       {
+        label: input.label,
         pageId: input.pageId,
         pageImageBase64: input.pageImageBase64,
         sectionIndex: i,
@@ -127,6 +130,7 @@ export async function renderPage(
 }
 
 export interface RenderSectionInput {
+  label: string
   pageId: string
   pageImageBase64: string
   sectionIndex: number
@@ -143,38 +147,30 @@ export async function renderSection(
   config: RenderConfig,
   llmModel: LLMModel
 ): Promise<SectionRendering> {
-  const allowedTextIds = input.texts.map((t) => t.textId)
-  const allowedImageIds = input.images.map((img) => img.imageId)
-
-  const validate = (result: unknown): ValidationResult => {
-    const r = result as { reasoning: string; content: string }
-    return validateSectionHtml(r.content, allowedTextIds, allowedImageIds)
-  }
-
   const result = await llmModel.generateObject<{
     reasoning: string
     content: string
   }>({
     schema: webRenderingLLMSchema,
-    prompt: {
-      name: config.promptName,
-      context: {
-        page_image_base64: input.pageImageBase64,
-        section_type: input.sectionType,
-        texts: input.texts.map((t) => ({
-          text_id: t.textId,
-          text_type: t.textType,
-          text: t.text,
-        })),
-        images: input.images.map((img) => ({
-          image_id: img.imageId,
-          image_base64: img.imageBase64,
-        })),
-      },
+    prompt: config.promptName,
+    context: {
+      label: input.label,
+      page_image_base64: input.pageImageBase64,
+      section_type: input.sectionType,
+      texts: input.texts.map((t) => ({
+        text_id: t.textId,
+        text_type: t.textType,
+        text: t.text,
+      })),
+      images: input.images.map((img) => ({
+        image_id: img.imageId,
+        image_base64: img.imageBase64,
+      })),
     },
-    validate,
+    validate: validateWebRendering,
     maxRetries: config.maxRetries,
     maxTokens: 16384,
+    timeoutMs: config.timeoutMs,
     log: {
       taskType: "web-rendering",
       pageId: input.pageId,
@@ -190,13 +186,37 @@ export async function renderSection(
   }
 }
 
+function validateWebRendering(
+  result: unknown,
+  context: Record<string, unknown>
+): ValidationResult {
+  const r = result as { reasoning: string; content: string }
+  const label = context.label as string
+  const texts = context.texts as Array<{ text_id: string }>
+  const images = context.images as Array<{ image_id: string }>
+  const allowedTextIds = texts.map((t) => t.text_id)
+  const allowedImageIds = images.map((img) => img.image_id)
+  const imageUrlPrefix = `/api/books/${label}/images`
+
+  const check = validateSectionHtml(r.content, allowedTextIds, allowedImageIds, imageUrlPrefix)
+  if (check.valid && check.sectionHtml) {
+    return {
+      valid: true,
+      errors: [],
+      cleaned: { reasoning: r.reasoning, content: check.sectionHtml },
+    }
+  }
+  return { valid: check.valid, errors: check.errors }
+}
+
 /**
  * Build RenderConfig from AppConfig.
  */
 export function buildRenderConfig(appConfig: AppConfig): RenderConfig {
   return {
     promptName: appConfig.web_rendering?.prompt ?? "web_generation_html",
-    modelId: appConfig.web_rendering?.model ?? "openai:gpt-4o",
-    maxRetries: appConfig.web_rendering?.max_retries ?? 8,
+    modelId: appConfig.web_rendering?.model ?? "openai:gpt-5.2",
+    maxRetries: appConfig.web_rendering?.max_retries ?? 25,
+    timeoutMs: (appConfig.web_rendering?.timeout ?? 180) * 1000,
   }
 }

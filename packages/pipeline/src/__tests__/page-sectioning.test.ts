@@ -41,7 +41,7 @@ describe("buildSectioningConfig", () => {
 
     const config = buildSectioningConfig(appConfig)
     expect(config.promptName).toBe("page_sectioning")
-    expect(config.modelId).toBe("openai:gpt-4o")
+    expect(config.modelId).toBe("openai:gpt-5.2")
     expect(config.sectionTypes).toEqual([])
     expect(config.prunedSectionTypes).toEqual([])
   })
@@ -262,7 +262,7 @@ describe("sectionPage", () => {
 
     const fakeLlm: LLMModel = {
       generateObject: async <T>(opts: GenerateObjectOptions) => {
-        capturedContext = opts.prompt?.context
+        capturedContext = opts.context
         return {
           object: { reasoning: "test", sections: [] } as T,
         } as GenerateObjectResult<T>

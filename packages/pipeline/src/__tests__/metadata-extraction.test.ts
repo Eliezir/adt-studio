@@ -73,9 +73,8 @@ describe("extractMetadata", () => {
     await extractMetadata(pages, config, llmModel)
 
     const opts = capturedOptions as GenerateObjectOptions
-    expect(opts.prompt).toBeDefined()
-    expect(opts.prompt!.name).toBe("metadata_extraction")
-    const ctx = opts.prompt!.context as { pages: MetadataPageInput[] }
+    expect(opts.prompt).toBe("metadata_extraction")
+    const ctx = opts.context as { pages: MetadataPageInput[] }
     expect(ctx.pages).toHaveLength(3)
     expect(ctx.pages[0].pageNumber).toBe(1)
     expect(ctx.pages[2].pageNumber).toBe(3)
@@ -126,6 +125,6 @@ describe("buildMetadataConfig", () => {
 
     const config = buildMetadataConfig(appConfig)
     expect(config.promptName).toBe("metadata_extraction")
-    expect(config.modelId).toBe("openai:gpt-4o")
+    expect(config.modelId).toBe("openai:gpt-5.2")
   })
 })

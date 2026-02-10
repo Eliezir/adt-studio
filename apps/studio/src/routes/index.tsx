@@ -97,17 +97,24 @@ function BookRow({
               </h3>
             </div>
             <div className="flex items-center gap-1.5 shrink-0">
+              {book.needsRebuild && (
+                <Badge variant="destructive" className="text-[11px] px-2 py-0.5">
+                  Needs rebuild
+                </Badge>
+              )}
               {book.languageCode && (
                 <Badge variant="outline" className="text-[11px] px-2 py-0.5">
                   {book.languageCode.toUpperCase()}
                 </Badge>
               )}
-              <Badge
-                variant={book.pageCount > 0 ? "default" : "secondary"}
-                className="text-[11px] px-2 py-0.5"
-              >
-                {book.pageCount > 0 ? `${book.pageCount} pages` : "New"}
-              </Badge>
+              {!book.needsRebuild && (
+                <Badge
+                  variant={book.pageCount > 0 ? "default" : "secondary"}
+                  className="text-[11px] px-2 py-0.5"
+                >
+                  {book.pageCount > 0 ? `${book.pageCount} pages` : "New"}
+                </Badge>
+              )}
               {!book.hasSourcePdf && (
                 <Badge variant="secondary" className="text-[11px] px-2 py-0.5">
                   No PDF
@@ -115,6 +122,13 @@ function BookRow({
               )}
             </div>
           </div>
+
+          {/* Rebuild warning */}
+          {book.needsRebuild && (
+            <p className="text-sm text-destructive mb-2">
+              {book.rebuildReason ?? "Book data is outdated and must be rebuilt."}
+            </p>
+          )}
 
           {/* Details */}
           {hasMetadata ? (

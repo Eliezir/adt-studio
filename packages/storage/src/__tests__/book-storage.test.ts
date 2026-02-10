@@ -345,27 +345,64 @@ describe("putNodeData / getLatestNodeData", () => {
 })
 
 describe("appendLlmLog", () => {
-  it("appends log entries with step and item_id", () => {
+  it("appends log entries with step, item_id, success, and error_count", () => {
     const { storage, paths } = createTempStorage()
 
-    storage.appendLlmLog("text-classification", "pg001", { taskType: "text-classification", modelId: "gpt-4o" })
-    storage.appendLlmLog("web-rendering", "pg002", { taskType: "web-rendering", modelId: "gpt-4o" })
+    storage.appendLlmLog({
+      requestId: "req-aaa",
+      timestamp: "2024-01-01T00:00:00.000Z",
+      taskType: "text-classification",
+      pageId: "pg001",
+      promptName: "text_classification",
+      modelId: "gpt-4o",
+      cacheHit: false,
+      success: true,
+      errorCount: 2,
+      attempt: 2,
+      durationMs: 1000,
+      validationErrors: ["err1", "err2"],
+      messages: [],
+    })
+    storage.appendLlmLog({
+      requestId: "req-bbb",
+      timestamp: "2024-01-01T00:00:01.000Z",
+      taskType: "web-rendering",
+      pageId: "pg002",
+      promptName: "web_generation_html",
+      modelId: "gpt-4o",
+      cacheHit: false,
+      success: false,
+      errorCount: 1,
+      attempt: 0,
+      durationMs: 500,
+      validationErrors: ["timeout"],
+      messages: [],
+    })
 
     const db = openBookDb(paths.dbPath)
     const rows = db.all("SELECT * FROM llm_log ORDER BY id") as Array<{
       id: number
+      request_id: string
       timestamp: string
       step: string
       item_id: string
+      success: number
+      error_count: number
       data: string
     }>
     expect(rows).toHaveLength(2)
+    expect(rows[0].request_id).toBe("req-aaa")
     expect(rows[0].step).toBe("text-classification")
     expect(rows[0].item_id).toBe("pg001")
+    expect(rows[0].success).toBe(1)
+    expect(rows[0].error_count).toBe(2)
+    expect(rows[0].timestamp).toBe("2024-01-01T00:00:00.000Z")
     expect(JSON.parse(rows[0].data).taskType).toBe("text-classification")
+    expect(rows[1].request_id).toBe("req-bbb")
     expect(rows[1].step).toBe("web-rendering")
     expect(rows[1].item_id).toBe("pg002")
-    expect(rows[0].timestamp).toBeTruthy()
+    expect(rows[1].success).toBe(0)
+    expect(rows[1].error_count).toBe(1)
     db.close()
 
     storage.close()

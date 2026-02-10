@@ -185,6 +185,9 @@ importers:
 
   packages/storage:
     dependencies:
+      '@adt/llm':
+        specifier: workspace:*
+        version: link:../llm
       '@adt/pdf':
         specifier: workspace:*
         version: link:../pdf

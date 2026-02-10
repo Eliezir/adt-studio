@@ -8,6 +8,7 @@
     ".": "./dist/index.js"
   },
   "dependencies": {
+    "@adt/llm": "workspace:*",
     "@adt/pdf": "workspace:*",
     "@adt/types": "workspace:*",
     "node-sqlite3-wasm": "^0.8.0"

@@ -12,10 +12,16 @@ export interface BookSummary {
   languageCode: string | null
   pageCount: number
   hasSourcePdf: boolean
+  needsRebuild: boolean
+  rebuildReason: string | null
 }
 
 export interface BookDetail extends BookSummary {
   metadata: BookMetadata | null
+}
+
+function isSchemaMismatchError(err: unknown): err is Error {
+  return err instanceof Error && err.message.includes("Schema version mismatch")
 }
 
 export function listBooks(booksDir: string): BookSummary[] {
@@ -39,31 +45,43 @@ export function listBooks(booksDir: string): BookSummary[] {
     let publisher: string | null = null
     let languageCode: string | null = null
     let pageCount = 0
+    let needsRebuild = false
+    let rebuildReason: string | null = null
 
     if (fs.existsSync(dbPath)) {
-      const db = openBookDb(dbPath)
       try {
-        const pages = db.all("SELECT COUNT(*) as count FROM pages") as Array<{
-          count: number
-        }>
-        pageCount = pages[0]?.count ?? 0
+        const db = openBookDb(dbPath)
+        try {
+          const pages = db.all("SELECT COUNT(*) as count FROM pages") as Array<{
+            count: number
+          }>
+          pageCount = pages[0]?.count ?? 0
 
-        const metaRows = db.all(
-          "SELECT data FROM node_data WHERE node = ? AND item_id = ? ORDER BY version DESC LIMIT 1",
-          ["metadata", "book"]
-        ) as Array<{ data: string }>
+          const metaRows = db.all(
+            "SELECT data FROM node_data WHERE node = ? AND item_id = ? ORDER BY version DESC LIMIT 1",
+            ["metadata", "book"]
+          ) as Array<{ data: string }>
 
-        if (metaRows.length > 0) {
-          const parsed = BookMetadata.safeParse(JSON.parse(metaRows[0].data))
-          if (parsed.success) {
-            title = parsed.data.title
-            authors = parsed.data.authors
-            publisher = parsed.data.publisher
-            languageCode = parsed.data.language_code
+          if (metaRows.length > 0) {
+            const parsed = BookMetadata.safeParse(JSON.parse(metaRows[0].data))
+            if (parsed.success) {
+              title = parsed.data.title
+              authors = parsed.data.authors
+              publisher = parsed.data.publisher
+              languageCode = parsed.data.language_code
+            }
           }
+        } finally {
+          db.close()
         }
-      } finally {
-        db.close()
+      } catch (err) {
+        if (isSchemaMismatchError(err)) {
+          needsRebuild = true
+          rebuildReason =
+            "Book data uses an older storage schema and must be rebuilt."
+        } else {
+          throw err
+        }
       }
     }
 
@@ -75,6 +93,8 @@ export function listBooks(booksDir: string): BookSummary[] {
       languageCode,
       pageCount,
       hasSourcePdf: fs.existsSync(pdfPath),
+      needsRebuild,
+      rebuildReason,
     })
   }
 
@@ -100,32 +120,44 @@ export function getBook(label: string, booksDir: string): BookDetail {
   let languageCode: string | null = null
   let pageCount = 0
   let metadata: BookMetadata | null = null
+  let needsRebuild = false
+  let rebuildReason: string | null = null
 
   if (fs.existsSync(dbPath)) {
-    const db = openBookDb(dbPath)
     try {
-      const pages = db.all("SELECT COUNT(*) as count FROM pages") as Array<{
-        count: number
-      }>
-      pageCount = pages[0]?.count ?? 0
+      const db = openBookDb(dbPath)
+      try {
+        const pages = db.all("SELECT COUNT(*) as count FROM pages") as Array<{
+          count: number
+        }>
+        pageCount = pages[0]?.count ?? 0
 
-      const metaRows = db.all(
-        "SELECT data FROM node_data WHERE node = ? AND item_id = ? ORDER BY version DESC LIMIT 1",
-        ["metadata", "book"]
-      ) as Array<{ data: string }>
+        const metaRows = db.all(
+          "SELECT data FROM node_data WHERE node = ? AND item_id = ? ORDER BY version DESC LIMIT 1",
+          ["metadata", "book"]
+        ) as Array<{ data: string }>
 
-      if (metaRows.length > 0) {
-        const parsed = BookMetadata.safeParse(JSON.parse(metaRows[0].data))
-        if (parsed.success) {
-          metadata = parsed.data
-          title = parsed.data.title
-          authors = parsed.data.authors
-          publisher = parsed.data.publisher
-          languageCode = parsed.data.language_code
+        if (metaRows.length > 0) {
+          const parsed = BookMetadata.safeParse(JSON.parse(metaRows[0].data))
+          if (parsed.success) {
+            metadata = parsed.data
+            title = parsed.data.title
+            authors = parsed.data.authors
+            publisher = parsed.data.publisher
+            languageCode = parsed.data.language_code
+          }
         }
+      } finally {
+        db.close()
       }
-    } finally {
-      db.close()
+    } catch (err) {
+      if (isSchemaMismatchError(err)) {
+        needsRebuild = true
+        rebuildReason =
+          "Book data uses an older storage schema and must be rebuilt."
+      } else {
+        throw err
+      }
     }
   }
 
@@ -137,6 +169,8 @@ export function getBook(label: string, booksDir: string): BookDetail {
     languageCode,
     pageCount,
     hasSourcePdf: fs.existsSync(pdfPath),
+    needsRebuild,
+    rebuildReason,
     metadata,
   }
 }
@@ -173,6 +207,8 @@ export function createBook(
     languageCode: null,
     pageCount: 0,
     hasSourcePdf: true,
+    needsRebuild: false,
+    rebuildReason: null,
   }
 }
 

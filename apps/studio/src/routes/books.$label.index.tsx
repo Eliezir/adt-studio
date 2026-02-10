@@ -93,9 +93,13 @@ function BookDetailPage() {
             {book.title ?? book.label}
           </h1>
         </div>
-        <Badge variant={book.pageCount > 0 ? "default" : "secondary"}>
-          {book.pageCount > 0 ? `${book.pageCount} pages` : "New"}
-        </Badge>
+        {book.needsRebuild ? (
+          <Badge variant="destructive">Needs rebuild</Badge>
+        ) : (
+          <Badge variant={book.pageCount > 0 ? "default" : "secondary"}>
+            {book.pageCount > 0 ? `${book.pageCount} pages` : "New"}
+          </Badge>
+        )}
         {book.pageCount > 0 && (
           <Link to="/books/$label/storyboard" params={{ label }}>
             <Button variant="outline" size="sm">
@@ -105,6 +109,19 @@ function BookDetailPage() {
           </Link>
         )}
       </div>
+
+      {/* Rebuild warning */}
+      {book.needsRebuild && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Rebuild Required</CardTitle>
+            <CardDescription>
+              {book.rebuildReason ??
+                "This book was created with an older storage schema and must be rebuilt."}
+            </CardDescription>
+          </CardHeader>
+        </Card>
+      )}
 
       {/* Two-column layout */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">

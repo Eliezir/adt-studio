@@ -45,7 +45,7 @@ export function TextGroupEditor({ groups, onChange }: TextGroupEditorProps) {
                     <Switch
                       id={`prune-${gi}-${ti}`}
                       checked={t.isPruned}
-                      onCheckedChange={(checked) => updateText(gi, ti, "isPruned", checked)}
+                      onCheckedChange={(checked: boolean) => updateText(gi, ti, "isPruned", checked)}
                     />
                   </div>
                 </div>
