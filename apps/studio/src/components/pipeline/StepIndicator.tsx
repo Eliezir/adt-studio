@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react"
 import { Check, Loader2, Circle, AlertCircle } from "lucide-react"
 import { cn } from "@/lib/utils"
 import type { StepName, StepProgress } from "@/hooks/use-pipeline"
@@ -44,50 +45,81 @@ function StepIcon({ state }: { state: StepState }) {
   }
 }
 
+/** Ticking elapsed timer for active steps */
+function ElapsedTimer() {
+  const [start] = useState(() => Date.now())
+  const [elapsed, setElapsed] = useState(0)
+
+  useEffect(() => {
+    const id = setInterval(() => setElapsed(Date.now() - start), 1000)
+    return () => clearInterval(id)
+  }, [start])
+
+  const secs = Math.floor(elapsed / 1000)
+  const mins = Math.floor(secs / 60)
+  const display = mins > 0 ? `${mins}m ${secs % 60}s` : `${secs}s`
+
+  return <span className="text-xs text-muted-foreground">{display}</span>
+}
+
 export function StepIndicator({
   label,
   state,
   progress,
 }: StepIndicatorProps) {
   return (
-    <div className="flex items-center gap-3 py-1.5">
-      <StepIcon state={state} />
-      <div className="flex-1">
-        <div
+    <div
+      className={cn(
+        "rounded-lg border p-3 transition-colors",
+        state === "active" && "border-primary/40 bg-primary/5",
+        state === "completed" && "border-border bg-muted/40",
+        state === "error" && "border-destructive/30 bg-destructive/5",
+        state === "pending" && "border-border/50 bg-transparent"
+      )}
+    >
+      <div className="flex items-center gap-2">
+        <StepIcon state={state} />
+        <span
           className={cn(
             "text-sm",
             state === "active" && "font-medium text-foreground",
             state === "completed" && "text-muted-foreground",
-            state === "pending" && "text-muted-foreground/60",
-            state === "error" && "text-destructive"
+            state === "pending" && "text-muted-foreground/50",
+            state === "error" && "font-medium text-destructive"
           )}
         >
           {label}
-        </div>
-        {state === "active" && progress?.totalPages && (
-          <div className="mt-1">
-            <div className="flex justify-between text-xs text-muted-foreground">
-              <span>
-                {progress.page ?? 0} / {progress.totalPages} pages
-              </span>
-              <span>
-                {Math.round(
-                  ((progress.page ?? 0) / progress.totalPages) * 100
-                )}
-                %
-              </span>
-            </div>
-            <div className="mt-0.5 h-1.5 rounded-full bg-muted">
-              <div
-                className="h-full rounded-full bg-blue-600 transition-all"
-                style={{
-                  width: `${((progress.page ?? 0) / progress.totalPages) * 100}%`,
-                }}
-              />
-            </div>
-          </div>
-        )}
+        </span>
+        {state === "active" && <ElapsedTimer />}
       </div>
+      {state === "active" && progress?.totalPages && (
+        <div className="mt-2">
+          <div className="flex justify-between text-xs text-muted-foreground">
+            <span>
+              {progress.page ?? 0} / {progress.totalPages}
+            </span>
+            <span>
+              {Math.round(
+                ((progress.page ?? 0) / progress.totalPages) * 100
+              )}
+              %
+            </span>
+          </div>
+          <div className="mt-1 h-1.5 rounded-full bg-muted">
+            <div
+              className="h-full rounded-full bg-primary transition-all"
+              style={{
+                width: `${((progress.page ?? 0) / progress.totalPages) * 100}%`,
+              }}
+            />
+          </div>
+          {progress.page != null && progress.totalPages && progress.page < progress.totalPages && (
+            <p className="mt-1.5 text-[11px] text-muted-foreground">
+              Remaining pages may need multiple LLM attempts...
+            </p>
+          )}
+        </div>
+      )}
     </div>
   )
 }

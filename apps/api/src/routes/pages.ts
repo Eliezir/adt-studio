@@ -11,6 +11,7 @@ interface PageSummary {
   pageId: string
   pageNumber: number
   hasRendering: boolean
+  textPreview: string
 }
 
 interface PageDetail {
@@ -50,8 +51,8 @@ export function createPageRoutes(
     const db = openBookDb(dbPath)
     try {
       const pages = db.all(
-        "SELECT page_id, page_number FROM pages ORDER BY page_number"
-      ) as Array<{ page_id: string; page_number: number }>
+        "SELECT page_id, page_number, text FROM pages ORDER BY page_number"
+      ) as Array<{ page_id: string; page_number: number; text: string }>
 
       // Check which pages have web-rendering output
       const rendered = new Set<string>()
@@ -67,6 +68,7 @@ export function createPageRoutes(
         pageId: p.page_id,
         pageNumber: p.page_number,
         hasRendering: rendered.has(p.page_id),
+        textPreview: p.text.slice(0, 150),
       }))
 
       return c.json(result)

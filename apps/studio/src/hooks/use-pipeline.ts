@@ -38,6 +38,7 @@ const INITIAL_PROGRESS: PipelineProgress = {
 /**
  * Hook to subscribe to real-time pipeline progress via SSE.
  * Connects to the SSE endpoint when `enabled` is true.
+ * Includes a polling fallback to catch completion if SSE misses it.
  */
 export function usePipelineSSE(label: string, enabled: boolean) {
   const [progress, setProgress] = useState<PipelineProgress>(INITIAL_PROGRESS)
@@ -50,10 +51,14 @@ export function usePipelineSSE(label: string, enabled: boolean) {
       return
     }
 
-    setProgress({
-      ...INITIAL_PROGRESS,
+    // Don't reset progress on reconnect — preserve previously received step data.
+    // Fresh runs call reset() before enabling SSE, which handles the clean-slate case.
+    setProgress((prev) => ({
+      ...prev,
       isRunning: true,
-    })
+      isComplete: false,
+      error: null,
+    }))
 
     const url = `/api/books/${label}/pipeline/status`
     const es = new EventSource(url)
@@ -96,18 +101,17 @@ export function usePipelineSSE(label: string, enabled: boolean) {
         isComplete: true,
         currentStep: null,
       }))
-      // Invalidate book data to refresh metadata/page count
       queryClient.invalidateQueries({ queryKey: ["books", label] })
       queryClient.invalidateQueries({ queryKey: ["books"] })
       es.close()
     })
 
     es.addEventListener("error", (e) => {
-      // SSE error can be a connection issue or a pipeline error event
       if (es.readyState === EventSource.CLOSED) {
         return
       }
-      // Try to parse error data if it's a MessageEvent
+      // Only close on actual server error events with data.
+      // For connection drops (no data), let EventSource auto-reconnect.
       const messageEvent = e as MessageEvent
       if (messageEvent.data) {
         try {
@@ -124,13 +128,51 @@ export function usePipelineSSE(label: string, enabled: boolean) {
             error: "Connection lost",
           }))
         }
+        es.close()
       }
-      es.close()
+      // No data = connection drop, EventSource will auto-reconnect
     })
+
+    // Polling fallback: if SSE misses the complete event (e.g., during
+    // reconnection timing gap), poll the JSON status endpoint to catch it.
+    const pollInterval = setInterval(async () => {
+      try {
+        const status = await api.getPipelineStatus(label)
+        if (status.status === "completed") {
+          setProgress((prev) => {
+            if (!prev.isRunning) return prev // already handled via SSE
+            return {
+              ...prev,
+              isRunning: false,
+              isComplete: true,
+              currentStep: null,
+            }
+          })
+          queryClient.invalidateQueries({ queryKey: ["books", label] })
+          queryClient.invalidateQueries({ queryKey: ["books"] })
+          es.close()
+          clearInterval(pollInterval)
+        } else if (status.status === "failed") {
+          setProgress((prev) => {
+            if (!prev.isRunning) return prev
+            return {
+              ...prev,
+              isRunning: false,
+              error: status.error ?? "Pipeline failed",
+            }
+          })
+          es.close()
+          clearInterval(pollInterval)
+        }
+      } catch {
+        // Polling failed, will retry next interval
+      }
+    }, 10000)
 
     return () => {
       es.close()
       eventSourceRef.current = null
+      clearInterval(pollInterval)
     }
   }, [label, enabled, queryClient])
 

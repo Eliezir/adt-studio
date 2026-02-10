@@ -57,6 +57,7 @@ export interface PageSummaryItem {
   pageId: string
   pageNumber: number
   hasRendering: boolean
+  textPreview: string
 }
 
 export interface SectionRendering {

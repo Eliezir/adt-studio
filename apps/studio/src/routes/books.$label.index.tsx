@@ -1,9 +1,10 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router"
-import { ArrowLeft, BookOpen, Key, LayoutGrid } from "lucide-react"
+import { ArrowLeft, BookOpen, Key, LayoutGrid, Play, Settings2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import {
   Card,
   CardContent,
@@ -12,9 +13,10 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { useBook } from "@/hooks/use-books"
-import { usePipelineSSE, useRunPipeline } from "@/hooks/use-pipeline"
+import { usePipelineSSE, usePipelineStatus, useRunPipeline } from "@/hooks/use-pipeline"
 import { useApiKey } from "@/hooks/use-api-key"
 import { PipelineProgress } from "@/components/pipeline/PipelineProgress"
+import { PagePreviewGrid } from "@/components/pipeline/PagePreviewGrid"
 
 export const Route = createFileRoute("/books/$label/")({
   component: BookDetailPage,
@@ -25,21 +27,36 @@ function BookDetailPage() {
   const navigate = useNavigate()
   const { data: book, isLoading, error } = useBook(label)
   const { apiKey, setApiKey, hasApiKey } = useApiKey()
-  const [showApiKeyInput, setShowApiKeyInput] = useState(false)
 
   const runPipeline = useRunPipeline()
   const [sseEnabled, setSseEnabled] = useState(false)
   const { progress, reset } = usePipelineSSE(label, sseEnabled)
+  const { data: pipelineStatus } = usePipelineStatus(label)
+
+  // Pipeline config options
+  const [startPage, setStartPage] = useState("")
+  const [endPage, setEndPage] = useState("")
+  const [concurrency, setConcurrency] = useState("16")
+
+  // Auto-reconnect to SSE if pipeline is already running
+  useEffect(() => {
+    if (pipelineStatus?.status === "running" && !sseEnabled) {
+      setSseEnabled(true)
+    }
+  }, [pipelineStatus?.status, sseEnabled])
 
   const handleRun = () => {
-    if (!hasApiKey) {
-      setShowApiKeyInput(true)
-      return
-    }
     reset()
     setSseEnabled(true)
+
+    const options: { startPage?: number; endPage?: number; concurrency?: number } = {}
+    if (startPage) options.startPage = Number(startPage)
+    if (endPage) options.endPage = Number(endPage)
+    const c = Number(concurrency)
+    if (c && c !== 16) options.concurrency = c
+
     runPipeline.mutate(
-      { label, apiKey },
+      { label, apiKey, options: Object.keys(options).length > 0 ? options : undefined },
       {
         onError: () => {
           setSseEnabled(false)
@@ -61,6 +78,8 @@ function BookDetailPage() {
   }
 
   if (!book) return null
+
+  const showPipelineRunning = progress.isRunning || progress.isComplete || progress.error
 
   return (
     <div className="mx-auto max-w-3xl">
@@ -127,12 +146,118 @@ function BookDetailPage() {
           </Card>
         )}
 
-        <PipelineProgress
-          progress={progress}
-          onRun={handleRun}
-          isStarting={runPipeline.isPending}
-          hasApiKey={hasApiKey}
-        />
+        {/* Pipeline: config form (pre-run) or progress (running/done) */}
+        {showPipelineRunning ? (
+          <PipelineProgress
+            progress={progress}
+            onRun={handleRun}
+            isStarting={runPipeline.isPending}
+            hasApiKey={hasApiKey}
+          />
+        ) : (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Settings2 className="h-5 w-5" />
+                Pipeline Configuration
+              </CardTitle>
+              <CardDescription>
+                Configure options before running the pipeline.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {/* API Key */}
+              <div className="space-y-2">
+                <Label htmlFor="api-key">OpenAI API Key</Label>
+                <Input
+                  id="api-key"
+                  type="password"
+                  value={apiKey}
+                  onChange={(e) => setApiKey(e.target.value)}
+                  placeholder="sk-..."
+                  className="max-w-md font-mono"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Stored in your browser only. Never sent to our servers.
+                </p>
+              </div>
+
+              {/* Page Range */}
+              <div className="space-y-2">
+                <Label>Page Range</Label>
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2">
+                    <Input
+                      type="number"
+                      min={1}
+                      value={startPage}
+                      onChange={(e) => setStartPage(e.target.value)}
+                      placeholder="First"
+                      className="w-24"
+                    />
+                    <span className="text-sm text-muted-foreground">to</span>
+                    <Input
+                      type="number"
+                      min={1}
+                      value={endPage}
+                      onChange={(e) => setEndPage(e.target.value)}
+                      placeholder="Last"
+                      className="w-24"
+                    />
+                  </div>
+                  <span className="text-xs text-muted-foreground">
+                    Leave empty to process all pages
+                  </span>
+                </div>
+              </div>
+
+              {/* Concurrency */}
+              <div className="space-y-2">
+                <Label htmlFor="concurrency">Concurrency</Label>
+                <div className="flex items-center gap-3">
+                  <Input
+                    id="concurrency"
+                    type="number"
+                    min={1}
+                    max={64}
+                    value={concurrency}
+                    onChange={(e) => setConcurrency(e.target.value)}
+                    className="w-24"
+                  />
+                  <span className="text-xs text-muted-foreground">
+                    Parallel LLM calls (higher = faster but more API usage)
+                  </span>
+                </div>
+              </div>
+
+              {/* Run button + error */}
+              <div className="flex items-center gap-3 pt-2">
+                <Button
+                  onClick={handleRun}
+                  disabled={runPipeline.isPending || !hasApiKey}
+                >
+                  <Play className="mr-2 h-4 w-4" />
+                  {runPipeline.isPending ? "Starting..." : book.pageCount > 0 ? "Re-run Pipeline" : "Run Pipeline"}
+                </Button>
+                {!hasApiKey && (
+                  <span className="text-xs text-muted-foreground">
+                    Enter your API key above to run.
+                  </span>
+                )}
+              </div>
+
+              {runPipeline.isError && (
+                <p className="text-sm text-destructive">
+                  Failed to start pipeline: {runPipeline.error.message}
+                </p>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        {(progress.isRunning || progress.isComplete || book.pageCount > 0) && (
+          <PagePreviewGrid label={label} isRunning={progress.isRunning} />
+        )}
 
         {book.pageCount > 0 && (
           <Link
@@ -145,46 +270,6 @@ function BookDetailPage() {
               View Storyboard ({book.pageCount} pages)
             </Button>
           </Link>
-        )}
-
-        {(showApiKeyInput || !hasApiKey) && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Key className="h-5 w-5" />
-                API Key
-              </CardTitle>
-              <CardDescription>
-                Your OpenAI API key is stored in your browser only.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex gap-2">
-                <Input
-                  type="password"
-                  value={apiKey}
-                  onChange={(e) => setApiKey(e.target.value)}
-                  placeholder="sk-..."
-                  className="max-w-md font-mono"
-                />
-                {apiKey && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setShowApiKeyInput(false)}
-                  >
-                    Done
-                  </Button>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {runPipeline.isError && (
-          <p className="text-sm text-destructive">
-            Failed to start pipeline: {runPipeline.error.message}
-          </p>
         )}
       </div>
     </div>

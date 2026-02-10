@@ -1,11 +1,12 @@
 import { useQuery } from "@tanstack/react-query"
 import { api } from "@/api/client"
 
-export function usePages(label: string) {
+export function usePages(label: string, options?: { refetchInterval?: number | false }) {
   return useQuery({
     queryKey: ["books", label, "pages"],
     queryFn: () => api.getPages(label),
     enabled: !!label,
+    refetchInterval: options?.refetchInterval ?? false,
   })
 }
 

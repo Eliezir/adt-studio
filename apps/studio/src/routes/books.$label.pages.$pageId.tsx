@@ -3,6 +3,7 @@ import { useState, useCallback, useEffect, useRef } from "react"
 import { ArrowLeft, ArrowRight, FileText, Image, Layers, Loader2, AlertCircle, ImageOff } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { usePage, usePageImage, usePages } from "@/hooks/use-pages"
 import { EditToolbar } from "@/components/page-edit/EditToolbar"
 import { TextGroupEditor } from "@/components/page-edit/TextGroupEditor"
@@ -24,6 +25,15 @@ function RenderedHtml({ html, className }: { html: string; className?: string })
 
   useEffect(() => {
     if (!ref.current) return
+
+    // Strip inline font-family from all elements so the app font is used consistently
+    const allEls = ref.current.querySelectorAll("*")
+    for (const el of allEls) {
+      if (el instanceof HTMLElement && el.style.fontFamily) {
+        el.style.fontFamily = ""
+      }
+    }
+
     const imgs = ref.current.querySelectorAll("img")
     for (const img of imgs) {
       img.onerror = () => {
@@ -330,15 +340,21 @@ function PageDetailPage() {
           </div>
         </div>
 
-        {/* Center: Rendered output + sections */}
-        <div className="flex flex-col overflow-hidden">
-          <div className="flex shrink-0 items-center gap-2 border-b bg-muted/30 px-4 py-2">
+        {/* Center: Pipeline Output — tabs for Preview vs By Section */}
+        <Tabs defaultValue="preview" className="flex flex-col overflow-hidden">
+          <div className="flex shrink-0 items-center gap-2 border-b bg-muted/30 px-4 py-1.5">
             <Layers className="h-4 w-4 text-muted-foreground" />
-            <span className="text-sm font-medium">Rendered Output</span>
+            <span className="text-sm font-medium">Pipeline Output</span>
             {reRender.isPending && <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />}
+            <TabsList className="ml-auto h-7">
+              <TabsTrigger value="preview" className="px-2.5 py-1 text-xs">Preview</TabsTrigger>
+              <TabsTrigger value="sections" className="px-2.5 py-1 text-xs">
+                By Section{page.rendering ? ` (${page.rendering.sections.length})` : ""}
+              </TabsTrigger>
+            </TabsList>
           </div>
-          <div className="flex-1 overflow-auto p-4">
-            {/* Page-like frame for rendered output */}
+
+          <TabsContent value="preview" className="mt-0 flex-1 overflow-auto p-4">
             {reRender.isPending ? (
               <div className="flex aspect-[3/4] items-center justify-center rounded border bg-muted/50 text-sm text-muted-foreground">
                 <div className="flex flex-col items-center gap-2">
@@ -349,7 +365,7 @@ function PageDetailPage() {
             ) : combinedHtml ? (
               <RenderedHtml
                 html={combinedHtml}
-                className="prose prose-sm max-w-none rounded border bg-white p-4"
+                className="prose prose-sm max-w-none rounded border bg-white p-4 font-sans"
               />
             ) : (
               <div className="flex aspect-[3/4] items-center justify-center rounded border bg-muted/50 text-sm text-muted-foreground">
@@ -359,19 +375,19 @@ function PageDetailPage() {
                 </div>
               </div>
             )}
+          </TabsContent>
 
-            {/* Section details */}
-            {page.rendering && page.sectioning && (
-              <div className="mt-4 space-y-3">
-                <h3 className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-                  <Layers className="h-3 w-3" />
-                  Sections ({page.rendering.sections.length})
-                </h3>
+          <TabsContent value="sections" className="mt-0 flex-1 overflow-auto p-4">
+            {page.rendering && page.sectioning ? (
+              <div className="space-y-4">
                 {page.rendering.sections.map((section, i) => {
                   const sectionMeta = page.sectioning?.sections[i]
                   return (
-                    <div key={i} className="rounded border p-3">
-                      <div className="mb-2 flex items-center gap-2">
+                    <div key={i} className="rounded border">
+                      <div className="flex items-center gap-2 border-b bg-muted/30 px-3 py-2">
+                        <span className="text-xs font-medium text-muted-foreground">
+                          Section {i + 1}
+                        </span>
                         <Badge variant="outline" className="text-xs">
                           {section.sectionType}
                         </Badge>
@@ -389,23 +405,35 @@ function PageDetailPage() {
                             />
                           </div>
                         )}
+                        {sectionMeta?.isPruned && (
+                          <Badge variant="secondary" className="text-xs">Pruned</Badge>
+                        )}
                       </div>
-                      <RenderedHtml
-                        html={section.html}
-                        className="prose prose-sm max-w-none rounded bg-white p-2"
-                      />
-                      {section.reasoning && (
-                        <p className="mt-1 text-xs text-muted-foreground">
-                          {section.reasoning}
-                        </p>
-                      )}
+                      <div className="p-3">
+                        <RenderedHtml
+                          html={section.html}
+                          className="prose prose-sm max-w-none rounded bg-white p-2 font-sans"
+                        />
+                        {section.reasoning && (
+                          <p className="mt-2 text-xs text-muted-foreground">
+                            {section.reasoning}
+                          </p>
+                        )}
+                      </div>
                     </div>
                   )
                 })}
               </div>
+            ) : (
+              <div className="flex aspect-[3/4] items-center justify-center rounded border bg-muted/50 text-sm text-muted-foreground">
+                <div className="flex flex-col items-center gap-2">
+                  <ImageOff className="h-6 w-6" />
+                  No sections. Run the pipeline first.
+                </div>
+              </div>
             )}
-          </div>
-        </div>
+          </TabsContent>
+        </Tabs>
 
         {/* Right: Original page image */}
         <div className="flex flex-col overflow-hidden">
