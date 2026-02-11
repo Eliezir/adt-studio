@@ -64,8 +64,8 @@ page_sectioning:
 default_render_strategy: two_column
 
 render_strategies:
-  html:
-    render_type: html
+  llm:
+    render_type: llm
     config:
       prompt: web_generation_html
       model: openai:gpt-5.2

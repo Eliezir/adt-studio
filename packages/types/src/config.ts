@@ -14,14 +14,14 @@ export const StepConfig = z.object({
 })
 export type StepConfig = z.infer<typeof StepConfig>
 
-export const RenderType = z.enum(["html", "template"])
+export const RenderType = z.enum(["llm", "template"])
 export type RenderType = z.infer<typeof RenderType>
 
 export const RenderStrategyConfig = z.object({
   render_type: RenderType,
   config: z
     .object({
-      // html render type
+      // llm render type
       prompt: z.string().optional(),
       model: z.string().optional(),
       max_retries: z.number().int().min(0).optional(),

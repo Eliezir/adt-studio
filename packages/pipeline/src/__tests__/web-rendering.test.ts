@@ -5,7 +5,7 @@ import { buildRenderStrategyResolver, renderPage, type RenderConfig } from "../w
 import type { TemplateEngine } from "../render-template.js"
 
 const defaultResolveConfig = (): RenderConfig => ({
-  renderType: "html",
+  renderType: "llm",
   promptName: "web_generation_html",
   modelId: "openai:gpt-4o",
   maxRetries: 8,
@@ -18,10 +18,10 @@ describe("buildRenderStrategyResolver", () => {
     const appConfig: AppConfig = {
       text_types: { heading: "Heading" },
       text_group_types: { paragraph: "Paragraph" },
-      default_render_strategy: "html",
+      default_render_strategy: "llm",
       render_strategies: {
-        html: {
-          render_type: "html",
+        llm: {
+          render_type: "llm",
           config: {
             prompt: "custom_render",
             model: "openai:gpt-4.1-mini",
@@ -33,7 +33,7 @@ describe("buildRenderStrategyResolver", () => {
 
     const resolve = buildRenderStrategyResolver(appConfig)
     const config = resolve("text_only")
-    expect(config.renderType).toBe("html")
+    expect(config.renderType).toBe("llm")
     expect(config.promptName).toBe("custom_render")
     expect(config.modelId).toBe("openai:gpt-4.1-mini")
     expect(config.maxRetries).toBe(8)
@@ -45,14 +45,14 @@ describe("buildRenderStrategyResolver", () => {
     const appConfig: AppConfig = {
       text_types: { heading: "Heading" },
       text_group_types: { paragraph: "Paragraph" },
-      default_render_strategy: "html",
+      default_render_strategy: "llm",
       render_strategies: {
-        html: {
-          render_type: "html",
+        llm: {
+          render_type: "llm",
           config: { prompt: "default_prompt", model: "openai:gpt-5.2" },
         },
         custom: {
-          render_type: "html",
+          render_type: "llm",
           config: { prompt: "custom_prompt", model: "openai:gpt-4.1-mini", max_retries: 3 },
         },
       },
@@ -81,7 +81,7 @@ describe("buildRenderStrategyResolver", () => {
 
     const resolve = buildRenderStrategyResolver(appConfig)
     const config = resolve("anything")
-    expect(config.renderType).toBe("html")
+    expect(config.renderType).toBe("llm")
     expect(config.promptName).toBe("web_generation_html")
     expect(config.modelId).toBe("openai:gpt-5.2")
     expect(config.maxRetries).toBe(25)
@@ -93,10 +93,10 @@ describe("buildRenderStrategyResolver", () => {
     const appConfig: AppConfig = {
       text_types: { heading: "Heading" },
       text_group_types: { paragraph: "Paragraph" },
-      default_render_strategy: "html_default",
+      default_render_strategy: "llm_default",
       render_strategies: {
-        html_default: {
-          render_type: "html",
+        llm_default: {
+          render_type: "llm",
           config: { prompt: "default_prompt", model: "openai:gpt-5.2" },
         },
       },
@@ -108,7 +108,7 @@ describe("buildRenderStrategyResolver", () => {
     const resolve = buildRenderStrategyResolver(appConfig)
     const config = resolve("front_cover")
 
-    expect(config.renderType).toBe("html")
+    expect(config.renderType).toBe("llm")
     expect(config.promptName).toBe("default_prompt")
     expect(config.modelId).toBe("openai:gpt-5.2")
   })
@@ -117,10 +117,10 @@ describe("buildRenderStrategyResolver", () => {
     const appConfig: AppConfig = {
       text_types: { heading: "Heading" },
       text_group_types: { paragraph: "Paragraph" },
-      default_render_strategy: "html",
+      default_render_strategy: "llm",
       render_strategies: {
-        html: {
-          render_type: "html",
+        llm: {
+          render_type: "llm",
           config: { prompt: "default_prompt", model: "openai:gpt-5.2" },
         },
         two_column: {
@@ -140,7 +140,7 @@ describe("buildRenderStrategyResolver", () => {
     expect(frontCover.templateName).toBe("two_column_render")
 
     const textOnly = resolve("text_only")
-    expect(textOnly.renderType).toBe("html")
+    expect(textOnly.renderType).toBe("llm")
     expect(textOnly.promptName).toBe("default_prompt")
   })
 })
@@ -679,7 +679,7 @@ describe("renderPage", () => {
     const resolveConfig = (sectionType: string): RenderConfig =>
       sectionType === "cover"
         ? {
-            renderType: "html",
+            renderType: "llm",
             promptName: "prompt_a",
             modelId: "openai:model-a",
             maxRetries: 2,
@@ -687,7 +687,7 @@ describe("renderPage", () => {
             templateName: "",
           }
         : {
-            renderType: "html",
+            renderType: "llm",
             promptName: "prompt_b",
             modelId: "openai:model-b",
             maxRetries: 2,

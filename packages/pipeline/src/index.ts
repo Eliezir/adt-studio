@@ -38,7 +38,7 @@ export {
   type TextInput,
   type ImageInput,
 } from "./web-rendering.js"
-export { renderSectionHtml } from "./render-html.js"
+export { renderSectionLlm } from "./render-llm.js"
 export {
   createTemplateEngine,
   renderSectionTemplate,

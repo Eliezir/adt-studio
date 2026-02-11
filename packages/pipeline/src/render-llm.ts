@@ -8,7 +8,7 @@ import type { RenderConfig, RenderSectionInput, TextInput, ImageInput } from "./
  * Render a single section as HTML using an LLM.
  * Flattens `parts` to texts/images arrays for the LLM context.
  */
-export async function renderSectionHtml(
+export async function renderSectionLlm(
   input: RenderSectionInput,
   config: RenderConfig,
   llmModel: LLMModel

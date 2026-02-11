@@ -6,7 +6,7 @@ import type {
   WebRenderingOutput,
 } from "@adt/types"
 import type { LLMModel } from "@adt/llm"
-import { renderSectionHtml } from "./render-html.js"
+import { renderSectionLlm } from "./render-llm.js"
 import { renderSectionTemplate, type TemplateEngine } from "./render-template.js"
 
 export interface TextInput {
@@ -25,8 +25,8 @@ export type SectionPart =
   | { type: "image"; imageId: string; imageBase64: string }
 
 export interface RenderConfig {
-  renderType: "html" | "template"
-  // html fields
+  renderType: "llm" | "template"
+  // llm fields
   promptName: string
   modelId: string
   maxRetries: number
@@ -165,7 +165,7 @@ export async function renderPage(
         templateEngine
       )
     } else {
-      rendering = await renderSectionHtml(
+      rendering = await renderSectionLlm(
         sectionInput,
         config,
         getLLMModel(llmModel, config.modelId)
@@ -212,7 +212,7 @@ export function buildRenderStrategyResolver(
     const cfg = strategy?.config
 
     return {
-      renderType: strategy?.render_type ?? "html",
+      renderType: strategy?.render_type ?? "llm",
       promptName: cfg?.prompt ?? DEFAULT_RENDER_CONFIG.prompt,
       modelId: cfg?.model ?? DEFAULT_RENDER_CONFIG.model,
       maxRetries: cfg?.max_retries ?? DEFAULT_RENDER_CONFIG.max_retries,
