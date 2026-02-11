@@ -212,6 +212,53 @@ export function createBook(
   }
 }
 
+export function getBookConfig(
+  label: string,
+  booksDir: string
+): Record<string, unknown> | null {
+  const safeLabel = parseBookLabel(label)
+  const resolvedDir = path.resolve(booksDir)
+  const bookDir = path.join(resolvedDir, safeLabel)
+
+  if (!fs.existsSync(bookDir)) {
+    throw new Error(`Book not found: ${safeLabel}`)
+  }
+
+  const configPath = path.join(bookDir, "config.yaml")
+  if (!fs.existsSync(configPath)) {
+    return null
+  }
+
+  const content = fs.readFileSync(configPath, "utf-8")
+  const parsed = yaml.load(content)
+  return (parsed as Record<string, unknown>) ?? null
+}
+
+export function updateBookConfig(
+  label: string,
+  booksDir: string,
+  overrides: Record<string, unknown>
+): void {
+  const safeLabel = parseBookLabel(label)
+  const resolvedDir = path.resolve(booksDir)
+  const bookDir = path.join(resolvedDir, safeLabel)
+
+  if (!fs.existsSync(bookDir)) {
+    throw new Error(`Book not found: ${safeLabel}`)
+  }
+
+  const configPath = path.join(bookDir, "config.yaml")
+
+  if (!overrides || Object.keys(overrides).length === 0) {
+    if (fs.existsSync(configPath)) {
+      fs.unlinkSync(configPath)
+    }
+    return
+  }
+
+  fs.writeFileSync(configPath, yaml.dump(overrides))
+}
+
 export function deleteBook(label: string, booksDir: string): void {
   const safeLabel = parseBookLabel(label)
   const resolvedDir = path.resolve(booksDir)

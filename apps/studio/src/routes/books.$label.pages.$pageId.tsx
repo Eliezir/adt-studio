@@ -187,7 +187,7 @@ function PageDetailPage() {
             ADT Studio
           </Link>
           <span className="text-muted-foreground/50 text-xs">/</span>
-          <Link to="/books/$label" params={{ label }} className="text-xs text-muted-foreground hover:text-foreground transition-colors shrink-0">
+          <Link to="/books/$label" params={{ label }} search={{ autoRun: undefined, startPage: undefined, endPage: undefined }} className="text-xs text-muted-foreground hover:text-foreground transition-colors shrink-0">
             {label}
           </Link>
           <span className="text-muted-foreground/50 text-xs">/</span>

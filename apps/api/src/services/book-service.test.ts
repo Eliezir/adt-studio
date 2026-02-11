@@ -4,7 +4,14 @@ import os from "node:os"
 import path from "node:path"
 import { openBookDb } from "@adt/storage"
 import { SCHEMA_VERSION } from "@adt/types"
-import { listBooks, getBook, createBook, deleteBook } from "./book-service.js"
+import {
+  listBooks,
+  getBook,
+  createBook,
+  deleteBook,
+  getBookConfig,
+  updateBookConfig,
+} from "./book-service.js"
 
 let tmpDir: string
 
@@ -284,6 +291,68 @@ describe("createBook", () => {
     expect(() => createBook("exists", fakePdf, tmpDir)).toThrow(
       "already exists"
     )
+  })
+})
+
+describe("getBookConfig", () => {
+  it("returns null when no config.yaml exists", () => {
+    const bookDir = path.join(tmpDir, "no-config")
+    fs.mkdirSync(bookDir)
+    expect(getBookConfig("no-config", tmpDir)).toBeNull()
+  })
+
+  it("returns parsed config when config.yaml exists", () => {
+    const fakePdf = Buffer.from("%PDF-1.0 fake")
+    createBook("with-config", fakePdf, tmpDir, { concurrency: 4 })
+    const config = getBookConfig("with-config", tmpDir)
+    expect(config).toEqual({ concurrency: 4 })
+  })
+
+  it("throws for non-existent book", () => {
+    expect(() => getBookConfig("ghost", tmpDir)).toThrow("not found")
+  })
+
+  it("throws for invalid label", () => {
+    expect(() => getBookConfig("-bad", tmpDir)).toThrow()
+  })
+})
+
+describe("updateBookConfig", () => {
+  it("writes config.yaml with overrides", () => {
+    const bookDir = path.join(tmpDir, "update-test")
+    fs.mkdirSync(bookDir)
+    updateBookConfig("update-test", tmpDir, { concurrency: 8 })
+    const configPath = path.join(bookDir, "config.yaml")
+    expect(fs.existsSync(configPath)).toBe(true)
+    const content = fs.readFileSync(configPath, "utf-8")
+    expect(content).toContain("concurrency: 8")
+  })
+
+  it("removes config.yaml when overrides are empty", () => {
+    const fakePdf = Buffer.from("%PDF-1.0 fake")
+    createBook("remove-config", fakePdf, tmpDir, { concurrency: 4 })
+    const configPath = path.join(tmpDir, "remove-config", "config.yaml")
+    expect(fs.existsSync(configPath)).toBe(true)
+
+    updateBookConfig("remove-config", tmpDir, {})
+    expect(fs.existsSync(configPath)).toBe(false)
+  })
+
+  it("is a no-op when overrides are empty and no config exists", () => {
+    const bookDir = path.join(tmpDir, "empty-update")
+    fs.mkdirSync(bookDir)
+    updateBookConfig("empty-update", tmpDir, {})
+    expect(fs.existsSync(path.join(bookDir, "config.yaml"))).toBe(false)
+  })
+
+  it("throws for non-existent book", () => {
+    expect(() => updateBookConfig("ghost", tmpDir, { concurrency: 2 })).toThrow(
+      "not found"
+    )
+  })
+
+  it("throws for invalid label", () => {
+    expect(() => updateBookConfig("-bad", tmpDir, {})).toThrow()
   })
 })
 

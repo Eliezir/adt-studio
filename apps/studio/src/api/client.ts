@@ -165,6 +165,10 @@ export interface PipelineStatsResponse {
   } | null
 }
 
+export interface BookConfigResponse {
+  config: Record<string, unknown>
+}
+
 export interface ActiveConfigResponse {
   merged: Record<string, unknown>
   hasBookOverride: boolean
@@ -284,4 +288,13 @@ export const api = {
     request<VersionListResponse>(
       `/books/${label}/debug/versions/${node}/${itemId}${includeData ? "?includeData=true" : ""}`
     ),
+
+  getBookConfig: (label: string) =>
+    request<BookConfigResponse>(`/books/${label}/config`),
+
+  updateBookConfig: (label: string, config: Record<string, unknown>) =>
+    request<BookConfigResponse>(`/books/${label}/config`, {
+      method: "PUT",
+      body: JSON.stringify({ config }),
+    }),
 }

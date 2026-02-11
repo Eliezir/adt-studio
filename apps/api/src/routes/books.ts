@@ -9,6 +9,8 @@ import {
   getBook,
   createBook,
   deleteBook,
+  getBookConfig,
+  updateBookConfig,
 } from "../services/book-service.js"
 
 export function createBookRoutes(booksDir: string): Hono {
@@ -68,6 +70,43 @@ export function createBookRoutes(booksDir: string): Hono {
     try {
       deleteBook(label, booksDir)
       return c.json({ ok: true })
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err)
+      if (message.includes("not found")) {
+        throw new HTTPException(404, { message })
+      }
+      throw new HTTPException(400, { message })
+    }
+  })
+
+  // GET /books/:label/config — Return book-level config overrides
+  app.get("/books/:label/config", (c) => {
+    const { label } = c.req.param()
+    try {
+      const config = getBookConfig(label, booksDir)
+      return c.json({ config: config ?? {} })
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err)
+      if (message.includes("not found")) {
+        throw new HTTPException(404, { message })
+      }
+      throw new HTTPException(400, { message })
+    }
+  })
+
+  // PUT /books/:label/config — Update book-level config overrides
+  app.put("/books/:label/config", async (c) => {
+    const { label } = c.req.param()
+    const body = await c.req.json<{ config: Record<string, unknown> }>()
+
+    if (!body.config || typeof body.config !== "object") {
+      throw new HTTPException(400, { message: "config object is required" })
+    }
+
+    try {
+      updateBookConfig(label, booksDir, body.config)
+      const updated = getBookConfig(label, booksDir)
+      return c.json({ config: updated ?? {} })
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err)
       if (message.includes("not found")) {

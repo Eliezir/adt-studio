@@ -229,6 +229,109 @@ describe("DELETE /books/:label", () => {
   })
 })
 
+describe("GET /books/:label/config", () => {
+  it("returns empty config when no overrides exist", async () => {
+    createTestBook("config-test")
+    const app = createBookRoutes(tmpDir)
+    const res = await app.request("/books/config-test/config")
+    expect(res.status).toBe(200)
+    const body = await res.json()
+    expect(body).toEqual({ config: {} })
+  })
+
+  it("returns config overrides when they exist", async () => {
+    createTestBook("config-has")
+    fs.writeFileSync(
+      path.join(tmpDir, "config-has", "config.yaml"),
+      "concurrency: 4\n"
+    )
+    const app = createBookRoutes(tmpDir)
+    const res = await app.request("/books/config-has/config")
+    expect(res.status).toBe(200)
+    const body = await res.json()
+    expect(body.config).toEqual({ concurrency: 4 })
+  })
+
+  it("returns 404 for missing book", async () => {
+    const app = createBookRoutes(tmpDir)
+    const res = await app.request("/books/ghost/config")
+    expect(res.status).toBe(404)
+  })
+
+  it("returns 400 for invalid label", async () => {
+    const app = createBookRoutes(tmpDir)
+    const res = await app.request("/books/-bad/config")
+    expect(res.status).toBe(400)
+  })
+})
+
+describe("PUT /books/:label/config", () => {
+  it("writes config overrides and returns them", async () => {
+    createTestBook("put-config")
+    const app = createBookRoutes(tmpDir)
+    const res = await app.request("/books/put-config/config", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ config: { concurrency: 8 } }),
+    })
+    expect(res.status).toBe(200)
+    const body = await res.json()
+    expect(body.config).toEqual({ concurrency: 8 })
+
+    expect(
+      fs.existsSync(path.join(tmpDir, "put-config", "config.yaml"))
+    ).toBe(true)
+  })
+
+  it("removes config file when empty overrides", async () => {
+    createTestBook("clear-config")
+    fs.writeFileSync(
+      path.join(tmpDir, "clear-config", "config.yaml"),
+      "concurrency: 4\n"
+    )
+    const app = createBookRoutes(tmpDir)
+    const res = await app.request("/books/clear-config/config", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ config: {} }),
+    })
+    expect(res.status).toBe(200)
+    const body = await res.json()
+    expect(body.config).toEqual({})
+  })
+
+  it("returns 404 for missing book", async () => {
+    const app = createBookRoutes(tmpDir)
+    const res = await app.request("/books/ghost/config", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ config: { concurrency: 2 } }),
+    })
+    expect(res.status).toBe(404)
+  })
+
+  it("returns 400 for invalid label", async () => {
+    const app = createBookRoutes(tmpDir)
+    const res = await app.request("/books/-bad/config", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ config: {} }),
+    })
+    expect(res.status).toBe(400)
+  })
+
+  it("returns 400 when config is missing from body", async () => {
+    createTestBook("no-body")
+    const app = createBookRoutes(tmpDir)
+    const res = await app.request("/books/no-body/config", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({}),
+    })
+    expect(res.status).toBe(400)
+  })
+})
+
 describe("GET /books/:label/images/:imageId", () => {
   function createBookWithImage(label: string): void {
     const storage = createBookStorage(label, tmpDir)

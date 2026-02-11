@@ -86,6 +86,7 @@ function BookRow({
         <Link
           to="/books/$label"
           params={{ label: book.label }}
+          search={{ autoRun: undefined, startPage: undefined, endPage: undefined }}
           className="flex-1 min-w-0 p-5"
         >
           {/* Top: title + badges */}
@@ -173,7 +174,7 @@ function BookRow({
             className="h-8 w-8 text-muted-foreground hover:text-primary"
             asChild
           >
-            <Link to="/books/$label" params={{ label: book.label }}>
+            <Link to="/books/$label" params={{ label: book.label }} search={{ autoRun: undefined, startPage: undefined, endPage: undefined }}>
               <Pencil className="h-4 w-4" />
             </Link>
           </Button>
