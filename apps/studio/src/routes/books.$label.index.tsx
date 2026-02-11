@@ -31,7 +31,7 @@ function BookDetailPage() {
   const { autoRun, startPage: searchStartPage, endPage: searchEndPage } = Route.useSearch()
   const navigate = useNavigate()
   const { data: book, isLoading, error } = useBook(label)
-  const { apiKey, setApiKey, hasApiKey } = useApiKey()
+  const { apiKey, hasApiKey } = useApiKey()
 
   const runPipeline = useRunPipeline()
   const [sseEnabled, setSseEnabled] = useState(false)
@@ -83,7 +83,7 @@ function BookDetailPage() {
     )
   }, [autoRun, hasApiKey, book, label, apiKey, searchStartPage, searchEndPage, navigate, reset, runPipeline])
 
-  const handleRun = (options: { startPage?: number; endPage?: number; concurrency?: number }) => {
+  const handleRun = (options: { startPage?: number; endPage?: number }) => {
     reset()
     setSseEnabled(true)
 
@@ -134,7 +134,7 @@ function BookDetailPage() {
           </Badge>
         )}
         {book.pageCount > 0 && (
-          <Link to="/books/$label/storyboard" params={{ label }}>
+          <Link to="/books/$label/storyboard" params={{ label }} search={{ page: undefined }}>
             <Button variant="outline" size="sm">
               <LayoutGrid className="mr-2 h-4 w-4" />
               Storyboard
@@ -223,12 +223,28 @@ function BookDetailPage() {
             isRunning={progress.isRunning}
             isPipelineStarting={runPipeline.isPending}
             hasApiKey={hasApiKey}
-            apiKey={apiKey}
-            onApiKeyChange={setApiKey}
             pageCount={book.pageCount}
           />
         )}
       </div>
+
+      {/* Review Storyboard CTA */}
+      {progress.isComplete && (
+        <Card className="border-green-200 bg-green-50/50">
+          <CardContent className="flex items-center justify-between py-3">
+            <div>
+              <p className="text-sm font-medium">Pipeline complete</p>
+              <p className="text-xs text-muted-foreground">Review the generated storyboard</p>
+            </div>
+            <Link to="/books/$label/storyboard" params={{ label }} search={{ page: undefined }}>
+              <Button size="sm">
+                <LayoutGrid className="mr-1.5 h-4 w-4" />
+                Review Storyboard
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Full-width page preview grid */}
       {(progress.isRunning || progress.isComplete || book.pageCount > 0) && (

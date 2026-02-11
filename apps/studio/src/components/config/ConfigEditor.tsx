@@ -22,33 +22,14 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useBookConfig, useUpdateBookConfig } from "@/hooks/use-book-config"
 import { useActiveConfig } from "@/hooks/use-debug"
-
-const ALL_TEXT_TYPES = [
-  "book_title", "book_subtitle", "book_author", "book_metadata",
-  "section_heading", "section_text", "instruction_text",
-  "activity_number", "activity_title", "activity_option",
-  "activity_input_placeholder_text", "fill_in_the_blank",
-  "image_associated_text", "image_overlay", "math",
-  "standalone_text", "header_text", "footer_text", "page_number", "other",
-]
-
-const ALL_SECTION_TYPES = [
-  "front_cover", "inside_cover", "back_cover", "separator", "credits",
-  "foreword", "table_of_contents", "boxed_text",
-  "text_only", "text_and_single_image", "text_and_images", "images_only",
-  "activity_matching", "activity_fill_in_a_table", "activity_multiple_choice",
-  "activity_true_false", "activity_open_ended_answer",
-  "activity_fill_in_the_blank", "activity_sorting", "other",
-]
+import { ALL_TEXT_TYPES, ALL_SECTION_TYPES } from "@/lib/config-constants"
 
 interface ConfigEditorProps {
   label: string
-  onRun: (options: { startPage?: number; endPage?: number; concurrency?: number }) => void
+  onRun: (options: { startPage?: number; endPage?: number }) => void
   isRunning: boolean
   isPipelineStarting: boolean
   hasApiKey: boolean
-  apiKey: string
-  onApiKeyChange: (key: string) => void
   pageCount: number
 }
 
@@ -58,8 +39,6 @@ export function ConfigEditor({
   isRunning,
   isPipelineStarting,
   hasApiKey,
-  apiKey,
-  onApiKeyChange,
   pageCount,
 }: ConfigEditorProps) {
   const { data: bookConfigData } = useBookConfig(label)
@@ -69,7 +48,6 @@ export function ConfigEditor({
   // Run tab state
   const [startPage, setStartPage] = useState("")
   const [endPage, setEndPage] = useState("")
-  const [concurrency, setConcurrency] = useState("16")
 
   // Config tab state
   const [configConcurrency, setConfigConcurrency] = useState("")
@@ -237,11 +215,9 @@ export function ConfigEditor({
         onSuccess: () => {
           setConfigDirty(false)
           setShowRebuildDialog(false)
-          const options: { startPage?: number; endPage?: number; concurrency?: number } = {}
+          const options: { startPage?: number; endPage?: number } = {}
           if (startPage) options.startPage = Number(startPage)
           if (endPage) options.endPage = Number(endPage)
-          const c = Number(concurrency)
-          if (c && c !== 16) options.concurrency = c
           onRun(options)
         },
       }
@@ -249,11 +225,9 @@ export function ConfigEditor({
   }
 
   const handleRun = () => {
-    const options: { startPage?: number; endPage?: number; concurrency?: number } = {}
+    const options: { startPage?: number; endPage?: number } = {}
     if (startPage) options.startPage = Number(startPage)
     if (endPage) options.endPage = Number(endPage)
-    const c = Number(concurrency)
-    if (c && c !== 16) options.concurrency = c
     onRun(options)
   }
 
@@ -279,21 +253,6 @@ export function ConfigEditor({
             {/* Run Tab */}
             <TabsContent value="run">
               <div className="space-y-4">
-                <div className="space-y-1.5">
-                  <Label htmlFor="api-key" className="text-xs">OpenAI API Key</Label>
-                  <Input
-                    id="api-key"
-                    type="password"
-                    value={apiKey}
-                    onChange={(e) => onApiKeyChange(e.target.value)}
-                    placeholder="sk-..."
-                    className="font-mono"
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Stored in your browser only. Never sent to our servers.
-                  </p>
-                </div>
-
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1.5">
                     <Label className="text-xs">Page Range</Label>
@@ -321,21 +280,6 @@ export function ConfigEditor({
                     </p>
                   </div>
 
-                  <div className="space-y-1.5">
-                    <Label htmlFor="run-concurrency" className="text-xs">Concurrency</Label>
-                    <Input
-                      id="run-concurrency"
-                      type="number"
-                      min={1}
-                      max={64}
-                      value={concurrency}
-                      onChange={(e) => setConcurrency(e.target.value)}
-                      className="w-20"
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      Parallel LLM calls
-                    </p>
-                  </div>
                 </div>
 
                 <div className="flex items-center gap-3 pt-1">
