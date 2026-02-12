@@ -130,7 +130,8 @@ export function createBookRoutes(booksDir: string): Hono {
       }
 
       const imageBuffer = fs.readFileSync(imagePath)
-      c.header("Content-Type", "image/png")
+      const contentType = imagePath.endsWith(".jpg") ? "image/jpeg" : "image/png"
+      c.header("Content-Type", contentType)
       c.header("Cache-Control", "public, max-age=86400")
       return c.body(imageBuffer)
     } finally {

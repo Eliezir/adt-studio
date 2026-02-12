@@ -42,4 +42,5 @@ export {
   SectionRendering,
   WebRenderingOutput,
   webRenderingLLMSchema,
+  activityAnswersLLMSchema,
 } from "./web-rendering.js"
