@@ -24,5 +24,10 @@ export const webRenderingLLMSchema = z.object({
 
 export const activityAnswersLLMSchema = z.object({
   reasoning: z.string(),
-  answers: z.record(z.string(), z.union([z.string(), z.boolean(), z.number()])),
+  answers: z.array(
+    z.object({
+      id: z.string(),
+      value: z.union([z.string(), z.boolean(), z.number()]),
+    })
+  ),
 })

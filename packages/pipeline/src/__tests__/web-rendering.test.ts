@@ -764,7 +764,7 @@ describe("renderPage", () => {
     }
     const activityAnswersResponse = {
       reasoning: "answer reasoning",
-      answers: { activity_gen_opt1: "A" },
+      answers: [{ id: "activity_gen_opt1", value: "A" }],
     }
 
     const fakeLlm: LLMModel = {
@@ -903,6 +903,73 @@ describe("renderPage", () => {
     expect(llmCalls).toHaveLength(1)
     expect(llmCalls[0]).toBe("activity-rendering")
 
+    expect(result.sections).toHaveLength(1)
+    expect(result.sections[0].activityReasoning).toBeUndefined()
+    expect(result.sections[0].activityAnswers).toBeUndefined()
+  })
+
+  it("does not generate activity answers for non-activity render types", async () => {
+    const llmCalls: string[] = []
+    const llmHtmlResponse = {
+      reasoning: "normal section reasoning",
+      content:
+        '<div id="content" class="container"><section role="article" data-section-type="text"><div data-id="pg001_gp001_tx001">Body text</div></section></div>',
+    }
+
+    const fakeLlm: LLMModel = {
+      generateObject: async <T>(opts: GenerateObjectOptions) => {
+        llmCalls.push(opts.log?.taskType ?? "unknown")
+        return { object: llmHtmlResponse as T } as GenerateObjectResult<T>
+      },
+    }
+
+    const nonActivityConfig = (): RenderConfig => ({
+      renderType: "llm",
+      promptName: "web_generation_html",
+      modelId: "openai:gpt-5.2",
+      maxRetries: 25,
+      timeoutMs: 180000,
+      answerPromptName: "activity_true_false_answers",
+      templateName: "",
+    })
+
+    const result = await renderPage(
+      {
+        label: "test-book",
+        pageId: "pg001",
+        pageImageBase64: "base64img",
+        sectioning: {
+          reasoning: "test",
+          sections: [
+            {
+              sectionType: "text",
+              partIds: ["pg001_gp001"],
+              backgroundColor: "#ffffff",
+              textColor: "#000000",
+              pageNumber: 1,
+              isPruned: false,
+            },
+          ],
+        },
+        textClassification: {
+          reasoning: "test",
+          groups: [
+            {
+              groupId: "pg001_gp001",
+              groupType: "paragraph",
+              texts: [
+                { textType: "body_text", text: "Body text", isPruned: false },
+              ],
+            },
+          ],
+        },
+        images: new Map(),
+      },
+      nonActivityConfig,
+      fakeLlm
+    )
+
+    expect(llmCalls).toEqual(["web-rendering"])
     expect(result.sections).toHaveLength(1)
     expect(result.sections[0].activityReasoning).toBeUndefined()
     expect(result.sections[0].activityAnswers).toBeUndefined()

@@ -9,22 +9,22 @@ You MUST respond with valid JSON containing EXACTLY TWO FIELDS - BOTH ARE MANDAT
 ```json
 {
     "reasoning": "Brief 1-2 sentence explanation",
-    "answers": {
-        "item-1": "answer-1",
-        "item-2": "answer-2"
-    }
+    "answers": [
+        {"id": "item-1", "value": "answer-1"},
+        {"id": "item-2", "value": "answer-2"}
+    ]
 }
 ```
 
 ABSOLUTE REQUIREMENTS - FAILURE CAUSES IMMEDIATE REJECTION:
 1. The `reasoning` field is MANDATORY - must be a non-empty string
-2. The `answers` field is MANDATORY - must be a JSON object/dictionary
-3. NEVER omit `answers` - if no items found, use empty object: "answers": {}
+2. The `answers` field is MANDATORY - must be a JSON array
+3. NEVER omit `answers` - if no items found, use empty array: "answers": []
 4. NEVER return null for `answers`
 5. Both fields must be present in EVERY response
 
 ## Answer Key Requirements
-- Keys in `answers` must match `data-activity-item` values from HTML exactly
+- Each entry in `answers` must have "id" matching `data-activity-item` values from HTML exactly
 - Do NOT use or consider `data-aria-id` (used for other purposes)
 - Values are correct fill-in text for each input
 - Use plain text strings; keep them concise and appropriate for the activity
@@ -41,20 +41,20 @@ Provide correct text for each input based on:
 - Logical consistency and educational level
 - Table headers/labels if present
 
-IMPORTANT: The `answers` dictionary MUST include ALL `data-activity-item` keys found in the HTML:
+IMPORTANT: The `answers` array MUST include ALL `data-activity-item` IDs found in the HTML:
 - If you can determine definitive answers: provide the answer text
-- If the exercise is open-ended (creative, personal, or multiple valid answers): use empty strings "" as values for all keys
-- ALWAYS include all keys - never return an empty `answers` object if input fields exist
+- If the exercise is open-ended (creative, personal, or multiple valid answers): use empty strings "" as values for all entries
+- ALWAYS include all entries - never return an empty `answers` array if input fields exist
 
 ### Example Response (definitive answers - vocabulary table):
 ```json
 {
     "reasoning": "This is a vocabulary activity with definitive translations.",
-    "answers": {
-        "item-1": "house",
-        "item-2": "dog",
-        "item-3": "coche"
-    }
+    "answers": [
+        {"id": "item-1", "value": "house"},
+        {"id": "item-2", "value": "dog"},
+        {"id": "item-3", "value": "coche"}
+    ]
 }
 ```
 
@@ -62,11 +62,11 @@ IMPORTANT: The `answers` dictionary MUST include ALL `data-activity-item` keys f
 ```json
 {
     "reasoning": "These are multiplication problems with definitive answers.",
-    "answers": {
-        "item-1": "15",
-        "item-2": "24",
-        "item-3": "36"
-    }
+    "answers": [
+        {"id": "item-1", "value": "15"},
+        {"id": "item-2", "value": "24"},
+        {"id": "item-3", "value": "36"}
+    ]
 }
 ```
 
@@ -74,12 +74,12 @@ IMPORTANT: The `answers` dictionary MUST include ALL `data-activity-item` keys f
 ```json
 {
     "reasoning": "This is an open-ended creative planning activity where students provide their own ideas for story elements. Multiple valid answers exist.",
-    "answers": {
-        "item-1": "",
-        "item-2": "",
-        "item-3": "",
-        "item-4": ""
-    }
+    "answers": [
+        {"id": "item-1", "value": ""},
+        {"id": "item-2", "value": ""},
+        {"id": "item-3", "value": ""},
+        {"id": "item-4", "value": ""}
+    ]
 }
 ```
 
@@ -87,22 +87,22 @@ IMPORTANT: The `answers` dictionary MUST include ALL `data-activity-item` keys f
 ```json
 {
     "reasoning": "No input fields with data-activity-item found in HTML.",
-    "answers": {}
+    "answers": []
 }
 ```
 
 **VALIDATION CHECKLIST**:
 - Response has "reasoning" field (non-empty string)
-- Response has "answers" field (object/dictionary)
-- Answer keys match ALL `data-activity-item` values from HTML exactly
-- Answer values are either correct text strings OR empty strings "" for open-ended exercises
-- Both fields present - `answers` must include ALL input field keys
+- Response has "answers" field (JSON array)
+- Each entry has "id" matching a `data-activity-item` value from HTML exactly
+- Each entry has "value" as either correct text string OR empty string "" for open-ended exercises
+- Both fields present - `answers` must include ALL input field entries
 
 **CRITICAL**:
 - Count the number of `data-activity-item` attributes in the HTML
-- Your `answers` object must have EXACTLY that many keys
+- Your `answers` array must have EXACTLY that many entries
 - Use empty string "" as the value if you cannot determine a definitive answer
-- DO NOT OMIT THE ANSWERS FIELD OR ANY KEYS
+- DO NOT OMIT THE ANSWERS FIELD OR ANY ENTRIES
 {% endchat %}
 
 {% chat role: "user" %}

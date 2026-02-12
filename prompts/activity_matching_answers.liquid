@@ -17,19 +17,19 @@ You MUST respond with valid JSON containing exactly two fields:
 ```json
 {
     "reasoning": "Brief 1-2 sentence explanation of how you determined the answers",
-    "answers": {
-        "item-id-1": "correct-answer-1",
-        "item-id-2": "correct-answer-2"
-    }
+    "answers": [
+        {"id": "item-id-1", "value": "correct-answer-1"},
+        {"id": "item-id-2", "value": "correct-answer-2"}
+    ]
 }
 ```
 
-The `answers` field is REQUIRED and must be a JSON object (dictionary), never null or missing.
+The `answers` field is REQUIRED and must be a JSON array, never null or missing.
 
 ## Answer Key Requirements
 
-- The `answers` object MUST include ALL `data-activity-item` keys found in draggable items
-- Count all draggable items with `data-activity-item` and ensure your answers dict has exactly that many keys
+- The `answers` array MUST include ALL `data-activity-item` IDs found in draggable items
+- Count all draggable items with `data-activity-item` and ensure your answers array has exactly that many entries
 - Values must be dropzone IDs (e.g., "dropzone-1", "dropzone-2") for this activity type
 - If you cannot determine the correct match, use empty string "" as the value
 - Think carefully about the textbook context and images before providing answers
@@ -53,31 +53,31 @@ For each draggable item with `data-activity-item`, determine which dropzone (ide
 ```json
 {
     "reasoning": "Based on the prefix 'bi-' meanings, 'bimotor' (two engines) matches the airplane image in dropzone-2, 'bibliobus' (mobile library) matches the bus with books in dropzone-4, 'bilingue' (two languages) matches the greeting in two languages in dropzone-3.",
-    "answers": {
-        "item-1": "dropzone-2",
-        "item-2": "dropzone-4",
-        "item-3": "dropzone-3",
-        "item-4": "dropzone-5",
-        "item-5": "dropzone-1",
-        "item-6": "dropzone-6"
-    }
+    "answers": [
+        {"id": "item-1", "value": "dropzone-2"},
+        {"id": "item-2", "value": "dropzone-4"},
+        {"id": "item-3", "value": "dropzone-3"},
+        {"id": "item-4", "value": "dropzone-5"},
+        {"id": "item-5", "value": "dropzone-1"},
+        {"id": "item-6", "value": "dropzone-6"}
+    ]
 }
 ```
 
 ### Answer Format:
-- Keys: `data-activity-item` values (e.g., "item-1", "item-2")
-- Values: Dropzone IDs (e.g., "dropzone-1", "dropzone-2")
-- Include ALL draggable items in the answers dictionary
+- Each entry has "id" from `data-activity-item` values (e.g., "item-1", "item-2")
+- Each entry has "value" as Dropzone IDs (e.g., "dropzone-1", "dropzone-2")
+- Include ALL draggable items in the answers array
 - Each item should map to exactly one dropzone
 
 CRITICAL:
 1. Count ALL draggable items with `data-activity-item` in the HTML
-2. Your `answers` dict must have EXACTLY that many keys
-3. Answer keys must match `data-activity-item` values exactly (e.g., "item-1", "item-2")
-4. Answer values must match dropzone `id` values exactly (e.g., "dropzone-1", "dropzone-2")
+2. Your `answers` array must have EXACTLY that many entries
+3. Each entry must have "id" matching `data-activity-item` values exactly (e.g., "item-1", "item-2")
+4. Each entry must have "value" matching dropzone `id` values exactly (e.g., "dropzone-1", "dropzone-2")
 5. If you cannot determine the match, use empty string ""
 6. Consider the images and context when determining correct matches
-7. The `answers` field is REQUIRED and must include ALL keys
+7. The `answers` field is REQUIRED and must include ALL entries
 {% endchat %}
 
 {% chat role: "user" %}

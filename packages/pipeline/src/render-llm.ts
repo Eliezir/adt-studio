@@ -71,10 +71,10 @@ export async function renderSectionLlm(
   let activityReasoning: string | undefined
   let activityAnswers: Record<string, string | boolean | number> | undefined
 
-  if (config.answerPromptName) {
+  if (isActivity && config.answerPromptName) {
     const answersResult = await llmModel.generateObject<{
       reasoning: string
-      answers: Record<string, string | boolean | number>
+      answers: Array<{ id: string; value: string | boolean | number }>
     }>({
       schema: activityAnswersLLMSchema,
       prompt: config.answerPromptName,
@@ -92,7 +92,10 @@ export async function renderSectionLlm(
       },
     })
     activityReasoning = answersResult.object.reasoning
-    activityAnswers = answersResult.object.answers
+    // Convert array of {id, value} to record for storage
+    activityAnswers = Object.fromEntries(
+      answersResult.object.answers.map((a) => [a.id, a.value])
+    )
   }
 
   return {
