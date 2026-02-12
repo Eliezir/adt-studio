@@ -4,7 +4,15 @@ import os from "node:os"
 import path from "node:path"
 import { openBookDb } from "@adt/storage"
 import { SCHEMA_VERSION } from "@adt/types"
-import { listBooks, getBook, createBook, deleteBook } from "./book-service.js"
+import {
+  listBooks,
+  getBook,
+  createBook,
+  deleteBook,
+  getBookConfig,
+  updateBookConfig,
+  acceptStoryboard,
+} from "./book-service.js"
 
 let tmpDir: string
 
@@ -66,6 +74,23 @@ function createTestPdf(label: string): void {
   )
 }
 
+function addTestRenderings(label: string, count: number): void {
+  const db = openBookDb(path.join(tmpDir, label, `${label}.db`))
+  for (let i = 1; i <= count; i++) {
+    const pageId = `pg${String(i).padStart(3, "0")}`
+    db.run(
+      "INSERT INTO node_data (node, item_id, version, data) VALUES (?, ?, ?, ?)",
+      [
+        "web-rendering",
+        pageId,
+        1,
+        JSON.stringify({ sections: [{ html: `<p>Page ${i}</p>` }] }),
+      ]
+    )
+  }
+  db.close()
+}
+
 function createLegacySchemaDb(label: string): void {
   createTestDb(label)
   const db = openBookDb(path.join(tmpDir, label, `${label}.db`))
@@ -102,6 +127,7 @@ describe("listBooks", () => {
       hasSourcePdf: true,
       needsRebuild: false,
       rebuildReason: null,
+      storyboardAccepted: false,
     })
   })
 
@@ -120,6 +146,7 @@ describe("listBooks", () => {
       hasSourcePdf: false,
       needsRebuild: false,
       rebuildReason: null,
+      storyboardAccepted: false,
     })
   })
 
@@ -140,6 +167,7 @@ describe("listBooks", () => {
       hasSourcePdf: true,
       needsRebuild: false,
       rebuildReason: null,
+      storyboardAccepted: false,
     })
   })
 
@@ -284,6 +312,137 @@ describe("createBook", () => {
     expect(() => createBook("exists", fakePdf, tmpDir)).toThrow(
       "already exists"
     )
+  })
+})
+
+describe("getBookConfig", () => {
+  it("returns null when no config.yaml exists", () => {
+    const bookDir = path.join(tmpDir, "no-config")
+    fs.mkdirSync(bookDir)
+    expect(getBookConfig("no-config", tmpDir)).toBeNull()
+  })
+
+  it("returns parsed config when config.yaml exists", () => {
+    const fakePdf = Buffer.from("%PDF-1.0 fake")
+    createBook("with-config", fakePdf, tmpDir, { concurrency: 4 })
+    const config = getBookConfig("with-config", tmpDir)
+    expect(config).toEqual({ concurrency: 4 })
+  })
+
+  it("throws for non-existent book", () => {
+    expect(() => getBookConfig("ghost", tmpDir)).toThrow("not found")
+  })
+
+  it("throws for invalid label", () => {
+    expect(() => getBookConfig("-bad", tmpDir)).toThrow()
+  })
+})
+
+describe("updateBookConfig", () => {
+  it("writes config.yaml with overrides", () => {
+    const bookDir = path.join(tmpDir, "update-test")
+    fs.mkdirSync(bookDir)
+    updateBookConfig("update-test", tmpDir, { concurrency: 8 })
+    const configPath = path.join(bookDir, "config.yaml")
+    expect(fs.existsSync(configPath)).toBe(true)
+    const content = fs.readFileSync(configPath, "utf-8")
+    expect(content).toContain("concurrency: 8")
+  })
+
+  it("removes config.yaml when overrides are empty", () => {
+    const fakePdf = Buffer.from("%PDF-1.0 fake")
+    createBook("remove-config", fakePdf, tmpDir, { concurrency: 4 })
+    const configPath = path.join(tmpDir, "remove-config", "config.yaml")
+    expect(fs.existsSync(configPath)).toBe(true)
+
+    updateBookConfig("remove-config", tmpDir, {})
+    expect(fs.existsSync(configPath)).toBe(false)
+  })
+
+  it("is a no-op when overrides are empty and no config exists", () => {
+    const bookDir = path.join(tmpDir, "empty-update")
+    fs.mkdirSync(bookDir)
+    updateBookConfig("empty-update", tmpDir, {})
+    expect(fs.existsSync(path.join(bookDir, "config.yaml"))).toBe(false)
+  })
+
+  it("throws for non-existent book", () => {
+    expect(() => updateBookConfig("ghost", tmpDir, { concurrency: 2 })).toThrow(
+      "not found"
+    )
+  })
+
+  it("throws for invalid label", () => {
+    expect(() => updateBookConfig("-bad", tmpDir, {})).toThrow()
+  })
+})
+
+describe("acceptStoryboard", () => {
+  it("succeeds when all pages have renderings", () => {
+    createTestDb("accept-book")
+    addTestPages("accept-book", 3)
+    addTestRenderings("accept-book", 3)
+
+    const result = acceptStoryboard("accept-book", tmpDir)
+    expect(result.version).toBeGreaterThanOrEqual(1)
+    expect(result.acceptedAt).toBeTypeOf("string")
+  })
+
+  it("marks book as storyboardAccepted in listBooks", () => {
+    createTestDb("accepted")
+    addTestPages("accepted", 2)
+    addTestRenderings("accepted", 2)
+    addTestMetadata("accepted", { title: "Accepted Book", authors: [] })
+    createTestPdf("accepted")
+
+    acceptStoryboard("accepted", tmpDir)
+
+    const books = listBooks(tmpDir)
+    expect(books[0].storyboardAccepted).toBe(true)
+  })
+
+  it("marks book as storyboardAccepted in getBook", () => {
+    createTestDb("accepted-detail")
+    addTestPages("accepted-detail", 2)
+    addTestRenderings("accepted-detail", 2)
+    createTestPdf("accepted-detail")
+
+    acceptStoryboard("accepted-detail", tmpDir)
+
+    const book = getBook("accepted-detail", tmpDir)
+    expect(book.storyboardAccepted).toBe(true)
+  })
+
+  it("throws when some pages are not rendered", () => {
+    createTestDb("partial")
+    addTestPages("partial", 3)
+    addTestRenderings("partial", 1) // only 1 of 3 rendered
+
+    expect(() => acceptStoryboard("partial", tmpDir)).toThrow(
+      "Not all pages have been rendered"
+    )
+  })
+
+  it("throws when book has no pages", () => {
+    createTestDb("no-pages")
+
+    expect(() => acceptStoryboard("no-pages", tmpDir)).toThrow(
+      "No pages found"
+    )
+  })
+
+  it("increments version on re-accept", () => {
+    createTestDb("re-accept")
+    addTestPages("re-accept", 2)
+    addTestRenderings("re-accept", 2)
+
+    const first = acceptStoryboard("re-accept", tmpDir)
+    const second = acceptStoryboard("re-accept", tmpDir)
+    expect(second.version).toBe(first.version + 1)
+  })
+
+  it("throws for non-existent book", () => {
+    expect(() => acceptStoryboard("ghost", tmpDir)).toThrow("not found")
   })
 })
 

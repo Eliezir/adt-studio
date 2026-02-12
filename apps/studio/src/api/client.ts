@@ -30,6 +30,7 @@ export interface BookSummary {
   hasSourcePdf: boolean
   needsRebuild: boolean
   rebuildReason: string | null
+  storyboardAccepted: boolean
 }
 
 export interface BookDetail extends BookSummary {
@@ -165,6 +166,10 @@ export interface PipelineStatsResponse {
   } | null
 }
 
+export interface BookConfigResponse {
+  config: Record<string, unknown>
+}
+
 export interface ActiveConfigResponse {
   merged: Record<string, unknown>
   hasBookOverride: boolean
@@ -284,4 +289,29 @@ export const api = {
     request<VersionListResponse>(
       `/books/${label}/debug/versions/${node}/${itemId}${includeData ? "?includeData=true" : ""}`
     ),
+
+  getBookConfig: (label: string) =>
+    request<BookConfigResponse>(`/books/${label}/config`),
+
+  updateBookConfig: (label: string, config: Record<string, unknown>) =>
+    request<BookConfigResponse>(`/books/${label}/config`, {
+      method: "PUT",
+      body: JSON.stringify({ config }),
+    }),
+
+  acceptStoryboard: (label: string) =>
+    request<{ version: number; acceptedAt: string }>(
+      `/books/${label}/accept-storyboard`,
+      { method: "POST" }
+    ),
+
+  exportBook: async (label: string): Promise<Blob> => {
+    const url = `${BASE_URL}/books/${label}/export`
+    const res = await fetch(url)
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({ error: res.statusText }))
+      throw new Error(body.error ?? `Export failed: ${res.status}`)
+    }
+    return res.blob()
+  },
 }

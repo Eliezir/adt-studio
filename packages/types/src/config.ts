@@ -14,6 +14,12 @@ export const StepConfig = z.object({
 })
 export type StepConfig = z.infer<typeof StepConfig>
 
+export const BookFormat = z.enum(["web", "epub", "webpub"])
+export type BookFormat = z.infer<typeof BookFormat>
+
+export const LayoutType = z.enum(["textbook", "storybook", "reference"])
+export type LayoutType = z.infer<typeof LayoutType>
+
 export const RenderType = z.enum(["llm", "template", "activity"])
 export type RenderType = z.infer<typeof RenderType>
 
@@ -60,6 +66,10 @@ export const AppConfig = z.object({
   image_filters: ImageFilters.optional(),
   concurrency: z.number().int().min(1).optional(),
   rate_limit: RateLimitConfig.optional(),
+  editing_language: z.string().optional(),
+  output_languages: z.array(z.string()).optional(),
+  book_format: z.array(BookFormat).optional(),
+  layout_type: LayoutType.optional(),
 })
 export type AppConfig = z.infer<typeof AppConfig>
 

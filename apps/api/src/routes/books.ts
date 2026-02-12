@@ -9,7 +9,11 @@ import {
   getBook,
   createBook,
   deleteBook,
+  getBookConfig,
+  updateBookConfig,
+  acceptStoryboard,
 } from "../services/book-service.js"
+import { exportBook } from "../services/export-service.js"
 
 export function createBookRoutes(booksDir: string): Hono {
   const app = new Hono()
@@ -68,6 +72,78 @@ export function createBookRoutes(booksDir: string): Hono {
     try {
       deleteBook(label, booksDir)
       return c.json({ ok: true })
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err)
+      if (message.includes("not found")) {
+        throw new HTTPException(404, { message })
+      }
+      throw new HTTPException(400, { message })
+    }
+  })
+
+  // GET /books/:label/config — Return book-level config overrides
+  app.get("/books/:label/config", (c) => {
+    const { label } = c.req.param()
+    try {
+      const config = getBookConfig(label, booksDir)
+      return c.json({ config: config ?? {} })
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err)
+      if (message.includes("not found")) {
+        throw new HTTPException(404, { message })
+      }
+      throw new HTTPException(400, { message })
+    }
+  })
+
+  // PUT /books/:label/config — Update book-level config overrides
+  app.put("/books/:label/config", async (c) => {
+    const { label } = c.req.param()
+    const body = await c.req.json<{ config: Record<string, unknown> }>()
+
+    if (!body.config || typeof body.config !== "object") {
+      throw new HTTPException(400, { message: "config object is required" })
+    }
+
+    try {
+      updateBookConfig(label, booksDir, body.config)
+      const updated = getBookConfig(label, booksDir)
+      return c.json({ config: updated ?? {} })
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err)
+      if (message.includes("not found")) {
+        throw new HTTPException(404, { message })
+      }
+      throw new HTTPException(400, { message })
+    }
+  })
+
+  // POST /books/:label/accept-storyboard — Accept the storyboard
+  app.post("/books/:label/accept-storyboard", (c) => {
+    const { label } = c.req.param()
+    try {
+      const result = acceptStoryboard(label, booksDir)
+      return c.json(result)
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err)
+      if (message.includes("not found")) {
+        throw new HTTPException(404, { message })
+      }
+      throw new HTTPException(400, { message })
+    }
+  })
+
+  // GET /books/:label/export — Download book as ZIP
+  app.get("/books/:label/export", (c) => {
+    const { label } = c.req.param()
+    try {
+      const result = exportBook(label, booksDir)
+      c.header("Content-Type", "application/zip")
+      c.header(
+        "Content-Disposition",
+        `attachment; filename="${result.filename}"`
+      )
+      return c.body(Buffer.from(result.zipBuffer))
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err)
       if (message.includes("not found")) {

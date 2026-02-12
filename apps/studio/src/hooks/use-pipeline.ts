@@ -135,6 +135,7 @@ export function usePipelineSSE(label: string, enabled: boolean) {
       }))
       queryClient.invalidateQueries({ queryKey: ["books", label] })
       queryClient.invalidateQueries({ queryKey: ["books"] })
+      queryClient.invalidateQueries({ queryKey: ["books", label, "pages"] })
       queryClient.invalidateQueries({ queryKey: ["debug"] })
       es.close()
     })
@@ -183,6 +184,7 @@ export function usePipelineSSE(label: string, enabled: boolean) {
           })
           queryClient.invalidateQueries({ queryKey: ["books", label] })
           queryClient.invalidateQueries({ queryKey: ["books"] })
+          queryClient.invalidateQueries({ queryKey: ["books", label, "pages"] })
           es.close()
           clearInterval(pollInterval)
         } else if (status.status === "failed") {

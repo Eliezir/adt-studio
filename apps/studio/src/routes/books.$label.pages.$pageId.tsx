@@ -1,7 +1,6 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router"
-import { useState, useCallback, useEffect, useMemo, useRef } from "react"
-import { ArrowLeft, ArrowRight, FileText, Image, Layers, Loader2, AlertCircle, ImageOff } from "lucide-react"
-import DOMPurify from "dompurify"
+import { useState, useCallback, useEffect } from "react"
+import { ArrowLeft, ArrowRight, FileText, Image, Layers, Loader2, AlertCircle, CheckCircle2, ImageOff, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -9,88 +8,15 @@ import { usePage, usePageImage, usePages } from "@/hooks/use-pages"
 import { EditToolbar } from "@/components/page-edit/EditToolbar"
 import { TextGroupEditor } from "@/components/page-edit/TextGroupEditor"
 import { ImagePruningEditor } from "@/components/page-edit/ImagePruningEditor"
+import { RenderedHtml } from "@/components/storyboard/RenderedHtml"
 import { useSaveTextClassification, useSaveImageClassification, useReRenderPage } from "@/hooks/use-page-mutations"
 import { useApiKey } from "@/hooks/use-api-key"
+import { useGuideDismissed } from "@/hooks/use-guide-dismissed"
 import type { PageDetail } from "@/api/client"
 
 export const Route = createFileRoute("/books/$label/pages/$pageId")({
   component: PageDetailPage,
 })
-
-/**
- * Renders HTML content and gracefully handles broken images by replacing
- * them with a styled placeholder showing the alt text.
- */
-function RenderedHtml({ html, className }: { html: string; className?: string }) {
-  const ref = useRef<HTMLDivElement>(null)
-  const sanitizedHtml = useMemo(
-    () => DOMPurify.sanitize(html),
-    [html]
-  )
-
-  useEffect(() => {
-    if (!ref.current) return
-
-    // Strip inline font-family from all elements so the app font is used consistently
-    const allEls = ref.current.querySelectorAll("*")
-    for (const el of allEls) {
-      if (el instanceof HTMLElement && el.style.fontFamily) {
-        el.style.fontFamily = ""
-      }
-    }
-
-    const imgs = ref.current.querySelectorAll("img")
-    for (const img of imgs) {
-      img.onerror = () => {
-        const placeholder = document.createElement("div")
-        placeholder.style.cssText =
-          "display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;" +
-          "min-height:120px;padding:16px;border-radius:8px;" +
-          "border:2px dashed #d1d5db;background:#f9fafb;"
-
-        // Icon (SVG inline since we can't use React components here)
-        const icon = document.createElementNS("http://www.w3.org/2000/svg", "svg")
-        icon.setAttribute("width", "32")
-        icon.setAttribute("height", "32")
-        icon.setAttribute("viewBox", "0 0 24 24")
-        icon.setAttribute("fill", "none")
-        icon.setAttribute("stroke", "#9ca3af")
-        icon.setAttribute("stroke-width", "1.5")
-        icon.innerHTML =
-          '<rect x="3" y="3" width="18" height="18" rx="2"/>' +
-          '<circle cx="9" cy="9" r="2"/>' +
-          '<path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/>' +
-          '<line x1="2" y1="2" x2="22" y2="22" stroke="#ef4444" stroke-width="2"/>'
-        placeholder.appendChild(icon)
-
-        // Alt text label
-        if (img.alt) {
-          const label = document.createElement("span")
-          label.style.cssText = "font-size:13px;font-weight:500;color:#6b7280;text-align:center;"
-          label.textContent = img.alt
-          placeholder.appendChild(label)
-        }
-
-        // Error detail with src path
-        const detail = document.createElement("span")
-        detail.style.cssText = "font-size:11px;color:#9ca3af;text-align:center;word-break:break-all;max-width:100%;"
-        const src = img.getAttribute("src") || ""
-        detail.textContent = src ? `Image not found: ${src}` : "Image source unavailable"
-        placeholder.appendChild(detail)
-
-        img.replaceWith(placeholder)
-      }
-    }
-  }, [sanitizedHtml])
-
-  return (
-    <div
-      ref={ref}
-      className={className}
-      dangerouslySetInnerHTML={{ __html: sanitizedHtml }}
-    />
-  )
-}
 
 function PageDetailPage() {
   const { label, pageId } = Route.useParams()
@@ -100,6 +26,7 @@ function PageDetailPage() {
   const { data: allPages } = usePages(label)
 
   const { apiKey, hasApiKey } = useApiKey()
+  const [pageGuideDismissed, dismissPageGuide] = useGuideDismissed("page-edit")
   const [isEditing, setIsEditing] = useState(false)
   const [editedGroups, setEditedGroups] = useState<PageDetail["textClassification"]>(null)
   const [editedImages, setEditedImages] = useState<PageDetail["imageClassification"]>(null)
@@ -146,6 +73,20 @@ function PageDetailPage() {
     }
   }, [apiKey, hasApiKey, reRender])
 
+  const [isSaveAndReRendering, setIsSaveAndReRendering] = useState(false)
+
+  const handleSaveAndReRender = useCallback(async () => {
+    setIsSaveAndReRendering(true)
+    try {
+      await handleSave()
+      if (hasApiKey) {
+        reRender.mutate(apiKey)
+      }
+    } finally {
+      setIsSaveAndReRendering(false)
+    }
+  }, [handleSave, apiKey, hasApiKey, reRender])
+
   const hasChanges =
     (editedGroups && JSON.stringify(editedGroups) !== JSON.stringify(page?.textClassification)) ||
     (editedImages && JSON.stringify(editedImages) !== JSON.stringify(page?.imageClassification)) ||
@@ -183,12 +124,11 @@ function PageDetailPage() {
       {/* Compact header: breadcrumb + nav + toolbar in one row */}
       <div className="flex shrink-0 items-center justify-between border-b px-4 py-1.5">
         <div className="flex items-center gap-2">
-          <Link to="/" className="text-xs text-muted-foreground hover:text-foreground transition-colors shrink-0">
-            ADT Studio
-          </Link>
-          <span className="text-muted-foreground/50 text-xs">/</span>
-          <Link to="/books/$label" params={{ label }} className="text-xs text-muted-foreground hover:text-foreground transition-colors shrink-0">
-            {label}
+          <Link to="/books/$label/storyboard" params={{ label }} search={{ page: pageId }}>
+            <Button variant="ghost" size="sm" className="h-7 px-2">
+              <ArrowLeft className="mr-1 h-3 w-3" />
+              Storyboard
+            </Button>
           </Link>
           <span className="text-muted-foreground/50 text-xs">/</span>
           <span className="text-sm font-semibold">Page {page.pageNumber}</span>
@@ -230,12 +170,25 @@ function PageDetailPage() {
           isReRendering={reRender.isPending}
           hasApiKey={hasApiKey}
           hasRenderingData={!!page.textClassification}
+          isSaveAndReRendering={isSaveAndReRendering}
           onEdit={handleEdit}
           onSave={handleSave}
           onCancel={handleCancel}
           onReRender={handleReRender}
+          onSaveAndReRender={handleSaveAndReRender}
         />
       </div>
+
+      {/* Success banner */}
+      {reRender.isSuccess && (
+        <div className="flex shrink-0 items-center gap-2 border-b bg-green-50 px-4 py-2 text-sm text-green-800">
+          <CheckCircle2 className="h-4 w-4 shrink-0" />
+          <span className="flex-1">Page re-rendered successfully.</span>
+          <Button variant="ghost" size="sm" onClick={() => reRender.reset()}>
+            Dismiss
+          </Button>
+        </div>
+      )}
 
       {/* Error banner */}
       {reRender.error && (
@@ -252,12 +205,33 @@ function PageDetailPage() {
       <div className="grid min-h-0 flex-1 grid-cols-[1fr_1.2fr_1.2fr] gap-0 divide-x">
         {/* Left: Pipeline inputs (text classification + image classification) */}
         <div className="flex flex-col overflow-hidden">
-          <div className="flex shrink-0 items-center gap-2 border-b bg-muted/30 px-4 py-2">
+          <div className="flex shrink-0 items-center gap-2 border-b bg-muted/50 px-4 py-2">
             <FileText className="h-4 w-4 text-muted-foreground" />
             <span className="text-sm font-medium">Pipeline Inputs</span>
             {isEditing && <Badge variant="secondary" className="text-xs">Editing</Badge>}
           </div>
           <div className="flex-1 overflow-auto p-4">
+            {/* Workflow hint card — view mode only */}
+            {!isEditing && !pageGuideDismissed && (
+              <div className="mb-4 rounded-lg border border-primary/20 bg-primary/5 p-3">
+                <div className="mb-1 flex items-center justify-between">
+                  <p className="text-xs font-medium text-primary">Editing workflow</p>
+                  <button
+                    type="button"
+                    onClick={dismissPageGuide}
+                    className="rounded p-0.5 text-primary/50 hover:text-primary"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </div>
+                <ol className="list-inside list-decimal space-y-0.5 text-xs text-foreground">
+                  <li>Click <strong>Edit Text & Images</strong> to modify inputs</li>
+                  <li><strong>Save</strong> your changes</li>
+                  <li>Click <strong>Re-render</strong> to regenerate this page</li>
+                </ol>
+              </div>
+            )}
+
             {/* Text classification */}
             {isEditing && editedGroups ? (
               <div className="mb-6">
@@ -342,7 +316,7 @@ function PageDetailPage() {
 
         {/* Center: Pipeline Output — tabs for Preview vs By Section */}
         <Tabs defaultValue="preview" className="flex flex-col overflow-hidden">
-          <div className="flex shrink-0 items-center gap-2 border-b bg-muted/30 px-4 py-1.5">
+          <div className="flex shrink-0 items-center gap-2 border-b bg-muted/50 px-4 py-1.5">
             <Layers className="h-4 w-4 text-muted-foreground" />
             <span className="text-sm font-medium">Pipeline Output</span>
             {reRender.isPending && <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />}
@@ -437,7 +411,7 @@ function PageDetailPage() {
 
         {/* Right: Original page image */}
         <div className="flex flex-col overflow-hidden">
-          <div className="flex shrink-0 items-center gap-2 border-b bg-muted/30 px-4 py-2">
+          <div className="flex shrink-0 items-center gap-2 border-b bg-muted/50 px-4 py-2">
             <Image className="h-4 w-4 text-muted-foreground" />
             <span className="text-sm font-medium">Original Page</span>
           </div>

@@ -10,6 +10,8 @@ export { StepName, ProgressEvent } from "./progress.js"
 export { BookLabel, parseBookLabel } from "./book.js"
 
 export {
+  BookFormat,
+  LayoutType,
   StepConfig,
   RenderType,
   RenderStrategyConfig,

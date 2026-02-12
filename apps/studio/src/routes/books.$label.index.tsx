@@ -1,10 +1,8 @@
-import { useState, useEffect } from "react"
-import { createFileRoute, Link } from "@tanstack/react-router"
-import { BookOpen, LayoutGrid, Play, Settings2 } from "lucide-react"
+import { useState, useEffect, useRef } from "react"
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router"
+import { BookOpen, LayoutGrid, FileDown, CheckCircle2, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import {
   Card,
   CardContent,
@@ -12,30 +10,37 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
-import { useBook } from "@/hooks/use-books"
+import { useBook, useExportBook } from "@/hooks/use-books"
 import { usePipelineSSE, usePipelineStatus, useRunPipeline } from "@/hooks/use-pipeline"
 import { useApiKey } from "@/hooks/use-api-key"
 import { PipelineProgress } from "@/components/pipeline/PipelineProgress"
 import { PagePreviewGrid } from "@/components/pipeline/PagePreviewGrid"
+import { ConfigEditor } from "@/components/config/ConfigEditor"
 
 export const Route = createFileRoute("/books/$label/")({
   component: BookDetailPage,
+  validateSearch: (search: Record<string, unknown>) => ({
+    autoRun: search.autoRun === true || search.autoRun === "true" ? true : undefined,
+    startPage: typeof search.startPage === "number" ? search.startPage : undefined,
+    endPage: typeof search.endPage === "number" ? search.endPage : undefined,
+  }),
 })
 
 function BookDetailPage() {
   const { label } = Route.useParams()
+  const { autoRun, startPage: searchStartPage, endPage: searchEndPage } = Route.useSearch()
+  const navigate = useNavigate()
   const { data: book, isLoading, error } = useBook(label)
-  const { apiKey, setApiKey, hasApiKey } = useApiKey()
+  const { apiKey, hasApiKey } = useApiKey()
 
+  const exportBook = useExportBook()
   const runPipeline = useRunPipeline()
   const [sseEnabled, setSseEnabled] = useState(false)
   const { progress, reset } = usePipelineSSE(label, sseEnabled)
   const { data: pipelineStatus } = usePipelineStatus(label)
 
-  // Pipeline config options
-  const [startPage, setStartPage] = useState("")
-  const [endPage, setEndPage] = useState("")
-  const [concurrency, setConcurrency] = useState("16")
+  // Auto-run guard
+  const hasAutoRun = useRef(false)
 
   // Auto-reconnect to SSE if pipeline is already running
   useEffect(() => {
@@ -44,15 +49,44 @@ function BookDetailPage() {
     }
   }, [pipelineStatus?.status, sseEnabled])
 
-  const handleRun = () => {
+  // Auto-run pipeline when navigated from wizard
+  useEffect(() => {
+    if (!autoRun || hasAutoRun.current || !hasApiKey || !book) return
+    hasAutoRun.current = true
+
+    // Clean the URL
+    navigate({
+      to: "/books/$label",
+      params: { label },
+      search: {
+        autoRun: undefined,
+        startPage: undefined,
+        endPage: undefined,
+      },
+      replace: true,
+    })
+
+    // Trigger pipeline
     reset()
     setSseEnabled(true)
 
-    const options: { startPage?: number; endPage?: number; concurrency?: number } = {}
-    if (startPage) options.startPage = Number(startPage)
-    if (endPage) options.endPage = Number(endPage)
-    const c = Number(concurrency)
-    if (c && c !== 16) options.concurrency = c
+    const options: { startPage?: number; endPage?: number } = {}
+    if (searchStartPage) options.startPage = searchStartPage
+    if (searchEndPage) options.endPage = searchEndPage
+
+    runPipeline.mutate(
+      { label, apiKey, options: Object.keys(options).length > 0 ? options : undefined },
+      {
+        onError: () => {
+          setSseEnabled(false)
+        },
+      }
+    )
+  }, [autoRun, hasApiKey, book, label, apiKey, searchStartPage, searchEndPage, navigate, reset, runPipeline])
+
+  const handleRun = (options: { startPage?: number; endPage?: number }) => {
+    reset()
+    setSseEnabled(true)
 
     runPipeline.mutate(
       { label, apiKey, options: Object.keys(options).length > 0 ? options : undefined },
@@ -100,8 +134,14 @@ function BookDetailPage() {
             {book.pageCount > 0 ? `${book.pageCount} pages` : "New"}
           </Badge>
         )}
+        {book.storyboardAccepted && (
+          <Badge className="bg-green-100 text-green-800 hover:bg-green-100">
+            <CheckCircle2 className="mr-1 h-3 w-3" />
+            Accepted
+          </Badge>
+        )}
         {book.pageCount > 0 && (
-          <Link to="/books/$label/storyboard" params={{ label }}>
+          <Link to="/books/$label/storyboard" params={{ label }} search={{ page: undefined }}>
             <Button variant="outline" size="sm">
               <LayoutGrid className="mr-2 h-4 w-4" />
               Storyboard
@@ -178,111 +218,64 @@ function BookDetailPage() {
           <div className="h-full">
             <PipelineProgress
               progress={progress}
-              onRun={handleRun}
+              onRun={() => handleRun({})}
               isStarting={runPipeline.isPending}
               hasApiKey={hasApiKey}
             />
           </div>
         ) : (
-          <Card className="h-full">
-            <CardHeader className="pb-3">
-              <CardTitle className="flex items-center gap-2 text-sm">
-                <Settings2 className="h-4 w-4" />
-                Pipeline Configuration
-              </CardTitle>
-              <CardDescription>
-                Configure options before running the pipeline.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {/* API Key */}
-                <div className="space-y-1.5">
-                  <Label htmlFor="api-key" className="text-xs">OpenAI API Key</Label>
-                  <Input
-                    id="api-key"
-                    type="password"
-                    value={apiKey}
-                    onChange={(e) => setApiKey(e.target.value)}
-                    placeholder="sk-..."
-                    className="font-mono"
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Stored in your browser only. Never sent to our servers.
-                  </p>
-                </div>
-
-                {/* Page Range + Concurrency in a row */}
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
-                    <Label className="text-xs">Page Range</Label>
-                    <div className="flex items-center gap-2">
-                      <Input
-                        type="number"
-                        min={1}
-                        value={startPage}
-                        onChange={(e) => setStartPage(e.target.value)}
-                        placeholder="First"
-                        className="w-20"
-                      />
-                      <span className="text-xs text-muted-foreground">to</span>
-                      <Input
-                        type="number"
-                        min={1}
-                        value={endPage}
-                        onChange={(e) => setEndPage(e.target.value)}
-                        placeholder="Last"
-                        className="w-20"
-                      />
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                      Leave empty for all pages
-                    </p>
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <Label htmlFor="concurrency" className="text-xs">Concurrency</Label>
-                    <Input
-                      id="concurrency"
-                      type="number"
-                      min={1}
-                      max={64}
-                      value={concurrency}
-                      onChange={(e) => setConcurrency(e.target.value)}
-                      className="w-20"
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      Parallel LLM calls
-                    </p>
-                  </div>
-                </div>
-
-                {/* Run button */}
-                <div className="flex items-center gap-3 pt-1">
-                  <Button
-                    onClick={handleRun}
-                    disabled={runPipeline.isPending || !hasApiKey}
-                  >
-                    <Play className="mr-2 h-4 w-4" />
-                    {runPipeline.isPending ? "Starting..." : book.pageCount > 0 ? "Re-run Pipeline" : "Run Pipeline"}
-                  </Button>
-                  {!hasApiKey && (
-                    <span className="text-xs text-muted-foreground">
-                      Enter your API key above to run.
-                    </span>
-                  )}
-                </div>
-
-                {runPipeline.isError && (
-                  <p className="text-sm text-destructive">
-                    Failed to start pipeline: {runPipeline.error.message}
-                  </p>
-                )}
-              </div>
-            </CardContent>
-          </Card>
+          <ConfigEditor
+            label={label}
+            onRun={handleRun}
+            isRunning={progress.isRunning}
+            isPipelineStarting={runPipeline.isPending}
+            hasApiKey={hasApiKey}
+            pageCount={book.pageCount}
+          />
         )}
       </div>
+
+      {/* Review Storyboard CTA */}
+      {progress.isComplete && (
+        <Card className="border-green-200 bg-green-50/50">
+          <CardContent className="flex items-center justify-between py-3">
+            <div>
+              <p className="text-sm font-medium">Pipeline complete</p>
+              <p className="text-xs text-muted-foreground">Review the generated storyboard</p>
+            </div>
+            <Link to="/books/$label/storyboard" params={{ label }} search={{ page: undefined }}>
+              <Button size="sm">
+                <LayoutGrid className="mr-1.5 h-4 w-4" />
+                Review Storyboard
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Export ZIP CTA */}
+      {book.storyboardAccepted && (
+        <Card className="border-green-200 bg-green-50/50">
+          <CardContent className="flex items-center justify-between py-3">
+            <div>
+              <p className="text-sm font-medium">Storyboard accepted</p>
+              <p className="text-xs text-muted-foreground">Download the book as an HTML + images bundle</p>
+            </div>
+            <Button
+              size="sm"
+              onClick={() => exportBook.mutate(label)}
+              disabled={exportBook.isPending}
+            >
+              {exportBook.isPending ? (
+                <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
+              ) : (
+                <FileDown className="mr-1.5 h-4 w-4" />
+              )}
+              Export ZIP
+            </Button>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Full-width page preview grid */}
       {(progress.isRunning || progress.isComplete || book.pageCount > 0) && (
