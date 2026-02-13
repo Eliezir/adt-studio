@@ -228,6 +228,38 @@ function PageDetailPage() {
                   onUpdate={edit.updateGroups}
                 />
               </div>
+            ) : page.textClassification ? (
+              <div className="mb-6">
+                <h3 className="mb-2 flex items-center gap-2 text-sm font-medium">
+                  <FileText className="h-3 w-3" />
+                  Text Groups ({page.textClassification.groups.length})
+                </h3>
+                <div className="space-y-3">
+                  {page.textClassification.groups.map((group) => (
+                    <div key={group.groupId} className="group/card rounded border p-3">
+                      <div className="mb-1 flex items-center gap-2">
+                        <span className="text-xs text-muted-foreground/70">{group.groupType}</span>
+                        <span className="text-xs text-muted-foreground/40 opacity-0 transition-opacity group-hover/card:opacity-100">
+                          {group.groupId}
+                        </span>
+                      </div>
+                      <div className="space-y-1">
+                        {group.texts.map((t, i) => (
+                          <div
+                            key={i}
+                            className={`group/text flex items-baseline gap-1 text-sm ${t.isPruned ? "text-muted-foreground line-through" : ""}`}
+                          >
+                            <span className="flex-1">{t.text}</span>
+                            <span className="shrink-0 text-xs text-muted-foreground/40 opacity-0 transition-opacity group-hover/text:opacity-100">
+                              {t.textType}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
             ) : (
               <p className="mb-6 text-sm text-muted-foreground">
                 No text classification data. Run the pipeline first.
