@@ -6,12 +6,19 @@ services:
     volumes:
       - ./books:/app/books
       - ./prompts:/app/prompts
+      - ./templates:/app/templates:ro
       - ./config.yaml:/app/config.yaml:ro
     environment:
       - PROJECT_ROOT=/app
       - BOOKS_DIR=/app/books
       - PROMPTS_DIR=/app/prompts
       - CONFIG_PATH=/app/config.yaml
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:3001/api/health').then(r => { if (!r.ok) process.exit(1) })"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
     restart: unless-stopped
 
   studio:
@@ -21,5 +28,6 @@ services:
     ports:
       - "${PORT:-8080}:80"
     depends_on:
-      - api
+      api:
+        condition: service_healthy
     restart: unless-stopped

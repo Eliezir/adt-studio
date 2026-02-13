@@ -13,13 +13,11 @@ Desktop-first application for automated book production — extract content from
 | Desktop | Tauri v2 |
 | Testing | Vitest |
 
-## Prerequisites
+### Desktop app — additional requirements
 
-- [Node.js](https://nodejs.org/) >= 20
-- [pnpm](https://pnpm.io/) >= 9
-- [Rust](https://www.rust-lang.org/tools/install) (for desktop app only)
+[Rust](https://www.rust-lang.org/tools/install) is required for the Tauri desktop wrapper.
 
-### Desktop app — platform-specific requirements
+#### Platform-specific dependencies
 
 <details>
 <summary><strong>macOS</strong></summary>
@@ -48,6 +46,39 @@ Desktop-first application for automated book production — extract content from
 
 ## Getting Started
 
+### Option A: Docker (recommended for quick setup)
+
+Run ADT Studio with no local dependencies — just [Docker](https://docs.docker.com/get-docker/).
+
+```bash
+# Clone the repository
+git clone git@github.com:unicef/adt-studio.git
+cd adt-studio
+
+# Build and start
+docker compose up --build
+```
+
+Open `http://localhost:8080` in the browser. Book data persists in the local `./books/` directory.
+
+```bash
+# Run in background
+docker compose up --build -d
+
+# Custom port
+PORT=3000 docker compose up --build -d
+
+# View logs
+docker compose logs -f
+
+# Stop
+docker compose down
+```
+
+### Option B: Local development
+
+Prerequisites: [Node.js](https://nodejs.org/) >= 20, [pnpm](https://pnpm.io/) >= 9.
+
 ```bash
 # Clone the repository
 git clone git@github.com:unicef/adt-studio.git
@@ -63,7 +94,7 @@ pnpm build
 pnpm dev
 ```
 
-The API server runs at `http://localhost:3000` and the Studio frontend at `http://localhost:5173`.
+The API server runs at `http://localhost:3001` and the Studio frontend at `http://localhost:5173`.
 
 ### Running the desktop app
 
