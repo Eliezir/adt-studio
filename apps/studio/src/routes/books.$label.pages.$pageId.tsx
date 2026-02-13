@@ -336,6 +336,7 @@ function PageDetailPage() {
                 </h3>
                 <ImagePruningEditor
                   images={editedImages.images}
+                  bookLabel={label}
                   onChange={(images) => setEditedImages({ ...editedImages, images })}
                 />
               </div>
@@ -347,10 +348,17 @@ function PageDetailPage() {
                 </h3>
                 <div className="space-y-2">
                   {page.imageClassification.images.map((img) => (
-                    <div key={img.imageId} className={`flex items-center justify-between rounded border p-2 ${img.isPruned ? "opacity-60" : ""}`}>
-                      <span className={`text-sm ${img.isPruned ? "line-through" : ""}`}>{img.imageId}</span>
-                      {img.reason && <span className="text-xs text-muted-foreground">{img.reason}</span>}
-                      {img.isPruned && <Badge variant="outline" className="text-xs">Pruned</Badge>}
+                    <div key={img.imageId} className={`flex items-center gap-3 rounded border p-2 ${img.isPruned ? "opacity-60" : ""}`}>
+                      <img
+                        src={`/api/books/${label}/images/${img.imageId}`}
+                        alt={img.imageId}
+                        className="h-16 w-16 shrink-0 rounded border object-cover bg-muted"
+                      />
+                      <div className="flex flex-1 flex-col gap-0.5 min-w-0">
+                        <span className={`text-sm truncate ${img.isPruned ? "line-through" : ""}`}>{img.imageId}</span>
+                        {img.reason && <span className="text-xs text-muted-foreground">{img.reason}</span>}
+                      </div>
+                      {img.isPruned && <Badge variant="outline" className="text-xs shrink-0">Pruned</Badge>}
                     </div>
                   ))}
                 </div>
