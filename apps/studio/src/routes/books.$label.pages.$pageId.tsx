@@ -1,21 +1,21 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router"
-import { useState, useCallback, useEffect } from "react"
-import { ArrowLeft, ArrowRight, FileText, Image, Layers, Loader2, AlertCircle, CheckCircle2, ImageOff, X } from "lucide-react"
+import { useState, useCallback, useEffect, useRef } from "react"
+import { ArrowLeft, ArrowRight, FileText, Image, Layers, Loader2, AlertCircle, CheckCircle2, ImageOff, RefreshCw } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog"
 import { usePage, usePageImage, usePages } from "@/hooks/use-pages"
-import { EditToolbar } from "@/components/page-edit/EditToolbar"
-import { TextGroupEditor } from "@/components/page-edit/TextGroupEditor"
-import { ImagePruningEditor } from "@/components/page-edit/ImagePruningEditor"
-import { RenderedHtml } from "@/components/storyboard/RenderedHtml"
-import { useSaveTextClassification, useSaveImageClassification, useSaveSectioning, useReRenderPage } from "@/hooks/use-page-mutations"
-import { SectionEditor } from "@/components/page-edit/SectionEditor"
+import { useReRenderPage } from "@/hooks/use-page-mutations"
+import { useInlinePageEdit } from "@/hooks/use-inline-page-edit"
 import { useApiKey } from "@/hooks/use-api-key"
-import { useGuideDismissed } from "@/hooks/use-guide-dismissed"
+import { TextGroupList } from "@/components/page-edit/TextGroupList"
+import { ImageList } from "@/components/page-edit/ImageList"
+import { SectionList } from "@/components/page-edit/SectionList"
+import { FloatingSaveBar } from "@/components/page-edit/FloatingSaveBar"
+import { RenderedHtml } from "@/components/storyboard/RenderedHtml"
 import { ActivityAnswerPanel } from "@/components/storyboard/ActivityAnswerPanel"
 import { isActivitySection, formatSectionType } from "@/lib/activity-utils"
-import type { PageDetail } from "@/api/client"
 
 export const Route = createFileRoute("/books/$label/pages/$pageId")({
   component: PageDetailPage,
@@ -29,56 +29,12 @@ function PageDetailPage() {
   const { data: allPages } = usePages(label)
 
   const { apiKey, hasApiKey } = useApiKey()
-  const [pageGuideDismissed, dismissPageGuide] = useGuideDismissed("page-edit")
-  const [isEditing, setIsEditing] = useState(false)
-  const [editedGroups, setEditedGroups] = useState<PageDetail["textClassification"]>(null)
-  const [editedImages, setEditedImages] = useState<PageDetail["imageClassification"]>(null)
-  const [editedSectioning, setEditedSectioning] = useState<PageDetail["sectioning"]>(null)
-
-  const saveText = useSaveTextClassification(label, pageId)
-  const saveImages = useSaveImageClassification(label, pageId)
-  const saveSectioning = useSaveSectioning(label, pageId)
   const reRender = useReRenderPage(label, pageId)
 
-  const handleEdit = useCallback(() => {
-    if (page?.textClassification) {
-      setEditedGroups(structuredClone(page.textClassification))
-    }
-    if (page?.imageClassification) {
-      setEditedImages(structuredClone(page.imageClassification))
-    }
-    if (page?.sectioning) {
-      setEditedSectioning(structuredClone(page.sectioning))
-    }
-    setIsEditing(true)
-  }, [page])
+  const edit = useInlinePageEdit(label, pageId, page)
 
-  const handleCancel = useCallback(() => {
-    setIsEditing(false)
-    setEditedGroups(null)
-    setEditedImages(null)
-    setEditedSectioning(null)
-  }, [])
-
-  const handleSave = useCallback(async () => {
-    const promises: Promise<unknown>[] = []
-
-    if (editedGroups && JSON.stringify(editedGroups) !== JSON.stringify(page?.textClassification)) {
-      promises.push(saveText.mutateAsync(editedGroups))
-    }
-    if (editedImages && JSON.stringify(editedImages) !== JSON.stringify(page?.imageClassification)) {
-      promises.push(saveImages.mutateAsync(editedImages))
-    }
-    if (editedSectioning && JSON.stringify(editedSectioning) !== JSON.stringify(page?.sectioning)) {
-      promises.push(saveSectioning.mutateAsync(editedSectioning))
-    }
-
-    await Promise.all(promises)
-    setIsEditing(false)
-    setEditedGroups(null)
-    setEditedImages(null)
-    setEditedSectioning(null)
-  }, [editedGroups, editedImages, editedSectioning, page, saveText, saveImages, saveSectioning])
+  const [expandedAnswers, setExpandedAnswers] = useState<Set<number>>(new Set())
+  const [confirmNav, setConfirmNav] = useState<{ to: string; params: Record<string, string> } | null>(null)
 
   const handleReRender = useCallback(() => {
     if (hasApiKey) {
@@ -86,28 +42,14 @@ function PageDetailPage() {
     }
   }, [apiKey, hasApiKey, reRender])
 
-  const [isSaveAndReRendering, setIsSaveAndReRendering] = useState(false)
-  const [expandedAnswers, setExpandedAnswers] = useState<Set<number>>(new Set())
-
   const handleSaveAndReRender = useCallback(async () => {
-    setIsSaveAndReRendering(true)
-    try {
-      await handleSave()
-      if (hasApiKey) {
-        reRender.mutate(apiKey)
-      }
-    } finally {
-      setIsSaveAndReRendering(false)
+    await edit.save()
+    if (hasApiKey) {
+      reRender.mutate(apiKey)
     }
-  }, [handleSave, apiKey, hasApiKey, reRender])
+  }, [edit.save, hasApiKey, apiKey, reRender])
 
-  const hasChanges =
-    (editedGroups && JSON.stringify(editedGroups) !== JSON.stringify(page?.textClassification)) ||
-    (editedImages && JSON.stringify(editedImages) !== JSON.stringify(page?.imageClassification)) ||
-    (editedSectioning && JSON.stringify(editedSectioning) !== JSON.stringify(page?.sectioning)) ||
-    false
-
-  // Find prev/next pages for navigation (computed before hooks that depend on them)
+  // Find prev/next pages for navigation
   const currentIndex = allPages?.findIndex((p) => p.pageId === pageId) ?? -1
   const prevPage = currentIndex > 0 ? allPages?.[currentIndex - 1] : null
   const nextPage =
@@ -115,31 +57,53 @@ function PageDetailPage() {
       ? allPages[currentIndex + 1]
       : null
 
+  // Use ref to avoid stale closure in keyboard handler
+  const hasChangesRef = useRef(edit.hasChanges)
+  hasChangesRef.current = edit.hasChanges
+  const discardRef = useRef(edit.discard)
+  discardRef.current = edit.discard
+
+  const navigateToPage = useCallback(
+    (targetPageId: string) => {
+      const target = {
+        to: "/books/$label/pages/$pageId" as const,
+        params: { label, pageId: targetPageId },
+      }
+      if (hasChangesRef.current) {
+        setConfirmNav(target)
+      } else {
+        navigate(target)
+      }
+    },
+    [label, navigate]
+  )
+
+  const confirmNavigation = useCallback(() => {
+    if (confirmNav) {
+      discardRef.current()
+      navigate(confirmNav)
+      setConfirmNav(null)
+    }
+  }, [confirmNav, navigate])
+
   // Keyboard navigation: arrow keys for prev/next page
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Skip when focus is in an editable element
       const tag = (e.target as HTMLElement)?.tagName
       if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return
       if ((e.target as HTMLElement)?.isContentEditable) return
 
       if (e.key === "ArrowLeft" && prevPage) {
         e.preventDefault()
-        navigate({
-          to: "/books/$label/pages/$pageId",
-          params: { label, pageId: prevPage.pageId },
-        })
+        navigateToPage(prevPage.pageId)
       } else if (e.key === "ArrowRight" && nextPage) {
         e.preventDefault()
-        navigate({
-          to: "/books/$label/pages/$pageId",
-          params: { label, pageId: nextPage.pageId },
-        })
+        navigateToPage(nextPage.pageId)
       }
     }
     window.addEventListener("keydown", handleKeyDown)
     return () => window.removeEventListener("keydown", handleKeyDown)
-  }, [navigate, label, prevPage, nextPage])
+  }, [prevPage, nextPage, navigateToPage])
 
   if (isLoading) {
     return <div className="p-4 text-muted-foreground">Loading page...</div>
@@ -155,14 +119,13 @@ function PageDetailPage() {
 
   if (!page) return null
 
-  // Combine all section HTMLs into a single preview
   const combinedHtml = page.rendering?.sections
     .map((s) => s.html)
     .join("\n")
 
   return (
     <div className="flex flex-1 min-h-0 flex-col">
-      {/* Compact header: breadcrumb + nav + toolbar in one row */}
+      {/* Compact header: breadcrumb + nav + re-render */}
       <div className="flex shrink-0 items-center justify-between border-b px-4 py-1.5">
         <div className="flex items-center gap-2">
           <Link to="/books/$label/storyboard" params={{ label }} search={{ page: pageId }}>
@@ -178,13 +141,7 @@ function PageDetailPage() {
               variant="outline"
               size="sm"
               disabled={!prevPage}
-              onClick={() =>
-                prevPage &&
-                navigate({
-                  to: "/books/$label/pages/$pageId",
-                  params: { label, pageId: prevPage.pageId },
-                })
-              }
+              onClick={() => prevPage && navigateToPage(prevPage.pageId)}
             >
               <ArrowLeft className="h-3 w-3" />
             </Button>
@@ -192,32 +149,34 @@ function PageDetailPage() {
               variant="outline"
               size="sm"
               disabled={!nextPage}
-              onClick={() =>
-                nextPage &&
-                navigate({
-                  to: "/books/$label/pages/$pageId",
-                  params: { label, pageId: nextPage.pageId },
-                })
-              }
+              onClick={() => nextPage && navigateToPage(nextPage.pageId)}
             >
               <ArrowRight className="h-3 w-3" />
             </Button>
           </div>
         </div>
-        <EditToolbar
-          isEditing={isEditing}
-          hasChanges={hasChanges}
-          isSaving={saveText.isPending || saveImages.isPending || saveSectioning.isPending}
-          isReRendering={reRender.isPending}
-          hasApiKey={hasApiKey}
-          hasRenderingData={!!page.textClassification}
-          isSaveAndReRendering={isSaveAndReRendering}
-          onEdit={handleEdit}
-          onSave={handleSave}
-          onCancel={handleCancel}
-          onReRender={handleReRender}
-          onSaveAndReRender={handleSaveAndReRender}
-        />
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleReRender}
+          disabled={!hasApiKey || reRender.isPending || !page?.textClassification}
+          title={
+            !hasApiKey
+              ? "Set your API key first"
+              : !page?.textClassification
+                ? "Run the pipeline first"
+                : reRender.isPending
+                  ? "Re-rendering..."
+                  : ""
+          }
+        >
+          {reRender.isPending ? (
+            <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+          ) : (
+            <RefreshCw className="mr-1 h-3 w-3" />
+          )}
+          Re-render
+        </Button>
       </div>
 
       {/* Success banner */}
@@ -253,40 +212,20 @@ function PageDetailPage() {
           <div className="flex shrink-0 items-center gap-2 border-b bg-muted/50 px-4 py-2">
             <FileText className="h-4 w-4 text-muted-foreground" />
             <span className="text-sm font-medium">Pipeline Inputs</span>
-            {isEditing && <Badge variant="secondary" className="text-xs">Editing</Badge>}
           </div>
           <div className="flex-1 overflow-auto p-4">
-            {/* Workflow hint card — view mode only */}
-            {!isEditing && !pageGuideDismissed && (
-              <div className="mb-4 rounded-lg border border-primary/20 bg-primary/5 p-3">
-                <div className="mb-1 flex items-center justify-between">
-                  <p className="text-xs font-medium text-primary">Editing workflow</p>
-                  <button
-                    type="button"
-                    onClick={dismissPageGuide}
-                    className="rounded p-0.5 text-primary/50 hover:text-primary"
-                  >
-                    <X className="h-3 w-3" />
-                  </button>
-                </div>
-                <ol className="list-inside list-decimal space-y-0.5 text-xs text-foreground">
-                  <li>Click <strong>Edit</strong> to modify text, images, and sections</li>
-                  <li><strong>Save</strong> your changes</li>
-                  <li>Click <strong>Re-render</strong> to regenerate this page</li>
-                </ol>
-              </div>
-            )}
-
             {/* Text classification */}
-            {isEditing && editedGroups ? (
+            {edit.effectiveGroups ? (
               <div className="mb-6">
                 <h3 className="mb-2 flex items-center gap-2 text-sm font-medium">
                   <FileText className="h-3 w-3" />
-                  Text Groups ({editedGroups.groups.length})
+                  Text Groups ({edit.effectiveGroups.groups.length})
                 </h3>
-                <TextGroupEditor
-                  groups={editedGroups.groups}
-                  onChange={(groups) => setEditedGroups({ ...editedGroups, groups })}
+                <TextGroupList
+                  groups={edit.effectiveGroups.groups}
+                  draftGroups={edit.draftGroups}
+                  serverGroups={page.textClassification}
+                  onUpdate={edit.updateGroups}
                 />
               </div>
             ) : page.textClassification ? (
@@ -297,10 +236,10 @@ function PageDetailPage() {
                 </h3>
                 <div className="space-y-3">
                   {page.textClassification.groups.map((group) => (
-                    <div key={group.groupId} className="rounded border p-3">
+                    <div key={group.groupId} className="group/card rounded border p-3">
                       <div className="mb-1 flex items-center gap-2">
-                        <Badge variant="secondary" className="text-xs">{group.groupType}</Badge>
-                        <span className="text-xs text-muted-foreground">
+                        <span className="text-xs text-muted-foreground/70">{group.groupType}</span>
+                        <span className="text-xs text-muted-foreground/40 opacity-0 transition-opacity group-hover/card:opacity-100">
                           {group.groupId}
                         </span>
                       </div>
@@ -308,12 +247,12 @@ function PageDetailPage() {
                         {group.texts.map((t, i) => (
                           <div
                             key={i}
-                            className={`text-sm ${t.isPruned ? "text-muted-foreground line-through" : ""}`}
+                            className={`group/text flex items-baseline gap-1 text-sm ${t.isPruned ? "text-muted-foreground line-through" : ""}`}
                           >
-                            <span className="mr-1 text-xs text-muted-foreground">
-                              [{t.textType}]
+                            <span className="flex-1">{t.text}</span>
+                            <span className="shrink-0 text-xs text-muted-foreground/40 opacity-0 transition-opacity group-hover/text:opacity-100">
+                              {t.textType}
                             </span>
-                            {t.text}
                           </div>
                         ))}
                       </div>
@@ -328,32 +267,17 @@ function PageDetailPage() {
             )}
 
             {/* Image classification */}
-            {isEditing && editedImages ? (
+            {edit.effectiveImages && edit.effectiveImages.images.length > 0 ? (
               <div>
                 <h3 className="mb-2 flex items-center gap-2 text-sm font-medium">
                   <Image className="h-3 w-3" />
-                  Images ({editedImages.images.length})
+                  Images ({edit.effectiveImages.images.length})
                 </h3>
-                <ImagePruningEditor
-                  images={editedImages.images}
-                  onChange={(images) => setEditedImages({ ...editedImages, images })}
+                <ImageList
+                  images={edit.effectiveImages.images}
+                  bookLabel={label}
+                  onUpdate={edit.updateImages}
                 />
-              </div>
-            ) : page.imageClassification && page.imageClassification.images.length > 0 ? (
-              <div>
-                <h3 className="mb-2 flex items-center gap-2 text-sm font-medium">
-                  <Image className="h-3 w-3" />
-                  Images ({page.imageClassification.images.length})
-                </h3>
-                <div className="space-y-2">
-                  {page.imageClassification.images.map((img) => (
-                    <div key={img.imageId} className={`flex items-center justify-between rounded border p-2 ${img.isPruned ? "opacity-60" : ""}`}>
-                      <span className={`text-sm ${img.isPruned ? "line-through" : ""}`}>{img.imageId}</span>
-                      {img.reason && <span className="text-xs text-muted-foreground">{img.reason}</span>}
-                      {img.isPruned && <Badge variant="outline" className="text-xs">Pruned</Badge>}
-                    </div>
-                  ))}
-                </div>
               </div>
             ) : null}
           </div>
@@ -397,24 +321,21 @@ function PageDetailPage() {
           </TabsContent>
 
           <TabsContent value="sections" className="mt-0 flex-1 overflow-auto p-4">
-            {isEditing && editedSectioning ? (
-              <SectionEditor
-                sections={editedSectioning.sections}
-                reasoning={editedSectioning.reasoning}
-                onChange={(sections) =>
-                  setEditedSectioning({ ...editedSectioning, sections })
-                }
+            {edit.effectiveSectioning ? (
+              <SectionList
+                sections={edit.effectiveSectioning.sections}
+                draftSectioning={edit.draftSectioning}
+                serverSectioning={page.sectioning}
+                onUpdate={edit.updateSectioning}
                 textGroups={
-                  (editedGroups ?? page.textClassification)?.groups.map((g) => ({
+                  edit.effectiveGroups?.groups.map((g) => ({
                     groupId: g.groupId,
                     groupType: g.groupType,
                   })) ?? []
                 }
-                images={
-                  (editedImages ?? page.imageClassification)?.images ?? []
-                }
+                images={edit.effectiveImages?.images ?? []}
               />
-            ) : page.rendering && page.sectioning ? (
+            ) : page.rendering ? (
               <div className="space-y-4">
                 {page.rendering.sections.map((section, i) => {
                   const sectionMeta = page.sectioning?.sections[i]
@@ -534,6 +455,37 @@ function PageDetailPage() {
           </div>
         </div>
       </div>
+
+      {/* Floating save bar */}
+      <FloatingSaveBar
+        changedEntities={edit.changedEntities}
+        isSaving={edit.isSaving}
+        hasApiKey={hasApiKey}
+        onSave={edit.save}
+        onSaveAndReRender={handleSaveAndReRender}
+        onDiscard={edit.discard}
+      />
+
+      {/* Unsaved changes confirmation dialog */}
+      <Dialog open={!!confirmNav} onOpenChange={(open) => !open && setConfirmNav(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Unsaved changes</DialogTitle>
+            <DialogDescription>
+              You have unsaved changes to {edit.changedEntities.join(", ").toLowerCase()}.
+              Navigating away will discard them.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setConfirmNav(null)}>
+              Stay on page
+            </Button>
+            <Button variant="destructive" onClick={confirmNavigation}>
+              Discard & navigate
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
