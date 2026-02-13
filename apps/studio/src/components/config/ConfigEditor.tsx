@@ -59,8 +59,8 @@ export function ConfigEditor({
   const [metadataModel, setMetadataModel] = useState("")
   const [textClassModel, setTextClassModel] = useState("")
   const [pageSectionModel, setPageSectionModel] = useState("")
-  const [webRenderModel, setWebRenderModel] = useState("")
-  const [maxRetries, setMaxRetries] = useState("")
+  const [editingLanguage, setEditingLanguage] = useState("")
+  const [defaultRenderStrategy, setDefaultRenderStrategy] = useState("")
 
   const [showRebuildDialog, setShowRebuildDialog] = useState(false)
   const [configDirty, setConfigDirty] = useState(false)
@@ -93,11 +93,8 @@ export function ConfigEditor({
     if (c.page_sectioning && typeof c.page_sectioning === "object" && "model" in c.page_sectioning) {
       setPageSectionModel(String((c.page_sectioning as Record<string, unknown>).model ?? ""))
     }
-    if (c.web_rendering && typeof c.web_rendering === "object") {
-      const wr = c.web_rendering as Record<string, unknown>
-      if (wr.model) setWebRenderModel(String(wr.model))
-      if (wr.max_retries != null) setMaxRetries(String(wr.max_retries))
-    }
+    if (c.editing_language) setEditingLanguage(String(c.editing_language))
+    if (c.default_render_strategy) setDefaultRenderStrategy(String(c.default_render_strategy))
   }, [bookConfigData])
 
   const getPlaceholder = (path: string): string => {
@@ -181,17 +178,19 @@ export function ConfigEditor({
     if (textClassModel.trim()) overrides.text_classification = { model: textClassModel.trim() }
     if (pageSectionModel.trim()) overrides.page_sectioning = { model: pageSectionModel.trim() }
 
-    const webRendering: Record<string, unknown> = {}
-    if (webRenderModel.trim()) webRendering.model = webRenderModel.trim()
-    if (maxRetries.trim()) webRendering.max_retries = Number(maxRetries)
-    if (Object.keys(webRendering).length > 0) overrides.web_rendering = webRendering
+    if (editingLanguage.trim()) overrides.editing_language = editingLanguage.trim()
+    if (defaultRenderStrategy.trim()) overrides.default_render_strategy = defaultRenderStrategy.trim()
 
     // Preserve existing content settings from book config
     if (bookConfigData?.config) {
       const bc = bookConfigData.config
-      if (bc.editing_language) overrides.editing_language = bc.editing_language
+      if (!editingLanguage.trim() && bc.editing_language) overrides.editing_language = bc.editing_language
       if (bc.output_languages) overrides.output_languages = bc.output_languages
       if (bc.book_format) overrides.book_format = bc.book_format
+      if (bc.render_strategies) overrides.render_strategies = bc.render_strategies
+      if (bc.section_render_strategies) overrides.section_render_strategies = bc.section_render_strategies
+      if (!defaultRenderStrategy.trim() && bc.default_render_strategy) overrides.default_render_strategy = bc.default_render_strategy
+      if (bc.translation) overrides.translation = bc.translation
     }
 
     return overrides
@@ -432,55 +431,68 @@ export function ConfigEditor({
                         className="text-xs"
                       />
                     </div>
-                    <div className="space-y-1">
-                      <Label className="text-xs">Web Rendering</Label>
-                      <Input
-                        value={webRenderModel}
-                        onChange={(e) => { setWebRenderModel(e.target.value); setConfigDirty(true) }}
-                        placeholder={getPlaceholder("web_rendering.model") || "openai:gpt-5.2"}
-                        className="text-xs"
-                      />
-                    </div>
                   </div>
                 </div>
 
                 {/* Rendering */}
                 <div>
                   <h4 className="mb-2 text-xs font-medium text-muted-foreground uppercase tracking-wider">Rendering</h4>
-                  <div className="space-y-1">
-                    <Label className="text-xs">Max Retries</Label>
-                    <Input
-                      type="number"
-                      min={0}
-                      value={maxRetries}
-                      onChange={(e) => { setMaxRetries(e.target.value); setConfigDirty(true) }}
-                      placeholder={getPlaceholder("web_rendering.max_retries") || "25"}
-                      className="w-24"
-                    />
+                  <div className="space-y-3">
+                    <div className="space-y-1">
+                      <Label className="text-xs">Default Render Strategy</Label>
+                      <Input
+                        value={defaultRenderStrategy}
+                        onChange={(e) => { setDefaultRenderStrategy(e.target.value); setConfigDirty(true) }}
+                        placeholder={getPlaceholder("default_render_strategy") || "two_column"}
+                        className="text-xs w-48"
+                      />
+                    </div>
+                    {activeConfigData?.merged && !!(activeConfigData.merged as Record<string, unknown>).render_strategies && typeof (activeConfigData.merged as Record<string, unknown>).render_strategies === "object" && (
+                      <div className="space-y-1">
+                        <Label className="text-xs">Available Strategies</Label>
+                        <div className="flex flex-wrap gap-1.5">
+                          {Object.entries((activeConfigData.merged as Record<string, unknown>).render_strategies as Record<string, unknown>).map(([name, strategy]) => {
+                            const renderType = strategy && typeof strategy === "object" && "type" in strategy ? String((strategy as Record<string, unknown>).type) : "unknown"
+                            return (
+                              <Badge key={name} variant="outline" className="text-xs">
+                                {name} <span className="ml-1 text-muted-foreground">[{renderType}]</span>
+                              </Badge>
+                            )
+                          })}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
 
-                {/* Content Settings (read-only) */}
-                {bookConfigData?.config && (
-                  !!bookConfigData.config.editing_language ||
-                  !!bookConfigData.config.output_languages ||
-                  !!bookConfigData.config.book_format
-                ) && (
-                  <div>
-                    <h4 className="mb-2 text-xs font-medium text-muted-foreground uppercase tracking-wider">Content Settings</h4>
-                    <div className="text-xs space-y-1 text-muted-foreground">
-                      {!!bookConfigData.config.editing_language && (
-                        <p>Editing Language: <span className="text-foreground">{String(bookConfigData.config.editing_language)}</span></p>
-                      )}
-                      {Array.isArray(bookConfigData.config.output_languages) && (
-                        <p>Output Languages: <span className="text-foreground">{(bookConfigData.config.output_languages as string[]).join(", ")}</span></p>
-                      )}
-                      {Array.isArray(bookConfigData.config.book_format) && (
-                        <p>Book Format: <span className="text-foreground">{(bookConfigData.config.book_format as string[]).join(", ")}</span></p>
-                      )}
+                {/* Language & Content */}
+                <div>
+                  <h4 className="mb-2 text-xs font-medium text-muted-foreground uppercase tracking-wider">Language & Content</h4>
+                  <div className="space-y-3">
+                    <div className="space-y-1">
+                      <Label className="text-xs">Editing Language</Label>
+                      <Input
+                        value={editingLanguage}
+                        onChange={(e) => { setEditingLanguage(e.target.value); setConfigDirty(true) }}
+                        placeholder={getPlaceholder("editing_language") || "English"}
+                        className="text-xs w-48"
+                      />
                     </div>
+                    {bookConfigData?.config && (
+                      !!bookConfigData.config.output_languages ||
+                      !!bookConfigData.config.book_format
+                    ) && (
+                      <div className="text-xs space-y-1 text-muted-foreground">
+                        {Array.isArray(bookConfigData.config.output_languages) && (
+                          <p>Output Languages: <span className="text-foreground">{(bookConfigData.config.output_languages as string[]).join(", ")}</span></p>
+                        )}
+                        {Array.isArray(bookConfigData.config.book_format) && (
+                          <p>Book Format: <span className="text-foreground">{(bookConfigData.config.book_format as string[]).join(", ")}</span></p>
+                        )}
+                      </div>
+                    )}
                   </div>
-                )}
+                </div>
 
                 {/* Save buttons */}
                 <div className="flex items-center gap-2 pt-2 border-t">
