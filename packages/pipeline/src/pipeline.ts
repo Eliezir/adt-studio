@@ -62,14 +62,15 @@ export async function runPipeline(
 
   try {
     // Step 1: Extract PDF
+    const config = loadBookConfig(label, booksRoot, configPath)
+
     const result = await extractPDF(
-      { pdfPath, startPage, endPage },
+      { pdfPath, startPage, endPage, spreadMode: config.spread_mode },
       storage,
       progress
     )
 
     // Step 2: Extract Metadata
-    const config = loadBookConfig(label, booksRoot, configPath)
     const metadataConfig = buildMetadataConfig(config)
     const cacheDir =
       options.cacheDir ?? path.join(booksRoot, label, ".cache")
