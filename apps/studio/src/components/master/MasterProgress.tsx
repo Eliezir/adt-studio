@@ -29,7 +29,7 @@ function getStepState(
   return "pending"
 }
 
-const MASTER_STEPS: StepName[] = ["text-catalog", "catalog-translation"]
+const MASTER_STEPS: StepName[] = ["text-catalog", "catalog-translation", "tts"]
 
 export function MasterProgress({
   progress,
@@ -55,7 +55,7 @@ export function MasterProgress({
             </CardTitle>
             <CardDescription className="mt-1">
               {!isRunning && !isComplete && !error &&
-                "Build text catalog and translate to output languages."}
+                "Build text catalog, translate, and generate speech for output languages."}
               {isRunning && "Master phase is running..."}
               {isComplete && "Master phase completed."}
               {error && !isRunning && `Master failed: ${error}`}

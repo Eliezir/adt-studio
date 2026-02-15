@@ -1,10 +1,69 @@
+import fs from "node:fs"
+import path from "node:path"
 import { Hono } from "hono"
 import { streamSSE } from "hono/streaming"
 import { HTTPException } from "hono/http-exception"
 import { z } from "zod"
+import { parseBookLabel } from "@adt/types"
+import { openBookDb } from "@adt/storage"
 import type { MasterService, MasterSSEEvent } from "../services/master-service.js"
 
 const MasterRunBody = z.object({}).strict()
+
+function requireMasterPrerequisites(label: string, booksDir: string): void {
+  const safeLabel = parseBookLabel(label)
+  const resolvedBooksDir = path.resolve(booksDir)
+  const bookDir = path.resolve(resolvedBooksDir, safeLabel)
+  if (
+    bookDir !== resolvedBooksDir &&
+    !bookDir.startsWith(resolvedBooksDir + path.sep)
+  ) {
+    throw new Error("Invalid book path")
+  }
+
+  const dbPath = path.join(bookDir, `${safeLabel}.db`)
+  if (!fs.existsSync(dbPath)) {
+    throw new HTTPException(404, {
+      message: `Book not found: ${safeLabel}`,
+    })
+  }
+
+  const db = openBookDb(dbPath)
+  try {
+    const storyboardRows = db.all(
+      "SELECT 1 FROM node_data WHERE node = ? AND item_id = ? LIMIT 1",
+      ["storyboard-acceptance", "book"]
+    ) as Array<Record<string, unknown>>
+    if (storyboardRows.length === 0) {
+      throw new HTTPException(409, {
+        message: "Storyboard must be accepted before running master.",
+      })
+    }
+
+    const proofRows = db.all(
+      "SELECT data FROM node_data WHERE node = ? AND item_id = ? ORDER BY version DESC LIMIT 1",
+      ["proof-status", "book"]
+    ) as Array<{ data: string }>
+    if (proofRows.length === 0) {
+      throw new HTTPException(409, {
+        message: "Proof must complete before running master.",
+      })
+    }
+    let proofData: { status?: string } | null = null
+    try {
+      proofData = JSON.parse(proofRows[0].data) as { status?: string }
+    } catch {
+      proofData = null
+    }
+    if (proofData?.status !== "completed") {
+      throw new HTTPException(409, {
+        message: "Proof must complete before running master.",
+      })
+    }
+  } finally {
+    db.close()
+  }
+}
 
 export function createMasterRoutes(
   service: MasterService,
@@ -23,6 +82,16 @@ export function createMasterRoutes(
       throw new HTTPException(400, {
         message: "API key required. Set X-OpenAI-Key header.",
       })
+    }
+
+    try {
+      requireMasterPrerequisites(label, booksDir)
+    } catch (err) {
+      if (err instanceof HTTPException) {
+        throw err
+      }
+      const message = err instanceof Error ? err.message : String(err)
+      throw new HTTPException(400, { message })
     }
 
     const existing = service.getStatus(label)

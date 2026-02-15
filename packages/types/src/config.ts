@@ -1,5 +1,6 @@
 import { z } from "zod"
 import { ImageFilters } from "./image-classification.js"
+import { SpeechConfig } from "./speech.js"
 
 export const RateLimitConfig = z.object({
   requests_per_minute: z.number().int().min(1),
@@ -80,6 +81,7 @@ export const AppConfig = z.object({
   image_captioning: StepConfig.optional(),
   layout_type: LayoutType.optional(),
   spread_mode: z.boolean().optional(),
+  speech: SpeechConfig.optional(),
 })
 export type AppConfig = z.infer<typeof AppConfig>
 

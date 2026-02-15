@@ -41,6 +41,7 @@ export interface BookSummary {
   needsRebuild: boolean
   rebuildReason: string | null
   storyboardAccepted: boolean
+  proofCompleted: boolean
 }
 
 export interface BookDetail extends BookSummary {

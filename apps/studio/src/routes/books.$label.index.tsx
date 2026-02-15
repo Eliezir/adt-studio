@@ -178,6 +178,11 @@ function BookDetailPage() {
   if (!book) return null
 
   const showPipelineRunning = progress.isRunning || progress.isComplete || progress.error
+  const canRunMaster =
+    book.storyboardAccepted &&
+    (book.proofCompleted ||
+      proofProgress.isComplete ||
+      proofStatus?.status === "completed")
 
   return (
     <div className="p-4 space-y-4">
@@ -344,13 +349,24 @@ function BookDetailPage() {
       )}
 
       {/* Master Phase — shown after storyboard is accepted */}
-      {book.storyboardAccepted && (
+      {canRunMaster && (
         <MasterProgress
           progress={masterProgress}
           onRun={handleRunMaster}
           isStarting={runMaster.isPending}
           hasApiKey={hasApiKey}
         />
+      )}
+
+      {book.storyboardAccepted && !canRunMaster && (
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base">Master Phase</CardTitle>
+            <CardDescription>
+              Complete the proof phase before running master.
+            </CardDescription>
+          </CardHeader>
+        </Card>
       )}
 
       {/* Quiz results — shown after proof generates quizzes */}

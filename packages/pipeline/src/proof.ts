@@ -119,48 +119,67 @@ export async function runProof(
         })
       : null
 
-    // Run all three steps in parallel
-    const [captionResult, glossaryResult, quizResult] =
-      await Promise.allSettled([
-        runImageCaptioning(
-          pages,
-          storage,
-          captionModel,
-          captionConfig,
-          language,
-          effectiveConcurrency,
-          progress
-        ),
-        runGlossary(
-          pages,
-          storage,
-          glossaryModel,
-          glossaryConfig,
-          progress
-        ),
-        runQuizGeneration(
-          pages,
-          storage,
-          quizModel,
-          quizConfig,
-          progress
-        ),
-      ])
+    storage.putNodeData("proof-status", "book", {
+      status: "running",
+      startedAt: new Date().toISOString(),
+    })
 
-    // Collect errors from all steps
-    const errors: string[] = []
-    if (captionResult.status === "rejected") {
-      errors.push(toErrorMessage(captionResult.reason))
-    }
-    if (glossaryResult.status === "rejected") {
-      errors.push(toErrorMessage(glossaryResult.reason))
-    }
-    if (quizResult.status === "rejected") {
-      errors.push(toErrorMessage(quizResult.reason))
-    }
+    try {
+      // Run all three steps in parallel
+      const [captionResult, glossaryResult, quizResult] =
+        await Promise.allSettled([
+          runImageCaptioning(
+            pages,
+            storage,
+            captionModel,
+            captionConfig,
+            language,
+            effectiveConcurrency,
+            progress
+          ),
+          runGlossary(
+            pages,
+            storage,
+            glossaryModel,
+            glossaryConfig,
+            progress
+          ),
+          runQuizGeneration(
+            pages,
+            storage,
+            quizModel,
+            quizConfig,
+            progress
+          ),
+        ])
 
-    if (errors.length > 0) {
-      throw new Error(errors.join("\n"))
+      // Collect errors from all steps
+      const errors: string[] = []
+      if (captionResult.status === "rejected") {
+        errors.push(toErrorMessage(captionResult.reason))
+      }
+      if (glossaryResult.status === "rejected") {
+        errors.push(toErrorMessage(glossaryResult.reason))
+      }
+      if (quizResult.status === "rejected") {
+        errors.push(toErrorMessage(quizResult.reason))
+      }
+
+      if (errors.length > 0) {
+        throw new Error(errors.join("\n"))
+      }
+
+      storage.putNodeData("proof-status", "book", {
+        status: "completed",
+        completedAt: new Date().toISOString(),
+      })
+    } catch (err) {
+      storage.putNodeData("proof-status", "book", {
+        status: "failed",
+        failedAt: new Date().toISOString(),
+        error: toErrorMessage(err),
+      })
+      throw err
     }
   } finally {
     storage.close()

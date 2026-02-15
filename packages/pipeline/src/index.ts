@@ -77,6 +77,18 @@ export {
 } from "./quiz-generation.js"
 export { buildTextCatalog } from "./text-catalog.js"
 export {
+  resolveVoice,
+  resolveInstructions,
+  isSpeakableText,
+  stripEmojis,
+  loadVoicesConfig,
+  loadSpeechInstructions,
+  generateSpeechFile,
+  type VoiceMaps,
+  type InstructionsMap,
+  type GenerateSpeechFileOptions,
+} from "./speech.js"
+export {
   translateCatalogBatch,
   buildCatalogTranslationConfig,
   getTargetLanguages,

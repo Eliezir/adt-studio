@@ -15,6 +15,7 @@ export type StepName =
   | "quiz-generation"
   | "text-catalog"
   | "catalog-translation"
+  | "tts"
 
 export interface StepProgress {
   step: StepName
