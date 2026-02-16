@@ -8,9 +8,11 @@ import {
   ChevronDown,
   ChevronRight,
   FileImage,
+  HelpCircle,
   PanelLeftOpen,
   PanelRightClose,
   PanelRightOpen,
+  XCircle,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -18,6 +20,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { usePage, usePageImage } from "@/hooks/use-pages"
 import { useReRenderPage } from "@/hooks/use-page-mutations"
 import { useInlinePageEdit } from "@/hooks/use-inline-page-edit"
+import { useQuizzes } from "@/hooks/use-quizzes"
+import { useTTS } from "@/hooks/use-tts"
 import { useApiKey } from "@/hooks/use-api-key"
 import { TextGroupList } from "@/components/page-edit/TextGroupList"
 import { ImageList } from "@/components/page-edit/ImageList"
@@ -27,6 +31,7 @@ import { RenderedHtml } from "@/components/storyboard/RenderedHtml"
 import { ActivityAnswerPanel } from "@/components/storyboard/ActivityAnswerPanel"
 import { OriginalPageColumn, OriginalPageSheet } from "./OriginalPagePanel"
 import { isActivitySection, formatSectionType } from "@/lib/activity-utils"
+import type { QuizItem } from "@/api/client"
 
 export interface PageEditPanelHandle {
   hasChanges: boolean
@@ -108,6 +113,83 @@ function ImageCaptionList({
   )
 }
 
+function QuizCard({ quiz }: { quiz: QuizItem }) {
+  const [expanded, setExpanded] = useState(false)
+
+  return (
+    <div className="rounded-lg border">
+      <button
+        type="button"
+        onClick={() => setExpanded((v) => !v)}
+        className="flex w-full items-start gap-2.5 p-3 text-left cursor-pointer"
+      >
+        <HelpCircle className="mt-0.5 h-3.5 w-3.5 text-primary shrink-0" />
+        <div className="flex-1 min-w-0">
+          <p className="text-xs font-medium">{quiz.question}</p>
+        </div>
+        {expanded ? (
+          <ChevronDown className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+        ) : (
+          <ChevronRight className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+        )}
+      </button>
+      {expanded && (
+        <div className="border-t px-3 pb-3 pt-2 space-y-1.5">
+          {quiz.options.map((option, i) => {
+            const isCorrect = i === quiz.answerIndex
+            return (
+              <div
+                key={i}
+                className={`flex items-start gap-2 rounded-md p-2 text-xs ${
+                  isCorrect
+                    ? "bg-green-50 border border-green-200"
+                    : "bg-red-50/50 border border-red-100"
+                }`}
+              >
+                {isCorrect ? (
+                  <CheckCircle2 className="mt-0.5 h-3 w-3 text-green-600 shrink-0" />
+                ) : (
+                  <XCircle className="mt-0.5 h-3 w-3 text-red-400 shrink-0" />
+                )}
+                <div className="min-w-0">
+                  <p className={isCorrect ? "font-medium" : ""}>{option.text}</p>
+                  {option.explanation && (
+                    <p className="mt-0.5 text-muted-foreground">{option.explanation}</p>
+                  )}
+                </div>
+              </div>
+            )
+          })}
+          {quiz.reasoning && (
+            <p className="mt-1.5 text-xs text-muted-foreground italic">{quiz.reasoning}</p>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function PageQuizList({ quizzes }: { quizzes: QuizItem[] }) {
+  if (quizzes.length === 0) {
+    return (
+      <div className="flex h-full items-center justify-center rounded border bg-muted/50 text-sm text-muted-foreground">
+        <div className="flex flex-col items-center gap-2">
+          <HelpCircle className="h-6 w-6" />
+          No quizzes for this page yet.
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="space-y-3">
+      {quizzes.map((quiz) => (
+        <QuizCard key={quiz.quizIndex} quiz={quiz} />
+      ))}
+    </div>
+  )
+}
+
 export const PageEditPanel = forwardRef<PageEditPanelHandle, PageEditPanelProps>(
   function PageEditPanel(
     { label, pageId, pageNumber, showOriginalImage, onToggleOriginalImage, sidebarVisible, onExpandSidebar },
@@ -117,6 +199,13 @@ export const PageEditPanel = forwardRef<PageEditPanelHandle, PageEditPanelProps>
     const { apiKey, hasApiKey } = useApiKey()
     const reRender = useReRenderPage(label, pageId)
     const edit = useInlinePageEdit(label, pageId, page)
+
+    const { audioMap } = useTTS(label)
+    const { data: quizData } = useQuizzes(label)
+    const pageQuizzes = useMemo(() => {
+      const all = quizData?.quizzes?.quizzes ?? []
+      return all.filter((q) => q.pageIds.includes(pageId))
+    }, [quizData, pageId])
 
     const [expandedAnswers, setExpandedAnswers] = useState<Set<number>>(new Set())
     const [inputsExpanded, setInputsExpanded] = useState(true)
@@ -248,6 +337,7 @@ export const PageEditPanel = forwardRef<PageEditPanelHandle, PageEditPanelProps>
                       draftGroups={edit.draftGroups}
                       serverGroups={page.textClassification}
                       onUpdate={edit.updateGroups}
+                      audioMap={audioMap}
                     />
                   </div>
                 ) : page.textClassification ? (
@@ -336,6 +426,11 @@ export const PageEditPanel = forwardRef<PageEditPanelHandle, PageEditPanelProps>
                   <TabsTrigger value="sections" className="px-2.5 py-1 text-xs">
                     By Section{page.rendering ? ` (${page.rendering.sections.length})` : ""}
                   </TabsTrigger>
+                  {pageQuizzes.length > 0 && (
+                    <TabsTrigger value="quizzes" className="px-2.5 py-1 text-xs">
+                      Quizzes ({pageQuizzes.length})
+                    </TabsTrigger>
+                  )}
                 </TabsList>
                 <div className="ml-auto flex items-center gap-1.5">
                   <Button
@@ -517,6 +612,10 @@ export const PageEditPanel = forwardRef<PageEditPanelHandle, PageEditPanelProps>
                     </div>
                   </div>
                 )}
+              </TabsContent>
+
+              <TabsContent value="quizzes" className="mt-0 flex-1 overflow-auto p-4">
+                <PageQuizList quizzes={pageQuizzes} />
               </TabsContent>
           </Tabs>
 
