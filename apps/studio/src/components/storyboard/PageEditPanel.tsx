@@ -1,8 +1,5 @@
 import { useState, useCallback, useMemo, useImperativeHandle, forwardRef } from "react"
 import {
-  FileText,
-  Image,
-  Layers,
   Loader2,
   AlertCircle,
   CheckCircle2,
@@ -10,7 +7,6 @@ import {
   RefreshCw,
   ChevronDown,
   ChevronRight,
-  MessageSquare,
   FileImage,
   PanelLeftOpen,
   PanelRightClose,
@@ -68,25 +64,24 @@ function ImageCaptionList({
   }
 
   return (
-    <div className="mt-6">
-      <h3 className="mb-3 flex items-center gap-2 text-sm font-medium">
-        <MessageSquare className="h-4 w-4" />
+    <div className="mt-4">
+      <h3 className="mb-2 flex items-center gap-2 text-xs font-medium text-muted-foreground">
         Image Captions ({captions.length})
       </h3>
       <div className="space-y-3">
         {captions.map((cap) => (
-          <div key={cap.imageId} className="rounded border p-3">
-            <div className="flex items-start gap-3">
+          <div key={cap.imageId} className="rounded border p-2.5">
+            <div className="flex items-start gap-2.5">
               <img
                 src={`/api/books/${bookLabel}/images/${cap.imageId}`}
                 alt={cap.caption}
-                className="h-16 w-16 shrink-0 rounded border object-cover"
+                className="h-12 w-12 shrink-0 rounded border object-cover"
                 onError={(e) => {
                   ;(e.target as HTMLImageElement).style.display = "none"
                 }}
               />
               <div className="min-w-0 flex-1">
-                <p className="text-sm">{cap.caption}</p>
+                <p className="text-xs">{cap.caption}</p>
                 <button
                   type="button"
                   className="mt-1.5 flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
@@ -217,8 +212,8 @@ export const PageEditPanel = forwardRef<PageEditPanelHandle, PageEditPanelProps>
         <div className="flex min-h-0 flex-1">
           {/* Inputs column — collapsible */}
           {inputsExpanded && (
-            <div className="flex w-[280px] shrink-0 flex-col overflow-hidden border-r">
-              <div className="flex h-9 shrink-0 items-center gap-2 border-b bg-muted/50 px-4">
+            <div className="flex w-[360px] shrink-0 flex-col overflow-hidden border-r">
+              <div className="flex h-9 shrink-0 items-center gap-2 border-b bg-muted/30 px-3">
                 {!sidebarVisible && (
                   <Button
                     variant="ghost"
@@ -230,8 +225,7 @@ export const PageEditPanel = forwardRef<PageEditPanelHandle, PageEditPanelProps>
                     <PanelLeftOpen className="h-4 w-4" />
                   </Button>
                 )}
-                <FileText className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm font-medium">Inputs</span>
+                <span className="text-xs font-medium text-muted-foreground">Inputs</span>
                 <Button
                   variant="ghost"
                   size="sm"
@@ -242,12 +236,11 @@ export const PageEditPanel = forwardRef<PageEditPanelHandle, PageEditPanelProps>
                   <PanelRightOpen className="h-4 w-4" />
                 </Button>
               </div>
-              <div className="flex-1 overflow-auto p-4">
+              <div className="flex-1 overflow-auto p-3">
                 {/* Text classification */}
                 {edit.effectiveGroups ? (
-                  <div className="mb-6">
-                    <h3 className="mb-2 flex items-center gap-2 text-sm font-medium">
-                      <FileText className="h-3 w-3" />
+                  <div className="mb-4">
+                    <h3 className="mb-2 flex items-center gap-2 text-xs font-medium text-muted-foreground">
                       Text Groups ({edit.effectiveGroups.groups.length})
                     </h3>
                     <TextGroupList
@@ -258,30 +251,25 @@ export const PageEditPanel = forwardRef<PageEditPanelHandle, PageEditPanelProps>
                     />
                   </div>
                 ) : page.textClassification ? (
-                  <div className="mb-6">
-                    <h3 className="mb-2 flex items-center gap-2 text-sm font-medium">
-                      <FileText className="h-3 w-3" />
+                  <div className="mb-4">
+                    <h3 className="mb-2 flex items-center gap-2 text-xs font-medium text-muted-foreground">
                       Text Groups ({page.textClassification.groups.length})
                     </h3>
-                    <div className="space-y-3">
+                    <div className="space-y-2">
                       {page.textClassification.groups.map((group) => (
-                        <div key={group.groupId} className="group/card rounded border p-3">
+                        <div key={group.groupId} className="group/card rounded border p-2.5">
                           <div className="mb-1 flex items-center gap-2">
-                            <span className="text-xs text-muted-foreground/70">{group.groupType}</span>
-                            <span className="text-xs text-muted-foreground/40 opacity-0 transition-opacity group-hover/card:opacity-100">
-                              {group.groupId}
-                            </span>
+                            <Badge variant="secondary" className="text-xs">{group.groupType}</Badge>
+                            <span className="text-xs text-muted-foreground">{group.groupId}</span>
                           </div>
-                          <div className="space-y-1">
+                          <div className="space-y-0.5">
                             {group.texts.map((t, i) => (
                               <div
                                 key={i}
-                                className={`group/text flex items-baseline gap-1 text-sm ${t.isPruned ? "text-muted-foreground line-through" : ""}`}
+                                className={`text-xs ${t.isPruned ? "text-muted-foreground line-through" : ""}`}
                               >
-                                <span className="flex-1">{t.text}</span>
-                                <span className="shrink-0 text-xs text-muted-foreground/40 opacity-0 transition-opacity group-hover/text:opacity-100">
-                                  {t.textType}
-                                </span>
+                                <span className="mr-1 text-muted-foreground">[{t.textType}]</span>
+                                {t.text}
                               </div>
                             ))}
                           </div>
@@ -290,7 +278,7 @@ export const PageEditPanel = forwardRef<PageEditPanelHandle, PageEditPanelProps>
                     </div>
                   </div>
                 ) : (
-                  <p className="mb-6 text-sm text-muted-foreground">
+                  <p className="mb-4 text-xs text-muted-foreground">
                     No text classification data. Run the pipeline first.
                   </p>
                 )}
@@ -298,8 +286,7 @@ export const PageEditPanel = forwardRef<PageEditPanelHandle, PageEditPanelProps>
                 {/* Image classification */}
                 {edit.effectiveImages && edit.effectiveImages.images.length > 0 ? (
                   <div>
-                    <h3 className="mb-2 flex items-center gap-2 text-sm font-medium">
-                      <Image className="h-3 w-3" />
+                    <h3 className="mb-2 flex items-center gap-2 text-xs font-medium text-muted-foreground">
                       Images ({edit.effectiveImages.images.length})
                     </h3>
                     <ImageList
@@ -315,7 +302,7 @@ export const PageEditPanel = forwardRef<PageEditPanelHandle, PageEditPanelProps>
 
           {/* Output column — fills remaining space */}
           <Tabs defaultValue="preview" className="flex min-w-0 flex-1 flex-col overflow-hidden">
-            <div className="flex h-9 shrink-0 items-center gap-2 border-b bg-muted/50 px-4">
+            <div className="flex h-9 shrink-0 items-center gap-2 border-b bg-muted/30 px-3">
                 {!inputsExpanded && (
                   <>
                     {!sidebarVisible && (
@@ -340,8 +327,7 @@ export const PageEditPanel = forwardRef<PageEditPanelHandle, PageEditPanelProps>
                     </Button>
                   </>
                 )}
-                <Layers className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm font-medium">Output</span>
+                <span className="text-xs font-medium text-muted-foreground">Output</span>
                 {reRender.isPending && <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />}
                 <TabsList className="h-7">
                   <TabsTrigger value="preview" className="px-2.5 py-1 text-xs">

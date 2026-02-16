@@ -65,13 +65,13 @@ export function TextGroupCard({
         <Badge variant="secondary" className="text-xs">{group.groupType}</Badge>
         <span className="text-xs text-muted-foreground">{group.groupId}</span>
       </div>
-      <div className="space-y-1">
+      <div className="space-y-0.5">
         {group.texts.map((t, i) => (
           <div
             key={i}
-            className={`text-sm ${t.isPruned ? "text-muted-foreground line-through" : ""}`}
+            className={`text-xs ${t.isPruned ? "text-muted-foreground line-through" : ""}`}
           >
-            <span className="mr-1 text-xs text-muted-foreground">[{t.textType}]</span>
+            <span className="mr-1 text-muted-foreground">[{t.textType}]</span>
             {t.text}
           </div>
         ))}
@@ -124,7 +124,7 @@ export function TextGroupCard({
             <Textarea
               value={t.text}
               onChange={(e) => updateText(ti, "text", e.target.value)}
-              className={`min-h-[60px] text-sm ${t.isPruned ? "line-through" : ""}`}
+              className={`min-h-[60px] text-xs ${t.isPruned ? "line-through" : ""}`}
             />
           </div>
         ))}

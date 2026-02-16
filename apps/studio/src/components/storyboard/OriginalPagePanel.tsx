@@ -1,4 +1,4 @@
-import { ImageOff, Image } from "lucide-react"
+import { ImageOff } from "lucide-react"
 import { usePageImage } from "@/hooks/use-pages"
 import {
   Sheet,
@@ -24,9 +24,8 @@ export function OriginalPageColumn({
 
   return (
     <div className="flex flex-col overflow-hidden border-l">
-      <div className="flex h-9 shrink-0 items-center gap-2 border-b bg-muted/50 px-4">
-        <Image className="h-4 w-4 text-muted-foreground" />
-        <span className="text-sm font-medium">Original Page</span>
+      <div className="flex h-9 shrink-0 items-center gap-2 border-b bg-muted/30 px-3">
+        <span className="text-xs font-medium text-muted-foreground">Original Page</span>
       </div>
       <div className="flex flex-1 items-start justify-center overflow-auto p-4">
         {imageData ? (
