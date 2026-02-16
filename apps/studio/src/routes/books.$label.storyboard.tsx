@@ -351,20 +351,9 @@ function StoryboardPage() {
         {/* Sidebar — fully collapsible */}
         {sidebarExpanded && (
           <div className="flex w-[272px] shrink-0 flex-col border-r">
-            {/* Sidebar header with progress + collapse */}
-            <div className="flex shrink-0 items-center gap-2 border-b bg-muted/30 px-3 py-2">
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between text-xs text-muted-foreground mb-1">
-                  <span>{renderedCount}/{totalCount}</span>
-                  <span>{totalCount > 0 ? Math.round((renderedCount / totalCount) * 100) : 0}%</span>
-                </div>
-                <div className="h-1 w-full rounded-full bg-muted">
-                  <div
-                    className="h-1 rounded-full bg-green-600 transition-all"
-                    style={{ width: totalCount > 0 ? `${(renderedCount / totalCount) * 100}%` : "0%" }}
-                  />
-                </div>
-              </div>
+            {/* Sidebar header */}
+            <div className="flex h-9 shrink-0 items-center justify-between border-b bg-muted/30 px-3">
+              <span className="text-xs font-medium text-muted-foreground">Pages</span>
               <Button
                 variant="ghost"
                 size="sm"

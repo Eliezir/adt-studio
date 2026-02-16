@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo, useImperativeHandle, forwardRef } from "react"
+import { useState, useCallback, useMemo, useImperativeHandle, forwardRef, useRef } from "react"
 import {
   FileText,
   Image,
@@ -13,6 +13,7 @@ import {
   MessageSquare,
   FileImage,
   PanelLeftOpen,
+  GripVertical,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -122,6 +123,36 @@ export const PageEditPanel = forwardRef<PageEditPanelHandle, PageEditPanelProps>
     const edit = useInlinePageEdit(label, pageId, page)
 
     const [expandedAnswers, setExpandedAnswers] = useState<Set<number>>(new Set())
+    const [inputWidth, setInputWidth] = useState(280)
+    const containerRef = useRef<HTMLDivElement>(null)
+
+    const handleResizeStart = useCallback(
+      (e: React.MouseEvent) => {
+        e.preventDefault()
+        const startX = e.clientX
+        const startWidth = inputWidth
+
+        const onMouseMove = (moveEvent: MouseEvent) => {
+          const newWidth = Math.max(180, Math.min(600, startWidth + (moveEvent.clientX - startX)))
+          // Don't let input column exceed 50% of the container
+          const containerWidth = containerRef.current?.offsetWidth ?? 1200
+          setInputWidth(Math.min(newWidth, containerWidth * 0.5))
+        }
+
+        const onMouseUp = () => {
+          document.removeEventListener("mousemove", onMouseMove)
+          document.removeEventListener("mouseup", onMouseUp)
+          document.body.style.cursor = ""
+          document.body.style.userSelect = ""
+        }
+
+        document.body.style.cursor = "col-resize"
+        document.body.style.userSelect = "none"
+        document.addEventListener("mousemove", onMouseMove)
+        document.addEventListener("mouseup", onMouseUp)
+      },
+      [inputWidth]
+    )
 
     useImperativeHandle(
       ref,
@@ -211,26 +242,24 @@ export const PageEditPanel = forwardRef<PageEditPanelHandle, PageEditPanelProps>
         )}
 
         {/* Two/three-column layout: Inputs | Output | (Original) */}
-        <div className="flex min-h-0 flex-1">
-          {/* Inputs + Output grid */}
-          <div className="grid min-h-0 flex-1 grid-cols-[1fr_3fr] gap-0 divide-x">
-            {/* Left: Inputs */}
-            <div className="flex flex-col overflow-hidden">
-              <div className="flex shrink-0 items-center gap-2 border-b bg-muted/50 px-4 py-1.5">
-                {!sidebarVisible && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-7 w-7 p-0 -ml-1"
-                    onClick={onExpandSidebar}
-                    title="Show page list"
-                  >
-                    <PanelLeftOpen className="h-4 w-4" />
-                  </Button>
-                )}
-                <FileText className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm font-medium">Inputs</span>
-              </div>
+        <div ref={containerRef} className="flex min-h-0 flex-1">
+          {/* Inputs column — resizable */}
+          <div className="flex shrink-0 flex-col overflow-hidden" style={{ width: inputWidth }}>
+            <div className="flex h-9 shrink-0 items-center gap-2 border-b bg-muted/50 px-4">
+              {!sidebarVisible && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 w-7 p-0 -ml-1"
+                  onClick={onExpandSidebar}
+                  title="Show page list"
+                >
+                  <PanelLeftOpen className="h-4 w-4" />
+                </Button>
+              )}
+              <FileText className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm font-medium">Inputs</span>
+            </div>
               <div className="flex-1 overflow-auto p-4">
                 {/* Text classification */}
                 {edit.effectiveGroups ? (
@@ -301,9 +330,17 @@ export const PageEditPanel = forwardRef<PageEditPanelHandle, PageEditPanelProps>
               </div>
             </div>
 
-            {/* Right: Output — tabs for Preview vs By Section */}
-            <Tabs defaultValue="preview" className="flex flex-col overflow-hidden">
-              <div className="flex shrink-0 items-center gap-2 border-b bg-muted/50 px-4 py-1.5">
+          {/* Resize handle */}
+          <div
+            className="group flex w-1.5 shrink-0 cursor-col-resize items-center justify-center border-x bg-transparent hover:bg-muted/50 active:bg-muted"
+            onMouseDown={handleResizeStart}
+          >
+            <GripVertical className="h-4 w-4 text-muted-foreground/40 group-hover:text-muted-foreground" />
+          </div>
+
+          {/* Output column — fills remaining space */}
+          <Tabs defaultValue="preview" className="flex min-w-0 flex-1 flex-col overflow-hidden">
+            <div className="flex h-9 shrink-0 items-center gap-2 border-b bg-muted/50 px-4">
                 <Layers className="h-4 w-4 text-muted-foreground" />
                 <span className="text-sm font-medium">Output</span>
                 {reRender.isPending && <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />}
@@ -354,7 +391,7 @@ export const PageEditPanel = forwardRef<PageEditPanelHandle, PageEditPanelProps>
 
               <TabsContent value="preview" className="mt-0 flex-1 overflow-auto p-4">
                 {reRender.isPending ? (
-                  <div className="flex aspect-[3/4] items-center justify-center rounded border bg-muted/50 text-sm text-muted-foreground">
+                  <div className="flex h-full items-center justify-center rounded border bg-muted/50 text-sm text-muted-foreground">
                     <div className="flex flex-col items-center gap-2">
                       <Loader2 className="h-6 w-6 animate-spin" />
                       Re-rendering page...
@@ -366,7 +403,7 @@ export const PageEditPanel = forwardRef<PageEditPanelHandle, PageEditPanelProps>
                     className="prose prose-sm max-w-none rounded border bg-white p-4 font-sans"
                   />
                 ) : (
-                  <div className="flex aspect-[3/4] items-center justify-center rounded border bg-muted/50 text-sm text-muted-foreground">
+                  <div className="flex h-full items-center justify-center rounded border bg-muted/50 text-sm text-muted-foreground">
                     <div className="flex flex-col items-center gap-2">
                       <ImageOff className="h-6 w-6" />
                       Not yet rendered. Run the pipeline first.
@@ -488,7 +525,7 @@ export const PageEditPanel = forwardRef<PageEditPanelHandle, PageEditPanelProps>
                     })}
                   </div>
                 ) : (
-                  <div className="flex aspect-[3/4] items-center justify-center rounded border bg-muted/50 text-sm text-muted-foreground">
+                  <div className="flex h-full items-center justify-center rounded border bg-muted/50 text-sm text-muted-foreground">
                     <div className="flex flex-col items-center gap-2">
                       <ImageOff className="h-6 w-6" />
                       No sections. Run the pipeline first.
@@ -496,8 +533,7 @@ export const PageEditPanel = forwardRef<PageEditPanelHandle, PageEditPanelProps>
                   </div>
                 )}
               </TabsContent>
-            </Tabs>
-          </div>
+          </Tabs>
 
           {/* Original page image — column on xl+, sheet on smaller */}
           {showOriginalImage && (

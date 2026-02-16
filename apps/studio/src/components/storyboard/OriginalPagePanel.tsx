@@ -24,7 +24,7 @@ export function OriginalPageColumn({
 
   return (
     <div className="flex flex-col overflow-hidden border-l">
-      <div className="flex shrink-0 items-center gap-2 border-b bg-muted/50 px-4 py-2">
+      <div className="flex h-9 shrink-0 items-center gap-2 border-b bg-muted/50 px-4">
         <Image className="h-4 w-4 text-muted-foreground" />
         <span className="text-sm font-medium">Original Page</span>
       </div>
