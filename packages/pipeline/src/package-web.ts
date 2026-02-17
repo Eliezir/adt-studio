@@ -371,7 +371,7 @@ export async function packageAdtWeb(
 // HTML generation
 // ---------------------------------------------------------------------------
 
-interface RenderPageOptions {
+export interface RenderPageOptions {
   content: string
   language: string
   sectionId: string
@@ -382,7 +382,7 @@ interface RenderPageOptions {
   bundleVersion: string
 }
 
-function renderPageHtml(opts: RenderPageOptions): string {
+export function renderPageHtml(opts: RenderPageOptions): string {
   const mathScript = opts.hasMath
     ? `    <script src="./assets/libs/mathjax/es5/tex-mml-chtml.js"></script>\n`
     : ""
@@ -626,7 +626,7 @@ function rewriteImageUrls(
 // Section helpers
 // ---------------------------------------------------------------------------
 
-function combineSections(rendering: WebRenderingOutput): {
+export function combineSections(rendering: WebRenderingOutput): {
   html: string
   activityAnswers?: Record<string, string | boolean | number>
 } {
@@ -648,7 +648,7 @@ function combineSections(rendering: WebRenderingOutput): {
 // Glossary helpers
 // ---------------------------------------------------------------------------
 
-function buildGlossaryJson(
+export function buildGlossaryJson(
   glossary: GlossaryOutput | undefined,
   catalog: TextCatalogOutput | undefined,
   textsMap: Record<string, string>,
@@ -750,6 +750,70 @@ async function buildTailwindCss(
   fs.writeFileSync(outputPath, result.css)
 }
 
+/**
+ * Build Tailwind CSS for preview and return the CSS string.
+ * Scans the given content HTML plus all web asset files for used classes.
+ */
+export async function buildPreviewTailwindCss(
+  contentHtml: string,
+  webAssetsDir: string,
+): Promise<string> {
+  const postcss = (await import("postcss")).default
+  const tailwindcss = (await import("tailwindcss")).default
+
+  const inputCssPath = path.join(webAssetsDir, "tailwind_css.css")
+  const inputCss = fs.existsSync(inputCssPath)
+    ? fs.readFileSync(inputCssPath, "utf-8")
+    : "@tailwind base;\n@tailwind components;\n@tailwind utilities;"
+
+  // Also scan the ADT bundle assets for Tailwind classes used by the interface
+  const contentSources: Array<{ raw: string; extension: string }> = [
+    { raw: contentHtml, extension: "html" },
+  ]
+  for (const file of ["interface.html", "base.bundle.min.js"]) {
+    const filePath = path.join(webAssetsDir, file)
+    if (fs.existsSync(filePath)) {
+      contentSources.push({
+        raw: fs.readFileSync(filePath, "utf-8"),
+        extension: path.extname(file).slice(1),
+      })
+    }
+  }
+
+  const tailwindConfig = {
+    content: contentSources,
+    theme: {
+      extend: {
+        keyframes: {
+          tutorialPopIn: {
+            "0%": { opacity: "0", transform: "scale(0.9)" },
+            "100%": { opacity: "1", transform: "scale(1)" },
+          },
+          pulseBorder: {
+            "0%": { boxShadow: "0 0 0 0 rgba(49,130,206,0.7)" },
+            "70%": { boxShadow: "0 0 0 10px rgba(49,130,206,0)" },
+            "100%": { boxShadow: "0 0 0 0 rgba(49,130,206,0)" },
+          },
+        },
+        animation: {
+          tutorialPopIn: "tutorialPopIn 0.3s ease-out forwards",
+          pulseBorder: "pulseBorder 2s infinite",
+        },
+        boxShadow: {
+          tutorial: "0 0 0 4px rgba(49,130,206,0.3)",
+        },
+      },
+    },
+    plugins: [],
+  }
+
+  const result = await postcss([tailwindcss(tailwindConfig)]).process(inputCss, {
+    from: undefined,
+  })
+
+  return result.css
+}
+
 // ---------------------------------------------------------------------------
 // File utilities
 // ---------------------------------------------------------------------------
@@ -826,7 +890,7 @@ function escapeAttr(s: string): string {
 // Static HTML: Navigation component
 // ---------------------------------------------------------------------------
 
-const NAV_HTML = `<nav aria-label="Content Index Menu" aria-labelledby="navPopupTitle" aria-hidden="true" inert class="fixed w-64 sm:w-80 bg-white shadow-lg p-5 border-r border-gray-300 transform -translate-x-full transition-transform duration-300 ease-in-out z-20 hidden rounded-lg top-2 left-0 bottom-2 h-[calc(100vh-5rem)] flex flex-col" id="navPopup" role="navigation">
+export const NAV_HTML = `<nav aria-label="Content Index Menu" aria-labelledby="navPopupTitle" aria-hidden="true" inert class="fixed w-64 sm:w-80 bg-white shadow-lg p-5 border-r border-gray-300 transform -translate-x-full transition-transform duration-300 ease-in-out z-20 hidden rounded-lg top-2 left-0 bottom-2 h-[calc(100vh-5rem)] flex flex-col" id="navPopup" role="navigation">
     <div class="nav__toggle flex flex-col gap-4 mb-4">
         <div class="flex justify-between items-center">
             <h3 class="text-xl font-semibold" data-id="toc-title" id="navPopupTitle">Contents</h3>
