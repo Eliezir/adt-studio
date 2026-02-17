@@ -12,28 +12,29 @@ function V2Layout() {
   const { step } = useParams({ strict: false }) as { step?: string }
   const { data: book } = useBook(label)
 
-  const activeStep = step ?? "extract"
+  const activeStep = step ?? "book"
 
   return (
     <div className="flex flex-1 min-h-0">
-      {/* Left sidebar */}
-      <div className="w-[220px] shrink-0 bg-muted/20 flex flex-col">
-        {/* Book header */}
-        <div className="shrink-0 h-10 px-4 flex items-center gap-2.5 bg-gray-700 text-white border-r border-gray-700">
+      {/* Left sidebar — spacer reserves layout width, inner panel expands on hover */}
+      <div className="w-14 lg:w-[220px] shrink-0 relative">
+        <div className="group/sidebar absolute inset-y-0 left-0 w-14 hover:w-[220px] lg:w-full bg-background flex flex-col z-30 overflow-hidden transition-[width] duration-150 hover:shadow-lg lg:hover:shadow-none">
+          {/* App header */}
           <Link
             to="/"
-            className="flex items-center justify-center w-6 h-6 rounded text-white/60 hover:text-white transition-colors"
+            className="shrink-0 h-10 px-2 group-hover/sidebar:px-4 lg:px-4 flex items-center justify-center group-hover/sidebar:justify-start lg:justify-start gap-0 group-hover/sidebar:gap-2.5 lg:gap-2.5 bg-gray-700 text-white border-r border-gray-700 hover:bg-gray-600 transition-colors"
+            title="Back to books"
           >
-            <Home className="w-4 h-4" />
+            <Home className="w-4 h-4 shrink-0" />
+            <span className="text-sm font-semibold truncate hidden group-hover/sidebar:block lg:block">
+              ADT Studio
+            </span>
           </Link>
-          <h2 className="text-sm font-semibold truncate">
-            {book?.title ?? book?.label ?? label}
-          </h2>
-        </div>
 
-        {/* Steps */}
-        <div className="flex-1 overflow-y-auto border-r border-gray-300">
-          <StepSidebar bookLabel={label} activeStep={activeStep} />
+          {/* Steps */}
+          <div className="flex-1 overflow-y-auto border-r border-gray-300">
+            <StepSidebar bookLabel={label} activeStep={activeStep} />
+          </div>
         </div>
       </div>
 

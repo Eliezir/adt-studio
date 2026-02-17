@@ -1,5 +1,6 @@
 import { useEffect } from "react"
-import { AlignLeft, ArrowLeft, ArrowRight, Image, Loader2 } from "lucide-react"
+import { AlignLeft, ArrowLeft, ArrowRight, BookOpen, Building2, FileText, Globe, Image, Loader2, User } from "lucide-react"
+import { useBook } from "@/hooks/use-books"
 import { usePages, usePageImage } from "@/hooks/use-pages"
 import { ExtractPageDetail } from "./ExtractPageDetail"
 import { useStepHeader } from "../StepViewRouter"
@@ -65,6 +66,70 @@ function PageCard({
         </p>
       </div>
     </button>
+  )
+}
+
+function BookBanner({ bookLabel, pages }: { bookLabel: string; pages: PageSummaryItem[] | undefined }) {
+  const { data: book } = useBook(bookLabel)
+  const coverPageNumber = book?.metadata?.cover_page_number ?? 1
+  const coverPage = pages?.find((p) => p.pageNumber === coverPageNumber)
+  const { data: coverImage } = usePageImage(bookLabel, coverPage?.pageId ?? "")
+
+  if (!book) return null
+
+  const title = book.title ?? book.metadata?.title ?? bookLabel
+  const authors = book.metadata?.authors?.join(", ")
+  const publisher = book.publisher ?? book.metadata?.publisher
+  const language = book.languageCode ?? book.metadata?.language_code
+
+  return (
+    <div className="flex gap-5 items-start p-4 pb-0">
+      {/* Cover thumbnail */}
+      <div className="shrink-0 w-24 rounded-md overflow-hidden shadow-sm bg-muted">
+        {coverImage ? (
+          <img
+            src={`data:image/png;base64,${coverImage.imageBase64}`}
+            alt={`Cover of ${title}`}
+            className="w-full h-auto block"
+          />
+        ) : (
+          <div className="w-full aspect-[3/4] flex items-center justify-center text-muted-foreground">
+            <BookOpen className="w-8 h-8" />
+          </div>
+        )}
+      </div>
+
+      {/* Metadata */}
+      <div className="flex-1 min-w-0 space-y-2">
+        <h3 className="text-lg font-semibold tracking-tight truncate">{title}</h3>
+        <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
+          {authors && (
+            <span className="flex items-center gap-1">
+              <User className="w-3 h-3" />
+              {authors}
+            </span>
+          )}
+          {publisher && (
+            <span className="flex items-center gap-1">
+              <Building2 className="w-3 h-3" />
+              {publisher}
+            </span>
+          )}
+          {language && (
+            <span className="flex items-center gap-1">
+              <Globe className="w-3 h-3" />
+              {language}
+            </span>
+          )}
+          {book.pageCount > 0 && (
+            <span className="flex items-center gap-1">
+              <FileText className="w-3 h-3" />
+              {book.pageCount} pages
+            </span>
+          )}
+        </div>
+      </div>
+    </div>
   )
 }
 
@@ -160,7 +225,9 @@ export function ExtractView({ bookLabel, selectedPageId: selectedPageIdProp, onS
 
   // Page grid view
   return (
-    <div className="p-4">
+    <div>
+      <BookBanner bookLabel={bookLabel} pages={pages} />
+      <div className="p-4">
       {pageList.length === 0 ? (
         <p className="text-sm text-muted-foreground">
           No pages extracted yet. Run the pipeline to extract content.
@@ -177,6 +244,7 @@ export function ExtractView({ bookLabel, selectedPageId: selectedPageIdProp, onS
           ))}
         </div>
       )}
+      </div>
     </div>
   )
 }
