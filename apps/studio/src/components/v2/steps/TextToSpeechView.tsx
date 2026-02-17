@@ -10,8 +10,8 @@ import { STEP_DESCRIPTIONS } from "../StepSidebar"
 import { cn } from "@/lib/utils"
 
 const TTS_SUB_STEPS = [
-  { key: "text-catalog", label: "Building Text Catalog" },
-  { key: "tts", label: "Generating Audio" },
+  { key: "text-catalog", label: "Build Text Catalog" },
+  { key: "tts", label: "Generate Audio" },
 ]
 
 export function TextToSpeechView({ bookLabel }: { bookLabel: string }) {
@@ -19,7 +19,8 @@ export function TextToSpeechView({ bookLabel }: { bookLabel: string }) {
   const queryClient = useQueryClient()
   const { progress: stepProgress, startRun, setSseEnabled } = useStepRun()
   const { apiKey, hasApiKey } = useApiKey()
-  const ttsRunning = stepProgress.isRunning && stepProgress.targetSteps.has("text-to-speech")
+  const ttsState = stepProgress.steps.get("text-to-speech")?.state
+  const ttsRunning = ttsState === "running" || ttsState === "queued"
 
   const handleRunTTS = useCallback(async () => {
     if (!hasApiKey || ttsRunning) return

@@ -11,7 +11,7 @@ import { StepRunCard } from "../StepRunCard"
 import { STEP_DESCRIPTIONS } from "../StepSidebar"
 
 const CAPTIONS_SUB_STEPS = [
-  { key: "image-captioning", label: "Captioning Images" },
+  { key: "image-captioning", label: "Caption Images" },
 ]
 
 type CaptioningData = NonNullable<PageDetail["imageCaptioning"]>
@@ -224,7 +224,8 @@ export function CaptionsView({ bookLabel }: { bookLabel: string }) {
   const { progress: stepProgress, startRun, setSseEnabled } = useStepRun()
   const { apiKey, hasApiKey } = useApiKey()
   const queryClient = useQueryClient()
-  const captionsRunning = stepProgress.isRunning && stepProgress.targetSteps.has("captions")
+  const captionsState = stepProgress.steps.get("captions")?.state
+  const captionsRunning = captionsState === "running" || captionsState === "queued"
 
   const handleRunCaptions = useCallback(async () => {
     if (!hasApiKey || captionsRunning) return

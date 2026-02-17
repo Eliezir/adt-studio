@@ -11,7 +11,7 @@ import { StepRunCard } from "../StepRunCard"
 import { STEP_DESCRIPTIONS } from "../StepSidebar"
 
 const QUIZZES_SUB_STEPS = [
-  { key: "quiz-generation", label: "Generating Quizzes" },
+  { key: "quiz-generation", label: "Generate Quizzes" },
 ]
 
 type QuizData = QuizGenerationOutput
@@ -137,7 +137,8 @@ export function QuizzesView({ bookLabel }: { bookLabel: string }) {
   const { setExtra } = useStepHeader()
   const { progress: stepProgress, startRun, setSseEnabled } = useStepRun()
   const { apiKey, hasApiKey } = useApiKey()
-  const quizzesRunning = stepProgress.isRunning && stepProgress.targetSteps.has("quizzes")
+  const quizzesState = stepProgress.steps.get("quizzes")?.state
+  const quizzesRunning = quizzesState === "running" || quizzesState === "queued"
 
   const handleRunQuizzes = useCallback(async () => {
     if (!hasApiKey || quizzesRunning) return

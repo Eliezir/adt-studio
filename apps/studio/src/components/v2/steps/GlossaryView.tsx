@@ -12,7 +12,7 @@ import { StepRunCard } from "../StepRunCard"
 import { STEP_DESCRIPTIONS } from "../StepSidebar"
 
 const GLOSSARY_SUB_STEPS = [
-  { key: "glossary", label: "Generating Glossary" },
+  { key: "glossary", label: "Generate Glossary" },
 ]
 
 type GlossaryData = Omit<GlossaryOutput, "version">
@@ -138,7 +138,8 @@ export function GlossaryView({ bookLabel }: { bookLabel: string }) {
   const { setExtra } = useStepHeader()
   const { progress: stepProgress, startRun, setSseEnabled } = useStepRun()
   const { apiKey, hasApiKey } = useApiKey()
-  const glossaryRunning = stepProgress.isRunning && stepProgress.targetSteps.has("glossary")
+  const glossaryState = stepProgress.steps.get("glossary")?.state
+  const glossaryRunning = glossaryState === "running" || glossaryState === "queued"
 
   const handleRunGlossary = useCallback(async () => {
     if (!hasApiKey || glossaryRunning) return

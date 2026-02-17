@@ -11,8 +11,8 @@ import { STEP_DESCRIPTIONS } from "../StepSidebar"
 import { StoryboardSectionDetail } from "./StoryboardSectionDetail"
 
 const STORYBOARD_SUB_STEPS = [
-  { key: "page-sectioning", label: "Sectioning Pages" },
-  { key: "web-rendering", label: "Rendering Pages" },
+  { key: "page-sectioning", label: "Section Pages" },
+  { key: "web-rendering", label: "Render Pages" },
 ]
 
 export function StoryboardView({ bookLabel, selectedPageId: selectedPageIdProp, onSelectPage }: { bookLabel: string; selectedPageId?: string; onSelectPage?: (pageId: string | null) => void }) {
@@ -22,7 +22,8 @@ export function StoryboardView({ bookLabel, selectedPageId: selectedPageIdProp, 
   const { progress: stepProgress, startRun, setSseEnabled } = useStepRun()
   const { apiKey, hasApiKey } = useApiKey()
   const queryClient = useQueryClient()
-  const storyboardRunning = stepProgress.isRunning && stepProgress.targetSteps.has("storyboard")
+  const storyboardState = stepProgress.steps.get("storyboard")?.state
+  const storyboardRunning = storyboardState === "running" || storyboardState === "queued"
 
   const handleRunStoryboard = useCallback(async () => {
     if (!hasApiKey || storyboardRunning) return

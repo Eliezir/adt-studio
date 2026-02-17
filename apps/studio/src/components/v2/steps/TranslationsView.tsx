@@ -17,8 +17,8 @@ function displayLang(code: string): string {
 }
 
 const TRANSLATIONS_SUB_STEPS = [
-  { key: "text-catalog", label: "Building Text Catalog" },
-  { key: "catalog-translation", label: "Translating Entries" },
+  { key: "text-catalog", label: "Build Text Catalog" },
+  { key: "catalog-translation", label: "Translate Entries" },
 ]
 
 function VersionPicker({
@@ -144,7 +144,8 @@ export function TranslationsView({ bookLabel }: { bookLabel: string }) {
   const queryClient = useQueryClient()
   const { progress: stepProgress, startRun, setSseEnabled } = useStepRun()
   const { apiKey, hasApiKey } = useApiKey()
-  const translationsRunning = stepProgress.isRunning && stepProgress.targetSteps.has("translations")
+  const translationsState = stepProgress.steps.get("translations")?.state
+  const translationsRunning = translationsState === "running" || translationsState === "queued"
 
   const handleRunTranslations = useCallback(async () => {
     if (!hasApiKey || translationsRunning) return

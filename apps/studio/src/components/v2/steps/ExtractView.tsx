@@ -72,11 +72,11 @@ function PageCard({
 }
 
 const EXTRACT_SUB_STEPS = [
-  { key: "extract", label: "Extracting PDF" },
-  { key: "metadata", label: "Extracting Metadata" },
-  { key: "image-classification", label: "Classifying Images" },
-  { key: "text-classification", label: "Classifying Text" },
-  { key: "translation", label: "Translating" },
+  { key: "extract", label: "Extract PDF" },
+  { key: "metadata", label: "Extract Metadata" },
+  { key: "image-classification", label: "Classify Images" },
+  { key: "text-classification", label: "Classify Text" },
+  { key: "translation", label: "Translate" },
 ]
 
 function BookBanner({ bookLabel, pages }: { bookLabel: string; pages: PageSummaryItem[] | undefined }) {
@@ -149,7 +149,8 @@ export function ExtractView({ bookLabel, selectedPageId: selectedPageIdProp, onS
   const selectedPageId = selectedPageIdProp ?? null
   const setSelectedPageId = onSelectPage ?? (() => {})
   const { setExtra, setOnLabelClick } = useStepHeader()
-  const extractRunning = stepProgress.isRunning && stepProgress.targetSteps.has("extract")
+  const extractState = stepProgress.steps.get("extract")?.state
+  const extractRunning = extractState === "running" || extractState === "queued"
 
   const pageList = pages ?? []
   const currentIndex = selectedPageId ? pageList.findIndex((p) => p.pageId === selectedPageId) : -1
