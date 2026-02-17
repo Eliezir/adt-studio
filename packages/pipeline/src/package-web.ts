@@ -382,7 +382,7 @@ export interface RenderPageOptions {
   bundleVersion: string
 }
 
-function renderPageHtml(opts: RenderPageOptions): string {
+export function renderPageHtml(opts: RenderPageOptions): string {
   const mathScript = opts.hasMath
     ? `    <script src="./assets/libs/mathjax/es5/tex-mml-chtml.js"></script>\n`
     : ""
