@@ -64,7 +64,7 @@ function PageCard({
           </div>
         </div>
         <p className="line-clamp-2 text-[11px] text-muted-foreground leading-relaxed">
-          {page.textPreview || "No text extracted"}
+          {page.textPreview?.replace(/\n/g, " ") || "No text extracted"}
         </p>
       </div>
     </button>

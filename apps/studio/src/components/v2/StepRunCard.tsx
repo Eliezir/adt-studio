@@ -39,7 +39,6 @@ export function StepRunCard({ stepSlug, subSteps, description, isRunning, onRun,
             ? `Running ${stepConfig?.label?.toLowerCase() ?? stepSlug}...`
             : stepConfig?.label ?? stepSlug}
         </span>
-        {isRunning && <Loader2 className="ml-auto h-4 w-4 animate-spin text-white/60" />}
       </div>
 
       {/* Main row: sub-steps | button | description */}
@@ -79,13 +78,20 @@ export function StepRunCard({ stepSlug, subSteps, description, isRunning, onRun,
           })}
         </div>
 
-        {/* Play / Retry button */}
-        {!isRunning && (
-          <div className="shrink-0">
+        {/* Play / Retry / Spinner button */}
+        <div className="shrink-0">
+          {isRunning ? (
+            <div className={cn(
+              "flex items-center justify-center w-12 h-12 rounded-full opacity-60",
+              color, "text-white",
+            )}>
+              <Loader2 className="w-5 h-5 animate-spin" />
+            </div>
+          ) : (
             <button
               type="button"
               className={cn(
-                "flex items-center justify-center w-12 h-12 rounded-full transition-all",
+                "flex items-center justify-center w-12 h-12 rounded-full transition-all cursor-pointer",
                 "hover:scale-105 active:scale-95 disabled:opacity-30 disabled:cursor-default disabled:hover:scale-100",
                 color, "text-white",
               )}
@@ -95,8 +101,8 @@ export function StepRunCard({ stepSlug, subSteps, description, isRunning, onRun,
             >
               {hasError ? <RotateCcw className="w-5 h-5" /> : <Play className="w-5 h-5 ml-0.5" />}
             </button>
-          </div>
-        )}
+          )}
+        </div>
 
         {/* Description */}
         {description && (

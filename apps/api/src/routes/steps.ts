@@ -23,6 +23,42 @@ const StepRunBody = z
   })
   .strict()
 
+/** Node types produced by each UI step */
+const STEP_NODES: Record<string, string[]> = {
+  storyboard: ["page-sectioning", "web-rendering", "storyboard-acceptance"],
+  quizzes: ["quiz-generation"],
+  captions: ["image-captioning"],
+  glossary: ["glossary"],
+  translations: ["text-catalog", "text-catalog-translation"],
+  "text-to-speech": ["tts"],
+}
+
+/** Direct downstream dependents of each UI step */
+const STEP_DEPENDENTS: Record<string, string[]> = {
+  extract: ["storyboard"],
+  storyboard: ["quizzes", "captions", "glossary"],
+  quizzes: ["translations"],
+  captions: ["translations"],
+  glossary: ["translations"],
+  translations: ["text-to-speech"],
+  "text-to-speech": [],
+}
+
+/** Collect node types for a step and all its transitive dependents. */
+function getNodesToClear(step: string): string[] {
+  const nodes = [...(STEP_NODES[step] ?? [])]
+  const queue = [...(STEP_DEPENDENTS[step] ?? [])]
+  const visited = new Set<string>()
+  while (queue.length > 0) {
+    const current = queue.shift()!
+    if (visited.has(current)) continue
+    visited.add(current)
+    nodes.push(...(STEP_NODES[current] ?? []))
+    queue.push(...(STEP_DEPENDENTS[current] ?? []))
+  }
+  return nodes
+}
+
 export function createStepRoutes(
   stepService: StepService,
   pipelineService: PipelineService,
@@ -74,8 +110,9 @@ export function createStepRoutes(
 
     const { fromStep, toStep } = parsed.data
 
-    // Synchronously clear data that will be rebuilt before returning,
-    // so the frontend can immediately reflect the cleared state.
+    // Synchronously clear data that will be rebuilt (including all
+    // downstream dependents) before returning, so the frontend can
+    // immediately reflect the cleared state.
     if (fromStep === "extract") {
       const storage = createBookStorage(label, booksDir)
       try {
@@ -83,47 +120,15 @@ export function createStepRoutes(
       } finally {
         storage.close()
       }
-    } else if (fromStep === "storyboard") {
-      const storage = createBookStorage(label, booksDir)
-      try {
-        storage.clearNodesByType(["page-sectioning", "web-rendering", "storyboard-acceptance"])
-      } finally {
-        storage.close()
-      }
-    } else if (fromStep === "quizzes") {
-      const storage = createBookStorage(label, booksDir)
-      try {
-        storage.clearNodesByType(["quiz-generation"])
-      } finally {
-        storage.close()
-      }
-    } else if (fromStep === "captions") {
-      const storage = createBookStorage(label, booksDir)
-      try {
-        storage.clearNodesByType(["image-captioning"])
-      } finally {
-        storage.close()
-      }
-    } else if (fromStep === "glossary") {
-      const storage = createBookStorage(label, booksDir)
-      try {
-        storage.clearNodesByType(["glossary"])
-      } finally {
-        storage.close()
-      }
-    } else if (fromStep === "translations") {
-      const storage = createBookStorage(label, booksDir)
-      try {
-        storage.clearNodesByType(["text-catalog", "text-catalog-translation"])
-      } finally {
-        storage.close()
-      }
-    } else if (fromStep === "text-to-speech") {
-      const storage = createBookStorage(label, booksDir)
-      try {
-        storage.clearNodesByType(["text-catalog", "text-catalog-translation", "tts"])
-      } finally {
-        storage.close()
+    } else {
+      const nodes = getNodesToClear(fromStep)
+      if (nodes.length > 0) {
+        const storage = createBookStorage(label, booksDir)
+        try {
+          storage.clearNodesByType(nodes)
+        } finally {
+          storage.close()
+        }
       }
     }
 

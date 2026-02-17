@@ -36,7 +36,6 @@ export function BookView({ bookLabel }: ViewProps) {
                 </div>
                 <StepProgressRing
                   size={32}
-                  progress={stepProgress?.progress ?? 0}
                   state={ringState}
                   colorClass={step.color}
                 />

@@ -621,8 +621,9 @@ async function runQuizzesStep(
       onLog: onLlmLog,
     })
 
+    const effectiveConcurrency = config.concurrency ?? 32
+
     progress.emit({ type: "step-start", step: "quiz-generation" })
-    progress.emit({ type: "step-progress", step: "quiz-generation", message: "Generating quizzes..." })
 
     // Gather page data for quiz generation
     const pages = storage.getPages()
@@ -639,7 +640,18 @@ async function runQuizzesStep(
     }
 
     if (quizPages.length > 0) {
-      const quizResult = await generateAllQuizzes(quizPages, quizConfig, quizModel)
+      const quizResult = await generateAllQuizzes(quizPages, quizConfig, quizModel, {
+        concurrency: effectiveConcurrency,
+        onQuizComplete: (completed, total) => {
+          progress.emit({
+            type: "step-progress",
+            step: "quiz-generation",
+            message: `${completed}/${total}`,
+            page: completed,
+            totalPages: total,
+          })
+        },
+      })
       storage.putNodeData("quiz-generation", "book", quizResult)
       progress.emit({
         type: "step-progress",
@@ -879,9 +891,9 @@ async function runGlossaryStep(
     })
 
     const pages = storage.getPages()
+    const effectiveConcurrency = config.concurrency ?? 32
 
     progress.emit({ type: "step-start", step: "glossary" })
-    progress.emit({ type: "step-progress", step: "glossary", message: "Generating glossary..." })
 
     console.log(`[step-run] ${label}: generating glossary from ${pages.length} pages`)
 
@@ -890,6 +902,16 @@ async function runGlossaryStep(
       pages,
       config: glossaryConfig,
       llmModel: glossaryModel,
+      concurrency: effectiveConcurrency,
+      onBatchComplete: (completed, total) => {
+        progress.emit({
+          type: "step-progress",
+          step: "glossary",
+          message: `${completed}/${total}`,
+          page: completed,
+          totalPages: total,
+        })
+      },
     })
     storage.putNodeData("glossary", "book", glossary)
 

@@ -9,6 +9,7 @@ import {
   GlossaryView,
   TranslationsView,
   TextToSpeechView,
+  PreviewView,
 } from "./steps"
 import { cn } from "@/lib/utils"
 
@@ -45,6 +46,7 @@ const VIEW_MAP: Record<string, ViewEntry> = {
   glossary: { component: GlossaryView },
   translations: { component: TranslationsView },
   "text-to-speech": { component: TextToSpeechView },
+  preview: { component: PreviewView, fullHeight: true },
 }
 
 export function StepViewRouter({ step, bookLabel, selectedPageId, onSelectPage }: { step: string; bookLabel: string; selectedPageId?: string; onSelectPage?: (pageId: string | null) => void }) {

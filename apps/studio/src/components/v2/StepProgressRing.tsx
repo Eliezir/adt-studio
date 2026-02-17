@@ -3,8 +3,6 @@ import type { UIStepState } from "@/hooks/use-step-run"
 interface StepProgressRingProps {
   /** Icon diameter in pixels (ring renders slightly larger) */
   size: number
-  /** 0-1 fraction */
-  progress: number
   /** Step state: idle | queued | running | done | error */
   state: UIStepState
   /** Tailwind color class prefix like "blue" for blue-500 */
@@ -28,7 +26,6 @@ const GAP = 3
 
 export function StepProgressRing({
   size,
-  progress,
   state,
   colorClass,
 }: StepProgressRingProps) {
@@ -48,7 +45,7 @@ export function StepProgressRing({
     left: `-${offset}px`,
   }
 
-  if (state === "queued") {
+  if (state === "queued" || state === "running") {
     return (
       <svg
         width={svgSize}
@@ -66,41 +63,6 @@ export function StepProgressRing({
           strokeDasharray={`${circumference * 0.25} ${circumference * 0.75}`}
           strokeLinecap="round"
           opacity={0.7}
-        />
-      </svg>
-    )
-  }
-
-  if (state === "running") {
-    const dashLength = Math.max(circumference * progress, circumference * 0.02)
-    return (
-      <svg
-        width={svgSize}
-        height={svgSize}
-        className="absolute pointer-events-none"
-        style={{ ...svgStyle, transform: "rotate(-90deg)" }}
-      >
-        {/* Background track */}
-        <circle
-          cx={center}
-          cy={center}
-          r={radius}
-          fill="none"
-          stroke={color}
-          strokeWidth={strokeWidth}
-          opacity={0.2}
-        />
-        {/* Progress arc */}
-        <circle
-          cx={center}
-          cy={center}
-          r={radius}
-          fill="none"
-          stroke={color}
-          strokeWidth={strokeWidth}
-          strokeDasharray={`${dashLength} ${circumference - dashLength}`}
-          strokeLinecap="round"
-          className="transition-[stroke-dasharray] duration-300"
         />
       </svg>
     )

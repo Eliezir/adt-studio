@@ -2,8 +2,17 @@ import fs from "node:fs"
 import path from "node:path"
 import { Hono } from "hono"
 import { HTTPException } from "hono/http-exception"
+import { z } from "zod"
 import { parseBookLabel } from "@adt/types"
-import { openBookDb } from "@adt/storage"
+import { openBookDb, createBookStorage } from "@adt/storage"
+
+const TranslationBody = z
+  .object({
+    entries: z.array(
+      z.object({ id: z.string(), text: z.string() })
+    ),
+  })
+  .strict()
 
 export function createTextCatalogRoutes(booksDir: string): Hono {
   const app = new Hono()
@@ -59,6 +68,32 @@ export function createTextCatalogRoutes(booksDir: string): Hono {
       })
     } finally {
       db.close()
+    }
+  })
+
+  // PUT /books/:label/text-catalog-translation/:language — Update a translation
+  app.put("/books/:label/text-catalog-translation/:language", async (c) => {
+    const { label, language } = c.req.param()
+    const safeLabel = parseBookLabel(label)
+
+    const body = await c.req.json()
+    const parsed = TranslationBody.safeParse(body)
+    if (!parsed.success) {
+      throw new HTTPException(400, {
+        message: `Invalid translation data: ${parsed.error.message}`,
+      })
+    }
+
+    const storage = createBookStorage(safeLabel, booksDir)
+    try {
+      const version = storage.putNodeData(
+        "text-catalog-translation",
+        language,
+        parsed.data
+      )
+      return c.json({ version })
+    } finally {
+      storage.close()
     }
   })
 

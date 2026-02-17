@@ -105,12 +105,35 @@ export function createPageRoutes(
         }
       }
 
+      // Get classified text per page from text-classification node data
+      const classifiedText = new Map<string, string>()
+      const textClassRows = db.all(
+        "SELECT item_id, data FROM node_data WHERE node = ? ORDER BY version DESC",
+        ["text-classification"]
+      ) as Array<{ item_id: string; data: string }>
+      for (const row of textClassRows) {
+        if (!classifiedText.has(row.item_id)) {
+          try {
+            const parsed = JSON.parse(row.data) as {
+              groups: Array<{ texts: Array<{ text: string; isPruned: boolean }> }>
+            }
+            const texts = parsed.groups
+              .flatMap((g) => g.texts)
+              .filter((t) => !t.isPruned)
+              .map((t) => t.text)
+            classifiedText.set(row.item_id, texts.join("\n"))
+          } catch {
+            // ignore parse errors
+          }
+        }
+      }
+
       const result: PageSummary[] = pages.map((p) => ({
         pageId: p.page_id,
         pageNumber: p.page_number,
         hasRendering: rendered.has(p.page_id),
         hasCaptioning: captioned.has(p.page_id),
-        textPreview: p.text.slice(0, 150),
+        textPreview: classifiedText.get(p.page_id) ?? p.text.slice(0, 150),
         imageCount: imageCounts.get(p.page_id) ?? 0,
         wordCount: p.text.trim() ? p.text.trim().split(/\s+/).length : 0,
       }))

@@ -547,6 +547,15 @@ export const api = {
   getTextCatalog: (label: string) =>
     request<TextCatalogResponse | null>(`/books/${label}/text-catalog`),
 
+  updateTranslation: (label: string, language: string, data: unknown) =>
+    request<{ version: number }>(`/books/${label}/text-catalog-translation/${language}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    }),
+
+  getStepStatus: (label: string) =>
+    request<{ steps: Record<string, boolean> }>(`/books/${label}/step-status`),
+
   getTTS: (label: string) =>
     request<TTSResponse>(`/books/${label}/tts`),
 

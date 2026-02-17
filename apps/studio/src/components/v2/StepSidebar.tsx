@@ -8,8 +8,11 @@ import {
   BookOpen,
   Languages,
   Volume2,
+  Eye,
   Settings,
 } from "lucide-react"
+import { useQuery } from "@tanstack/react-query"
+import { api } from "@/api/client"
 import { cn } from "@/lib/utils"
 import { useStepRun } from "@/hooks/use-step-run"
 import { StepProgressRing } from "./StepProgressRing"
@@ -23,6 +26,7 @@ export const STEPS = [
   { slug: "glossary", label: "Glossary", icon: BookOpen, color: "bg-lime-500", textColor: "text-lime-600", bgLight: "bg-lime-50", bgDark: "bg-lime-700", borderColor: "border-lime-200" },
   { slug: "translations", label: "Translations", icon: Languages, color: "bg-pink-500", textColor: "text-pink-600", bgLight: "bg-pink-50", bgDark: "bg-pink-700", borderColor: "border-pink-200" },
   { slug: "text-to-speech", label: "Text to Speech", icon: Volume2, color: "bg-amber-500", textColor: "text-amber-600", bgLight: "bg-amber-50", bgDark: "bg-amber-700", borderColor: "border-amber-200" },
+  { slug: "preview", label: "Preview", icon: Eye, color: "bg-gray-500", textColor: "text-gray-600", bgLight: "bg-gray-50", bgDark: "bg-gray-700", borderColor: "border-gray-200" },
 ] as const
 
 export type StepSlug = (typeof STEPS)[number]["slug"]
@@ -35,6 +39,7 @@ export const STEP_DESCRIPTIONS: Record<string, string> = {
   glossary: "Build a glossary of key terms and definitions found in the text.",
   translations: "Translate the book content into additional languages.",
   "text-to-speech": "Generate audio narration for the book using text-to-speech.",
+  preview: "Package and preview the final ADT web application.",
 }
 
 export function toCamelLabel(label: string): string {
@@ -90,6 +95,12 @@ export function StepSidebar({ bookLabel, activeStep }: { bookLabel: string; acti
   const matchRoute = useMatchRoute()
   const search = useSearch({ strict: false }) as { tab?: string }
   const { progress: stepRunProgress } = useStepRun()
+  const { data: stepStatusData } = useQuery({
+    queryKey: ["books", bookLabel, "step-status"],
+    queryFn: () => api.getStepStatus(bookLabel),
+    enabled: !!bookLabel,
+  })
+  const completedSteps = stepStatusData?.steps ?? {}
 
   const isSettings = !!matchRoute({
     to: "/books/$label/v2/$step/settings",
@@ -136,14 +147,15 @@ export function StepSidebar({ bookLabel, activeStep }: { bookLabel: string; acti
                   <div
                     className={cn(
                       "flex items-center justify-center w-7 h-7 rounded-full transition-colors",
-                      isActive ? cn(step.color, "text-white") : "bg-muted text-muted-foreground"
+                      isActive || step.slug === "book" || completedSteps[step.slug]
+                        ? cn(step.color, "text-white")
+                        : "bg-muted text-muted-foreground"
                     )}
                   >
                     <Icon className="w-3.5 h-3.5" />
                   </div>
                   <StepProgressRing
                     size={28}
-                    progress={stepProgress?.progress ?? 0}
                     state={ringState}
                     colorClass={step.color}
                   />
