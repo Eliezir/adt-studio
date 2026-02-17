@@ -1,8 +1,13 @@
 import { useState, useEffect, useCallback, useRef, createContext, useContext } from "react"
-import { useQueryClient } from "@tanstack/react-query"
+import { useQueryClient, type QueryClient } from "@tanstack/react-query"
 import { api } from "@/api/client"
 import type { StepName } from "./use-pipeline"
 import { getTargetStepsForRange, isFinalPipelineStepForUiStep } from "./step-run-range"
+import {
+  getInvalidationKeysForUiStep,
+  getMetadataInvalidationKeys,
+  type QueryKey,
+} from "./step-run-invalidation"
 
 /** Maps internal pipeline step names to UI step slugs */
 const PIPELINE_TO_UI_STEP: Record<string, string> = {
@@ -59,6 +64,12 @@ const INITIAL: StepRunProgress = {
   subSteps: new Map(),
 }
 
+function invalidateQueryKeys(qc: QueryClient, keys: QueryKey[]) {
+  for (const key of keys) {
+    qc.invalidateQueries({ queryKey: key })
+  }
+}
+
 export function useStepRunSSE(label: string, enabled: boolean) {
   const [progress, setProgress] = useState<StepRunProgress>(INITIAL)
   const queryClient = useQueryClient()
@@ -82,12 +93,19 @@ export function useStepRunSSE(label: string, enabled: boolean) {
 
     es.addEventListener("progress", (e) => {
       const data = JSON.parse(e.data)
+      const pipelineStep = data.step as string
+      const uiStep = PIPELINE_TO_UI_STEP[pipelineStep]
+      if (!uiStep) return
+
+      const isFinalCompletion =
+        data.type === "step-complete" &&
+        isFinalPipelineStepForUiStep(uiStep, pipelineStep)
+      const isMetadataCompletion =
+        data.type === "step-complete" && pipelineStep === "metadata"
+
       setProgress((prev) => {
         const steps = new Map(prev.steps)
         const subSteps = new Map(prev.subSteps)
-        const pipelineStep = data.step as string
-        const uiStep = PIPELINE_TO_UI_STEP[pipelineStep]
-        if (!uiStep) return prev
 
         if (data.type === "step-start") {
           const existing = steps.get(uiStep)
@@ -106,7 +124,7 @@ export function useStepRunSSE(label: string, enabled: boolean) {
           }
           subSteps.set(pipelineStep, { state: "running", page, totalPages: total })
         } else if (data.type === "step-complete") {
-          if (isFinalPipelineStepForUiStep(uiStep, pipelineStep)) {
+          if (isFinalCompletion) {
             steps.set(uiStep, { state: "done", progress: 1 })
           }
           subSteps.set(pipelineStep, { state: "done" })
@@ -122,6 +140,13 @@ export function useStepRunSSE(label: string, enabled: boolean) {
 
         return { ...prev, steps, subSteps }
       })
+
+      if (isFinalCompletion) {
+        invalidateQueryKeys(queryClient, getInvalidationKeysForUiStep(label, uiStep))
+      }
+      if (isMetadataCompletion) {
+        invalidateQueryKeys(queryClient, getMetadataInvalidationKeys(label))
+      }
     })
 
     es.addEventListener("complete", () => {
@@ -146,7 +171,6 @@ export function useStepRunSSE(label: string, enabled: boolean) {
       queryClient.invalidateQueries({ queryKey: ["books", label, "pages"] })
       queryClient.invalidateQueries({ queryKey: ["books", label, "step-status"] })
       queryClient.invalidateQueries({ queryKey: ["debug"] })
-      queryClient.invalidateQueries({ queryKey: ["steps-status", label] })
       es.close()
     })
 
@@ -202,7 +226,6 @@ export function useStepRunSSE(label: string, enabled: boolean) {
           queryClient.invalidateQueries({ queryKey: ["books"] })
           queryClient.invalidateQueries({ queryKey: ["books", label, "pages"] })
           queryClient.invalidateQueries({ queryKey: ["books", label, "step-status"] })
-          queryClient.invalidateQueries({ queryKey: ["steps-status", label] })
           es.close()
           clearInterval(pollInterval)
         } else if (status.status === "failed") {
