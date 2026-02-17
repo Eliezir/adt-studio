@@ -626,7 +626,7 @@ function rewriteImageUrls(
 // Section helpers
 // ---------------------------------------------------------------------------
 
-function combineSections(rendering: WebRenderingOutput): {
+export function combineSections(rendering: WebRenderingOutput): {
   html: string
   activityAnswers?: Record<string, string | boolean | number>
 } {
