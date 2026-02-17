@@ -1,8 +1,10 @@
-import { useState, useEffect, useRef, useCallback } from "react"
-import { Check, Eye, EyeOff, Layers, Loader2, ChevronDown } from "lucide-react"
+import { useState, useEffect, useRef } from "react"
+import { Check, Eye, EyeOff, Layers, Loader2, ChevronDown, RefreshCw } from "lucide-react"
 import { useQueryClient } from "@tanstack/react-query"
 import { api } from "@/api/client"
 import type { PageDetail, VersionEntry } from "@/api/client"
+import { useReRenderPage } from "@/hooks/use-page-mutations"
+import { useApiKey } from "@/hooks/use-api-key"
 import { BookPreviewFrame } from "@/components/storyboard/BookPreviewFrame"
 
 // -- VersionPicker (same as ExtractPageDetail) --
@@ -25,7 +27,7 @@ function VersionPicker({
   node: string
   itemId: string
   onPreview: (data: unknown) => void
-  onSave: () => void
+  onSave?: () => void
   onDiscard: () => void
 }) {
   const [open, setOpen] = useState(false)
@@ -76,14 +78,16 @@ function VersionPicker({
         >
           Discard
         </button>
-        <button
-          type="button"
-          onClick={onSave}
-          className="flex items-center gap-1 text-[10px] font-medium rounded px-2 py-0.5 bg-green-600 hover:bg-green-500 text-white cursor-pointer transition-colors"
-        >
-          <Check className="h-3 w-3" />
-          Save
-        </button>
+        {onSave && (
+          <button
+            type="button"
+            onClick={onSave}
+            className="flex items-center gap-1 text-[10px] font-medium rounded px-2 py-0.5 bg-green-600 hover:bg-green-500 text-white cursor-pointer transition-colors"
+          >
+            <Check className="h-3 w-3" />
+            Save
+          </button>
+        )}
       </div>
     )
   }
@@ -164,6 +168,7 @@ function ImageCard({ imageId, bookLabel, isPruned, reason }: { imageId: string; 
 // -- Types --
 
 type SectioningData = NonNullable<PageDetail["sectioning"]>
+type RenderingData = NonNullable<PageDetail["rendering"]>
 
 // -- Main component --
 
@@ -172,24 +177,24 @@ export function StoryboardSectionDetail({
   pageId,
   sectionIndex,
   page,
-  topHeight,
-  onTopHeightChange,
 }: {
   bookLabel: string
   pageId: string
   sectionIndex: number
   page: PageDetail
-  topHeight: number
-  onTopHeightChange: (h: number) => void
 }) {
   const queryClient = useQueryClient()
+  const reRender = useReRenderPage(bookLabel, pageId)
+  const { apiKey, hasApiKey } = useApiKey()
 
   const [saving, setSaving] = useState(false)
   const [pendingSectioning, setPendingSectioning] = useState<SectioningData | null>(null)
+  const [pendingRendering, setPendingRendering] = useState<RenderingData | null>(null)
 
   // Clear pending state when page changes
   useEffect(() => {
     setPendingSectioning(null)
+    setPendingRendering(null)
   }, [pageId])
 
   // Effective data
@@ -198,7 +203,9 @@ export function StoryboardSectionDetail({
 
   // Current section data
   const section = sectioningData?.sections[sectionIndex]
-  const renderedSection = page.rendering?.sections[sectionIndex]
+  const renderingData = pendingRendering ?? page.rendering
+  const renderedSection = renderingData?.sections[sectionIndex]
+  const renderingDirty = pendingRendering != null
 
   if (!section) {
     return (
@@ -221,10 +228,27 @@ export function StoryboardSectionDetail({
     await queryClient.invalidateQueries({ queryKey: ["books", bookLabel, "pages", pageId] })
     await minDelay
     setSaving(false)
+
+    // Automatically re-render with the updated sectioning
+    if (hasApiKey) {
+      reRender.mutate(apiKey)
+    }
   }
 
   const discardSectioning = () => {
     setPendingSectioning(null)
+  }
+
+  // Save / discard rendering
+  const saveRendering = async () => {
+    if (!pendingRendering) return
+    setSaving(true)
+    const minDelay = new Promise((r) => setTimeout(r, 400))
+    await api.updateRendering(bookLabel, pageId, pendingRendering)
+    setPendingRendering(null)
+    await queryClient.invalidateQueries({ queryKey: ["books", bookLabel, "pages", pageId] })
+    await minDelay
+    setSaving(false)
   }
 
   // Toggle isPruned on a part within the current section
@@ -251,52 +275,44 @@ export function StoryboardSectionDetail({
   const hasTextParts = parts.some((p) => p.type === "text_group")
   const hasImageParts = parts.some((p) => p.type === "image")
 
-  const containerRef = useRef<HTMLDivElement>(null)
-  const dragging = useRef(false)
-
-  const onMouseDown = useCallback((e: React.MouseEvent) => {
-    e.preventDefault()
-    dragging.current = true
-
-    const onMouseMove = (ev: MouseEvent) => {
-      if (!dragging.current || !containerRef.current) return
-      const rect = containerRef.current.getBoundingClientRect()
-      const pct = ((ev.clientY - rect.top) / rect.height) * 100
-      onTopHeightChange(Math.min(Math.max(pct, 15), 85))
-    }
-
-    const onMouseUp = () => {
-      dragging.current = false
-      document.removeEventListener("mousemove", onMouseMove)
-      document.removeEventListener("mouseup", onMouseUp)
-    }
-
-    document.addEventListener("mousemove", onMouseMove)
-    document.addEventListener("mouseup", onMouseUp)
-  }, [])
-
   return (
-    <div ref={containerRef} className="flex flex-col h-full">
-      {/* Top: Rendered HTML in scrollable frame */}
-      <div className="shrink-0 overflow-auto" style={{ height: `${topHeight}%` }}>
+    <div className="h-full overflow-auto">
+      {/* Rendered HTML preview — full width */}
+      <div className="px-4 pt-4">
+        <div className="flex items-center gap-2 mb-2 text-xs text-muted-foreground">
+          <span className="font-medium uppercase tracking-wider">Rendered</span>
+          <button
+            type="button"
+            disabled={!hasApiKey || reRender.isPending}
+            onClick={() => hasApiKey && reRender.mutate(apiKey)}
+            className="p-1 rounded hover:bg-accent transition-colors cursor-pointer disabled:opacity-30 disabled:cursor-default"
+            title={!hasApiKey ? "Set API key first" : "Re-render from current sectioning"}
+          >
+            <RefreshCw className={`h-3 w-3 ${reRender.isPending ? "animate-spin" : ""}`} />
+          </button>
+          <VersionPicker
+            currentVersion={page.versions.rendering}
+            saving={saving || reRender.isPending}
+            dirty={renderingDirty}
+            bookLabel={bookLabel}
+            node="web-rendering"
+            itemId={pageId}
+            onPreview={(data) => setPendingRendering(data as RenderingData)}
+            onSave={saveRendering}
+            onDiscard={() => setPendingRendering(null)}
+          />
+        </div>
         {renderedSection?.html ? (
-          <BookPreviewFrame html={renderedSection.html} className="w-full" />
+          <BookPreviewFrame html={renderedSection.html} className="w-full rounded border" />
         ) : (
-          <div className="p-4 text-sm text-muted-foreground">
+          <div className="p-4 text-sm text-muted-foreground border rounded">
             No rendered content for this section.
           </div>
         )}
       </div>
 
-      {/* Resize handle */}
-      <div
-        onMouseDown={onMouseDown}
-        className="shrink-0 h-1.5 cursor-row-resize bg-border hover:bg-primary/30 transition-colors"
-      />
-
-      {/* Bottom: Section data, scrollable independently */}
-      <div className="flex-1 min-h-0 overflow-auto">
-        <div className="max-w-3xl mx-auto py-4 px-4 space-y-6">
+      {/* Section data — constrained width */}
+      <div className="max-w-3xl mx-auto py-4 px-4 space-y-6">
 
       {/* Section metadata */}
       <div className="flex items-center gap-2 text-xs text-muted-foreground">
@@ -418,7 +434,6 @@ export function StoryboardSectionDetail({
         </div>
       )}
 
-        </div>
       </div>
     </div>
   )

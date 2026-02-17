@@ -343,6 +343,12 @@ export const api = {
       body: JSON.stringify(data),
     }),
 
+  updateRendering: (label: string, pageId: string, data: unknown) =>
+    request<{ version: number }>(`/books/${label}/pages/${pageId}/rendering`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    }),
+
   reRenderPage: (label: string, pageId: string, apiKey: string) =>
     request<{ version: number; rendering: { sections: SectionRendering[] } }>(
       `/books/${label}/pages/${pageId}/re-render`,

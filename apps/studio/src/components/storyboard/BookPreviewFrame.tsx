@@ -3,18 +3,25 @@ import DOMPurify from "dompurify"
 
 /**
  * Renders section HTML in an iframe that matches the final book output structure.
- * Uses the Tailwind CDN for full utility class support and wraps content in the
- * same containers as the packaged ADT output (body + #content div).
+ * Loads the iframe shell once (Tailwind CDN + fonts), then swaps #content innerHTML
+ * when the html prop changes — avoids full-page reloads and the reflow cascade they cause.
+ *
+ * Height measurement is deferred until after fonts settle to prevent the visible
+ * "slow collapse" caused by intermediate reflows during font loading.
  */
 export function BookPreviewFrame({ html, className }: { html: string; className?: string }) {
   const iframeRef = useRef<HTMLIFrameElement>(null)
   const [height, setHeight] = useState(300)
+  const readyRef = useRef(false)
+  const latestHtmlRef = useRef("")
+  const settledRef = useRef(false)
+  const observerRef = useRef<ResizeObserver | null>(null)
 
   const sanitizedHtml = useMemo(() => DOMPurify.sanitize(html), [html])
+  latestHtmlRef.current = sanitizedHtml
 
-  const srcdoc = useMemo(
-    () =>
-      `<!DOCTYPE html>
+  // Stable shell — loaded once, never changes
+  const srcdoc = `<!DOCTYPE html>
 <html>
 <head>
   <meta charset="utf-8" />
@@ -27,33 +34,72 @@ export function BookPreviewFrame({ html, className }: { html: string; className?
     }
   </style>
 </head>
-<body class="min-h-screen flex items-center justify-center">
-  <div id="content">
-    ${sanitizedHtml}
-  </div>
+<body class="flex items-center justify-center">
+  <div id="content"></div>
 </body>
-</html>`,
-    [sanitizedHtml],
-  )
+</html>`
 
+  /** Inject HTML into the iframe, then measure height once fonts are settled. */
+  function injectAndMeasure(newHtml: string) {
+    const iframe = iframeRef.current
+    const doc = iframe?.contentDocument
+    const el = doc?.getElementById("content")
+    if (!el || !doc) return
+
+    // Suppress ResizeObserver during font loading
+    settledRef.current = false
+    el.innerHTML = newHtml
+
+    // Wait one frame so the browser queues font loads for the new content,
+    // then wait for fonts.ready so we measure the final layout.
+    requestAnimationFrame(() => {
+      const measure = () => {
+        settledRef.current = true
+        const h = doc.documentElement.scrollHeight
+        if (h > 0) setHeight(h)
+      }
+
+      if (doc.fonts?.ready) {
+        doc.fonts.ready.then(measure)
+      } else {
+        measure()
+      }
+    })
+  }
+
+  // When html prop changes, update the content div directly (no iframe reload)
+  useEffect(() => {
+    if (readyRef.current) injectAndMeasure(sanitizedHtml)
+  }, [sanitizedHtml])
+
+  // One-time iframe setup
   useEffect(() => {
     const iframe = iframeRef.current
     if (!iframe) return
-
-    let observer: ResizeObserver | null = null
 
     const onLoad = () => {
       const doc = iframe.contentDocument
       if (!doc) return
 
-      const updateHeight = () => {
-        const h = doc.documentElement.scrollHeight
-        if (h > 0) setHeight(h)
+      // Wait for Tailwind CDN + initial font CSS to load
+      const start = () => {
+        readyRef.current = true
+        injectAndMeasure(latestHtmlRef.current)
+
+        // ResizeObserver handles window/container resizes — only fires when settled
+        observerRef.current = new ResizeObserver(() => {
+          if (!settledRef.current) return
+          const h = doc.documentElement.scrollHeight
+          if (h > 0) setHeight(h)
+        })
+        observerRef.current.observe(doc.body)
       }
 
-      updateHeight()
-      observer = new ResizeObserver(updateHeight)
-      observer.observe(doc.body)
+      if (doc.fonts?.ready) {
+        doc.fonts.ready.then(start)
+      } else {
+        start()
+      }
 
       // Forward arrow key events to parent so navigation still works
       doc.addEventListener("keydown", (e: KeyboardEvent) => {
@@ -66,16 +112,18 @@ export function BookPreviewFrame({ html, className }: { html: string; className?
     iframe.addEventListener("load", onLoad)
     return () => {
       iframe.removeEventListener("load", onLoad)
-      observer?.disconnect()
+      observerRef.current?.disconnect()
+      readyRef.current = false
     }
-  }, [srcdoc])
+  }, [])
 
   return (
     <iframe
       ref={iframeRef}
       srcDoc={srcdoc}
       className={className}
-      style={{ width: "100%", height, border: "none" }}
+      scrolling="no"
+      style={{ width: "100%", height, overflow: "hidden" }}
     />
   )
 }
