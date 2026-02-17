@@ -32,7 +32,11 @@ const MIME_TYPES: Record<string, string> = {
   ".webp": "image/webp",
 }
 
-export function createBookRoutes(booksDir: string): Hono {
+export function createBookRoutes(
+  booksDir: string,
+  webAssetsDir?: string,
+  configPath?: string,
+): Hono {
   const app = new Hono()
 
   app.get("/books", (c) => {
@@ -208,10 +212,10 @@ export function createBookRoutes(booksDir: string): Hono {
   })
 
   // GET /books/:label/export — Download book as ZIP
-  app.get("/books/:label/export", (c) => {
+  app.get("/books/:label/export", async (c) => {
     const { label } = c.req.param()
     try {
-      const result = exportBook(label, booksDir)
+      const result = await exportBook(label, booksDir, webAssetsDir ?? "", configPath)
       c.header("Content-Type", "application/zip")
       c.header(
         "Content-Disposition",

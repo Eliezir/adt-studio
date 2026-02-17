@@ -5,13 +5,23 @@ import { HTTPException } from "hono/http-exception"
 import { parseBookLabel, TTSOutput } from "@adt/types"
 import { openBookDb } from "@adt/storage"
 
+function safeParseLabel(label: string): string {
+  try {
+    return parseBookLabel(label)
+  } catch (err) {
+    throw new HTTPException(400, {
+      message: err instanceof Error ? err.message : String(err),
+    })
+  }
+}
+
 export function createTTSRoutes(booksDir: string): Hono {
   const app = new Hono()
 
   // GET /books/:label/tts — Get all TTS data grouped by language
   app.get("/books/:label/tts", (c) => {
     const { label } = c.req.param()
-    const safeLabel = parseBookLabel(label)
+    const safeLabel = safeParseLabel(label)
     const dbPath = path.join(path.resolve(booksDir), safeLabel, `${safeLabel}.db`)
 
     if (!fs.existsSync(dbPath)) {
@@ -61,7 +71,7 @@ export function createTTSRoutes(booksDir: string): Hono {
   // GET /books/:label/audio/:language/:fileName — Serve audio file
   app.get("/books/:label/audio/:language/:fileName", (c) => {
     const { label, language, fileName } = c.req.param()
-    const safeLabel = parseBookLabel(label)
+    const safeLabel = safeParseLabel(label)
     const resolvedDir = path.resolve(booksDir)
     const bookDir = path.join(resolvedDir, safeLabel)
 
@@ -74,6 +84,7 @@ export function createTTSRoutes(booksDir: string): Hono {
     }
 
     const audioPath = path.resolve(bookDir, "audio", language, fileName)
+    // Verify path doesn't escape book directory
     if (!audioPath.startsWith(bookDir + path.sep)) {
       throw new HTTPException(400, { message: "Invalid audio path" })
     }
@@ -82,20 +93,23 @@ export function createTTSRoutes(booksDir: string): Hono {
     try {
       stat = fs.statSync(audioPath)
     } catch {
-      throw new HTTPException(404, { message: `Audio file not found: ${fileName}` })
+      throw new HTTPException(404, {
+        message: `Audio file not found: ${fileName}`,
+      })
     }
-
     if (!stat.isFile()) {
-      throw new HTTPException(404, { message: `Audio file not found: ${fileName}` })
+      throw new HTTPException(404, {
+        message: `Audio file not found: ${fileName}`,
+      })
     }
 
     const audioBuffer = fs.readFileSync(audioPath)
     const ext = path.extname(fileName).toLowerCase()
-    const contentType = ext === ".mp3" ? "audio/mpeg"
-      : ext === ".wav" ? "audio/wav"
-        : ext === ".ogg" ? "audio/ogg"
-          : "audio/mpeg"
-
+    const contentType =
+      ext === ".mp3" ? "audio/mpeg"
+        : ext === ".wav" ? "audio/wav"
+          : ext === ".ogg" ? "audio/ogg"
+            : "audio/mpeg"
     c.header("Content-Type", contentType)
     c.header("Cache-Control", "public, max-age=86400")
     return c.body(audioBuffer)

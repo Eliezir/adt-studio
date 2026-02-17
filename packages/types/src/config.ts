@@ -23,8 +23,11 @@ export type QuizGenerationConfig = z.infer<typeof QuizGenerationConfig>
 export const BookFormat = z.enum(["web", "epub", "webpub"])
 export type BookFormat = z.infer<typeof BookFormat>
 
-export const LayoutType = z.enum(["textbook", "storybook", "reference"])
+export const LayoutType = z.enum(["textbook", "storybook", "reference", "custom"])
 export type LayoutType = z.infer<typeof LayoutType>
+
+export const PresetName = z.enum(["textbook", "storybook", "reference"])
+export type PresetName = z.infer<typeof PresetName>
 
 export const RenderType = z.enum(["llm", "template", "activity"])
 export type RenderType = z.infer<typeof RenderType>

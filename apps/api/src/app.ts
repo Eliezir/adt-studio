@@ -25,6 +25,8 @@ import { createTTSRoutes } from "./routes/tts.js"
 import { createStepRoutes } from "./routes/steps.js"
 import { createStepService } from "./services/step-service.js"
 import { createStepRunner } from "./services/step-runner.js"
+import { createPresetRoutes } from "./routes/presets.js"
+import { createAdtPreviewRoutes } from "./routes/adt-preview.js"
 
 // Resolve paths relative to monorepo root (2 levels up from apps/api/)
 const projectRoot = path.resolve(
@@ -67,7 +69,7 @@ app.use(
 app.onError(errorHandler)
 
 app.route("/api", healthRoutes)
-app.route("/api", createBookRoutes(booksDir))
+app.route("/api", createBookRoutes(booksDir, webAssetsDir, configPath))
 app.route("/api", createPipelineRoutes(pipelineService, booksDir, promptsDir, configPath))
 app.route("/api", createPageRoutes(booksDir, promptsDir, configPath))
 app.route("/api", createProofRoutes(proofService, booksDir, promptsDir, configPath))
@@ -80,5 +82,7 @@ app.route("/api", createPromptRoutes(promptsDir, booksDir))
 app.route("/api", createTextCatalogRoutes(booksDir))
 app.route("/api", createTTSRoutes(booksDir))
 app.route("/api", createStepRoutes(stepService, pipelineService, booksDir, promptsDir, configPath))
+app.route("/api", createPresetRoutes(configPath))
+app.route("/api", createAdtPreviewRoutes(booksDir, webAssetsDir))
 
 export default app

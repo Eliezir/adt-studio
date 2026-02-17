@@ -114,7 +114,7 @@ describe("Page routes", () => {
       expect(body[0].pageId).toBe(`${label}_p1`)
       expect(body[0].pageNumber).toBe(1)
       expect(body[0].hasRendering).toBe(true)
-      expect(body[0].textPreview).toBe("Page one text content")
+      expect(body[0].textPreview).toBe("Hello world")
       expect(body[1].pageId).toBe(`${label}_p2`)
       expect(body[1].pageNumber).toBe(2)
       expect(body[1].hasRendering).toBe(false)
