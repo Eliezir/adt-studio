@@ -526,6 +526,7 @@ function StoryboardPage() {
               onToggleOriginalImage={() => setShowOriginalImage((v) => !v)}
               sidebarVisible={sidebarExpanded}
               onExpandSidebar={() => setSidebarExpanded(true)}
+              onCollapseSidebar={() => setSidebarExpanded(false)}
             />
           ) : (
             <div className="flex flex-1 items-center justify-center">
