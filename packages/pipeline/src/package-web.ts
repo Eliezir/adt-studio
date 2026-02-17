@@ -750,6 +750,70 @@ async function buildTailwindCss(
   fs.writeFileSync(outputPath, result.css)
 }
 
+/**
+ * Build Tailwind CSS for preview and return the CSS string.
+ * Scans the given content HTML plus all web asset files for used classes.
+ */
+export async function buildPreviewTailwindCss(
+  contentHtml: string,
+  webAssetsDir: string,
+): Promise<string> {
+  const postcss = (await import("postcss")).default
+  const tailwindcss = (await import("tailwindcss")).default
+
+  const inputCssPath = path.join(webAssetsDir, "tailwind_css.css")
+  const inputCss = fs.existsSync(inputCssPath)
+    ? fs.readFileSync(inputCssPath, "utf-8")
+    : "@tailwind base;\n@tailwind components;\n@tailwind utilities;"
+
+  // Also scan the ADT bundle assets for Tailwind classes used by the interface
+  const contentSources: Array<{ raw: string; extension: string }> = [
+    { raw: contentHtml, extension: "html" },
+  ]
+  for (const file of ["interface.html", "base.bundle.min.js"]) {
+    const filePath = path.join(webAssetsDir, file)
+    if (fs.existsSync(filePath)) {
+      contentSources.push({
+        raw: fs.readFileSync(filePath, "utf-8"),
+        extension: path.extname(file).slice(1),
+      })
+    }
+  }
+
+  const tailwindConfig = {
+    content: contentSources,
+    theme: {
+      extend: {
+        keyframes: {
+          tutorialPopIn: {
+            "0%": { opacity: "0", transform: "scale(0.9)" },
+            "100%": { opacity: "1", transform: "scale(1)" },
+          },
+          pulseBorder: {
+            "0%": { boxShadow: "0 0 0 0 rgba(49,130,206,0.7)" },
+            "70%": { boxShadow: "0 0 0 10px rgba(49,130,206,0)" },
+            "100%": { boxShadow: "0 0 0 0 rgba(49,130,206,0)" },
+          },
+        },
+        animation: {
+          tutorialPopIn: "tutorialPopIn 0.3s ease-out forwards",
+          pulseBorder: "pulseBorder 2s infinite",
+        },
+        boxShadow: {
+          tutorial: "0 0 0 4px rgba(49,130,206,0.3)",
+        },
+      },
+    },
+    plugins: [],
+  }
+
+  const result = await postcss([tailwindcss(tailwindConfig)]).process(inputCss, {
+    from: undefined,
+  })
+
+  return result.css
+}
+
 // ---------------------------------------------------------------------------
 // File utilities
 // ---------------------------------------------------------------------------
