@@ -32,7 +32,11 @@ const MIME_TYPES: Record<string, string> = {
   ".webp": "image/webp",
 }
 
-export function createBookRoutes(booksDir: string): Hono {
+export function createBookRoutes(
+  booksDir: string,
+  webAssetsDir?: string,
+  configPath?: string,
+): Hono {
   const app = new Hono()
 
   app.get("/books", (c) => {
