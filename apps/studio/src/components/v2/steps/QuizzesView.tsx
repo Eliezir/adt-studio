@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react"
-import { Check, CheckCircle2, XCircle, ChevronDown, Loader2, ImageOff } from "lucide-react"
+import { Check, CheckCircle2, XCircle, ChevronDown, HelpCircle, Loader2, ImageOff } from "lucide-react"
 import { useQueryClient } from "@tanstack/react-query"
 import { api } from "@/api/client"
 import type { QuizGenerationOutput, VersionEntry } from "@/api/client"
@@ -270,7 +270,7 @@ function PageLightbox({
   )
 }
 
-export function QuizzesView({ bookLabel }: { bookLabel: string }) {
+export function QuizzesView({ bookLabel, selectedPageId }: { bookLabel: string; selectedPageId?: string }) {
   const queryClient = useQueryClient()
   const { data, isLoading } = useQuizzes(bookLabel)
   const { setExtra } = useStepHeader()
@@ -300,6 +300,10 @@ export function QuizzesView({ bookLabel }: { bookLabel: string }) {
   const quizzes = effective?.quizzes ?? []
   const dirty = pending != null
 
+  const displayQuizzes = selectedPageId
+    ? quizzes.filter((q) => q.pageIds.includes(selectedPageId))
+    : quizzes
+
   const saveQuizzes = useCallback(async () => {
     if (!pending) return
     setSaving(true)
@@ -318,7 +322,7 @@ export function QuizzesView({ bookLabel }: { bookLabel: string }) {
     if (!data?.quizzes) return
     setExtra(
       <div className="flex items-center gap-1.5 ml-auto">
-        <span className="text-[10px] bg-white/20 rounded-full px-2 py-0.5">{quizzes.length} questions</span>
+        <span className="text-[10px] bg-white/20 rounded-full px-2 py-0.5">{displayQuizzes.length} questions</span>
         <VersionPicker
           currentVersion={data.version}
           saving={saving}
@@ -331,7 +335,7 @@ export function QuizzesView({ bookLabel }: { bookLabel: string }) {
       </div>
     )
     return () => setExtra(null)
-  }, [data, quizzes.length, saving, dirty, bookLabel])
+  }, [data, displayQuizzes.length, saving, dirty, bookLabel, selectedPageId])
 
   const updateQuestion = (idx: number, question: string) => {
     const base = pending ?? data?.quizzes
@@ -394,9 +398,23 @@ export function QuizzesView({ bookLabel }: { bookLabel: string }) {
     )
   }
 
+  if (selectedPageId && displayQuizzes.length === 0 && quizzes.length > 0) {
+    return (
+      <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
+        <div className="w-12 h-12 rounded-full bg-orange-50 flex items-center justify-center mb-3">
+          <HelpCircle className="w-6 h-6 text-orange-300" />
+        </div>
+        <p className="text-sm font-medium">No quizzes for this page</p>
+        <p className="text-xs mt-1">Quizzes are linked to other pages in this book</p>
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-2">
-      {quizzes.map((quiz, idx) => (
+      {displayQuizzes.map((quiz) => {
+        const idx = quizzes.indexOf(quiz)
+        return (
         <div key={idx} className="rounded-md border bg-card overflow-hidden">
           <div className="flex flex-wrap items-center gap-1.5 px-4 py-2 bg-muted/20 border-b">
             {quiz.pageIds.length > 0 ? (
@@ -454,7 +472,8 @@ export function QuizzesView({ bookLabel }: { bookLabel: string }) {
             )}
           </div>
         </div>
-      ))}
+        )
+      })}
       <PageLightbox
         bookLabel={bookLabel}
         pageId={lightboxPageId}
