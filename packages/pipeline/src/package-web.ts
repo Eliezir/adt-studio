@@ -164,7 +164,6 @@ export async function packageAdtWeb(
           // Check for math content
           if (containsMathContent(rewrittenHtml)) hasMath = true
 
-          // Generate page HTML
           const pageHtml = renderPageHtml({
             content: rewrittenHtml,
             language,
@@ -175,7 +174,6 @@ export async function packageAdtWeb(
             hasMath: containsMathContent(rewrittenHtml),
             bundleVersion,
           })
-
           fs.writeFileSync(path.join(adtDir, `${page.pageId}.html`), pageHtml)
 
           const entry: PageEntry = {
@@ -205,8 +203,8 @@ export async function packageAdtWeb(
         bundleVersion,
         skipContentWrapper: true,
       })
-
       fs.writeFileSync(path.join(adtDir, `${quizId}.html`), quizPageHtml)
+
       const quizEntry: PageEntry = { section_id: quizId, href: `${quizId}.html` }
       if (pageNumber !== undefined) quizEntry.page_number = pageNumber
       pageList.push(quizEntry)
@@ -433,7 +431,7 @@ export function renderPageHtml(opts: RenderPageOptions): string {
 
   const contentBlock = opts.skipContentWrapper
     ? `    ${opts.content}`
-    : `    <div id="content">
+    : `    <div id="content" class="opacity-0">
     ${opts.content}
     </div>`
 
@@ -446,6 +444,8 @@ export function renderPageHtml(opts: RenderPageOptions): string {
     <title>${escapeHtml(opts.pageTitle)}</title>
     <meta name="title-id" content="${escapeAttr(opts.sectionId)}" />
     <meta name="page-section-id" content="${opts.pageIndex}" />
+    <link rel="preload" href="./assets/fonts/Merriweather-VariableFont_opsz,wdth,wght.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="./assets/fonts/Merriweather-Italic-VariableFont_opsz,wdth,wght.woff2" as="font" type="font/woff2" crossorigin>
     <link href="./content/tailwind_output.css" rel="stylesheet">
     <link href="./assets/libs/fontawesome/css/all.min.css" rel="stylesheet">
     <link href="./assets/fonts.css" rel="stylesheet">
@@ -552,7 +552,7 @@ export function renderQuizHtml(
     }
 </style>
 
-<div id="content" class="container content mx-auto w-full min-h-screen px-8 py-8 flex items-center justify-center">
+<div id="content" class="container content mx-auto w-full min-h-screen px-8 py-8 flex items-center justify-center opacity-0">
     <section
         id="simple-main"
         role="activity"
