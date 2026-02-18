@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react"
-import { Check, ChevronDown, Loader2 } from "lucide-react"
+import { Check, ChevronDown, Image as ImageIcon, Loader2 } from "lucide-react"
 import { useQueryClient } from "@tanstack/react-query"
 import { api } from "@/api/client"
 import type { PageDetail, VersionEntry } from "@/api/client"
@@ -218,7 +218,7 @@ function PageCaptions({ bookLabel, pageId, pageNumber }: { bookLabel: string; pa
   )
 }
 
-export function CaptionsView({ bookLabel }: { bookLabel: string }) {
+export function CaptionsView({ bookLabel, selectedPageId }: { bookLabel: string; selectedPageId?: string }) {
   const { data: pages, isLoading } = usePages(bookLabel)
   const { setExtra } = useStepHeader()
   const { progress: stepProgress, startRun, setSseEnabled } = useStepRun()
@@ -237,18 +237,22 @@ export function CaptionsView({ bookLabel }: { bookLabel: string }) {
 
   const pagesWithImages = (pages ?? []).filter((p) => p.imageCount > 0)
   const hasCaptionData = pagesWithImages.some((p) => p.hasCaptioning)
-  const totalImages = pagesWithImages.reduce((sum, p) => sum + p.imageCount, 0)
+
+  const displayPages = selectedPageId
+    ? pagesWithImages.filter((p) => p.pageId === selectedPageId)
+    : pagesWithImages
+  const totalImages = displayPages.reduce((sum, p) => sum + p.imageCount, 0)
 
   useEffect(() => {
     if (!pages) return
     setExtra(
       <div className="flex items-center gap-1.5 ml-auto">
         <span className="text-[10px] bg-white/20 rounded-full px-2 py-0.5">{totalImages} images</span>
-        <span className="text-[10px] bg-white/20 rounded-full px-2 py-0.5">{pagesWithImages.length} pages</span>
+        <span className="text-[10px] bg-white/20 rounded-full px-2 py-0.5">{displayPages.length} pages</span>
       </div>
     )
     return () => setExtra(null)
-  }, [pages, totalImages, pagesWithImages.length, setExtra])
+  }, [pages, totalImages, displayPages.length, setExtra, selectedPageId])
 
   if (isLoading && !captionsRunning) {
     return (
@@ -274,9 +278,21 @@ export function CaptionsView({ bookLabel }: { bookLabel: string }) {
     )
   }
 
+  if (selectedPageId && displayPages.length === 0 && pagesWithImages.length > 0) {
+    return (
+      <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
+        <div className="w-12 h-12 rounded-full bg-teal-50 flex items-center justify-center mb-3">
+          <ImageIcon className="w-6 h-6 text-teal-300" />
+        </div>
+        <p className="text-sm font-medium">No captions for this page</p>
+        <p className="text-xs mt-1">This page has no captioned images</p>
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-4">
-      {pagesWithImages.map((page) => (
+      {displayPages.map((page) => (
         <PageCaptions
           key={page.pageId}
           bookLabel={bookLabel}
