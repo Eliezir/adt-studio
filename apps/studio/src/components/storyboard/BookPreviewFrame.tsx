@@ -125,11 +125,8 @@ export const BookPreviewFrame = forwardRef<BookPreviewFrameHandle, BookPreviewFr
     }
     if (editing && editing !== el) finishEditing();
     selectElement(el);
-  });
-
-  document.addEventListener('dblclick', function(e) {
-    var el = e.target.closest('[data-id]');
-    if (el) startEditing(el);
+    // Single-click on text enters edit mode immediately; images just select
+    if (el.tagName !== 'IMG') startEditing(el);
   });
 
   document.addEventListener('keydown', function(e) {
