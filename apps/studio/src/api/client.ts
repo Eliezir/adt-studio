@@ -479,7 +479,8 @@ export const api = {
     sectionIndex: number,
     instruction: string,
     apiKey: string,
-    currentHtml?: string
+    currentHtml?: string,
+    signal?: AbortSignal
   ) =>
     request<{ html: string; reasoning: string }>(
       `/books/${label}/pages/${pageId}/sections/${sectionIndex}/ai-edit`,
@@ -487,7 +488,7 @@ export const api = {
         method: "POST",
         headers: { "X-OpenAI-Key": apiKey },
         body: JSON.stringify({ instruction, currentHtml }),
-        signal: AbortSignal.timeout(120_000),
+        signal: signal ?? AbortSignal.timeout(120_000),
       }
     ),
 
