@@ -3,11 +3,9 @@ import { createBookStorage } from "@adt/storage"
 import { createLLMModel, createPromptEngine } from "@adt/llm"
 import type { LLMModel } from "@adt/llm"
 import { renderPage, buildRenderStrategyResolver, createTemplateEngine, loadBookConfig } from "@adt/pipeline"
-import type {
-  TextClassificationOutput,
-  ImageClassificationOutput,
-  PageSectioningOutput,
-} from "@adt/types"
+import { loadStyleguideContent } from "./pipeline-runner"
+import type { PageSectioningOutput, WebRenderingOutput } from "@adt/types"
+import { webRenderingLLMSchema } from "@adt/types"
 
 export interface ReRenderOptions {
   label: string
@@ -23,6 +21,24 @@ export interface ReRenderResult {
   rendering: unknown
 }
 
+export interface AiEditSectionOptions {
+  label: string
+  pageId: string
+  sectionIndex: number
+  instruction: string
+  /** Optional: current HTML from the frontend (for successive edits on unsaved changes) */
+  currentHtml?: string
+  booksDir: string
+  promptsDir: string
+  configPath?: string
+  apiKey: string
+}
+
+export interface AiEditSectionResult {
+  html: string
+  reasoning: string
+}
+
 export async function reRenderPage(
   options: ReRenderOptions
 ): Promise<ReRenderResult> {
@@ -36,41 +52,33 @@ export async function reRenderPage(
 
   try {
     // Read latest pipeline data
-    const textRow = storage.getLatestNodeData("text-classification", pageId)
-    const imageRow = storage.getLatestNodeData("image-classification", pageId)
     const sectionRow = storage.getLatestNodeData("page-sectioning", pageId)
 
-    if (!textRow || !imageRow || !sectionRow) {
+    if (!sectionRow) {
       throw new Error(
-        "Page must have text-classification, image-classification, and page-sectioning data before re-rendering"
+        "Page must have page-sectioning data before re-rendering"
       )
     }
 
-    const textClassification = textRow.data as TextClassificationOutput
-    const imageClassification = imageRow.data as ImageClassificationOutput
     const sectioning = sectionRow.data as PageSectioningOutput
 
-    // Build image map (non-pruned images)
+    // Build image map (all page images — expandParts filters by pruned status)
     const allImages = storage.getPageImages(pageId)
-    const prunedImageIds = new Set(
-      imageClassification.images
-        .filter((img) => img.isPruned)
-        .map((img) => img.imageId)
-    )
     const renderImages = new Map<string, string>()
     for (const img of allImages) {
-      if (!prunedImageIds.has(img.imageId)) {
-        renderImages.set(img.imageId, storage.getImageBase64(img.imageId))
-      }
+      renderImages.set(img.imageId, storage.getImageBase64(img.imageId))
     }
 
     // Load config and build render strategy resolver
     const config = loadBookConfig(label, booksDir, configPath)
     const resolveRenderConfig = buildRenderStrategyResolver(config)
 
+    const styleguideContent = loadStyleguideContent(config.styleguide, configPath)
+
     // Create LLM model resolver (model-specific, cached)
     const cacheDir = path.join(path.resolve(booksDir), label, ".cache")
-    const promptEngine = createPromptEngine(promptsDir)
+    const bookPromptsDir = path.join(path.resolve(booksDir), label, "prompts")
+    const promptEngine = createPromptEngine([bookPromptsDir, promptsDir])
     const templatesDir = path.join(path.dirname(promptsDir), "templates")
     const templateEngine = createTemplateEngine(templatesDir)
     const renderModels = new Map<string, LLMModel>()
@@ -97,8 +105,8 @@ export async function reRenderPage(
         pageId,
         pageImageBase64,
         sectioning,
-        textClassification,
         images: renderImages,
+        styleguide: styleguideContent,
       },
       resolveRenderConfig,
       resolveRenderModel,
@@ -112,6 +120,96 @@ export async function reRenderPage(
   } finally {
     storage.close()
     // Restore previous key
+    if (previousKey !== undefined) {
+      process.env.OPENAI_API_KEY = previousKey
+    } else {
+      delete process.env.OPENAI_API_KEY
+    }
+  }
+}
+
+/**
+ * Use LLM to edit a single section's HTML based on a natural language instruction.
+ * Returns the edited HTML and reasoning without saving — the frontend previews first.
+ */
+export async function aiEditSection(
+  options: AiEditSectionOptions
+): Promise<AiEditSectionResult> {
+  const { label, pageId, sectionIndex, instruction, currentHtml: providedHtml, booksDir, promptsDir, configPath, apiKey } = options
+
+  const previousKey = process.env.OPENAI_API_KEY
+  process.env.OPENAI_API_KEY = apiKey
+
+  const storage = createBookStorage(label, booksDir)
+
+  try {
+    // Use provided HTML (from frontend pending state) or read from DB
+    let currentHtml: string
+    if (providedHtml) {
+      currentHtml = providedHtml
+    } else {
+      const renderingRow = storage.getLatestNodeData("web-rendering", pageId)
+      if (!renderingRow) {
+        throw new Error("Page must have web-rendering data before AI editing")
+      }
+      const rendering = renderingRow.data as WebRenderingOutput
+      const section = rendering.sections[sectionIndex]
+      if (!section) {
+        throw new Error(`Section ${sectionIndex} not found in rendering`)
+      }
+      currentHtml = section.html
+    }
+
+    // Load config to get model ID for editing
+    const config = loadBookConfig(label, booksDir, configPath)
+    const modelId = (config as Record<string, unknown>).page_sectioning
+      ? ((config as Record<string, unknown>).page_sectioning as Record<string, unknown>).model as string
+      : "openai:gpt-4o"
+
+    // Build LLM model
+    const cacheDir = path.join(path.resolve(booksDir), label, ".cache")
+    const bookPromptsDir = path.join(path.resolve(booksDir), label, "prompts")
+    const promptEngine = createPromptEngine([bookPromptsDir, promptsDir])
+    const model = createLLMModel({
+      modelId,
+      cacheDir,
+      promptEngine,
+      onLog: (entry) => storage.appendLlmLog(entry),
+    })
+
+    // Extract existing data-ids for validation
+    const dataIdRegex = /data-id="([^"]+)"/g
+    const existingIds = new Set<string>()
+    let match
+    while ((match = dataIdRegex.exec(currentHtml)) !== null) {
+      existingIds.add(match[1])
+    }
+
+    const result = await model.generateObject<{ reasoning: string; content: string }>({
+      schema: webRenderingLLMSchema,
+      prompt: "html_edit",
+      context: { current_html: currentHtml, instruction },
+      validate: (obj) => {
+        const r = obj as { content: string }
+        const errors: string[] = []
+        if (!r.content.includes("<section")) {
+          errors.push("Result must contain a <section> element")
+        }
+        // Verify all existing data-ids are preserved
+        for (const id of existingIds) {
+          if (!r.content.includes(`data-id="${id}"`)) {
+            errors.push(`Missing data-id="${id}" in result`)
+          }
+        }
+        return { valid: errors.length === 0, errors }
+      },
+      maxRetries: 3,
+      log: { taskType: "web-rendering", pageId, promptName: "html_edit" },
+    })
+
+    return { html: result.object.content, reasoning: result.object.reasoning }
+  } finally {
+    storage.close()
     if (previousKey !== undefined) {
       process.env.OPENAI_API_KEY = previousKey
     } else {

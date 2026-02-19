@@ -3,7 +3,7 @@ import { parseDocument, DomUtils } from "htmlparser2"
 export interface HtmlValidationResult {
   valid: boolean
   errors: string[]
-  /** The cleaned HTML (section inner HTML if a <section> tag was found) */
+  /** The cleaned HTML — includes <div id="content"> wrapper when present, otherwise just the <section> */
   sectionHtml?: string
 }
 
@@ -11,14 +11,22 @@ const EXEMPT_TAGS = new Set(["style", "script"])
 const DISALLOWED_TAGS = new Set(["script", "iframe", "object", "embed"])
 const URL_ATTRS = new Set(["src", "href", "xlink:href", "formaction"])
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function findSectionElements(doc: any): any[] {
+  return DomUtils.findAll(
+    (el) => el.type === "tag" && el.name === "section",
+    doc.children ?? []
+  )
+}
+
 /**
- * Find the first <section> element in the parsed document.
- * Returns null if no <section> tag exists.
+ * Find the <div id="content"> container in the parsed document.
+ * Returns null if no such element exists.
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function findSectionElement(doc: any): any | null {
+function findContentContainer(doc: any): any | null {
   return DomUtils.findOne(
-    (el) => el.type === "tag" && el.name === "section",
+    (el) => el.type === "tag" && el.name === "div" && el.attribs?.id === "content",
     doc.children ?? [],
     true
   )
@@ -27,6 +35,12 @@ function findSectionElement(doc: any): any | null {
 export interface HtmlValidationOptions {
   /** When true, data-ids prefixed with "activity_gen_" are allowed even if not in the allowed set */
   allowActivityGeneratedIds?: boolean
+  /** Map of text data-id → expected text content. Validates rendered text matches the source. */
+  expectedTexts?: Map<string, string>
+  /** Expected value for the section's data-section-type attribute. */
+  expectedSectionType?: string
+  /** Expected value for the section's data-section-id attribute. */
+  expectedSectionId?: string
 }
 
 export function validateSectionHtml(
@@ -41,11 +55,17 @@ export function validateSectionHtml(
   const errors: string[] = []
   const doc = parseDocument(html)
 
-  const section = findSectionElement(doc)
-  if (!section) {
+  const sections = findSectionElements(doc)
+  if (sections.length === 0) {
     errors.push("No <section> tag found in HTML output")
     return { valid: false, errors }
   }
+  if (sections.length > 1) {
+    errors.push(`Expected exactly one <section> tag, found ${sections.length}`)
+  }
+
+  const section = sections[0]
+  validateRequiredSectionAttributes(section, options, errors)
 
   walkNode(section, allowedIds, errors, options)
 
@@ -53,10 +73,47 @@ export function validateSectionHtml(
     rewriteImageSrcs(section, imageIdSet, imageUrlPrefix)
   }
 
+  // Prefer the <div id="content"> wrapper when present so background colors
+  // and other container-level styling are preserved in the stored HTML.
+  const contentContainer = findContentContainer(doc)
+  const outputNode = contentContainer ?? section
+
   return {
     valid: errors.length === 0,
     errors,
-    sectionHtml: DomUtils.getOuterHTML(section),
+    sectionHtml: DomUtils.getOuterHTML(outputNode),
+  }
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function validateRequiredSectionAttributes(
+  section: any,
+  options: HtmlValidationOptions | undefined,
+  errors: string[]
+): void {
+  if (!options) return
+
+  const actualSectionType = section.attribs?.["data-section-type"]
+  const actualSectionId = section.attribs?.["data-section-id"]
+
+  if (options.expectedSectionType !== undefined) {
+    if (actualSectionType === undefined) {
+      errors.push('Missing required section attribute "data-section-type"')
+    } else if (actualSectionType !== options.expectedSectionType) {
+      errors.push(
+        `Invalid data-section-type: expected "${options.expectedSectionType}" but got "${actualSectionType}"`
+      )
+    }
+  }
+
+  if (options.expectedSectionId !== undefined) {
+    if (actualSectionId === undefined) {
+      errors.push('Missing required section attribute "data-section-id"')
+    } else if (actualSectionId !== options.expectedSectionId) {
+      errors.push(
+        `Invalid data-section-id: expected "${options.expectedSectionId}" but got "${actualSectionId}"`
+      )
+    }
   }
 }
 
@@ -98,9 +155,22 @@ function walkNode(node: any, allowedIds: Set<string>, errors: string[], options?
     }
 
     const dataId = node.attribs?.["data-id"]
-    if (dataId !== undefined && !allowedIds.has(dataId)) {
+    // Skip data-id validation on <section> elements — their data-id is a
+    // section identifier (e.g. "pg028_section"), not a content element ID.
+    if (dataId !== undefined && tagName !== "section" && !allowedIds.has(dataId)) {
       if (!(options?.allowActivityGeneratedIds && dataId.startsWith("activity_gen_"))) {
         errors.push(`Unknown data-id: "${dataId}"`)
+      }
+    }
+
+    // Verify text content matches expected text for this data-id
+    if (dataId !== undefined && options?.expectedTexts?.has(dataId)) {
+      const actualText = normalizeText(DomUtils.getText(node))
+      const expectedText = normalizeText(options.expectedTexts.get(dataId)!)
+      if (actualText !== expectedText) {
+        errors.push(
+          `Text mismatch for data-id "${dataId}": expected "${expectedText.slice(0, 80)}" but got "${actualText.slice(0, 80)}"`
+        )
       }
     }
   }
@@ -161,6 +231,10 @@ function hasAncestorWithDataId(node: any): boolean {
     current = current.parent
   }
   return false
+}
+
+function normalizeText(text: string): string {
+  return text.replace(/\s+/g, " ").trim()
 }
 
 function isUnsafeUrl(value: string): boolean {

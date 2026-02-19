@@ -114,7 +114,6 @@ describe("Pipeline routes", () => {
           body: JSON.stringify({
             startPage: 1,
             endPage: 5,
-            concurrency: 4,
           }),
         }
       )
@@ -129,10 +128,68 @@ describe("Pipeline routes", () => {
         expect.objectContaining({
           startPage: 1,
           endPage: 5,
-          concurrency: 4,
         }),
         expect.anything()
       )
+    })
+
+    it("rejects unsupported run options", async () => {
+      const res = await app.request(
+        "/api/books/my-book/pipeline/run",
+        {
+          method: "POST",
+          headers: {
+            "X-OpenAI-Key": "sk-test-key",
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            concurrency: 4,
+          }),
+        }
+      )
+
+      expect(res.status).toBe(400)
+      const body = await res.json()
+      expect(body.error).toContain("Invalid pipeline run options")
+    })
+
+    it("rejects invalid page range", async () => {
+      const res = await app.request(
+        "/api/books/my-book/pipeline/run",
+        {
+          method: "POST",
+          headers: {
+            "X-OpenAI-Key": "sk-test-key",
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            startPage: 5,
+            endPage: 1,
+          }),
+        }
+      )
+
+      expect(res.status).toBe(400)
+      const body = await res.json()
+      expect(body.error).toContain("endPage")
+    })
+
+    it("rejects invalid JSON body", async () => {
+      const res = await app.request(
+        "/api/books/my-book/pipeline/run",
+        {
+          method: "POST",
+          headers: {
+            "X-OpenAI-Key": "sk-test-key",
+            "Content-Type": "application/json",
+          },
+          body: "{not-json",
+        }
+      )
+
+      expect(res.status).toBe(400)
+      const body = await res.json()
+      expect(body.error).toContain("Invalid JSON body")
     })
   })
 

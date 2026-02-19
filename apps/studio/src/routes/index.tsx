@@ -15,8 +15,10 @@ import {
   User,
   Globe,
   CheckCircle2,
+  Settings,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { useSettingsDialog } from "@/routes/__root"
 import { Badge } from "@/components/ui/badge"
 import { DeleteBookDialog } from "@/components/books/DeleteBookDialog"
 import { useBooks, useDeleteBook } from "@/hooks/use-books"
@@ -85,9 +87,8 @@ function BookRow({
       <div className="flex items-stretch">
         {/* Main content — clickable */}
         <Link
-          to="/books/$label"
-          params={{ label: book.label }}
-          search={{ autoRun: undefined, startPage: undefined, endPage: undefined }}
+          to="/books/$label/v2/$step"
+          params={{ label: book.label, step: "extract" }}
           className="flex-1 min-w-0 p-5"
         >
           {/* Top: title + badges */}
@@ -181,7 +182,7 @@ function BookRow({
             className="h-8 w-8 text-muted-foreground hover:text-primary"
             asChild
           >
-            <Link to="/books/$label" params={{ label: book.label }} search={{ autoRun: undefined, startPage: undefined, endPage: undefined }}>
+            <Link to="/books/$label/v2/$step" params={{ label: book.label, step: "extract" }}>
               <Pencil className="h-4 w-4" />
             </Link>
           </Button>
@@ -203,6 +204,7 @@ function HomePage() {
   const { data: books, isLoading, error } = useBooks()
   const deleteMutation = useDeleteBook()
   const [deleteLabel, setDeleteLabel] = useState<string | null>(null)
+  const { openSettings } = useSettingsDialog()
 
   if (isLoading) {
     return (
@@ -227,7 +229,18 @@ function HomePage() {
       {/* Left — workflow guide (30%) */}
       <div className="w-[30%] shrink-0 border-r bg-muted/30 flex flex-col overflow-auto">
         <div className="p-5 pb-3">
-          <h1 className="text-lg font-bold tracking-tight text-primary">ADT Studio</h1>
+          <div className="flex items-center justify-between">
+            <h1 className="text-lg font-bold tracking-tight text-primary">ADT Studio</h1>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7 text-muted-foreground hover:text-foreground"
+              onClick={openSettings}
+              title="API Key Settings"
+            >
+              <Settings className="h-3.5 w-3.5" />
+            </Button>
+          </div>
           <p className="text-xs text-muted-foreground mt-0.5">
             Accessible Digital Textbooks
           </p>

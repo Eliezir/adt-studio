@@ -14,8 +14,31 @@ import {
   acceptStoryboard,
 } from "../services/book-service.js"
 import { exportBook } from "../services/export-service.js"
+import { exportBookEpub } from "../services/epub-service.js"
 
-export function createBookRoutes(booksDir: string): Hono {
+const MIME_TYPES: Record<string, string> = {
+  ".html": "text/html; charset=utf-8",
+  ".js": "application/javascript; charset=utf-8",
+  ".css": "text/css; charset=utf-8",
+  ".json": "application/json; charset=utf-8",
+  ".mp3": "audio/mpeg",
+  ".jpg": "image/jpeg",
+  ".jpeg": "image/jpeg",
+  ".png": "image/png",
+  ".svg": "image/svg+xml",
+  ".woff": "font/woff",
+  ".woff2": "font/woff2",
+  ".ttf": "font/ttf",
+  ".ico": "image/x-icon",
+  ".webp": "image/webp",
+  ".dic": "application/octet-stream",
+}
+
+export function createBookRoutes(
+  booksDir: string,
+  webAssetsDir?: string,
+  configPath?: string,
+): Hono {
   const app = new Hono()
 
   app.get("/books", (c) => {
@@ -133,12 +156,76 @@ export function createBookRoutes(booksDir: string): Hono {
     }
   })
 
-  // GET /books/:label/export — Download book as ZIP
-  app.get("/books/:label/export", (c) => {
+  // GET /books/:label/step-status — Which pipeline steps have data
+  app.get("/books/:label/step-status", (c) => {
     const { label } = c.req.param()
+    let safeLabel: string
     try {
-      const result = exportBook(label, booksDir)
-      c.header("Content-Type", "application/zip")
+      safeLabel = parseBookLabel(label)
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err)
+      throw new HTTPException(400, { message })
+    }
+    const resolvedDir = path.resolve(booksDir)
+    const dbPath = path.join(resolvedDir, safeLabel, `${safeLabel}.db`)
+
+    if (!fs.existsSync(dbPath)) {
+      return c.json({ steps: {} })
+    }
+
+    const db = openBookDb(dbPath)
+    try {
+      // Check if pages exist (extract step)
+      const pageRows = db.all("SELECT COUNT(*) as count FROM pages") as Array<{ count: number }>
+      const hasPages = (pageRows[0]?.count ?? 0) > 0
+
+      // Get all distinct nodes that have data
+      const nodeRows = db.all("SELECT DISTINCT node FROM node_data") as Array<{ node: string }>
+      const nodes = new Set(nodeRows.map((r) => r.node))
+
+      // Map nodes → step slugs
+      const NODE_TO_STEP: Record<string, string> = {
+        "page-sectioning": "storyboard",
+        "web-rendering": "storyboard",
+        "storyboard-acceptance": "storyboard",
+        "quiz-generation": "quizzes",
+        "image-captioning": "captions",
+        glossary: "glossary",
+        "text-catalog": "translations",
+        "text-catalog-translation": "translations",
+        tts: "text-to-speech",
+      }
+
+      const steps: Record<string, boolean> = {}
+      if (hasPages) steps.extract = true
+      for (const node of nodes) {
+        const step = NODE_TO_STEP[node]
+        if (step) steps[step] = true
+      }
+
+      // Check if ADT is packaged (preview step)
+      const adtDir = path.join(resolvedDir, safeLabel, "adt")
+      if (fs.existsSync(adtDir)) steps.preview = true
+
+      return c.json({ steps })
+    } finally {
+      db.close()
+    }
+  })
+
+  // GET /books/:label/export — Download book as ZIP or EPUB
+  app.get("/books/:label/export", async (c) => {
+    const { label } = c.req.param()
+    const format = c.req.query("format") ?? "web"
+    if (format !== "web" && format !== "epub") {
+      throw new HTTPException(400, { message: `Invalid format: ${format}. Must be "web" or "epub".` })
+    }
+    try {
+      const result = format === "epub"
+        ? await exportBookEpub(label, booksDir, configPath)
+        : await exportBook(label, booksDir, webAssetsDir ?? "", configPath)
+      const contentType = format === "epub" ? "application/epub+zip" : "application/zip"
+      c.header("Content-Type", contentType)
       c.header(
         "Content-Disposition",
         `attachment; filename="${result.filename}"`
@@ -215,6 +302,78 @@ export function createBookRoutes(booksDir: string): Hono {
     } finally {
       db.close()
     }
+  })
+
+  // GET /books/:label/adt/* — Serve packaged ADT static files
+  // Supports an optional cache-bust version segment: /adt/v-{ts}/page.html
+  // The version segment is stripped before resolving files, so all relative
+  // URLs (pages, assets, content) carry the same bust automatically.
+  // When no file path is given, redirect to the first page.
+  app.get("/books/:label/adt/*", (c) => {
+    const { label } = c.req.param()
+    let safeLabel: string
+    try {
+      safeLabel = parseBookLabel(label)
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err)
+      throw new HTTPException(400, { message })
+    }
+    const adtDir = path.join(path.resolve(booksDir), safeLabel, "adt")
+    if (!fs.existsSync(adtDir)) {
+      throw new HTTPException(404, {
+        message: `ADT not packaged for book: ${safeLabel}`,
+      })
+    }
+
+    // Extract file path from URL — c.req.param("*") is unreliable in sub-routers
+    const adtPrefix = `/books/${safeLabel}/adt/`
+    const reqPath = c.req.path
+    const prefixIdx = reqPath.indexOf(adtPrefix)
+    let filePath = prefixIdx >= 0 ? reqPath.slice(prefixIdx + adtPrefix.length) : ""
+
+    // Strip optional cache-bust version segment (e.g. "v-1708300000000/" or "v-1708300000000")
+    filePath = filePath.replace(/^v-[^/]+\/?/, "")
+
+    if (!filePath) {
+      // Root request — redirect to first page
+      const pagesPath = path.join(adtDir, "content", "pages.json")
+      if (!fs.existsSync(pagesPath)) {
+        throw new HTTPException(404, {
+          message: `ADT not packaged for book: ${safeLabel}`,
+        })
+      }
+      const pages = JSON.parse(fs.readFileSync(pagesPath, "utf-8")) as Array<{ href: string }>
+      if (pages.length === 0) {
+        throw new HTTPException(404, { message: "ADT has no pages" })
+      }
+      // Preserve the version segment in the redirect
+      const versionMatch = reqPath.match(/\/adt\/(v-[^/]+)/)
+      const versionPrefix = versionMatch ? `${versionMatch[1]}/` : ""
+      return c.redirect(`/api/books/${safeLabel}/adt/${versionPrefix}${pages[0].href}`)
+    }
+
+    const resolvedPath = path.resolve(adtDir, filePath)
+    if (!resolvedPath.startsWith(adtDir + path.sep)) {
+      throw new HTTPException(400, { message: "Invalid path" })
+    }
+
+    let stat: fs.Stats
+    try {
+      stat = fs.statSync(resolvedPath)
+    } catch {
+      throw new HTTPException(404, { message: `Not found: ${filePath}` })
+    }
+    if (!stat.isFile()) {
+      throw new HTTPException(404, { message: `Not found: ${filePath}` })
+    }
+
+    const fileBuffer = fs.readFileSync(resolvedPath)
+    const ext = path.extname(resolvedPath).toLowerCase()
+    c.header("Content-Type", MIME_TYPES[ext] ?? "application/octet-stream")
+    // Cache indefinitely — the iframe URL includes a cache-busting version
+    // segment (v-{timestamp}) that changes on every repackage.
+    c.header("Cache-Control", "public, max-age=31536000, immutable")
+    return c.body(fileBuffer)
   })
 
   return app

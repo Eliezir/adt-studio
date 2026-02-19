@@ -1,4 +1,22 @@
-const BASE_URL = "/api"
+function resolveBaseUrl(): string {
+  if (
+    window.location.protocol === "tauri:" ||
+    window.location.hostname === "tauri.localhost"
+  ) {
+    return "http://localhost:3001/api"
+  }
+  return "/api"
+}
+
+const BASE_URL = resolveBaseUrl()
+
+export function getAdtUrl(label: string): string {
+  return `${BASE_URL}/books/${label}/adt`
+}
+
+export function getAudioUrl(label: string, language: string, fileName: string): string {
+  return `${BASE_URL}/books/${label}/audio/${language}/${fileName}`
+}
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
   const url = `${BASE_URL}${path}`
@@ -31,6 +49,7 @@ export interface BookSummary {
   needsRebuild: boolean
   rebuildReason: string | null
   storyboardAccepted: boolean
+  proofCompleted: boolean
 }
 
 export interface BookDetail extends BookSummary {
@@ -52,17 +71,65 @@ export interface PipelineStatus {
   completedAt?: number
 }
 
+export interface ProofStatus {
+  label: string
+  status: "idle" | "running" | "completed" | "failed"
+  error?: string
+  startedAt?: number
+  completedAt?: number
+}
+
+export interface MasterStatus {
+  label: string
+  status: "idle" | "running" | "completed" | "failed"
+  error?: string
+  startedAt?: number
+  completedAt?: number
+}
+
+export interface AzureCredentials {
+  key: string
+  region: string
+}
+
 export interface RunPipelineOptions {
   startPage?: number
   endPage?: number
-  concurrency?: number
+}
+
+export interface RunStepsOptions {
+  fromStep: string
+  toStep: string
+}
+
+function buildApiHeaders(
+  apiKey: string,
+  azure?: AzureCredentials
+): Record<string, string> {
+  const headers: Record<string, string> = { "X-OpenAI-Key": apiKey }
+  if (azure?.key) headers["X-Azure-Speech-Key"] = azure.key
+  if (azure?.region) headers["X-Azure-Speech-Region"] = azure.region
+  return headers
+}
+
+export interface StepRunStatus {
+  label: string
+  status: "idle" | "running" | "completed" | "failed"
+  fromStep?: string
+  toStep?: string
+  error?: string
+  startedAt?: number
+  completedAt?: number
 }
 
 export interface PageSummaryItem {
   pageId: string
   pageNumber: number
   hasRendering: boolean
+  hasCaptioning: boolean
   textPreview: string
+  imageCount: number
+  wordCount: number
 }
 
 export interface SectionRendering {
@@ -96,8 +163,23 @@ export interface PageDetail {
   sectioning: {
     reasoning: string
     sections: Array<{
+      sectionId: string
       sectionType: string
-      partIds: string[]
+      parts: Array<
+        | {
+            type: "text_group"
+            groupId: string
+            groupType: string
+            texts: Array<{ textType: string; text: string; isPruned: boolean }>
+            isPruned: boolean
+          }
+        | {
+            type: "image"
+            imageId: string
+            isPruned: boolean
+            reason?: string
+          }
+      >
       backgroundColor: string
       textColor: string
       pageNumber: number | null
@@ -107,6 +189,95 @@ export interface PageDetail {
   rendering: {
     sections: SectionRendering[]
   } | null
+  imageCaptioning: {
+    captions: Array<{ imageId: string; reasoning: string; caption: string }>
+  } | null
+  versions: {
+    textClassification: number | null
+    imageClassification: number | null
+    sectioning: number | null
+    rendering: number | null
+    imageCaptioning: number | null
+  }
+}
+
+// --- Glossary types ---
+
+export interface GlossaryItem {
+  word: string
+  definition: string
+  variations: string[]
+  emojis: string[]
+}
+
+export interface GlossaryOutput {
+  items: GlossaryItem[]
+  pageCount: number
+  generatedAt: string
+  version: number
+}
+
+// --- Quiz types ---
+
+export interface QuizOption {
+  text: string
+  explanation: string
+}
+
+export interface QuizItem {
+  quizIndex: number
+  afterPageId: string
+  pageIds: string[]
+  question: string
+  options: QuizOption[]
+  answerIndex: number
+  reasoning: string
+}
+
+export interface QuizGenerationOutput {
+  generatedAt: string
+  language: string
+  pagesPerQuiz: number
+  quizzes: QuizItem[]
+}
+
+export interface QuizzesResponse {
+  quizzes: QuizGenerationOutput | null
+  version: number | null
+}
+
+// --- Text Catalog types ---
+
+export interface TextCatalogEntry {
+  id: string
+  text: string
+}
+
+export interface TextCatalogResponse {
+  entries: TextCatalogEntry[]
+  generatedAt: string
+  version: number
+  translations: Record<string, { entries: TextCatalogEntry[]; version: number }>
+}
+
+// --- TTS types ---
+
+export interface TTSEntry {
+  textId: string
+  fileName: string
+  voice: string
+  model: string
+  cached: boolean
+}
+
+export interface TTSLanguageData {
+  entries: TTSEntry[]
+  generatedAt: string
+  version: number
+}
+
+export interface TTSResponse {
+  languages: Record<string, TTSLanguageData>
 }
 
 // --- Debug types ---
@@ -217,19 +388,38 @@ export const api = {
   runPipeline: (
     label: string,
     apiKey: string,
-    options?: RunPipelineOptions
+    options?: RunPipelineOptions,
+    azure?: AzureCredentials
   ) =>
     request<{ status: string; label: string }>(
       `/books/${label}/pipeline/run`,
       {
         method: "POST",
-        headers: { "X-OpenAI-Key": apiKey },
+        headers: buildApiHeaders(apiKey, azure),
         body: options ? JSON.stringify(options) : undefined,
       }
     ),
 
   getPipelineStatus: (label: string) =>
     request<PipelineStatus>(`/books/${label}/pipeline/status`),
+
+  runSteps: (
+    label: string,
+    apiKey: string,
+    options: RunStepsOptions,
+    azure?: AzureCredentials
+  ) =>
+    request<{ status: string; label: string; fromStep: string; toStep: string }>(
+      `/books/${label}/steps/run`,
+      {
+        method: "POST",
+        headers: buildApiHeaders(apiKey, azure),
+        body: JSON.stringify(options),
+      }
+    ),
+
+  getStepsStatus: (label: string) =>
+    request<StepRunStatus>(`/books/${label}/steps/status`),
 
   getPages: (label: string) =>
     request<PageSummaryItem[]>(`/books/${label}/pages`),
@@ -258,12 +448,42 @@ export const api = {
       body: JSON.stringify(data),
     }),
 
+  updateRendering: (label: string, pageId: string, data: unknown) =>
+    request<{ version: number }>(`/books/${label}/pages/${pageId}/rendering`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    }),
+
+  updateImageCaptioning: (label: string, pageId: string, data: unknown) =>
+    request<{ version: number }>(`/books/${label}/pages/${pageId}/image-captioning`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    }),
+
   reRenderPage: (label: string, pageId: string, apiKey: string) =>
     request<{ version: number; rendering: { sections: SectionRendering[] } }>(
       `/books/${label}/pages/${pageId}/re-render`,
       {
         method: "POST",
         headers: { "X-OpenAI-Key": apiKey },
+        signal: AbortSignal.timeout(120_000),
+      }
+    ),
+
+  aiEditSection: (
+    label: string,
+    pageId: string,
+    sectionIndex: number,
+    instruction: string,
+    apiKey: string,
+    currentHtml?: string
+  ) =>
+    request<{ html: string; reasoning: string }>(
+      `/books/${label}/pages/${pageId}/sections/${sectionIndex}/ai-edit`,
+      {
+        method: "POST",
+        headers: { "X-OpenAI-Key": apiKey },
+        body: JSON.stringify({ instruction, currentHtml }),
         signal: AbortSignal.timeout(120_000),
       }
     ),
@@ -307,14 +527,131 @@ export const api = {
       body: JSON.stringify({ config }),
     }),
 
+  getPrompt: (name: string, bookLabel?: string) =>
+    request<{ name: string; content: string; source?: string }>(
+      bookLabel ? `/books/${bookLabel}/prompts/${name}` : `/prompts/${name}`
+    ),
+
+  updatePrompt: (name: string, content: string, bookLabel?: string) =>
+    request<{ name: string; content: string; source?: string }>(
+      bookLabel ? `/books/${bookLabel}/prompts/${name}` : `/prompts/${name}`,
+      { method: "PUT", body: JSON.stringify({ content }) },
+    ),
+
+  getTemplate: (name: string, bookLabel?: string) =>
+    request<{ name: string; content: string; source?: string }>(
+      bookLabel ? `/books/${bookLabel}/templates/${name}` : `/templates/${name}`
+    ),
+
+  updateTemplate: (name: string, content: string, bookLabel?: string) =>
+    request<{ name: string; content: string; source?: string }>(
+      bookLabel ? `/books/${bookLabel}/templates/${name}` : `/templates/${name}`,
+      { method: "PUT", body: JSON.stringify({ content }) },
+    ),
+
+  runProof: (label: string, apiKey: string) =>
+    request<{ status: string; label: string }>(
+      `/books/${label}/proof/run`,
+      { method: "POST", headers: { "X-OpenAI-Key": apiKey } }
+    ),
+
+  getProofStatus: (label: string) =>
+    request<ProofStatus>(`/books/${label}/proof/status`),
+
+  runMaster: (label: string, apiKey: string, azure?: AzureCredentials) =>
+    request<{ status: string; label: string }>(
+      `/books/${label}/master/run`,
+      { method: "POST", headers: buildApiHeaders(apiKey, azure) }
+    ),
+
+  getMasterStatus: (label: string) =>
+    request<MasterStatus>(`/books/${label}/master/status`),
+
   acceptStoryboard: (label: string) =>
     request<{ version: number; acceptedAt: string }>(
       `/books/${label}/accept-storyboard`,
       { method: "POST" }
     ),
 
-  exportBook: async (label: string): Promise<Blob> => {
-    const url = `${BASE_URL}/books/${label}/export`
+  getQuizzes: (label: string) =>
+    request<QuizzesResponse>(`/books/${label}/quizzes`),
+
+  updateQuizzes: (label: string, data: unknown) =>
+    request<{ version: number }>(`/books/${label}/quizzes`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    }),
+
+  getGlossary: (label: string) =>
+    request<GlossaryOutput | null>(`/books/${label}/glossary`),
+
+  updateGlossary: (label: string, data: unknown) =>
+    request<{ version: number }>(`/books/${label}/glossary`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    }),
+
+  getTextCatalog: (label: string) =>
+    request<TextCatalogResponse | null>(`/books/${label}/text-catalog`),
+
+  updateTranslation: (label: string, language: string, data: unknown) =>
+    request<{ version: number }>(`/books/${label}/text-catalog-translation/${language}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    }),
+
+  getStepStatus: (label: string) =>
+    request<{ steps: Record<string, boolean> }>(`/books/${label}/step-status`),
+
+  getTTS: (label: string) =>
+    request<TTSResponse>(`/books/${label}/tts`),
+
+  packageAdt: (label: string) =>
+    request<{ status: string; label: string }>(
+      `/books/${label}/package-adt`,
+      { method: "POST" }
+    ),
+
+  getPackageAdtStatus: (label: string) =>
+    request<{ label: string; hasAdt: boolean }>(
+      `/books/${label}/package-adt/status`
+    ),
+
+  getTemplates: () =>
+    request<{ templates: string[] }>(`/templates`),
+
+  getPreset: (name: string) =>
+    request<{ config: Record<string, unknown> }>(`/presets/${name}`),
+
+  getStyleguides: () =>
+    request<{ styleguides: string[] }>(`/styleguides`),
+
+  getStyleguidePreview: (name: string) =>
+    request<{ name: string; html: string }>(`/styleguides/${name}/preview`),
+
+  getGlobalConfig: () =>
+    request<{ config: Record<string, unknown> }>(`/config`),
+
+  getSpeechInstructions: () =>
+    request<Record<string, string>>("/speech-config/instructions"),
+
+  updateSpeechInstructions: (data: Record<string, string>) =>
+    request<Record<string, string>>("/speech-config/instructions", {
+      method: "PUT",
+      body: JSON.stringify(data),
+    }),
+
+  getVoiceMappings: () =>
+    request<Record<string, Record<string, string>>>("/speech-config/voices"),
+
+  updateVoiceMappings: (data: Record<string, Record<string, string>>) =>
+    request<Record<string, Record<string, string>>>("/speech-config/voices", {
+      method: "PUT",
+      body: JSON.stringify(data),
+    }),
+
+  exportBook: async (label: string, format: "web" | "epub" = "web"): Promise<Blob> => {
+    const url = `${BASE_URL}/books/${label}/export?format=${format}`
     const res = await fetch(url)
     if (!res.ok) {
       const body = await res.json().catch(() => ({ error: res.statusText }))

@@ -148,8 +148,9 @@ vi.mock("../page-sectioning.js", async () => {
       reasoning: "Mock sectioning",
       sections: [
         {
+          sectionId: "pg001_sec001",
           sectionType: "text_only",
-          partIds: ["pg001_gp001"],
+          parts: [{ type: "text_group", groupId: "pg001_gp001", groupType: "paragraph", texts: [{ textType: "section_text", text: "Hello world", isPruned: false }], isPruned: false }],
           backgroundColor: "#ffffff",
           textColor: "#000000",
           pageNumber: null,

@@ -12,7 +12,12 @@ export { BookLabel, parseBookLabel } from "./book.js"
 export {
   BookFormat,
   LayoutType,
+  PresetName,
+  StyleguideName,
   StepConfig,
+  QuizGenerationConfig,
+  SectioningMode,
+  PageSectioningConfig,
   RenderType,
   RenderStrategyConfig,
   AppConfig,
@@ -35,6 +40,10 @@ export {
 export { BookMetadata } from "./metadata.js"
 
 export {
+  SectionTextEntry,
+  SectionTextPart,
+  SectionImagePart,
+  SectionPart,
   PageSection,
   PageSectioningOutput,
   buildPageSectioningLLMSchema,
@@ -46,3 +55,34 @@ export {
   webRenderingLLMSchema,
   activityAnswersLLMSchema,
 } from "./web-rendering.js"
+
+export {
+  ImageCaption,
+  ImageCaptioningOutput,
+  imageCaptioningLLMSchema,
+} from "./image-captioning.js"
+
+export {
+  GlossaryItem,
+  GlossaryOutput,
+  glossaryLLMSchema,
+} from "./glossary.js"
+
+export {
+  QuizOption,
+  Quiz,
+  QuizGenerationOutput,
+  quizLLMSchema,
+} from "./quiz.js"
+
+export {
+  TextCatalogEntry,
+  TextCatalogOutput,
+} from "./text-catalog.js"
+
+export {
+  TTSProviderConfig,
+  SpeechConfig,
+  SpeechFileEntry,
+  TTSOutput,
+} from "./speech.js"

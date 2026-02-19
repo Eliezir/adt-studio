@@ -3,7 +3,7 @@ import path from "node:path"
 import { createBookStorage } from "@adt/storage"
 import type { Storage } from "@adt/storage"
 import { createLLMModel, createPromptEngine, createRateLimiter } from "@adt/llm"
-import type { LLMModel } from "@adt/llm"
+import type { LLMModel, LogLevel } from "@adt/llm"
 import { extractPDF } from "./pdf-extraction.js"
 import { extractMetadata, buildMetadataConfig } from "./metadata-extraction.js"
 import { classifyPageText, buildClassifyConfig } from "./text-classification.js"
@@ -36,6 +36,8 @@ export interface RunPipelineOptions {
   templatesDir: string
   /** Override cache directory. Defaults to {booksRoot}/{label}/.cache */
   cacheDir?: string
+  /** LLM console log level. Defaults to "info". Use "silent" for no output. */
+  logLevel?: LogLevel
 }
 
 export async function runPipeline(
@@ -52,6 +54,7 @@ export async function runPipeline(
     configPath,
     promptsDir,
     templatesDir,
+    logLevel,
   } = options
 
   if (!fs.existsSync(pdfPath)) {
@@ -60,16 +63,30 @@ export async function runPipeline(
 
   const storage = createBookStorage(label, booksRoot)
 
+  // Copy source PDF into book directory so re-extraction can find it
+  const bookDir = path.join(booksRoot, label)
+  const destPdf = path.join(bookDir, `${label}.pdf`)
+  const resolvedPdf = path.resolve(pdfPath)
+  if (resolvedPdf !== path.resolve(destPdf)) {
+    fs.copyFileSync(resolvedPdf, destPdf)
+  }
+
   try {
     // Step 1: Extract PDF
+    const config = loadBookConfig(label, booksRoot, configPath)
+
     const result = await extractPDF(
-      { pdfPath, startPage, endPage },
+      {
+        pdfPath,
+        startPage: startPage ?? config.start_page,
+        endPage: endPage ?? config.end_page,
+        spreadMode: config.spread_mode,
+      },
       storage,
       progress
     )
 
     // Step 2: Extract Metadata
-    const config = loadBookConfig(label, booksRoot, configPath)
     const metadataConfig = buildMetadataConfig(config)
     const cacheDir =
       options.cacheDir ?? path.join(booksRoot, label, ".cache")
@@ -84,6 +101,7 @@ export async function runPipeline(
       cacheDir,
       promptEngine,
       rateLimiter,
+      logLevel,
       onLog: (entry) => storage.appendLlmLog(entry),
     })
 
@@ -125,13 +143,18 @@ export async function runPipeline(
           cacheDir,
           promptEngine,
           rateLimiter,
+          logLevel,
           onLog: (entry) => storage.appendLlmLog(entry),
         })
       : null
 
     // Step 3: Create Storyboard (per-page classification, sectioning, rendering)
     const textClassifyConfig = buildClassifyConfig(config)
-    const imageClassifyConfig = buildImageClassifyConfig(config)
+    const imageClassifyConfig = {
+      ...buildImageClassifyConfig(config),
+      getImageBytes: (imageId: string) =>
+        Buffer.from(storage.getImageBase64(imageId), "base64"),
+    }
     const sectioningConfig = buildSectioningConfig(config)
     const resolveRenderConfig = buildRenderStrategyResolver(config)
     const llmModel = createLLMModel({
@@ -139,6 +162,7 @@ export async function runPipeline(
       cacheDir,
       promptEngine,
       rateLimiter,
+      logLevel,
       onLog: (entry) => storage.appendLlmLog(entry),
     })
     const renderModels = new Map<string, LLMModel>()
@@ -150,6 +174,7 @@ export async function runPipeline(
         cacheDir,
         promptEngine,
         rateLimiter,
+        logLevel,
         onLog: (entry) => storage.appendLlmLog(entry),
       })
       renderModels.set(modelId, model)
@@ -318,7 +343,6 @@ async function processPage(
       pageId: page.pageId,
       pageImageBase64,
       sectioning,
-      textClassification,
       images: renderImages,
     },
     resolveRenderConfig,

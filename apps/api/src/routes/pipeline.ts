@@ -1,7 +1,28 @@
 import { Hono } from "hono"
 import { streamSSE } from "hono/streaming"
 import { HTTPException } from "hono/http-exception"
+import { z } from "zod"
 import type { PipelineService, PipelineSSEEvent } from "../services/pipeline-service.js"
+
+const PipelineRunBody = z
+  .object({
+    startPage: z.number().int().min(1).optional(),
+    endPage: z.number().int().min(1).optional(),
+  })
+  .strict()
+  .superRefine((value, ctx) => {
+    if (
+      value.startPage !== undefined &&
+      value.endPage !== undefined &&
+      value.endPage < value.startPage
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["endPage"],
+        message: "endPage must be greater than or equal to startPage",
+      })
+    }
+  })
 
 export function createPipelineRoutes(
   service: PipelineService,
@@ -33,19 +54,31 @@ export function createPipelineRoutes(
     // Parse optional body params
     let startPage: number | undefined
     let endPage: number | undefined
-    let concurrency: number | undefined
 
     const contentType = c.req.header("content-type")
     if (contentType?.includes("application/json")) {
+      let body: unknown
       try {
-        const body = await c.req.json()
-        startPage = body.startPage
-        endPage = body.endPage
-        concurrency = body.concurrency
+        body = await c.req.json()
       } catch {
-        // Ignore parse errors for optional body
+        throw new HTTPException(400, {
+          message: "Invalid JSON body",
+        })
       }
+
+      const parsed = PipelineRunBody.safeParse(body)
+      if (!parsed.success) {
+        throw new HTTPException(400, {
+          message: `Invalid pipeline run options: ${parsed.error.message}`,
+        })
+      }
+
+      startPage = parsed.data.startPage
+      endPage = parsed.data.endPage
     }
+
+    const azureSpeechKey = c.req.header("X-Azure-Speech-Key") || undefined
+    const azureSpeechRegion = c.req.header("X-Azure-Speech-Region") || undefined
 
     // Fire-and-forget: startPipeline runs async, we return immediately
     service
@@ -56,7 +89,8 @@ export function createPipelineRoutes(
         configPath,
         startPage,
         endPage,
-        concurrency,
+        azureSpeechKey,
+        azureSpeechRegion,
       })
       .catch(() => {
         // Error is tracked in job status, no need to handle here

@@ -40,6 +40,7 @@ export async function renderSectionTemplate(
   const imageUrlPrefix = `/api/books/${input.label}/images`
 
   const context: Record<string, unknown> = {
+    section_id: input.sectionId,
     section_type: input.sectionType,
     background_color: input.backgroundColor,
     text_color: input.textColor,
@@ -71,10 +72,12 @@ export async function renderSectionTemplate(
   // Validate the template output using the same validator as LLM output
   const allowedTextIds: string[] = []
   const allowedImageIds: string[] = []
+  const expectedTexts = new Map<string, string>()
   for (const part of input.parts) {
     if (part.type === "group") {
       for (const t of part.texts) {
         allowedTextIds.push(t.textId)
+        expectedTexts.set(t.textId, t.text)
       }
     } else {
       allowedImageIds.push(part.imageId)
@@ -85,7 +88,12 @@ export async function renderSectionTemplate(
     html,
     allowedTextIds,
     allowedImageIds,
-    imageUrlPrefix
+    imageUrlPrefix,
+    {
+      expectedTexts,
+      expectedSectionType: input.sectionType,
+      expectedSectionId: input.sectionId,
+    }
   )
   if (!check.valid) {
     throw new Error(

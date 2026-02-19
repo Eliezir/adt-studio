@@ -26,6 +26,9 @@ function getStepState(
   step: StepName,
   progress: PipelineProgressState
 ): "pending" | "active" | "completed" | "error" {
+  // If the pipeline completed overall, all visible steps succeeded
+  if (progress.isComplete) return "completed"
+
   if (progress.completedSteps.has(step)) return "completed"
   if (progress.stepProgress.has(step)) return "active"
   if (progress.currentStep === step) return "active"
@@ -52,7 +55,8 @@ export function PipelineProgress({
   isStarting,
   hasApiKey,
 }: PipelineProgressProps) {
-  const { isRunning, isComplete, error } = progress
+  const { isRunning, isComplete, error, skippedSteps } = progress
+  const visibleSteps = STEP_ORDER.filter((s) => !skippedSteps.has(s))
 
   return (
     <Card>
@@ -66,14 +70,14 @@ export function PipelineProgress({
               {error && !isRunning && (
                 <XCircle className="h-5 w-5 text-destructive" />
               )}
-              Pipeline
+              Progress
             </CardTitle>
             <CardDescription className="mt-1">
               {!isRunning && !isComplete && !error &&
                 "Run the pipeline to extract and process this book."}
-              {isRunning && "Pipeline is running..."}
-              {isComplete && "Pipeline completed successfully."}
-              {error && !isRunning && `Pipeline failed: ${error}`}
+              {isRunning && "Processing..."}
+              {isComplete && "All steps completed successfully."}
+              {error && !isRunning && `Failed: ${error}`}
             </CardDescription>
           </div>
           {!isRunning && (
@@ -97,7 +101,7 @@ export function PipelineProgress({
       <CardContent>
         {(isRunning || isComplete || error) && (
           <div className="mb-4 grid grid-cols-2 gap-2 sm:grid-cols-3">
-            {STEP_ORDER.map((step) => (
+            {visibleSteps.map((step) => (
               <StepIndicator
                 key={step}
                 step={step}

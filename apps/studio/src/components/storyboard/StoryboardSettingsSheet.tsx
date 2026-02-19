@@ -137,7 +137,10 @@ export function StoryboardSettingsSheet({
       if (bc.metadata) overrides.metadata = bc.metadata
       if (bc.text_classification) overrides.text_classification = bc.text_classification
       if (bc.page_sectioning) overrides.page_sectioning = bc.page_sectioning
-      if (bc.web_rendering) overrides.web_rendering = bc.web_rendering
+      if (bc.render_strategies) overrides.render_strategies = bc.render_strategies
+      if (bc.section_render_strategies) overrides.section_render_strategies = bc.section_render_strategies
+      if (bc.default_render_strategy) overrides.default_render_strategy = bc.default_render_strategy
+      if (bc.translation) overrides.translation = bc.translation
     }
 
     return overrides

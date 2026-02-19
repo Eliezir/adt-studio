@@ -1,6 +1,5 @@
 import type {
   PageSectioningOutput,
-  TextClassificationOutput,
   AppConfig,
   SectionRendering,
   WebRenderingOutput,
@@ -31,6 +30,7 @@ export interface RenderConfig {
   modelId: string
   maxRetries: number
   timeoutMs: number
+  temperature: number
   // activity fields — answer generation prompt
   answerPromptName: string
   // template fields
@@ -42,10 +42,12 @@ export interface RenderSectionInput {
   pageId: string
   pageImageBase64: string
   sectionIndex: number
+  sectionId: string
   sectionType: string
   backgroundColor: string
   textColor: string
   parts: SectionPart[]
+  styleguide?: string
 }
 
 export interface RenderPageInput {
@@ -53,8 +55,8 @@ export interface RenderPageInput {
   pageId: string
   pageImageBase64: string
   sectioning: PageSectioningOutput
-  textClassification: TextClassificationOutput
   images: Map<string, string> // imageId → base64
+  styleguide?: string
 }
 
 export type ResolveLLMModel = LLMModel | ((modelId: string) => LLMModel)
@@ -69,42 +71,39 @@ function getLLMModel(
 }
 
 /**
- * Resolve section part IDs to an ordered array of groups and images.
- * Groups are expanded to their non-pruned text entries.
+ * Expand inline section parts into the render-ready SectionPart format.
+ * Filters to non-pruned parts, expands text groups to TextInput while preserving text IDs,
+ * and resolves image base64 from the images map.
  */
-function resolveParts(
-  partIds: string[],
-  textClassification: TextClassificationOutput,
+function expandParts(
+  sectionParts: import("@adt/types").SectionPart[],
   images: Map<string, string>
 ): SectionPart[] {
-  const groupMap = new Map(
-    textClassification.groups.map((g) => [g.groupId, g])
-  )
   const parts: SectionPart[] = []
 
-  for (const partId of partIds) {
-    const group = groupMap.get(partId)
-    if (group) {
-      const nonPruned = group.texts.filter((t) => !t.isPruned)
-      const texts = nonPruned.map((t, i) => ({
-        textId: `${partId}_tx${String(i + 1).padStart(3, "0")}`,
+  for (const part of sectionParts) {
+    if (part.isPruned) continue
+
+    if (part.type === "text_group") {
+      const nonPruned = part.texts.filter((t) => !t.isPruned)
+      const texts = nonPruned.map((t) => ({
+        textId: t.textId,
         textType: t.textType,
         text: t.text,
       }))
       if (texts.length > 0) {
         parts.push({
           type: "group",
-          groupId: partId,
-          groupType: group.groupType,
+          groupId: part.groupId,
+          groupType: part.groupType,
           texts,
         })
       }
-      continue
-    }
-
-    const imageBase64 = images.get(partId)
-    if (imageBase64) {
-      parts.push({ type: "image", imageId: partId, imageBase64 })
+    } else if (part.type === "image") {
+      const imageBase64 = images.get(part.imageId)
+      if (imageBase64) {
+        parts.push({ type: "image", imageId: part.imageId, imageBase64 })
+      }
     }
   }
 
@@ -131,12 +130,8 @@ export async function renderPage(
     // Skip pruned sections
     if (section.isPruned) continue
 
-    // Resolve parts from part IDs
-    const parts = resolveParts(
-      section.partIds,
-      input.textClassification,
-      input.images
-    )
+    // Expand inline parts to render-ready format
+    const parts = expandParts(section.parts, input.images)
 
     // Skip sections with no content
     if (parts.length === 0) continue
@@ -148,10 +143,12 @@ export async function renderPage(
       pageId: input.pageId,
       pageImageBase64: input.pageImageBase64,
       sectionIndex: i,
+      sectionId: section.sectionId,
       sectionType: section.sectionType,
       backgroundColor: section.backgroundColor,
       textColor: section.textColor,
       parts,
+      styleguide: input.styleguide,
     }
 
     let rendering: SectionRendering
@@ -188,6 +185,7 @@ const DEFAULT_RENDER_CONFIG = {
   model: "openai:gpt-5.2",
   max_retries: 25,
   timeout: 180,
+  temperature: 0.3,
 }
 
 /**
@@ -222,6 +220,7 @@ export function buildRenderStrategyResolver(
       modelId: cfg?.model ?? DEFAULT_RENDER_CONFIG.model,
       maxRetries: cfg?.max_retries ?? DEFAULT_RENDER_CONFIG.max_retries,
       timeoutMs: (cfg?.timeout ?? DEFAULT_RENDER_CONFIG.timeout) * 1000,
+      temperature: cfg?.temperature ?? DEFAULT_RENDER_CONFIG.temperature,
       answerPromptName: cfg?.answer_prompt ?? "",
       templateName: cfg?.template ?? "",
     }

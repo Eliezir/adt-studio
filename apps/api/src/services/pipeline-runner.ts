@@ -1,3 +1,4 @@
+import fs from "node:fs"
 import path from "node:path"
 import { createBookStorage } from "@adt/storage"
 import type { Storage } from "@adt/storage"
@@ -57,6 +58,19 @@ function wrapStepError(step: StepName, err: unknown): never {
   throw new PipelineStepError(step, toErrorMessage(err))
 }
 
+export function loadStyleguideContent(
+  styleguideName: string | undefined,
+  configPath: string | undefined
+): string | undefined {
+  if (!styleguideName) return undefined
+  const projectRoot = configPath ? path.dirname(configPath) : process.cwd()
+  const styleguidesDir = path.resolve(projectRoot, "assets", "styleguides")
+  const filePath = path.resolve(styleguidesDir, `${styleguideName}.md`)
+  if (!filePath.startsWith(styleguidesDir + path.sep)) return undefined
+  if (!fs.existsSync(filePath)) return undefined
+  return fs.readFileSync(filePath, "utf-8")
+}
+
 async function processWithConcurrency<T>(
   items: T[],
   concurrency: number,
@@ -103,21 +117,25 @@ export function createPipelineRunner(): PipelineRunner {
         )
 
         // Step 1: Extract PDF
+        const config = loadBookConfig(label, booksDir, configPath)
+        const styleguideContent = loadStyleguideContent(config.styleguide, configPath)
+
         await extractPDF(
           {
             pdfPath,
-            startPage: options.startPage,
-            endPage: options.endPage,
+            startPage: options.startPage ?? config.start_page,
+            endPage: options.endPage ?? config.end_page,
+            spreadMode: config.spread_mode,
           },
           storage,
           progress
         )
 
         // Step 2: Extract Metadata
-        const config = loadBookConfig(label, booksDir, configPath)
         const metadataConfig = buildMetadataConfig(config)
         const cacheDir = path.join(path.resolve(booksDir), label, ".cache")
-        const promptEngine = createPromptEngine(promptsDir)
+        const bookPromptsDir = path.join(path.resolve(booksDir), label, "prompts")
+        const promptEngine = createPromptEngine([bookPromptsDir, promptsDir])
         const templatesDir = path.join(path.dirname(promptsDir), "templates")
         const templateEngine = createTemplateEngine(templatesDir)
         const rateLimiter = config.rate_limit
@@ -224,8 +242,7 @@ export function createPipelineRunner(): PipelineRunner {
             })
           : null
 
-        const effectiveConcurrency =
-          options.concurrency ?? config.concurrency ?? 32
+        const effectiveConcurrency = config.concurrency ?? 32
 
         const totalPages = pages.length
         let completedClassifyText = 0
@@ -309,7 +326,8 @@ export function createPipelineRunner(): PipelineRunner {
                   },
                 },
                 translationConfig,
-                translationModel
+                translationModel,
+                styleguideContent
               )
             } catch (err) {
               const msg = toErrorMessage(err)
@@ -340,6 +358,11 @@ export function createPipelineRunner(): PipelineRunner {
         if (translationConfig) {
           progress.emit({
             type: "step-complete",
+            step: "translation",
+          })
+        } else {
+          progress.emit({
+            type: "step-skip",
             step: "translation",
           })
         }
@@ -389,7 +412,8 @@ async function processPage(
   _totalPages: number,
   callbacks: PageCallbacks,
   translationConfig: TranslationConfig | null,
-  translationModel: LLMModel | null
+  translationModel: LLMModel | null,
+  styleguideContent?: string
 ): Promise<void> {
   const {
     textClassifyConfig,
@@ -504,8 +528,8 @@ async function processPage(
         pageId: page.pageId,
         pageImageBase64,
         sectioning,
-        textClassification,
         images: renderImages,
+        styleguide: styleguideContent,
       },
       resolveRenderConfig,
       resolveRenderModel,

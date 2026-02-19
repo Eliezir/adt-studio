@@ -1,51 +1,44 @@
-import { useState, useCallback, useMemo } from "react"
+import { useState, useCallback, useEffect } from "react"
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router"
 import {
   Upload,
   FileText,
   ChevronDown,
   Check,
-  Search,
   GraduationCap,
   BookHeart,
   Library,
+  SlidersHorizontal,
+  Eye,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent } from "@/components/ui/card"
+import { Switch } from "@/components/ui/switch"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import { LanguagePicker } from "@/components/LanguagePicker"
 import { useCreateBook } from "@/hooks/use-books"
 import { useApiKey } from "@/hooks/use-api-key"
+import { api } from "@/api/client"
+import { usePreset, useGlobalConfig, useStyleguides, useStyleguidePreview } from "@/hooks/use-presets"
+import {
+  AdvancedLayoutPanel,
+  type RenderStrategyState,
+} from "@/components/config/AdvancedLayoutPanel"
 
 export const Route = createFileRoute("/books/new")({
   component: AddBookPage,
 })
 
-const LAYOUT_TYPES = ["textbook", "storybook", "reference"] as const
+const LAYOUT_TYPES = ["textbook", "storybook", "reference", "custom"] as const
 type LayoutType = (typeof LAYOUT_TYPES)[number]
 
-const SUPPORTED_LANGUAGES = [
-  { code: "en", name: "English" },
-  { code: "fr", name: "French" },
-  { code: "es", name: "Spanish" },
-  { code: "pt", name: "Portuguese" },
-  { code: "ar", name: "Arabic" },
-  { code: "zh", name: "Chinese" },
-  { code: "hi", name: "Hindi" },
-  { code: "bn", name: "Bengali" },
-  { code: "ru", name: "Russian" },
-  { code: "ja", name: "Japanese" },
-  { code: "de", name: "German" },
-  { code: "ko", name: "Korean" },
-  { code: "it", name: "Italian" },
-  { code: "tr", name: "Turkish" },
-  { code: "vi", name: "Vietnamese" },
-  { code: "th", name: "Thai" },
-  { code: "nl", name: "Dutch" },
-  { code: "pl", name: "Polish" },
-  { code: "sw", name: "Swahili" },
-  { code: "id", name: "Indonesian" },
-] as const
 
 const STEPS = [
   { number: 1, label: "Upload" },
@@ -56,14 +49,14 @@ const STEPS = [
 const LAYOUT_CARDS: {
   type: LayoutType
   icon: typeof GraduationCap
-  color: string
+  iconColor: string
   selectedBg: string
   description: string
 }[] = [
   {
     type: "textbook",
     icon: GraduationCap,
-    color: "bg-blue-500",
+    iconColor: "text-blue-500",
     selectedBg: "bg-blue-500/5",
     description:
       "Structured chapters, exercises. Best for educational content.",
@@ -71,7 +64,7 @@ const LAYOUT_CARDS: {
   {
     type: "storybook",
     icon: BookHeart,
-    color: "bg-amber-500",
+    iconColor: "text-amber-500",
     selectedBg: "bg-amber-500/5",
     description:
       "Large images, narrative flow. Best for illustrated books.",
@@ -79,29 +72,51 @@ const LAYOUT_CARDS: {
   {
     type: "reference",
     icon: Library,
-    color: "bg-emerald-500",
+    iconColor: "text-emerald-500",
     selectedBg: "bg-emerald-500/5",
     description:
       "Dense text, tables, glossaries. Best for technical material.",
   },
+  {
+    type: "custom",
+    icon: SlidersHorizontal,
+    iconColor: "text-violet-500",
+    selectedBg: "bg-violet-500/5",
+    description:
+      "Full control over render strategies, pruning, and filters.",
+  },
 ]
 
 function Stepper({ currentStep }: { currentStep: number }) {
+  const clampedStep = Math.min(Math.max(currentStep, 1), STEPS.length)
+  const progressPercent =
+    STEPS.length > 1
+      ? ((clampedStep - 1) / (STEPS.length - 1)) * 100
+      : 0
+
   return (
-    <div className="flex items-center px-6 pt-5 pb-2">
-      {STEPS.map((step, i) => (
-        <div key={step.number} className="flex flex-1 items-center">
-          <div className="flex flex-col items-center gap-1">
+    <div className="px-6 pt-5 pb-2">
+      <div className="relative">
+        <div className="pointer-events-none absolute left-[16.6667%] right-[16.6667%] top-3.5 h-0.5 bg-border">
+          <div
+            className="h-full bg-primary transition-all"
+            style={{ width: `${progressPercent}%` }}
+          />
+        </div>
+
+        <div className="grid grid-cols-3">
+          {STEPS.map((step) => (
+            <div key={step.number} className="relative z-10 flex flex-col items-center gap-1">
             <div
               className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-medium transition-colors ${
-                currentStep > step.number
+                clampedStep > step.number
                   ? "bg-primary text-primary-foreground"
-                  : currentStep === step.number
+                  : clampedStep === step.number
                     ? "bg-primary text-primary-foreground"
-                    : "border-2 border-muted-foreground/30 text-muted-foreground"
+                    : "border-2 border-muted-foreground/30 text-muted-foreground bg-card"
               }`}
             >
-              {currentStep > step.number ? (
+              {clampedStep > step.number ? (
                 <Check className="h-3.5 w-3.5" />
               ) : (
                 step.number
@@ -109,98 +124,16 @@ function Stepper({ currentStep }: { currentStep: number }) {
             </div>
             <span
               className={`text-xs ${
-                currentStep >= step.number
+                clampedStep >= step.number
                   ? "text-foreground font-medium"
                   : "text-muted-foreground"
               }`}
             >
               {step.label}
             </span>
+            </div>
+          ))}
           </div>
-          {i < STEPS.length - 1 && (
-            <div
-              className={`mx-2 h-0.5 flex-1 transition-colors ${
-                currentStep > step.number ? "bg-primary" : "bg-border"
-              }`}
-            />
-          )}
-        </div>
-      ))}
-    </div>
-  )
-}
-
-function LanguagePicker({
-  selected,
-  onSelect,
-  multiple,
-  label,
-  hint,
-}: {
-  selected: string | Set<string>
-  onSelect: (code: string) => void
-  multiple?: boolean
-  label: string
-  hint?: string
-}) {
-  const [search, setSearch] = useState("")
-
-  const filtered = useMemo(() => {
-    if (!search) return SUPPORTED_LANGUAGES
-    const q = search.toLowerCase()
-    return SUPPORTED_LANGUAGES.filter(
-      (l) =>
-        l.name.toLowerCase().includes(q) || l.code.toLowerCase().includes(q)
-    )
-  }, [search])
-
-  const isSelected = (code: string) =>
-    typeof selected === "string" ? selected === code : selected.has(code)
-
-  return (
-    <div className="space-y-2">
-      <div>
-        <Label className="text-xs">{label}</Label>
-        {hint && (
-          <p className="text-xs text-muted-foreground mt-0.5">{hint}</p>
-        )}
-      </div>
-      <div className="relative">
-        <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search languages..."
-          className="pl-8 h-8 text-xs"
-        />
-      </div>
-      <div className="flex flex-wrap gap-1.5">
-        {filtered.map((lang) => {
-          const active = isSelected(lang.code)
-          return (
-            <button
-              key={lang.code}
-              type="button"
-              onClick={() => onSelect(lang.code)}
-              className={`inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-xs font-medium transition-colors ${
-                active
-                  ? "border-primary bg-primary text-primary-foreground"
-                  : "border-border text-foreground hover:border-primary/40 hover:bg-accent"
-              }`}
-            >
-              {active && multiple && <Check className="h-3 w-3" />}
-              {lang.name}
-              <span className={`text-[10px] ${active ? "opacity-70" : "opacity-40"}`}>
-                {lang.code}
-              </span>
-            </button>
-          )
-        })}
-        {filtered.length === 0 && (
-          <p className="text-xs text-muted-foreground py-1">
-            No languages match &ldquo;{search}&rdquo;
-          </p>
-        )}
       </div>
     </div>
   )
@@ -209,9 +142,10 @@ function LanguagePicker({
 function AddBookPage() {
   const navigate = useNavigate()
   const createMutation = useCreateBook()
-  const { hasApiKey } = useApiKey()
+  const { apiKey, hasApiKey } = useApiKey()
 
   const [step, setStep] = useState(1)
+  const [submitError, setSubmitError] = useState<string | null>(null)
 
   // Step 1 — Upload
   const [label, setLabel] = useState("")
@@ -220,14 +154,156 @@ function AddBookPage() {
   const [showAdvanced, setShowAdvanced] = useState(false)
   const [startPage, setStartPage] = useState("")
   const [endPage, setEndPage] = useState("")
+  const [spreadMode, setSpreadMode] = useState(false)
 
   // Step 2 — Layout
   const [layoutType, setLayoutType] = useState<LayoutType>("textbook")
+  const [styleguide, setStyleguide] = useState("")
+  const [showAdvancedLayout, setShowAdvancedLayout] = useState(false)
+  const [defaultRenderStrategy, setDefaultRenderStrategy] = useState("")
+  const [renderStrategies, setRenderStrategies] = useState<Record<string, RenderStrategyState>>({})
+  const [sectionRenderStrategies, setSectionRenderStrategies] = useState<Record<string, string>>({})
+  const [prunedTextTypes, setPrunedTextTypes] = useState<Set<string>>(new Set())
+  const [prunedSectionTypes, setPrunedSectionTypes] = useState<Set<string>>(new Set())
+  const [imageMinSide, setImageMinSide] = useState("")
+  const [imageMaxSide, setImageMaxSide] = useState("")
+  const [textTypes, setTextTypes] = useState<Record<string, string>>({})
+  const [textGroupTypes, setTextGroupTypes] = useState<Record<string, string>>({})
+  const [sectionTypes, setSectionTypes] = useState<Record<string, string>>({})
+  const [sectioningMode, setSectioningMode] = useState("section")
+
+  // Styleguide preview
+  const [styleguidePreviewOpen, setStyleguidePreviewOpen] = useState(false)
+  const [previewName, setPreviewName] = useState<string | null>(null)
+  const { data: previewData, isLoading: styleguidePreviewLoading } = useStyleguidePreview(previewName)
+
+  const openStyleguidePreview = () => {
+    if (!styleguide) return
+    setPreviewName(styleguide)
+    setStyleguidePreviewOpen(true)
+  }
+
+  // Fetch preset + global config + styleguides via TanStack Query
+  const presetName = layoutType === "custom" ? null : layoutType
+  const { data: presetData } = usePreset(presetName)
+  const { data: globalConfigData } = useGlobalConfig()
+  const { data: styleguidesData } = useStyleguides()
+  const availableStyleguides = styleguidesData?.styleguides ?? []
+
+  // Populate local state when query data or layout type changes
+  useEffect(() => {
+    if (!globalConfigData) return
+    if (layoutType !== "custom" && !presetData) return
+
+    const config = presetData?.config ?? globalConfigData.config
+    const globalConfig = globalConfigData.config
+
+    // Type definitions always come from global config
+    setTextTypes(
+      globalConfig.text_types && typeof globalConfig.text_types === "object"
+        ? (globalConfig.text_types as Record<string, string>)
+        : {}
+    )
+    setTextGroupTypes(
+      globalConfig.text_group_types && typeof globalConfig.text_group_types === "object"
+        ? (globalConfig.text_group_types as Record<string, string>)
+        : {}
+    )
+    setSectionTypes(
+      globalConfig.section_types && typeof globalConfig.section_types === "object"
+        ? (globalConfig.section_types as Record<string, string>)
+        : {}
+    )
+
+    // Use preset's default render strategy, or fall back to "dynamic"
+    setDefaultRenderStrategy(
+      typeof config.default_render_strategy === "string"
+        ? config.default_render_strategy
+        : "dynamic"
+    )
+
+    // Render strategies
+    if (config.render_strategies && typeof config.render_strategies === "object") {
+      const loaded: Record<string, RenderStrategyState> = {}
+      for (const [name, raw] of Object.entries(
+        config.render_strategies as Record<string, Record<string, unknown>>
+      )) {
+        const cfg = (raw.config ?? {}) as Record<string, unknown>
+        loaded[name] = {
+          render_type: String(raw.render_type ?? "llm"),
+          config: {
+            prompt: cfg.prompt != null ? String(cfg.prompt) : undefined,
+            model: cfg.model != null ? String(cfg.model) : undefined,
+            max_retries: cfg.max_retries != null ? String(cfg.max_retries) : undefined,
+            timeout: cfg.timeout != null ? String(cfg.timeout) : undefined,
+            temperature: cfg.temperature != null ? String(cfg.temperature) : undefined,
+            answer_prompt: cfg.answer_prompt != null ? String(cfg.answer_prompt) : undefined,
+            template: cfg.template != null ? String(cfg.template) : undefined,
+          },
+        }
+      }
+      setRenderStrategies(loaded)
+    } else {
+      setRenderStrategies({})
+    }
+
+    // Section render strategies
+    if (config.section_render_strategies && typeof config.section_render_strategies === "object") {
+      setSectionRenderStrategies(
+        config.section_render_strategies as Record<string, string>
+      )
+    } else {
+      setSectionRenderStrategies({})
+    }
+
+    // Pruned types
+    setPrunedTextTypes(
+      Array.isArray(config.pruned_text_types)
+        ? new Set(config.pruned_text_types as string[])
+        : new Set()
+    )
+    setPrunedSectionTypes(
+      Array.isArray(config.pruned_section_types)
+        ? new Set(config.pruned_section_types as string[])
+        : new Set()
+    )
+
+    // Image filters
+    if (config.image_filters && typeof config.image_filters === "object") {
+      const f = config.image_filters as Record<string, unknown>
+      setImageMinSide(f.min_side != null ? String(f.min_side) : "")
+      setImageMaxSide(f.max_side != null ? String(f.max_side) : "")
+    } else {
+      setImageMinSide("")
+      setImageMaxSide("")
+    }
+
+    // Spread mode from preset
+    if (typeof config.spread_mode === "boolean") {
+      setSpreadMode(config.spread_mode)
+    }
+
+    // Sectioning mode from preset
+    if (config.page_sectioning && typeof config.page_sectioning === "object") {
+      const ps = config.page_sectioning as Record<string, unknown>
+      setSectioningMode(ps.mode ? String(ps.mode) : "section")
+    } else {
+      setSectioningMode("section")
+    }
+
+    // Styleguide from preset
+    setStyleguide(typeof config.styleguide === "string" ? config.styleguide : "")
+
+    // Custom layout auto-expands advanced panel
+    if (layoutType === "custom") {
+      setShowAdvancedLayout(true)
+    }
+  }, [layoutType, presetData, globalConfigData])
 
   // Step 3 — Settings
-  const [editingLanguage, setEditingLanguage] = useState("en")
+  const [editingLanguage, setEditingLanguage] = useState("")
   const [outputLanguages, setOutputLanguages] = useState<Set<string>>(
-    () => new Set(["en"])
+    () => new Set()
   )
 
   const suggestLabel = useCallback((filename: string) => {
@@ -280,26 +356,114 @@ function AddBookPage() {
 
   const handleSubmit = () => {
     if (!file || !label) return
+    setSubmitError(null)
+
+    const parsedStartPage = startPage.trim() ? Number(startPage) : undefined
+    const parsedEndPage = endPage.trim() ? Number(endPage) : undefined
+    const hasInvalidStart =
+      parsedStartPage !== undefined &&
+      (!Number.isInteger(parsedStartPage) || parsedStartPage < 1)
+    const hasInvalidEnd =
+      parsedEndPage !== undefined &&
+      (!Number.isInteger(parsedEndPage) || parsedEndPage < 1)
+
+    if (hasInvalidStart || hasInvalidEnd) {
+      setSubmitError("Page range must use whole numbers greater than or equal to 1.")
+      return
+    }
+    if (
+      parsedStartPage !== undefined &&
+      parsedEndPage !== undefined &&
+      parsedEndPage < parsedStartPage
+    ) {
+      setSubmitError("Last page must be greater than or equal to first page.")
+      return
+    }
 
     const configOverrides: Record<string, unknown> = {}
     configOverrides.layout_type = layoutType
-    configOverrides.editing_language = editingLanguage
+    if (styleguide) {
+      configOverrides.styleguide = styleguide
+    }
+    if (editingLanguage.trim()) {
+      configOverrides.editing_language = editingLanguage.trim()
+    }
     if (outputLanguages.size > 0) {
       configOverrides.output_languages = Array.from(outputLanguages)
     }
+    configOverrides.spread_mode = spreadMode
+    if (parsedStartPage !== undefined) {
+      configOverrides.start_page = parsedStartPage
+    }
+    if (parsedEndPage !== undefined) {
+      configOverrides.end_page = parsedEndPage
+    }
+
+    // Advanced layout settings
+    // "dynamic" means use section_render_strategies mapping with two_column fallback
+    const effectiveStrategy = defaultRenderStrategy === "dynamic" ? "two_column" : defaultRenderStrategy
+    if (effectiveStrategy.trim()) {
+      configOverrides.default_render_strategy = effectiveStrategy.trim()
+    }
+    if (Object.keys(renderStrategies).length > 0) {
+      const strategies: Record<string, unknown> = {}
+      for (const [name, strategy] of Object.entries(renderStrategies)) {
+        const config: Record<string, unknown> = {}
+        if (strategy.config.prompt) config.prompt = strategy.config.prompt
+        if (strategy.config.model) config.model = strategy.config.model
+        if (strategy.config.max_retries) config.max_retries = Number(strategy.config.max_retries)
+        if (strategy.config.timeout) config.timeout = Number(strategy.config.timeout)
+        if (strategy.config.temperature) config.temperature = Number(strategy.config.temperature)
+        if (strategy.config.answer_prompt) config.answer_prompt = strategy.config.answer_prompt
+        if (strategy.config.template) config.template = strategy.config.template
+        strategies[name] = {
+          render_type: strategy.render_type,
+          ...(Object.keys(config).length > 0 ? { config } : {}),
+        }
+      }
+      configOverrides.render_strategies = strategies
+    }
+    if (Object.keys(sectionRenderStrategies).length > 0) {
+      configOverrides.section_render_strategies = sectionRenderStrategies
+    }
+    if (prunedTextTypes.size > 0) {
+      configOverrides.pruned_text_types = Array.from(prunedTextTypes)
+    }
+    if (prunedSectionTypes.size > 0) {
+      configOverrides.pruned_section_types = Array.from(prunedSectionTypes)
+    }
+    const imageFilters: Record<string, number> = {}
+    if (imageMinSide.trim()) imageFilters.min_side = Number(imageMinSide)
+    if (imageMaxSide.trim()) imageFilters.max_side = Number(imageMaxSide)
+    if (Object.keys(imageFilters).length > 0) {
+      configOverrides.image_filters = imageFilters
+    }
+    // Type definitions
+    if (Object.keys(textTypes).length > 0) {
+      configOverrides.text_types = textTypes
+    }
+    if (Object.keys(textGroupTypes).length > 0) {
+      configOverrides.text_group_types = textGroupTypes
+    }
+    if (Object.keys(sectionTypes).length > 0) {
+      configOverrides.section_types = sectionTypes
+    }
+    configOverrides.page_sectioning = { mode: sectioningMode }
 
     createMutation.mutate(
       { label, pdf: file, config: configOverrides },
       {
-        onSuccess: (book) => {
+        onSuccess: async (book) => {
+          if (hasApiKey && apiKey) {
+            try {
+              await api.runSteps(book.label, apiKey, { fromStep: "extract", toStep: "storyboard" })
+            } catch {
+              // Book creation already succeeded; user can retry the run from v2.
+            }
+          }
           navigate({
-            to: "/books/$label",
-            params: { label: book.label },
-            search: {
-              autoRun: hasApiKey ? true : undefined,
-              startPage: startPage ? Number(startPage) : undefined,
-              endPage: endPage ? Number(endPage) : undefined,
-            },
+            to: "/books/$label/v2/$step",
+            params: { label: book.label, step: "book" },
           })
         },
       }
@@ -307,7 +471,7 @@ function AddBookPage() {
   }
 
   return (
-    <div className="mx-auto max-w-xl p-4">
+    <div className="mx-auto w-[36rem] max-w-[calc(100vw-2rem)] p-4">
       <div className="mb-3 flex items-center gap-2">
         <Link
           to="/"
@@ -319,9 +483,9 @@ function AddBookPage() {
         <h1 className="text-lg font-semibold">Add Book</h1>
       </div>
 
-      <Card>
+      <Card className="w-full">
         <Stepper currentStep={step} />
-        <CardContent className="pt-4 space-y-4">
+        <CardContent className="pt-4 space-y-4 max-h-[calc(100vh-10rem)] overflow-y-auto">
           {/* Step 1 — Upload */}
           {step === 1 && (
             <div key={1} className="animate-wizard-enter space-y-4">
@@ -453,7 +617,7 @@ function AddBookPage() {
                 </p>
               </div>
 
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-2 gap-3">
                 {LAYOUT_CARDS.map((card) => {
                   const Icon = card.icon
                   const selected = layoutType === card.type
@@ -468,10 +632,7 @@ function AddBookPage() {
                           : "hover:border-primary/40 hover:shadow-sm"
                       }`}
                     >
-                      <div
-                        className={`absolute inset-x-0 top-0 h-0.5 rounded-t-xl ${card.color}`}
-                      />
-                      <Icon className="h-6 w-6 text-muted-foreground mt-1" />
+                      <Icon className={`mt-1 h-6 w-6 ${card.iconColor}`} />
                       <span className="mt-2 text-sm font-semibold capitalize">
                         {card.type}
                       </span>
@@ -482,6 +643,106 @@ function AddBookPage() {
                   )
                 })}
               </div>
+
+              {/* Advanced layout settings toggle */}
+              <button
+                type="button"
+                onClick={() => setShowAdvancedLayout(!showAdvancedLayout)}
+                className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <ChevronDown
+                  className={`h-3.5 w-3.5 transition-transform ${showAdvancedLayout ? "" : "-rotate-90"}`}
+                />
+                Advanced layout settings
+              </button>
+
+              {showAdvancedLayout && (
+                <div className="space-y-4 rounded-lg border bg-muted/30 p-3">
+                  <div className="space-y-1.5">
+                    <div className="flex items-center gap-2">
+                      <Switch
+                        id="spread-mode"
+                        checked={spreadMode}
+                        onCheckedChange={setSpreadMode}
+                      />
+                      <Label htmlFor="spread-mode" className="text-xs">
+                        Spread Mode
+                      </Label>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Merge facing pages as spreads (cover + page pairs).
+                    </p>
+                  </div>
+                  <AdvancedLayoutPanel
+                    defaultRenderStrategy={defaultRenderStrategy}
+                    onDefaultRenderStrategyChange={setDefaultRenderStrategy}
+                    sectioningMode={sectioningMode}
+                    onSectioningModeChange={setSectioningMode}
+                    renderStrategies={renderStrategies}
+                    onRenderStrategiesChange={setRenderStrategies}
+                    textTypes={textTypes}
+                    onTextTypesChange={setTextTypes}
+                    textGroupTypes={textGroupTypes}
+                    onTextGroupTypesChange={setTextGroupTypes}
+                    sectionTypes={sectionTypes}
+                    onSectionTypesChange={setSectionTypes}
+                    prunedTextTypes={prunedTextTypes}
+                    onTogglePrunedText={(t) => {
+                      setPrunedTextTypes((prev) => {
+                        const next = new Set(prev)
+                        if (next.has(t)) next.delete(t)
+                        else next.add(t)
+                        return next
+                      })
+                    }}
+                    prunedSectionTypes={prunedSectionTypes}
+                    onTogglePrunedSection={(t) => {
+                      setPrunedSectionTypes((prev) => {
+                        const next = new Set(prev)
+                        if (next.has(t)) next.delete(t)
+                        else next.add(t)
+                        return next
+                      })
+                    }}
+                    afterStrategySlot={
+                      availableStyleguides.length > 0 && renderStrategies[defaultRenderStrategy]?.render_type !== "template" ? (
+                        <div className="space-y-1.5">
+                          <Label className="text-xs">Styleguide</Label>
+                          <div className="flex items-center gap-2">
+                            <select
+                              value={styleguide}
+                              onChange={(e) => setStyleguide(e.target.value)}
+                              className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                            >
+                              <option value="">None</option>
+                              {availableStyleguides.map((sg) => (
+                                <option key={sg} value={sg}>
+                                  {sg}
+                                </option>
+                              ))}
+                            </select>
+                            {styleguide && (
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                className="h-9 px-2.5 shrink-0"
+                                onClick={openStyleguidePreview}
+                              >
+                                <Eye className="h-3.5 w-3.5 mr-1" />
+                                Preview
+                              </Button>
+                            )}
+                          </div>
+                          <p className="text-xs text-muted-foreground">
+                            Provides consistent HTML/CSS patterns for LLM-generated pages.
+                          </p>
+                        </div>
+                      ) : undefined
+                    }
+                  />
+                </div>
+              )}
 
               {/* Navigation */}
               <div className="flex justify-between pt-1">
@@ -500,23 +761,23 @@ function AddBookPage() {
             <div key={3} className="animate-wizard-enter space-y-5">
               <LanguagePicker
                 label="Editing Language"
-                hint="The primary language of your book"
+                hint="Leave empty to use the book language."
                 selected={editingLanguage}
                 onSelect={setEditingLanguage}
               />
 
               <LanguagePicker
                 label="Output Languages"
-                hint="Select languages for translated versions"
+                hint="Leave empty to output only in the book language."
                 selected={outputLanguages}
                 onSelect={toggleOutputLanguage}
                 multiple
               />
 
               {/* Error */}
-              {createMutation.isError && (
+              {(submitError || createMutation.isError) && (
                 <p className="text-sm text-destructive">
-                  {createMutation.error.message}
+                  {submitError ?? createMutation.error?.message ?? "Failed to create book."}
                 </p>
               )}
 
@@ -539,6 +800,28 @@ function AddBookPage() {
           )}
         </CardContent>
       </Card>
+
+      <Dialog open={styleguidePreviewOpen} onOpenChange={setStyleguidePreviewOpen}>
+        <DialogContent className="max-w-4xl h-[80vh] flex flex-col p-0">
+          <DialogHeader className="px-6 pt-6 pb-0">
+            <DialogTitle>Styleguide Preview — {styleguide}</DialogTitle>
+          </DialogHeader>
+          <div className="flex-1 min-h-0 px-6 pb-6">
+            {styleguidePreviewLoading ? (
+              <div className="flex items-center justify-center h-full text-sm text-muted-foreground">
+                Loading preview...
+              </div>
+            ) : (
+              <iframe
+                srcDoc={previewData?.html ?? ""}
+                className="w-full h-full rounded-md border"
+                sandbox="allow-scripts"
+                title="Styleguide Preview"
+              />
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

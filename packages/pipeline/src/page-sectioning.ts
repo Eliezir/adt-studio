@@ -2,8 +2,10 @@ import type {
   TextClassificationOutput,
   ImageClassificationOutput,
   PageSectioningOutput,
+  SectionPart,
   AppConfig,
   TypeDef,
+  SectioningMode,
 } from "@adt/types"
 import { buildPageSectioningLLMSchema } from "@adt/types"
 import type { LLMModel, ValidationResult } from "@adt/llm"
@@ -13,6 +15,7 @@ export interface SectioningConfig {
   prunedSectionTypes: string[]
   promptName: string
   modelId: string
+  mode: SectioningMode
 }
 
 export interface SectionPageInput {
@@ -98,6 +101,7 @@ export async function sectionPage(
     schema,
     prompt: config.promptName,
     context: {
+      sectioning_mode: config.mode,
       page: { imageBase64: input.pageImageBase64 },
       images: unprunedImages.map((img) => ({
         image_id: img.imageId,
@@ -120,17 +124,97 @@ export async function sectionPage(
     },
   })
 
-  // Post-process: mark pruned sections
+  // Build lookup maps for expanding part_ids into inline parts
+  const groupMap = new Map(
+    input.textClassification.groups.map((g) => [g.groupId, g])
+  )
+  const imageClassMap = new Map(
+    input.imageClassification.images.map((img) => [img.imageId, img])
+  )
+
+  // Track which parts get assigned to a section
+  const assignedPartIds = new Set<string>()
+
+  // Post-process: mark pruned sections, expand part_ids to inline parts
   const prunedSet = new Set(config.prunedSectionTypes)
 
-  const sections = result.object.sections.map((s) => ({
-    sectionType: s.section_type,
-    partIds: s.part_ids,
-    backgroundColor: s.background_color,
-    textColor: s.text_color,
-    pageNumber: s.page_number,
-    isPruned: prunedSet.has(s.section_type),
-  }))
+  const sections = result.object.sections.map((s, idx) => {
+    const sectionId = `${input.pageId}_sec${String(idx + 1).padStart(3, "0")}`
+    const parts: SectionPart[] = s.part_ids.map((partId) => {
+      assignedPartIds.add(partId)
+
+      const group = groupMap.get(partId)
+      if (group) {
+        return {
+          type: "text_group" as const,
+          groupId: group.groupId,
+          groupType: group.groupType,
+          texts: group.texts.map((t, tIdx) => ({
+            textId: `${group.groupId}_tx${String(tIdx + 1).padStart(3, "0")}`,
+            textType: t.textType,
+            text: t.text,
+            isPruned: t.isPruned,
+          })),
+          isPruned: false,
+        }
+      }
+
+      const imgClass = imageClassMap.get(partId)
+      return {
+        type: "image" as const,
+        imageId: partId,
+        isPruned: false,
+        ...(imgClass?.reason ? { reason: imgClass.reason } : {}),
+      }
+    })
+
+    return {
+      sectionId,
+      sectionType: s.section_type,
+      parts,
+      backgroundColor: s.background_color,
+      textColor: s.text_color,
+      pageNumber: s.page_number,
+      isPruned: prunedSet.has(s.section_type),
+    }
+  })
+
+  // Collect unassigned parts and add them to the last non-pruned section
+  const unassignedParts: SectionPart[] = []
+
+  for (const group of input.textClassification.groups) {
+    if (!assignedPartIds.has(group.groupId)) {
+      unassignedParts.push({
+        type: "text_group",
+        groupId: group.groupId,
+        groupType: group.groupType,
+        texts: group.texts.map((t, tIdx) => ({
+          textId: `${group.groupId}_tx${String(tIdx + 1).padStart(3, "0")}`,
+          textType: t.textType,
+          text: t.text,
+          isPruned: t.isPruned,
+        })),
+        isPruned: true,
+      })
+    }
+  }
+
+  for (const img of input.imageClassification.images) {
+    if (!assignedPartIds.has(img.imageId)) {
+      unassignedParts.push({
+        type: "image",
+        imageId: img.imageId,
+        isPruned: true,
+        ...(img.reason ? { reason: img.reason } : {}),
+      })
+    }
+  }
+
+  if (unassignedParts.length > 0 && sections.length > 0) {
+    const targetSection =
+      [...sections].reverse().find((s) => !s.isPruned) ?? sections[0]
+    targetSection.parts.push(...unassignedParts)
+  }
 
   return {
     reasoning: result.object.reasoning,
@@ -186,5 +270,6 @@ export function buildSectioningConfig(appConfig: AppConfig): SectioningConfig {
     prunedSectionTypes: appConfig.pruned_section_types ?? [],
     promptName: appConfig.page_sectioning?.prompt ?? "page_sectioning",
     modelId: appConfig.page_sectioning?.model ?? "openai:gpt-5.2",
+    mode: appConfig.page_sectioning?.mode ?? "section",
   }
 }

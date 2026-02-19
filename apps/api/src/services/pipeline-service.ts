@@ -24,7 +24,8 @@ export interface StartPipelineOptions {
   configPath?: string
   startPage?: number
   endPage?: number
-  concurrency?: number
+  azureSpeechKey?: string
+  azureSpeechRegion?: string
 }
 
 export interface PipelineProgress {

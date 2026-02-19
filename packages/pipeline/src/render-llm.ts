@@ -34,6 +34,7 @@ export async function renderSectionLlm(
   const context = {
     label: input.label,
     page_image_base64: input.pageImageBase64,
+    section_id: input.sectionId,
     section_type: input.sectionType,
     texts: texts.map((t) => ({
       text_id: t.textId,
@@ -44,6 +45,7 @@ export async function renderSectionLlm(
       image_id: img.imageId,
       image_base64: img.imageBase64,
     })),
+    styleguide: input.styleguide ?? "",
     _isActivity: isActivity,
   }
 
@@ -57,6 +59,7 @@ export async function renderSectionLlm(
     validate: validateWebRendering,
     maxRetries: config.maxRetries,
     maxTokens: 16384,
+    temperature: config.temperature,
     timeoutMs: config.timeoutMs,
     log: {
       taskType,
@@ -84,6 +87,7 @@ export async function renderSectionLlm(
       },
       maxRetries: config.maxRetries,
       maxTokens: 4096,
+      temperature: config.temperature,
       timeoutMs: config.timeoutMs,
       log: {
         taskType: "activity-answers",
@@ -114,19 +118,27 @@ function validateWebRendering(
 ): ValidationResult {
   const r = result as { reasoning: string; content: string }
   const label = context.label as string
-  const texts = context.texts as Array<{ text_id: string }>
+  const texts = context.texts as Array<{ text_id: string; text: string }>
   const images = context.images as Array<{ image_id: string }>
   const isActivity = context._isActivity as boolean | undefined
+  const sectionId = context.section_id as string
+  const sectionType = context.section_type as string
   const allowedTextIds = texts.map((t) => t.text_id)
   const allowedImageIds = images.map((img) => img.image_id)
   const imageUrlPrefix = `/api/books/${label}/images`
+  const expectedTexts = new Map(texts.map((t) => [t.text_id, t.text]))
 
   const check = validateSectionHtml(
     r.content,
     allowedTextIds,
     allowedImageIds,
     imageUrlPrefix,
-    isActivity ? { allowActivityGeneratedIds: true } : undefined
+    {
+      ...(isActivity && { allowActivityGeneratedIds: true }),
+      expectedTexts,
+      expectedSectionType: sectionType,
+      expectedSectionId: sectionId,
+    }
   )
   if (check.valid && check.sectionHtml) {
     return {

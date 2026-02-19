@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { api } from "@/api/client"
+import { useApiKey } from "@/hooks/use-api-key"
 
 export type StepName =
   | "extract"
@@ -10,6 +11,13 @@ export type StepName =
   | "image-classification"
   | "page-sectioning"
   | "web-rendering"
+  | "image-captioning"
+  | "glossary"
+  | "quiz-generation"
+  | "text-catalog"
+  | "catalog-translation"
+  | "tts"
+  | "package-web"
 
 export interface StepProgress {
   step: StepName
@@ -37,6 +45,7 @@ export interface PipelineProgress {
   error: string | null
   currentStep: StepName | null
   completedSteps: Set<StepName>
+  skippedSteps: Set<StepName>
   stepProgress: Map<StepName, StepProgress>
   liveLlmLogs: LlmLogSummary[]
 }
@@ -49,9 +58,16 @@ const INITIAL_PROGRESS: PipelineProgress = {
   error: null,
   currentStep: null,
   completedSteps: new Set(),
+  skippedSteps: new Set(),
   stepProgress: new Map(),
   liveLlmLogs: [],
 }
+
+/**
+ * Module-level cache of pipeline progress per book label.
+ * Survives component unmount/navigation so progress isn't lost.
+ */
+const progressCache = new Map<string, PipelineProgress>()
 
 /**
  * Hook to subscribe to real-time pipeline progress via SSE.
@@ -59,13 +75,23 @@ const INITIAL_PROGRESS: PipelineProgress = {
  * Includes a polling fallback to catch completion if SSE misses it.
  */
 export function usePipelineSSE(label: string, enabled: boolean) {
-  const [progress, setProgress] = useState<PipelineProgress>(INITIAL_PROGRESS)
+  const [progress, _setProgress] = useState<PipelineProgress>(
+    () => progressCache.get(label) ?? INITIAL_PROGRESS
+  )
+
+  // Wrap setProgress to also persist to module-level cache
+  const setProgress: typeof _setProgress = useCallback((action) => {
+    _setProgress((prev) => {
+      const next = typeof action === "function" ? action(prev) : action
+      progressCache.set(label, next)
+      return next
+    })
+  }, [label])
   const queryClient = useQueryClient()
   const eventSourceRef = useRef<EventSource | null>(null)
 
   useEffect(() => {
     if (!enabled || !label) {
-      setProgress(INITIAL_PROGRESS)
       return
     }
 
@@ -88,9 +114,12 @@ export function usePipelineSSE(label: string, enabled: boolean) {
         const next = { ...prev }
         const stepProgress = new Map(prev.stepProgress)
         const completedSteps = new Set(prev.completedSteps)
+        const skippedSteps = new Set(prev.skippedSteps)
 
         if (data.type === "step-start") {
           next.currentStep = data.step
+        } else if (data.type === "step-skip") {
+          skippedSteps.add(data.step)
         } else if (data.type === "step-progress") {
           stepProgress.set(data.step, {
             step: data.step,
@@ -123,6 +152,7 @@ export function usePipelineSSE(label: string, enabled: boolean) {
 
         next.stepProgress = stepProgress
         next.completedSteps = completedSteps
+        next.skippedSteps = skippedSteps
         return next
       })
     })
@@ -216,11 +246,12 @@ export function usePipelineSSE(label: string, enabled: boolean) {
 
   const reset = useCallback(() => {
     setProgress(INITIAL_PROGRESS)
+    progressCache.delete(label)
     if (eventSourceRef.current) {
       eventSourceRef.current.close()
       eventSourceRef.current = null
     }
-  }, [])
+  }, [label, setProgress])
 
   return { progress, reset }
 }
@@ -230,6 +261,7 @@ export function usePipelineSSE(label: string, enabled: boolean) {
  */
 export function useRunPipeline() {
   const queryClient = useQueryClient()
+  const { azureKey, azureRegion } = useApiKey()
   return useMutation({
     mutationFn: ({
       label,
@@ -238,8 +270,8 @@ export function useRunPipeline() {
     }: {
       label: string
       apiKey: string
-      options?: { startPage?: number; endPage?: number; concurrency?: number }
-    }) => api.runPipeline(label, apiKey, options),
+      options?: { startPage?: number; endPage?: number }
+    }) => api.runPipeline(label, apiKey, options, { key: azureKey, region: azureRegion }),
     onSuccess: (_data, { label }) => {
       queryClient.invalidateQueries({
         queryKey: ["pipeline-status", label],
