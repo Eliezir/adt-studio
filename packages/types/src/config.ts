@@ -1,5 +1,5 @@
 import { z } from "zod"
-import { ImageFilters } from "./image-classification.js"
+import { ImageFilters } from "./image-filtering.js"
 import { SpeechConfig } from "./speech.js"
 
 export const RateLimitConfig = z.object({
@@ -99,6 +99,7 @@ export const AppConfig = z
     output_languages: z.array(z.string()).optional(),
     book_format: z.array(BookFormat).optional(),
     image_captioning: StepConfig.optional(),
+    image_cropping: StepConfig.optional(),
     layout_type: LayoutType.optional(),
     spread_mode: z.boolean().optional(),
     start_page: z.number().int().min(1).optional(),

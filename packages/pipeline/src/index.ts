@@ -15,13 +15,23 @@ export {
   classifyPageImages,
   buildImageClassifyConfig,
   type ImageClassifyConfig,
-} from "./image-classification.js"
+} from "./image-filtering.js"
 export {
   filterPageImageMeaningfulness,
   buildMeaningfulnessConfig,
   type MeaningfulnessConfig,
   type MeaningfulnessPageInput,
 } from "./image-meaningfulness.js"
+export {
+  cropPageImages,
+  applyCrops,
+  applyCrop,
+  buildCroppingConfig,
+  getCroppedImageId,
+  type AppliedCrop,
+  type CroppingConfig,
+  type CroppingPageInput,
+} from "./image-cropping.js"
 export { grayscaleStdDev } from "./image-complexity.js"
 export {
   extractMetadata,
@@ -122,6 +132,16 @@ export { loadConfig, loadBookConfig, deepMerge } from "./config.js"
 export { runPipeline, type RunPipelineOptions } from "./pipeline.js"
 export { runProof, type RunProofOptions } from "./proof.js"
 export { runMaster, type RunMasterOptions } from "./master.js"
+export { runFullPipeline, type FullPipelineOptions } from "./pipeline-dag.js"
+export {
+  runDAG,
+  runPipelineDAG,
+  type DAGNode,
+  type DAGResult,
+  type NodeStatus,
+  type StepExecutor,
+  type PipelineDAGResult,
+} from "./dag.js"
 export {
   packageAdtWeb,
   type PackageAdtWebOptions,
