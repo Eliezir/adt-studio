@@ -13,13 +13,10 @@ permissions:
   contents: write
 
 jobs:
-  release:
+  desktop:
     runs-on: windows-latest
     permissions:
       contents: write
-    outputs:
-      tag: ${{ steps.version.outputs.tag }}
-      version: ${{ steps.version.outputs.version }}
 
     steps:
       - uses: actions/checkout@v4
@@ -45,8 +42,6 @@ jobs:
         run: |
           REF="${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}"
           VERSION="${REF#v}"
-          # Strip pre-release suffix (e.g. 0.2.1-rc1 → 0.2.1) — WiX/MSI requires
-          # numeric-only pre-release identifiers, so any alpha suffix breaks the build.
           VERSION_MSI="${VERSION%%-*}"
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           echo "version_msi=$VERSION_MSI" >> "$GITHUB_OUTPUT"
@@ -72,6 +67,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           projectPath: apps/desktop
+          args: --verbose
           tagName: ${{ steps.version.outputs.tag }}
           releaseName: "ADT Studio ${{ steps.version.outputs.tag }}"
           releaseBody: ""
@@ -79,7 +75,6 @@ jobs:
           prerelease: false
 
   docker:
-    needs: release
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -87,6 +82,12 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+
+      - name: Extract tag
+        id: version
+        run: |
+          REF="${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}"
+          echo "tag=${REF}" >> "$GITHUB_OUTPUT"
 
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v3
@@ -103,27 +104,35 @@ jobs:
           push: true
           tags: |
             ghcr.io/unicef/adt-studio:latest
-            ghcr.io/unicef/adt-studio:${{ needs.release.outputs.tag }}
+            ghcr.io/unicef/adt-studio:${{ steps.version.outputs.tag }}
+
+      - name: Ensure GitHub release exists
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="${{ steps.version.outputs.tag }}"
+          gh release view "$TAG" --repo ${{ github.repository }} 2>/dev/null || \
+            gh release create "$TAG" --repo ${{ github.repository }} --title "ADT Studio $TAG" --notes ""
 
       - name: Generate standalone docker-compose.yml
         run: |
-          TAG="${{ needs.release.outputs.tag }}"
+          TAG="${{ steps.version.outputs.tag }}"
           sed "s/__TAG__/${TAG}/g" docker/compose-release.yml.template > docker-compose.yml
 
       - name: Upload docker-compose.yml to release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release upload ${{ needs.release.outputs.tag }} docker-compose.yml \
+          gh release upload ${{ steps.version.outputs.tag }} docker-compose.yml \
             --repo ${{ github.repository }} \
             --clobber
 
       - name: Generate release notes
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        shell: bash
         run: |
+          TAG="${{ steps.version.outputs.tag }}"
           NOTES=$(gh api repos/${{ github.repository }}/releases/generate-notes \
-            -f tag_name=${{ github.ref_name }} \
+            -f tag_name="$TAG" \
             --jq '.body')
-          gh release edit ${{ needs.release.outputs.tag }} --notes "$NOTES"
+          gh release edit "$TAG" --notes "$NOTES"
