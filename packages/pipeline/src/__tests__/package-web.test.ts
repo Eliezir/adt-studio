@@ -52,10 +52,10 @@ describe("renderPageHtml", () => {
     })
 
     expect(html).toContain(
-      '<link rel="preload" href="./assets/fonts/Merriweather-VariableFont_opsz,wdth,wght.woff2" as="font" type="font/woff2" crossorigin>',
+      '<link rel="preload" href="./assets/fonts/Merriweather-VariableFont.woff2" as="font" type="font/woff2" crossorigin>',
     )
     expect(html).toContain(
-      '<link rel="preload" href="./assets/fonts/Merriweather-Italic-VariableFont_opsz,wdth,wght.woff2" as="font" type="font/woff2" crossorigin>',
+      '<link rel="preload" href="./assets/fonts/Merriweather-Italic-VariableFont.woff2" as="font" type="font/woff2" crossorigin>',
     )
 
     // Preloads should appear before the fonts.css stylesheet
