@@ -59,6 +59,10 @@ const replaceDynamicImports = {
   },
 }
 
+// Clean output directory to avoid stale artifacts.
+fs.rmSync(outDir, { recursive: true, force: true })
+fs.mkdirSync(outDir, { recursive: true })
+
 await build({
   entryPoints: [path.join(root, "src/index.ts")],
   bundle: true,
@@ -84,10 +88,6 @@ await build({
 // Copy .wasm files next to the bundle so runtime loaders find them.
 // Search the pnpm store since these packages are transitive deps.
 const WASM_PACKAGES = ["node-sqlite3-wasm", "mupdf", "@resvg/resvg-wasm"]
-
-// Avoid stale .wasm artifacts causing false-positive verification passes.
-fs.rmSync(outDir, { recursive: true, force: true })
-fs.mkdirSync(outDir, { recursive: true })
 
 for (const pkg of WASM_PACKAGES) {
   const pnpmDir = path.join(monorepoRoot, "node_modules/.pnpm")
