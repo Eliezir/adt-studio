@@ -68,6 +68,8 @@ export interface StageService {
   getStatus(label: string): BookRunStatus
   /** Get the run-derived state for each stage (running/queued/error). Stages not returned are idle from the run perspective. */
   getStageStates(label: string): Partial<Record<StageName, RunStageState>>
+  /** Get step names currently executing in memory (not persisted). */
+  getRunningSteps(label: string): ReadonlySet<string>
   addListener(label: string, listener: StageEventListener): () => void
   startStageRun(
     label: string,
@@ -82,6 +84,7 @@ export function createStageService(
 ): StageService {
   const books = new Map<string, BookRunState>()
   const listeners = new Map<string, Set<StageEventListener>>()
+  const runningSteps = new Map<string, Set<string>>()
 
   function getOrCreateState(label: string): BookRunState {
     let state = books.get(label)
@@ -109,8 +112,16 @@ export function createStageService(
     job: StageRunJob,
     options: StageRunOptions
   ): Promise<void> {
+    const steps = new Set<string>()
+    runningSteps.set(label, steps)
+
     const progress: StageRunProgress = {
       emit(event: ProgressEvent) {
+        if (event.type === "step-start") {
+          steps.add(event.step)
+        } else if (event.type === "step-complete" || event.type === "step-skip" || event.type === "step-error") {
+          steps.delete(event.step)
+        }
         emit(label, { type: "progress", data: event })
       },
     }
@@ -130,6 +141,7 @@ export function createStageService(
       emit(label, { type: "stage-run-error", label, error: message })
     }
 
+    runningSteps.delete(label)
     drainQueue(label)
   }
 
@@ -175,6 +187,10 @@ export function createStageService(
           toStage: q.toStage,
         })),
       }
+    },
+
+    getRunningSteps(label: string): ReadonlySet<string> {
+      return runningSteps.get(label) ?? new Set()
     },
 
     getStageStates(label: string): Partial<Record<StageName, RunStageState>> {

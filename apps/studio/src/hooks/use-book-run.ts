@@ -107,6 +107,10 @@ export function useBookRunStatus(label: string): BookRunContextValue {
       const uiStage = (STEP_TO_STAGE as Record<string, string>)[pipelineStep]
       if (!uiStage) return
 
+      // Cancel any in-flight step-status fetch — its response reflects a
+      // point-in-time snapshot that is already stale relative to this SSE event.
+      queryClient.cancelQueries({ queryKey: stepStatusKey(label) })
+
       if (d.type === "step-start") {
         // Mark step as running in the query cache
         queryClient.setQueryData<StepStatusResponse>(stepStatusKey(label), (old) => {

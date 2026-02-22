@@ -977,12 +977,17 @@ Pipeline progress uses a `ProgressEvent` discriminated union streamed via SSE. E
 - `queue-next` → `invalidateQueries` (new run started, full refetch)
 - `complete` → `invalidateQueries` (run finished, reconcile with DB)
 
+**Cancel in-flight fetches on SSE events**: SSE progress events cancel any pending `step-status` query fetch via `cancelQueries` before updating the cache. This prevents a race where a stale fetch response (initiated by the `open` handler or window focus) arrives *after* an SSE event has already updated the cache, overwriting the more-current SSE state with an older server snapshot. This is a general TanStack Query pattern: when you have a push-based update channel (SSE/WebSocket) alongside pull-based queries, cancel in-flight pulls before applying pushes.
+
 ### Stage & Step Status
 
-Stage/step status comes from a **single source of truth**: the `GET /books/:label/step-status` endpoint, cached via TanStack Query and patched live by SSE events. The backend computes stage states by merging two sources:
+Stage/step status comes from a **single source of truth**: the `GET /books/:label/step-status` endpoint, cached via TanStack Query and patched live by SSE events. The backend computes stage and step states by merging three sources (highest priority first):
 
-1. **`step_completions` DB table** — persistent record of which steps have completed (survives page refresh)
-2. **`StageService` in-memory state** — which stages are currently running, queued, or errored
+1. **`StageService.getRunningSteps()` in-memory set** — which individual steps are currently executing (added on `step-start`, removed on `step-complete`/`step-skip`/`step-error`)
+2. **`step_completions` DB table** — persistent record of which steps have completed (survives page refresh)
+3. **`StageService.getStageStates()` in-memory state** — which stages are currently running, queued, or errored (based on the active job's from→to range)
+
+For stages, DB completion wins over run state: if all steps in a stage are done in the DB, the stage is `"done"` even if the active run range includes it. This prevents completed stages from showing as `"running"` just because the overall run hasn't finished yet.
 
 The merged response:
 ```json
@@ -1269,5 +1274,6 @@ import { HTTPException } from "hono/http-exception"
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 0.3.0 | 2026-02-21 | Per-step run tracking in StageService, cancel-on-SSE pattern to prevent stale fetch overwrites |
 | 0.2.0 | 2026-02-20 | Step completion tracking, DB-as-source-of-truth for stage status, query invalidation guidance |
 | 0.1.0 | 2025-02-04 | Initial comprehensive guidelines |

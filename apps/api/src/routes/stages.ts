@@ -125,6 +125,7 @@ export function createStageRoutes(
 
     // Run-derived states from the in-memory service
     const runStates = stageService.getStageStates(label)
+    const activeSteps = stageService.getRunningSteps(label)
     const { active } = stageService.getStatus(label)
 
     if (!fs.existsSync(dbPath)) {
@@ -136,7 +137,7 @@ export function createStageRoutes(
       const steps: Record<string, string> = {}
       for (const stage of PIPELINE) {
         for (const step of stage.steps) {
-          steps[step.name] = "idle"
+          steps[step.name] = activeSteps.has(step.name) ? "running" : "idle"
         }
       }
       return c.json({ stages, steps, error: active?.error ?? null })
@@ -147,31 +148,35 @@ export function createStageRoutes(
       const rows = db.all("SELECT step FROM step_completions") as Array<{ step: string }>
       const completedSteps = new Set(rows.map((r) => r.step))
 
-      // Compute per-stage state: run state takes priority over DB completion
+      // Compute per-step state: running (in-memory) > done (DB) > idle
+      const steps: Record<string, string> = {}
+      for (const stage of PIPELINE) {
+        for (const step of stage.steps) {
+          if (activeSteps.has(step.name)) {
+            steps[step.name] = "running"
+          } else if (completedSteps.has(step.name)) {
+            steps[step.name] = "done"
+          } else {
+            steps[step.name] = "idle"
+          }
+        }
+      }
+
+      // Compute per-stage state: DB completion wins over run state
+      // (a stage whose steps all completed is "done" even if the run range includes it)
       const stages: Record<string, string> = {}
       for (const stage of PIPELINE) {
-        const runState = runStates[stage.name]
-        if (runState) {
-          stages[stage.name] = runState
-        } else if (stage.steps.length > 0 && stage.steps.every((s) => completedSteps.has(s.name))) {
+        const allDone = stage.steps.length > 0 && stage.steps.every((s) => completedSteps.has(s.name))
+        if (allDone) {
           stages[stage.name] = "done"
         } else {
-          stages[stage.name] = "idle"
+          stages[stage.name] = runStates[stage.name] ?? "idle"
         }
       }
 
       // Check if ADT is packaged (preview stage)
       const adtDir = path.join(resolvedDir, safeLabel, "adt")
       if (fs.existsSync(adtDir)) stages.preview = "done"
-
-      // Compute per-step state: "done" from DB, "idle" otherwise
-      // (SSE will overlay "running" on the frontend side)
-      const steps: Record<string, string> = {}
-      for (const stage of PIPELINE) {
-        for (const step of stage.steps) {
-          steps[step.name] = completedSteps.has(step.name) ? "done" : "idle"
-        }
-      }
 
       return c.json({ stages, steps, error: active?.error ?? null })
     } finally {

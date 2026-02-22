@@ -444,6 +444,7 @@ describe("GET /books/:label/step-status", () => {
     return {
       getStatus: () => ({ active: null, queue: [] }),
       getStageStates: () => ({}),
+      getRunningSteps: () => new Set<string>(),
       addListener: () => () => {},
       startStageRun: () => ({ status: "started" as const, id: "mock" }),
     }
