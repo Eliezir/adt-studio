@@ -193,6 +193,8 @@ pnpm lint             # Lint all packages
 
 | Document | Description |
 |----------|-------------|
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | System architecture, package graph, pipeline model, data flow |
+| [docs/DEVELOPER-GUIDE.md](docs/DEVELOPER-GUIDE.md) | Hosting guide and developer extension reference for third-party teams |
 | [CLAUDE.md](CLAUDE.md) | Claude Code project configuration |
 | [AGENTS.md](AGENTS.md) | Specialized agent definitions |
 | [docs/GUIDELINES.md](docs/GUIDELINES.md) | Full coding standards, security, patterns |
