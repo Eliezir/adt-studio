@@ -52,15 +52,20 @@ export function useExportBook() {
         // Tauri mode: programmatic blob-URL anchor clicks don't trigger file system
         // downloads in WebView2 (async click loses the user-gesture context).
         // Use native OS save dialog + fs write instead (see Lesson #10).
-        const { save } = await import("@tauri-apps/plugin-dialog")
-        const { writeFile } = await import("@tauri-apps/plugin-fs")
-        const savePath = await save({
-          defaultPath: `${label}.zip`,
-          filters: [{ name: "ZIP Archive", extensions: ["zip"] }],
-        })
-        if (savePath) {
-          const buf = await blob.arrayBuffer()
-          await writeFile(savePath, new Uint8Array(buf))
+        try {
+          const { save } = await import("@tauri-apps/plugin-dialog")
+          const { writeFile } = await import("@tauri-apps/plugin-fs")
+          const savePath = await save({
+            defaultPath: `${label}.zip`,
+            filters: [{ name: "ZIP Archive", extensions: ["zip"] }],
+          })
+          if (savePath) {
+            const buf = await blob.arrayBuffer()
+            await writeFile(savePath, new Uint8Array(buf))
+          }
+        } catch (err) {
+          console.error("Export failed:", err)
+          throw err // Re-throw so TanStack Query marks the mutation as failed
         }
       } else {
         // Local dev / browser: standard anchor-click download
