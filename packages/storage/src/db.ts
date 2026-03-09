@@ -89,7 +89,10 @@ function initSchema(db: sqlite.Database): void {
   }>
   const existing = rows[0]?.version ?? 0
 
-  if (existing === SCHEMA_VERSION) return
+  if (existing === SCHEMA_VERSION) {
+    cleanupDeprecatedSchema(db)
+    return
+  }
 
   let version = existing
 
@@ -118,6 +121,7 @@ function initSchema(db: sqlite.Database): void {
   }
 
   if (version === SCHEMA_VERSION) {
+    cleanupDeprecatedSchema(db)
     upsertSchemaVersion(db, SCHEMA_VERSION)
     return
   }
@@ -280,6 +284,11 @@ function migrateV8toV9(db: sqlite.Database): void {
     db.exec("ROLLBACK")
     throw err
   }
+}
+
+/** Remove deprecated schema artifacts from older builds. */
+function cleanupDeprecatedSchema(db: sqlite.Database): void {
+  db.exec("DROP TABLE IF EXISTS debug_images")
 }
 
 function upsertSchemaVersion(db: sqlite.Database, version: number): void {

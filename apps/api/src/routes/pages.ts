@@ -57,6 +57,7 @@ function validateImageId(id: string): string {
 export function createPageRoutes(
   booksDir: string,
   promptsDir: string,
+  webAssetsDir: string,
   configPath?: string
 ): Hono {
   const app = new Hono()
@@ -493,6 +494,7 @@ export function createPageRoutes(
       sectionIndex,
       booksDir,
       promptsDir,
+      webAssetsDir,
       configPath,
       apiKey,
     })
@@ -529,6 +531,7 @@ export function createPageRoutes(
       currentHtml: typeof body.currentHtml === "string" ? body.currentHtml : undefined,
       booksDir,
       promptsDir,
+      webAssetsDir,
       configPath,
       apiKey,
     })
