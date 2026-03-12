@@ -58,9 +58,7 @@ export async function buildScreenshotHtml(
   <style>${fontCss}</style>
 </head>
 <body class="min-h-screen flex items-center justify-center">
-  <div id="content">
-  ${htmlWithInlineImages}
-  </div>
+  ${/^\s*<div\b[^>]*\bid="content"/.test(htmlWithInlineImages) ? htmlWithInlineImages : `<div id="content">\n  ${htmlWithInlineImages}\n  </div>`}
 </body>
 </html>`
 }

@@ -456,6 +456,25 @@ export interface RenderPageOptions {
   embed?: boolean
 }
 
+/**
+ * Add `opacity-0` to the first `<div id="content">` element's class list.
+ * Used when the LLM-generated content already provides its own wrapper div so
+ * we don't add a duplicate — but still need the fade-in class for the ADT animation.
+ */
+function injectOpacityClass(html: string): string {
+  return html.replace(
+    /(<div\b[^>]*\bid="content"[^>]*)>/,
+    (_, opening) => {
+      if (/\bopacity-0\b/.test(opening)) return opening + ">"
+      const hasClass = /\bclass="/.test(opening)
+      if (hasClass) {
+        return opening.replace(/\bclass="([^"]*)"/, 'class="$1 opacity-0"') + ">"
+      }
+      return opening + ' class="opacity-0">'
+    }
+  )
+}
+
 export function renderPageHtml(opts: RenderPageOptions): string {
   const mathScript = opts.hasMath
     ? `    <script src="./assets/libs/mathjax/es5/tex-mml-chtml.js"></script>\n`
@@ -466,9 +485,16 @@ export function renderPageHtml(opts: RenderPageOptions): string {
       ? `\n    <script type="text/javascript">\n        window.correctAnswers = JSON.parse('${escapeInlineScriptJson(JSON.stringify(opts.activityAnswers))}');\n    </script>`
       : ""
 
+  // When content already has <div id="content"> (LLM-generated), use it directly to avoid
+  // a duplicate #content element that breaks `body > .container` queries in the ADT JS
+  // (used for audio/TTS init, fade animation, and layout adjustments).
+  // Inject opacity-0 into the existing wrapper for the fade-in animation (skip in embed mode).
+  const contentAlreadyWrapped = /^\s*<div\b[^>]*\bid="content"/.test(opts.content)
   const contentBlock = opts.skipContentWrapper
     ? `    ${opts.content}`
-    : `    <div id="content"${opts.embed ? "" : ` class="opacity-0"`}>
+    : contentAlreadyWrapped
+      ? `    ${!opts.embed ? injectOpacityClass(opts.content) : opts.content}`
+      : `    <div id="content"${opts.embed ? "" : ` class="opacity-0"`}>
     ${opts.content}
     </div>`
 
