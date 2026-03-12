@@ -1772,6 +1772,8 @@ export function StoryboardSectionDetail({
       setPendingRendering(updated)
       setAiReasoning(result.reasoning)
       setAiInstruction("")
+      // Regenerate Tailwind CSS so new classes from the AI edit render immediately
+      previewFrameRef.current?.refreshCss(result.html)
     } catch (err) {
       if (err instanceof DOMException && err.name === "AbortError") {
         // User cancelled — not an error

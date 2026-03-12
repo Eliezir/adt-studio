@@ -355,11 +355,12 @@ export function createAdtPreviewRoutes(
   })
 
   // /content/tailwind_output.css — rebuilt on every request (no cache, dev tool)
-  app.get("/books/:label/adt-preview/content/tailwind_output.css", async (c) => {
-    const { safeLabel } = resolveBook(c.req.param("label"))
+  // GET: generates CSS from DB content only.
+  // POST: accepts { extraHtml } to include unsaved content (e.g., AI edits) in the scan.
 
+  /** Collect all rendered HTML from the DB + optional extra HTML for Tailwind scanning. */
+  async function generateTailwindCss(safeLabel: string, extraHtml?: string): Promise<string> {
     const storage = createBookStorage(safeLabel, booksDir)
-    let css: string
     try {
       const pages = storage.getPages()
       let allHtml = ""
@@ -385,11 +386,27 @@ export function createAdtPreviewRoutes(
         }
       }
 
-      css = await buildPreviewTailwindCss(allHtml, webAssetsDir)
+      // Include unsaved content (e.g., AI-edited section HTML) so new Tailwind classes
+      // are picked up before the edit is persisted to the DB.
+      if (extraHtml) allHtml += "\n" + extraHtml
+
+      return await buildPreviewTailwindCss(allHtml, webAssetsDir)
     } finally {
       storage.close()
     }
+  }
 
+  app.get("/books/:label/adt-preview/content/tailwind_output.css", async (c) => {
+    const { safeLabel } = resolveBook(c.req.param("label"))
+    const css = await generateTailwindCss(safeLabel)
+    c.header("Content-Type", "text/css")
+    return c.body(css)
+  })
+
+  app.post("/books/:label/adt-preview/content/tailwind_output.css", async (c) => {
+    const { safeLabel } = resolveBook(c.req.param("label"))
+    const body = await c.req.json<{ extraHtml?: string }>()
+    const css = await generateTailwindCss(safeLabel, body.extraHtml)
     c.header("Content-Type", "text/css")
     return c.body(css)
   })
