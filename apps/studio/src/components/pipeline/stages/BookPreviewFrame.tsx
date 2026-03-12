@@ -128,10 +128,19 @@ export const BookPreviewFrame = forwardRef<BookPreviewFrameHandle, BookPreviewFr
     el.contentEditable = 'false';
     el.style.outline = '';
     el.style.outlineOffset = '';
-    // Grab the innerHTML of the injected wrapper div so we preserve the
-    // full stored structure (including the outer container/content div).
     var wrapper = document.getElementById('content');
-    var fullHtml = wrapper ? wrapper.innerHTML : document.body.innerHTML;
+    var fullHtml;
+    if (wrapper) {
+      // When the LLM provides its own <div id="content" class="container ..."> wrapper,
+      // injectContent places it directly in body (no outer wrapper added). Use outerHTML
+      // to preserve the full div with its layout classes.
+      // When we injected a plain <div id="content"> wrapper ourselves (no classes),
+      // use innerHTML to return just the section content as originally stored.
+      var cls = (wrapper.getAttribute('class') || '').trim();
+      fullHtml = cls ? wrapper.outerHTML : wrapper.innerHTML;
+    } else {
+      fullHtml = document.body.innerHTML;
+    }
     parent.postMessage({
       type: 'text-changed',
       dataId: el.getAttribute('data-id'),
@@ -247,9 +256,10 @@ ${interactiveScript}
 
     // Preserve the interactive script if present
     const scriptEl = doc.body.querySelector("script")
-    // Wrap in the same <div id="content"> wrapper that renderPageHtml uses
-    // in the preview so structure matches the final output.
-    doc.body.innerHTML = `<div id="content">${newHtml}</div>`
+    // If HTML already has <div id="content">, inject directly to avoid a duplicate
+    // wrapper. Otherwise add the plain wrapper to match renderPageHtml's structure.
+    const hasOwnWrapper = /^\s*<div\b[^>]*\bid="content"/.test(newHtml)
+    doc.body.innerHTML = hasOwnWrapper ? newHtml : `<div id="content">${newHtml}</div>`
     if (scriptEl && editable) {
       doc.body.appendChild(scriptEl)
     }
