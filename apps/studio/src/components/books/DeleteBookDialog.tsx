@@ -7,6 +7,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
+import { m } from "@/paraglide/messages"
 
 interface DeleteBookDialogProps {
   label: string | null
@@ -25,22 +26,25 @@ export function DeleteBookDialog({
     <Dialog open={!!label} onOpenChange={(open) => !open && onCancel()}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Delete book</DialogTitle>
+          <DialogTitle>{m.books_deleteDialog_title()}</DialogTitle>
           <DialogDescription>
-            Are you sure you want to delete <strong>{label}</strong>? This will
-            remove all extracted data and cannot be undone.
+            {m.books_deleteDialog_body_prefix()}{" "}
+            <strong>{label}</strong>
+            {m.books_deleteDialog_body_suffix()}
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>
           <Button variant="outline" onClick={onCancel} disabled={isPending}>
-            Cancel
+            {m.books_deleteDialog_cancel()}
           </Button>
           <Button
             variant="destructive"
             onClick={onConfirm}
             disabled={isPending}
           >
-            {isPending ? "Deleting..." : "Delete"}
+            {isPending
+              ? m.books_deleteDialog_deleting()
+              : m.books_deleteDialog_delete()}
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -7,6 +7,7 @@
     "noEmit": false,
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "jsx": "react-jsx",
+    "allowJs": true,
     "paths": {
       "@/*": ["./src/*"]
     }

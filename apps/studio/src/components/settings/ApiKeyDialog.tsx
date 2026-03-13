@@ -12,10 +12,11 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { cn } from "@/lib/utils"
+import { m } from "@/paraglide/messages"
 
 const TABS = [
-  { key: "openai", label: "OpenAI" },
-  { key: "azure", label: "Azure Speech" },
+  { key: "openai", label: m.settings_apiKey_tab_openai() },
+  { key: "azure", label: m.settings_apiKey_tab_azure() },
 ] as const
 
 type TabKey = (typeof TABS)[number]["key"]
@@ -85,9 +86,9 @@ export function ApiKeyDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>API Keys</DialogTitle>
+          <DialogTitle>{m.settings_apiKey_title()}</DialogTitle>
           <DialogDescription>
-            Configure API keys for AI pipeline features.
+            {m.settings_apiKey_description()}
           </DialogDescription>
         </DialogHeader>
 
@@ -115,12 +116,14 @@ export function ApiKeyDialog({
 
         {tab === "openai" && (
           <div className="space-y-2">
-            <Label htmlFor="openai-key-input">OpenAI API Key</Label>
+            <Label htmlFor="openai-key-input">
+              {m.settings_apiKey_openai_label()}
+            </Label>
             <div className="relative">
               <Input
                 id="openai-key-input"
                 type={showKey ? "text" : "password"}
-                placeholder="sk-..."
+                placeholder={m.settings_apiKey_openai_placeholder()}
                 value={openaiDraft}
                 onChange={(e) => setOpenaiDraft(e.target.value)}
                 onKeyDown={(e) => { if (e.key === "Enter") handleSave() }}
@@ -138,7 +141,9 @@ export function ApiKeyDialog({
               </Button>
             </div>
             {openaiDraft.length > 0 && !isValidOpenAIKey(openaiDraft) && (
-              <p className="text-sm text-destructive">Key must start with &quot;sk-&quot;</p>
+              <p className="text-sm text-destructive">
+                {m.settings_apiKey_openai_invalid()}
+              </p>
             )}
           </div>
         )}
@@ -146,12 +151,14 @@ export function ApiKeyDialog({
         {tab === "azure" && (
           <div className="space-y-3">
             <div className="space-y-2">
-              <Label htmlFor="azure-key-input">Subscription Key</Label>
+              <Label htmlFor="azure-key-input">
+                {m.settings_apiKey_azure_label()}
+              </Label>
               <div className="relative">
                 <Input
                   id="azure-key-input"
                   type={showKey ? "text" : "password"}
-                  placeholder="Azure Speech subscription key"
+                  placeholder={m.settings_apiKey_azure_placeholder()}
                   value={azureKeyDraft}
                   onChange={(e) => setAzureKeyDraft(e.target.value)}
                   onKeyDown={(e) => { if (e.key === "Enter") handleSave() }}
@@ -170,10 +177,12 @@ export function ApiKeyDialog({
               </div>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="azure-region-input">Region</Label>
+              <Label htmlFor="azure-region-input">
+                {m.settings_apiKey_azure_region_label()}
+              </Label>
               <Input
                 id="azure-region-input"
-                placeholder="e.g. eastus, westeurope"
+                placeholder={m.settings_apiKey_azure_region_placeholder()}
                 value={azureRegionDraft}
                 onChange={(e) => setAzureRegionDraft(e.target.value)}
                 onKeyDown={(e) => { if (e.key === "Enter") handleSave() }}
@@ -184,10 +193,10 @@ export function ApiKeyDialog({
 
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
+            {m.settings_apiKey_cancel()}
           </Button>
           <Button onClick={handleSave} disabled={!canSave}>
-            Save
+            {m.settings_apiKey_save()}
           </Button>
         </DialogFooter>
       </DialogContent>

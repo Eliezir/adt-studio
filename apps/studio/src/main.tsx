@@ -1,6 +1,7 @@
 import { StrictMode } from "react"
 import { createRoot } from "react-dom/client"
 import { RouterProvider, createRouter } from "@tanstack/react-router"
+import { deLocalizeUrl, localizeUrl } from './paraglide/runtime'
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { routeTree } from "./routeTree.gen"
 import "./styles/globals.css"
@@ -14,8 +15,13 @@ const queryClient = new QueryClient({
   },
 })
 
-const router = createRouter({ routeTree })
-
+const router = createRouter({
+  routeTree,
+  rewrite: {
+    input: ({ url }) => deLocalizeUrl(url),
+    output: ({ url }) => localizeUrl(url),
+  },
+})
 declare module "@tanstack/react-router" {
   interface Register {
     router: typeof router

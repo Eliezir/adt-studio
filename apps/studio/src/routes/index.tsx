@@ -18,8 +18,20 @@ import { useSettingsDialog } from "@/routes/__root"
 import { Badge } from "@/components/ui/badge"
 import { DeleteBookDialog } from "@/components/books/DeleteBookDialog"
 import { useBooks, useDeleteBook } from "@/hooks/use-books"
-import { getPipelineStages, STAGE_DESCRIPTIONS } from "@/components/pipeline/stage-config"
+import {
+  getPipelineStages,
+  type PipelineStageLabelKey,
+  type PipelineStageDescriptionKey,
+} from "@/components/pipeline/stage-config"
 import type { BookSummary } from "@/api/client"
+import { LocaleSwitcher } from "@/components/LocaleSwitcher"
+import { m } from "@/paraglide/messages"
+
+type MessageKey = PipelineStageLabelKey | PipelineStageDescriptionKey
+
+function translateStageMessage(key: MessageKey): string {
+  return (m[key as keyof typeof m] as () => string)()
+}
 
 export const Route = createFileRoute("/")({
   component: HomePage,
@@ -74,7 +86,7 @@ function BookRow({
             <div className="flex items-center gap-1.5 shrink-0">
               {book.needsRebuild && (
                 <Badge variant="destructive" className="text-[11px] px-2 py-0.5">
-                  Needs rebuild
+                  {m.book_row_needs_rebuild()}
                 </Badge>
               )}
               {book.languageCode && (
@@ -87,12 +99,18 @@ function BookRow({
                   variant={book.pageCount > 0 ? "default" : "secondary"}
                   className="text-[11px] px-2 py-0.5"
                 >
-                  {book.pageCount > 0 ? `${book.pageCount} pages` : "New"}
+                  {book.pageCount > 0
+                    ? `${book.pageCount} ${
+                        book.pageCount === 1
+                          ? m.book_row_page_label_singular()
+                          : m.book_row_page_label_plural()
+                      }`
+                    : m.book_row_new()}
                 </Badge>
               )}
               {!book.hasSourcePdf && (
                 <Badge variant="secondary" className="text-[11px] px-2 py-0.5">
-                  No PDF
+                  {m.book_row_no_pdf()}
                 </Badge>
               )}
             </div>
@@ -101,7 +119,7 @@ function BookRow({
           {/* Rebuild warning */}
           {book.needsRebuild && (
             <p className="text-sm text-destructive mb-2">
-              {book.rebuildReason ?? "Book data is outdated and must be rebuilt."}
+              {book.rebuildReason ?? m.book_row_default_rebuild_reason()}
             </p>
           )}
 
@@ -109,33 +127,33 @@ function BookRow({
           {hasMetadata ? (
             <div className="space-y-1.5">
               {book.title && (
-                <DetailRow icon={FileText} label="Label" value={book.label} />
+                <DetailRow icon={FileText} label={m.book_row_label()} value={book.label} />
               )}
               {book.authors.length > 0 && (
                 <DetailRow
                   icon={User}
-                  label={book.authors.length > 1 ? "Authors" : "Author"}
+                  label={book.authors.length > 1 ? m.book_row_authors() : m.book_row_author()}
                   value={book.authors.join(", ")}
                 />
               )}
               {book.publisher && (
                 <DetailRow
                   icon={Building2}
-                  label="Publisher"
+                  label={m.book_row_publisher()}
                   value={book.publisher}
                 />
               )}
               {book.languageCode && (
                 <DetailRow
                   icon={Globe}
-                  label="Language"
+                  label={m.book_row_language()}
                   value={book.languageCode.toUpperCase()}
                 />
               )}
             </div>
           ) : (
             <p className="text-sm text-muted-foreground italic">
-              No metadata yet — run the pipeline to extract book details
+              {m.book_row_no_metadata()}
             </p>
           )}
         </Link>
@@ -175,7 +193,7 @@ function HomePage() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center flex-1 text-muted-foreground">
-        Loading books...
+        {m.index_loading_books()}
       </div>
     )
   }
@@ -183,7 +201,7 @@ function HomePage() {
   if (error) {
     return (
       <div className="flex items-center justify-center flex-1 text-destructive">
-        Failed to load books: {error.message}
+        {m.index_failed_to_load_books({ message: error.message })}
       </div>
     )
   }
@@ -193,20 +211,23 @@ function HomePage() {
   return (
     <div className="flex flex-1 min-h-0 flex-col">
       {/* Top bar — matches book page header */}
-      <div className="shrink-0 h-10 flex items-center bg-gray-700 text-white px-4">
+      <div className="shrink-0 min-h-11 py-1 flex items-center bg-gray-700 text-white px-4">
         <div className="flex items-center gap-2.5">
           <Home className="w-4 h-4 shrink-0" />
           <span className="text-sm font-semibold">ADT Studio</span>
         </div>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-10 w-10 shrink-0 text-white/70 hover:text-white hover:bg-gray-600 ml-auto"
-          onClick={openSettings}
-          title="API Key Settings"
-        >
-          <Settings className="h-3.5 w-3.5" />
-        </Button>
+        <div className="ml-auto flex items-center gap-1.5">
+          <LocaleSwitcher />
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-10 w-10 shrink-0 text-white/70 hover:text-white hover:bg-gray-600"
+            onClick={openSettings}
+            title={m.index_header_api_key_settings()}
+          >
+            <Settings className="h-3.5 w-3.5" />
+          </Button>
+        </div>
       </div>
 
       <div className="flex flex-1 min-h-0">
@@ -214,11 +235,14 @@ function HomePage() {
       <div className="w-[30%] shrink-0 border-r bg-muted/30 flex flex-col overflow-auto">
         <div className="px-5 pt-5 pb-5 flex-1">
           <h2 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">
-            Pipeline Stages
+            {m.index_pipeline_stages()}
           </h2>
           <div className="space-y-1">
             {PIPELINE_STEPS.map((step, i) => {
               const Icon = step.icon
+              const label = translateStageMessage(step.labelKey)
+              const description = translateStageMessage(step.descriptionKey)
+
               return (
                 <div
                   key={step.slug}
@@ -233,12 +257,10 @@ function HomePage() {
                     )}
                   </div>
                   <div className="min-w-0 pb-1">
-                    <span className="text-sm font-medium">{step.label}</span>
-                    {STAGE_DESCRIPTIONS[step.slug] && (
-                      <p className="text-[11px] text-muted-foreground leading-relaxed">
-                        {STAGE_DESCRIPTIONS[step.slug]}
-                      </p>
-                    )}
+                    <span className="text-sm font-medium">{label}</span>
+                    <p className="text-[11px] text-muted-foreground leading-relaxed">
+                      {description}
+                    </p>
                   </div>
                 </div>
               )
@@ -249,7 +271,7 @@ function HomePage() {
             to="/books/new"
             className="mt-4 flex items-center justify-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 shadow-sm transition-colors"
           >
-            Get started <ArrowRight className="h-3.5 w-3.5" />
+            {m.index_pipeline_get_started()} <ArrowRight className="h-3.5 w-3.5" />
           </Link>
         </div>
       </div>
@@ -258,12 +280,13 @@ function HomePage() {
       <div className="flex-1 min-w-0 overflow-auto p-5">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-sm font-medium text-muted-foreground">
-            Your Books{bookList.length > 0 && ` (${bookList.length})`}
+            {m.index_books_heading()}
+            {bookList.length > 0 && ` (${bookList.length})`}
           </h2>
           <Button variant="outline" size="sm" asChild>
             <Link to="/books/new" className="gap-1.5">
               <Plus className="h-3.5 w-3.5" />
-              Add Book
+              {m.index_books_add_book()}
             </Link>
           </Button>
         </div>
@@ -282,10 +305,10 @@ function HomePage() {
                   <Plus className="h-6 w-6 text-primary" />
                 </div>
                 <span className="text-sm font-medium">
-                  Add your first book
+                  {m.index_books_empty_title()}
                 </span>
                 <span className="text-xs text-muted-foreground mt-1">
-                  Upload a PDF to get started
+                  {m.index_books_empty_subtitle()}
                 </span>
               </div>
             </Link>
