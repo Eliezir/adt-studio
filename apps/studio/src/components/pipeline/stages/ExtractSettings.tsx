@@ -24,6 +24,7 @@ import { PruneToggle } from "@/components/pipeline/PruneToggle"
 import { useBookRun } from "@/hooks/use-book-run"
 import { useStepConfig } from "@/hooks/use-step-config"
 import { normalizeLocale } from "@/lib/languages"
+import * as m from "@/paraglide/messages"
 
 export function ExtractSettings({ bookLabel, headerTarget, tab = "general" }: { bookLabel: string; headerTarget?: HTMLDivElement | null; tab?: string }) {
   const { data: bookConfigData } = useBookConfig(bookLabel)
@@ -256,7 +257,7 @@ export function ExtractSettings({ bookLabel, headerTarget, tab = "general" }: { 
           {/* Page Range */}
           <div>
             <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">
-              Page Range
+              {m.extract_settings_page_range_heading()}
             </h3>
             <div className="flex items-center gap-2">
               <Input
@@ -264,28 +265,28 @@ export function ExtractSettings({ bookLabel, headerTarget, tab = "general" }: { 
                 min={1}
                 value={startPage}
                 onChange={(e) => { setStartPage(e.target.value); markDirty("start_page") }}
-                placeholder="First"
+                placeholder={m.extract_settings_page_range_first()}
                 className="w-24"
               />
-              <span className="text-xs text-muted-foreground">to</span>
+              <span className="text-xs text-muted-foreground">{m.extract_settings_page_range_to()}</span>
               <Input
                 type="number"
                 min={1}
                 value={endPage}
                 onChange={(e) => { setEndPage(e.target.value); markDirty("end_page") }}
-                placeholder="Last"
+                placeholder={m.extract_settings_page_range_last()}
                 className="w-24"
               />
             </div>
             <p className="text-xs text-muted-foreground mt-1.5">
-              Leave empty to process all pages.
+              {m.extract_settings_page_range_hint()}
             </p>
           </div>
 
           {/* Spread Mode */}
           <div>
             <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">
-              Spread Mode
+              {m.extract_settings_spread_heading()}
             </h3>
             <div className="flex items-center gap-2">
               <Switch
@@ -294,11 +295,11 @@ export function ExtractSettings({ bookLabel, headerTarget, tab = "general" }: { 
                 onCheckedChange={(v) => { setSpreadMode(v); markDirty("spread_mode") }}
               />
               <Label htmlFor="spread-mode" className="text-sm font-normal">
-                Merge facing pages as spreads
+                {m.extract_settings_spread_label()}
               </Label>
             </div>
             <p className="text-xs text-muted-foreground mt-1.5">
-              Enable for scanned books where two pages appear on a single PDF page.
+              {m.extract_settings_spread_hint()}
             </p>
           </div>
 
@@ -307,45 +308,45 @@ export function ExtractSettings({ bookLabel, headerTarget, tab = "general" }: { 
             <LanguagePicker
               selected={editingLanguage}
               onSelect={(v) => { setEditingLanguage(v); markDirty("editing_language") }}
-              label="Editing Language"
-              hint="Leave empty to use the book language."
+              label={m.extract_settings_editing_language_label()}
+              hint={m.extract_settings_editing_language_hint()}
             />
           </div>
 
           {/* Image Filters */}
           <div>
             <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">
-              Image Filters
+              {m.extract_settings_image_filters_heading()}
             </h3>
             <div className="flex items-center gap-2">
               <div className="space-y-1">
-                <Label className="text-xs">Min side (px)</Label>
+                <Label className="text-xs">{m.extract_settings_min_side_label()}</Label>
                 <Input
                   type="number"
                   min={0}
                   value={minSide}
                   onChange={(e) => { setMinSide(e.target.value); markDirty("image_filters") }}
-                  placeholder="None"
+                  placeholder={m.extract_settings_none_placeholder()}
                   className="w-28"
                 />
               </div>
               <div className="space-y-1">
-                <Label className="text-xs">Max side (px)</Label>
+                <Label className="text-xs">{m.extract_settings_max_side_label()}</Label>
                 <Input
                   type="number"
                   min={0}
                   value={maxSide}
                   onChange={(e) => { setMaxSide(e.target.value); markDirty("image_filters") }}
-                  placeholder="None"
+                  placeholder={m.extract_settings_none_placeholder()}
                   className="w-28"
                 />
               </div>
             </div>
             <p className="text-xs text-muted-foreground mt-1.5">
-              Images with shortest side below min or longest side above max are pruned.
+              {m.extract_settings_image_filters_hint()}
             </p>
             <div className="space-y-1 mt-3">
-              <Label className="text-xs">Min complexity</Label>
+              <Label className="text-xs">{m.extract_settings_min_complexity_label()}</Label>
               <Input
                 type="number"
                 min={0}
@@ -357,7 +358,7 @@ export function ExtractSettings({ bookLabel, headerTarget, tab = "general" }: { 
               />
             </div>
             <p className="text-xs text-muted-foreground mt-1.5">
-              Higher values filter out simple or blank images.
+              {m.extract_settings_complexity_hint()}
             </p>
             <div className="flex items-center gap-2 mt-4">
               <Switch
@@ -369,11 +370,11 @@ export function ExtractSettings({ bookLabel, headerTarget, tab = "general" }: { 
                 }}
               />
               <Label htmlFor="meaningfulness-filter" className="text-sm font-normal">
-                LLM meaningfulness filter
+                {m.extract_settings_meaningfulness_label()}
               </Label>
             </div>
             <p className="text-xs text-muted-foreground mt-1.5">
-              Use an LLM to filter out decorative or non-educational images.
+              {m.extract_settings_meaningfulness_hint()}
             </p>
             <div className="flex items-center gap-2 mt-4">
               <Switch
@@ -385,11 +386,11 @@ export function ExtractSettings({ bookLabel, headerTarget, tab = "general" }: { 
                 }}
               />
               <Label htmlFor="cropping-filter" className="text-sm font-normal">
-                LLM image cropping
+                {m.extract_settings_cropping_label()}
               </Label>
             </div>
             <p className="text-xs text-muted-foreground mt-1.5">
-              Use an LLM to crop away stray text, artifacts, and excessive whitespace from image edges.
+              {m.extract_settings_cropping_hint()}
             </p>
             <div className="flex items-center gap-2 mt-4">
               <Switch
@@ -401,11 +402,11 @@ export function ExtractSettings({ bookLabel, headerTarget, tab = "general" }: { 
                 }}
               />
               <Label htmlFor="segmentation-filter" className="text-sm font-normal">
-                LLM image segmentation
+                {m.extract_settings_segmentation_label()}
               </Label>
             </div>
             <p className="text-xs text-muted-foreground mt-1.5">
-              Use an LLM to detect and split composited images (e.g., multiple photos in a single image layer) into individual segments. Requires GPT-5.2+.
+              {m.extract_settings_segmentation_hint()}
             </p>
           </div>
         </>
@@ -414,14 +415,14 @@ export function ExtractSettings({ bookLabel, headerTarget, tab = "general" }: { 
       {tab === "text-types" && (
         <div>
           <p className="text-xs text-muted-foreground mb-3">
-            Types used during text classification. Pruned types are excluded from rendering.
+            {m.extract_settings_text_types_description()}
           </p>
           <div className="rounded-md border divide-y">
             {/* Header */}
             <div className="flex items-center gap-2 px-3 py-1.5 bg-muted/50">
               <span className="shrink-0 w-5" />
-              <span className="text-xs font-medium text-muted-foreground shrink-0 w-40">Type</span>
-              <span className="text-xs font-medium text-muted-foreground flex-1 min-w-0">Description</span>
+              <span className="text-xs font-medium text-muted-foreground shrink-0 w-40">{m.extract_settings_text_types_type_header()}</span>
+              <span className="text-xs font-medium text-muted-foreground flex-1 min-w-0">{m.extract_settings_text_types_desc_header()}</span>
               <span className="shrink-0 w-5" />
             </div>
             {Object.entries(textTypes).map(([key, description]) => {
@@ -439,13 +440,13 @@ export function ExtractSettings({ bookLabel, headerTarget, tab = "general" }: { 
                     value={description}
                     onChange={(e) => updateDescription(key, e.target.value)}
                     className="h-7 text-xs flex-1 min-w-0"
-                    placeholder="Description..."
+                    placeholder={m.extract_settings_text_types_desc_placeholder()}
                   />
                   <button
                     type="button"
                     onClick={() => removeTextType(key)}
                     className="shrink-0 p-0.5 rounded text-muted-foreground/0 group-hover:text-muted-foreground hover:!text-destructive transition-colors"
-                    title="Remove type"
+                    title={m.extract_settings_text_types_remove()}
                   >
                     <X className="h-3.5 w-3.5" />
                   </button>
@@ -467,7 +468,7 @@ export function ExtractSettings({ bookLabel, headerTarget, tab = "general" }: { 
                 onChange={(e) => setNewTypeDesc(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && addTextType()}
                 className="h-7 text-xs flex-1 min-w-0"
-                placeholder="Description..."
+                placeholder={m.extract_settings_text_types_desc_placeholder()}
               />
               <Button
                 variant="ghost"
@@ -476,7 +477,7 @@ export function ExtractSettings({ bookLabel, headerTarget, tab = "general" }: { 
                 onClick={addTextType}
                 disabled={!newTypeKey.trim() || newTypeKey.trim().toLowerCase().replace(/\s+/g, "_") in textTypes}
               >
-                Add
+                {m.extract_settings_text_types_add()}
               </Button>
             </div>
           </div>
@@ -487,8 +488,8 @@ export function ExtractSettings({ bookLabel, headerTarget, tab = "general" }: { 
         <PromptViewer
           promptName="metadata_extraction"
           bookLabel={bookLabel}
-          title="Metadata Extraction Prompt"
-          description="The prompt template used to extract book metadata (title, author, etc.) from the first few pages. This is a Liquid template processed with page context."
+          title={m.extract_settings_metadata_prompt_title()}
+          description={m.extract_settings_metadata_prompt_desc()}
           model={metadata.model}
           onModelChange={metadata.onModelChange}
           maxRetries={metadata.maxRetries}
@@ -502,8 +503,8 @@ export function ExtractSettings({ bookLabel, headerTarget, tab = "general" }: { 
         <PromptViewer
           promptName="text_classification"
           bookLabel={bookLabel}
-          title="Text Classification Prompt"
-          description="The prompt template used for text classification. This is a Liquid template processed with page context."
+          title={m.extract_settings_classification_prompt_title()}
+          description={m.extract_settings_classification_prompt_desc()}
           model={textClassification.model}
           onModelChange={textClassification.onModelChange}
           maxRetries={textClassification.maxRetries}
@@ -517,8 +518,8 @@ export function ExtractSettings({ bookLabel, headerTarget, tab = "general" }: { 
         <PromptViewer
           promptName="image_meaningfulness"
           bookLabel={bookLabel}
-          title="Image Meaningfulness Prompt"
-          description="LLM-based filter to determine if extracted images are meaningful."
+          title={m.extract_settings_meaningfulness_prompt_title()}
+          description={m.extract_settings_meaningfulness_prompt_desc()}
           model={imageMeaningfulness.model}
           onModelChange={imageMeaningfulness.onModelChange}
           maxRetries={imageMeaningfulness.maxRetries}
@@ -532,8 +533,8 @@ export function ExtractSettings({ bookLabel, headerTarget, tab = "general" }: { 
         <PromptViewer
           promptName="image_cropping"
           bookLabel={bookLabel}
-          title="Image Cropping Prompt"
-          description="LLM-based cropping to remove stray text, artifacts, and excessive whitespace from extracted images."
+          title={m.extract_settings_cropping_prompt_title()}
+          description={m.extract_settings_cropping_prompt_desc()}
           model={imageCropping.model}
           onModelChange={imageCropping.onModelChange}
           maxRetries={imageCropping.maxRetries}
@@ -546,25 +547,25 @@ export function ExtractSettings({ bookLabel, headerTarget, tab = "general" }: { 
       {tab === "segmentation-prompt" && (
         <div className="flex flex-col h-full">
           <div className="shrink-0 px-4 pt-4 pb-3 space-y-1.5 border-b">
-            <Label className="text-xs">Min image dimension (px)</Label>
+            <Label className="text-xs">{m.extract_settings_seg_min_side_label()}</Label>
             <Input
               type="number"
               min={0}
               value={segmentationMinSide}
               onChange={(e) => { setSegmentationMinSide(e.target.value); markDirty("image_segmentation") }}
-              placeholder="None"
+              placeholder={m.extract_settings_none_placeholder()}
               className="w-32"
             />
             <p className="text-xs text-muted-foreground">
-              Skip segmentation for images whose shortest side is below this threshold.
+              {m.extract_settings_seg_min_side_hint()}
             </p>
           </div>
           <div className="flex-1 min-h-0">
             <PromptViewer
               promptName="image_segmentation"
               bookLabel={bookLabel}
-              title="Image Segmentation Prompt"
-              description="LLM-based segmentation to detect and split composited images into individual segments. Requires GPT-5.2+ for accurate bounding box coordinates."
+              title={m.extract_settings_segmentation_prompt_title()}
+              description={m.extract_settings_segmentation_prompt_desc()}
               model={imageSegmentation.model}
               onModelChange={imageSegmentation.onModelChange}
               maxRetries={imageSegmentation.maxRetries}
@@ -580,8 +581,8 @@ export function ExtractSettings({ bookLabel, headerTarget, tab = "general" }: { 
         <PromptViewer
           promptName="book_summary"
           bookLabel={bookLabel}
-          title="Book Summary Prompt"
-          description="The prompt template used to generate a short book summary at the end of extract. The summary is generated in the configured editing language."
+          title={m.extract_settings_summary_prompt_title()}
+          description={m.extract_settings_summary_prompt_desc()}
           model={bookSummary.model}
           onModelChange={bookSummary.onModelChange}
           maxRetries={bookSummary.maxRetries}
@@ -599,7 +600,7 @@ export function ExtractSettings({ bookLabel, headerTarget, tab = "general" }: { 
           disabled={updateConfig.isPending || !hasApiKey}
         >
           <Play className="mr-1.5 h-3.5 w-3.5" />
-          Save &amp; Rerun
+          {m.extract_settings_save_rerun()}
         </Button>,
         headerTarget
       )}
@@ -607,18 +608,17 @@ export function ExtractSettings({ bookLabel, headerTarget, tab = "general" }: { 
       <Dialog open={showRerunDialog} onOpenChange={setShowRerunDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Save &amp; Rerun Extraction</DialogTitle>
+            <DialogTitle>{m.extract_settings_save_rerun_title()}</DialogTitle>
             <DialogDescription>
-              This will save your settings and re-run the extraction pipeline.
-              Any manual edits to extracted text will be overwritten for affected pages.
+              {m.extract_settings_save_rerun_desc()}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowRerunDialog(false)}>
-              Cancel
+              {m.extract_settings_cancel()}
             </Button>
             <Button onClick={confirmSaveAndRerun} disabled={updateConfig.isPending}>
-              {updateConfig.isPending ? "Saving..." : "Confirm Rerun"}
+              {updateConfig.isPending ? m.extract_settings_saving() : m.extract_settings_confirm_rerun()}
             </Button>
           </DialogFooter>
         </DialogContent>

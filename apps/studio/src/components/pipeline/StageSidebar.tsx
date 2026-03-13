@@ -16,55 +16,48 @@ import {
   toCamelLabel,
 } from "./stage-config"
 import { useSettingsDialog } from "@/routes/__root"
+import { msg } from "./pipeline-i18n"
+import * as m from "@/paraglide/messages"
 
-const EXTRACT_SETTINGS_TABS = [
-  { key: "general", label: "General" },
-  { key: "text-types", label: "Text Types" },
-  { key: "metadata-prompt", label: "Metadata Prompt" },
-  { key: "prompt", label: "Extraction Prompt" },
-  { key: "meaningfulness-prompt", label: "Meaningfulness Prompt" },
-  { key: "cropping-prompt", label: "Cropping Prompt" },
-  { key: "segmentation-prompt", label: "Segmentation Prompt" },
-  { key: "book-summary-prompt", label: "Summary Prompt" },
-]
-
-const STORYBOARD_SETTINGS_TABS = [
-  { key: "general", label: "General" },
-  { key: "sectioning-prompt", label: "Sectioning Mode" },
-  { key: "rendering-prompt", label: "AI Rendering" },
-  { key: "rendering-template", label: "Template Rendering" },
-  { key: "activity-prompts", label: "Activity Rendering" },
-  { key: "image-generation", label: "Image Generation" },
-]
-
-const QUIZ_SETTINGS_TABS = [
-  { key: "general", label: "General" },
-  { key: "prompt", label: "Quiz Prompt" },
-]
-
-const GLOSSARY_SETTINGS_TABS = [
-  { key: "general", label: "Glossary Prompt" },
-]
-
-const CAPTIONS_SETTINGS_TABS = [
-  { key: "general", label: "Caption Prompt" },
-]
-
-const TRANSLATIONS_SETTINGS_TABS = [
-  { key: "general", label: "Languages" },
-  { key: "prompt", label: "Translation Prompt" },
-  { key: "speech", label: "Speech" },
-  { key: "speech-prompts", label: "Speech Prompts" },
-  { key: "voices", label: "Voices" },
-]
-
-const SETTINGS_TABS: Record<string, { key: string; label: string }[]> = {
-  extract: EXTRACT_SETTINGS_TABS,
-  storyboard: STORYBOARD_SETTINGS_TABS,
-  quizzes: QUIZ_SETTINGS_TABS,
-  glossary: GLOSSARY_SETTINGS_TABS,
-  captions: CAPTIONS_SETTINGS_TABS,
-  "text-and-speech": TRANSLATIONS_SETTINGS_TABS,
+function getSettingsTabs(slug: string): { key: string; label: string }[] | undefined {
+  const tabs: Record<string, { key: string; label: string }[]> = {
+    extract: [
+      { key: "general", label: m.sidebar_tab_general() },
+      { key: "text-types", label: m.sidebar_tab_text_types() },
+      { key: "metadata-prompt", label: m.sidebar_tab_metadata_prompt() },
+      { key: "prompt", label: m.sidebar_tab_extraction_prompt() },
+      { key: "meaningfulness-prompt", label: m.sidebar_tab_meaningfulness_prompt() },
+      { key: "cropping-prompt", label: m.sidebar_tab_cropping_prompt() },
+      { key: "segmentation-prompt", label: m.sidebar_tab_segmentation_prompt() },
+      { key: "book-summary-prompt", label: m.sidebar_tab_summary_prompt() },
+    ],
+    storyboard: [
+      { key: "general", label: m.sidebar_tab_general() },
+      { key: "sectioning-prompt", label: m.sidebar_tab_sectioning_mode() },
+      { key: "rendering-prompt", label: m.sidebar_tab_ai_rendering() },
+      { key: "rendering-template", label: m.sidebar_tab_template_rendering() },
+      { key: "activity-prompts", label: m.sidebar_tab_activity_rendering() },
+      { key: "image-generation", label: m.sidebar_tab_image_generation() },
+    ],
+    quizzes: [
+      { key: "general", label: m.sidebar_tab_general() },
+      { key: "prompt", label: m.sidebar_tab_quiz_prompt() },
+    ],
+    glossary: [
+      { key: "general", label: m.sidebar_tab_glossary_prompt() },
+    ],
+    captions: [
+      { key: "general", label: m.sidebar_tab_caption_prompt() },
+    ],
+    "text-and-speech": [
+      { key: "general", label: m.sidebar_tab_languages() },
+      { key: "prompt", label: m.sidebar_tab_translation_prompt() },
+      { key: "speech", label: m.sidebar_tab_speech() },
+      { key: "speech-prompts", label: m.sidebar_tab_speech_prompts() },
+      { key: "voices", label: m.sidebar_tab_voices() },
+    ],
+  }
+  return tabs[slug]
 }
 
 export function StageSidebar({
@@ -115,7 +108,7 @@ export function StageSidebar({
   const stageItems = STAGES.map((step, index) => {
     const isActive = step.slug === activeStep
     const Icon = step.icon
-    const settingsTabs = SETTINGS_TABS[step.slug]
+    const settingsTabs = getSettingsTabs(step.slug)
     const showSubTabs = isActive && isSettings && !!settingsTabs
     const state = stageState(step.slug)
     const stageCompleted = state === "done"
@@ -153,7 +146,7 @@ export function StageSidebar({
               ? { label: bookLabel, step: step.slug, pageId: selectedPageId }
               : { label: bookLabel, step: step.slug }}
             className={cn("flex items-center gap-2.5 min-w-7", x.flex1)}
-            title={step.label}
+            title={msg(step.labelKey)}
           >
             <div className="relative shrink-0">
               <div
@@ -171,7 +164,7 @@ export function StageSidebar({
               <StepProgressRing size={28} state={ringState} colorClass={isActive ? "bg-white" : step.color} />
             </div>
             <span className={cn("truncate hidden", x.showLabel)}>
-              {step.slug === "book" ? toCamelLabel(bookLabel) : step.label}
+              {step.slug === "book" ? toCamelLabel(bookLabel) : msg(step.labelKey)}
             </span>
           </Link>
 
@@ -180,7 +173,7 @@ export function StageSidebar({
               to="/books/$label/$step/settings"
               params={{ label: bookLabel, step: step.slug }}
               search={{ tab: "general" }}
-              title={`${step.label} Settings`}
+              title={m.sidebar_stage_settings_title({ stageName: msg(step.labelKey) })}
               className={cn(
                 "shrink-0 inline-flex items-center justify-center w-6 h-6 rounded-full transition-colors",
                 isActive
@@ -194,7 +187,7 @@ export function StageSidebar({
             <button
               type="button"
               onClick={openSettings}
-              title="API Key Settings"
+              title={m.sidebar_api_key_settings()}
               className={cn(
                 "shrink-0 inline-flex items-center justify-center w-6 h-6 rounded-full transition-colors cursor-pointer",
                 isActive
@@ -208,7 +201,7 @@ export function StageSidebar({
             <button
               type="button"
               onClick={() => window.dispatchEvent(new CustomEvent("adt:repackage"))}
-              title="Re-package ADT"
+              title={m.sidebar_repackage_adt()}
               className={cn(
                 "shrink-0 inline-flex items-center justify-center w-6 h-6 rounded-full transition-colors cursor-pointer",
                 isActive
@@ -318,7 +311,7 @@ function PageIndex({
   if (!pages?.length) {
     return (
       <div className="px-3 py-4 text-xs text-muted-foreground text-center">
-        No pages extracted yet
+        {m.sidebar_no_pages()}
       </div>
     )
   }
@@ -433,10 +426,10 @@ function PageRow({
         )}
         <div className="flex flex-col gap-0.5 min-w-0 flex-1 pt-0.5">
           <span className="text-[11px] leading-snug line-clamp-2">
-            {page.textPreview || "Untitled"}
+            {page.textPreview || m.sidebar_untitled()}
           </span>
           <span className="text-[9px] font-mono opacity-50 leading-none">
-            pg {page.pageNumber}
+            {m.sidebar_page_number({ pageNumber: String(page.pageNumber) })}
             {page.sectionCount > 1 && (
               <span className="ml-1 inline-flex items-center justify-center min-w-[14px] h-[12px] px-0.5 rounded bg-black/10 text-[8px] font-semibold not-italic leading-none">
                 {page.sectionCount}
@@ -476,7 +469,7 @@ function PageRow({
                     ? cn(activeStepDef?.color ?? "bg-violet-600", pruned ? "text-white/50 line-through" : "text-white")
                     : pruned ? "bg-black/5 text-black/20 line-through hover:bg-black/10 hover:text-black/40" : "bg-black/5 text-black/40 hover:bg-black/10 hover:text-black/60"
                 )}
-                title={`Section ${i + 1}${pruned ? " (pruned)" : ""}`}
+                title={pruned ? m.sidebar_section_title_pruned({ index: String(i + 1) }) : m.sidebar_section_title({ index: String(i + 1) })}
               >
                 {i + 1}
               </button>
@@ -487,4 +480,3 @@ function PageRow({
     </div>
   )
 }
-

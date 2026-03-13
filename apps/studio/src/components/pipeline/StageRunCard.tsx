@@ -7,13 +7,9 @@ import { PIPELINE } from "@adt/types"
 import type { StageName } from "@adt/types"
 import { STAGES } from "./stage-config"
 import type { PipelineMessageKey } from "./stage-config"
+import { msg } from "./pipeline-i18n"
 import { useBookRun } from "@/hooks/use-book-run"
 import * as m from "@/paraglide/messages"
-
-/** Type-safe dynamic lookup for parameterless paraglide pipeline messages. */
-function msg(key: PipelineMessageKey): string {
-  return (m as unknown as Record<string, () => string>)[key]()
-}
 
 export interface StageSubStep {
   key: string

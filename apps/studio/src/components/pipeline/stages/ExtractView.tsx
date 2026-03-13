@@ -8,6 +8,7 @@ import { ExtractPageDetail } from "./ExtractPageDetail"
 import { useStepHeader } from "../StepViewRouter"
 import { StageRunCard } from "../StageRunCard"
 import type { PageSummaryItem } from "@/api/client"
+import * as m from "@/paraglide/messages"
 
 function PageCard({
   bookLabel,
@@ -35,12 +36,12 @@ function PageCard({
         ) : imageData ? (
           <img
             src={`data:image/png;base64,${imageData.imageBase64}`}
-            alt={`Page ${page.pageNumber}`}
+            alt={m.extract_page_label({ pageNumber: String(page.pageNumber) })}
             className="w-full h-auto block"
           />
         ) : (
           <div className="flex aspect-[3/4] items-center justify-center text-[10px] text-muted-foreground">
-            No image
+            {m.extract_no_image()}
           </div>
         )}
       </div>
@@ -48,7 +49,7 @@ function PageCard({
       {/* Info */}
       <div className="px-2.5 py-2 border-t">
         <div className="flex items-center justify-between mb-0.5">
-          <span className="text-xs font-medium">Page {page.pageNumber}</span>
+          <span className="text-xs font-medium">{m.extract_page_label({ pageNumber: String(page.pageNumber) })}</span>
           <div className="flex items-center gap-2">
             {page.wordCount > 0 && (
               <span className="flex items-center gap-0.5 text-[10px] text-muted-foreground">
@@ -65,7 +66,7 @@ function PageCard({
           </div>
         </div>
         <p className="line-clamp-2 text-[11px] text-muted-foreground leading-relaxed">
-          {page.textPreview?.replace(/\n/g, " ") || "No text extracted"}
+          {page.textPreview?.replace(/\n/g, " ") || m.extract_no_text()}
         </p>
       </div>
     </button>
@@ -93,7 +94,7 @@ function BookBanner({ bookLabel, pages }: { bookLabel: string; pages: PageSummar
         {coverImage ? (
           <img
             src={`data:image/png;base64,${coverImage.imageBase64}`}
-            alt={`Cover of ${title}`}
+            alt={m.extract_cover_alt({ title })}
             className="w-full h-auto block"
           />
         ) : (
@@ -128,7 +129,7 @@ function BookBanner({ bookLabel, pages }: { bookLabel: string; pages: PageSummar
           {book.pageCount > 0 && (
             <span className="flex items-center gap-1">
               <FileText className="w-3 h-3" />
-              {book.pageCount} pages
+              {book.pageCount} {book.pageCount === 1 ? m.book_row_page_label_singular() : m.book_row_page_label_plural()}
             </span>
           )}
         </div>
@@ -182,7 +183,7 @@ export function ExtractView({ bookLabel, selectedPageId: selectedPageIdProp, onS
       setExtra(
         <>
           <span className="text-white/40 text-sm">/</span>
-          <span className="text-sm font-medium">Page {selectedPage.pageNumber}</span>
+          <span className="text-sm font-medium">{m.extract_page_label({ pageNumber: String(selectedPage.pageNumber) })}</span>
           <div className="ml-auto flex gap-1">
             <button
               type="button"
@@ -207,7 +208,7 @@ export function ExtractView({ bookLabel, selectedPageId: selectedPageIdProp, onS
       setOnLabelClick(null)
       setExtra(
         <span className="ml-auto text-[11px] font-medium bg-white/20 rounded-full px-2.5 py-0.5">
-          {pageList.length} pages
+          {pageList.length} {pageList.length === 1 ? m.book_row_page_label_singular() : m.book_row_page_label_plural()}
         </span>
       )
     } else {
@@ -238,7 +239,7 @@ export function ExtractView({ bookLabel, selectedPageId: selectedPageIdProp, onS
     return (
       <div className="flex items-center gap-2 p-4 text-sm text-muted-foreground">
         <Loader2 className="h-4 w-4 animate-spin" />
-        Loading pages...
+        {m.extract_loading_pages()}
       </div>
     )
   }
@@ -268,7 +269,7 @@ export function ExtractView({ bookLabel, selectedPageId: selectedPageIdProp, onS
         />
       ) : pageList.length === 0 ? (
         <p className="text-sm text-muted-foreground">
-          No pages extracted yet. Run the pipeline to extract content.
+          {m.extract_no_pages()}
         </p>
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">

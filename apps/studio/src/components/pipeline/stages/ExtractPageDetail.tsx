@@ -5,12 +5,13 @@ import { usePage, usePageImage } from "@/hooks/use-pages"
 import { api, BASE_URL } from "@/api/client"
 import type { VersionEntry } from "@/api/client"
 import { useActiveConfig } from "@/hooks/use-debug"
+import * as m from "@/paraglide/messages"
 
 function VersionPicker({
   currentVersion,
   saving,
   dirty,
-  bookLabel,
+  bookLabel, 
   node,
   itemId,
   onPreview,
@@ -73,7 +74,7 @@ function VersionPicker({
           onClick={onDiscard}
           className="text-[10px] font-medium rounded px-2 py-0.5 bg-muted hover:bg-accent hover:text-accent-foreground cursor-pointer transition-colors"
         >
-          Discard
+          {m.extract_detail_discard()}
         </button>
         <button
           type="button"
@@ -81,7 +82,7 @@ function VersionPicker({
           className="flex items-center gap-1 text-[10px] font-medium rounded px-2 py-0.5 bg-green-600 hover:bg-green-500 text-white cursor-pointer transition-colors"
         >
           <Check className="h-3 w-3" />
-          Save
+          {m.extract_detail_save()}
         </button>
       </div>
     )
@@ -117,7 +118,7 @@ function VersionPicker({
               </button>
             ))
           ) : (
-            <div className="px-3 py-1 text-xs text-muted-foreground">No versions</div>
+            <div className="px-3 py-1 text-xs text-muted-foreground">{m.extract_detail_no_versions()}</div>
           )}
         </div>
       )}
@@ -131,7 +132,7 @@ function ImageCard({ imageId, bookLabel, isPruned, reason, onTogglePrune }: { im
   return (
     <div
       className={`relative rounded border overflow-hidden bg-card flex flex-col items-center min-h-[80px] ${isPruned ? "opacity-40" : ""}`}
-      title={isPruned ? `Pruned: ${reason}` : undefined}
+      title={isPruned && reason ? m.extract_detail_pruned_reason({ reason }) : undefined}
     >
       <button
         type="button"
@@ -141,7 +142,7 @@ function ImageCard({ imageId, bookLabel, isPruned, reason, onTogglePrune }: { im
             ? "bg-destructive hover:bg-destructive/80"
             : "bg-black/30 opacity-0 group-hover:opacity-100 hover:bg-black/50"
         }`}
-        title={isPruned ? "Unprune image" : "Prune image"}
+        title={isPruned ? m.extract_detail_unprune_image() : m.extract_detail_prune_image()}
       >
         {isPruned
           ? <EyeOff className="h-3 w-3 text-white" />
@@ -274,7 +275,7 @@ export function ExtractPageDetail({
   }
 
   if (isLoading) {
-    return <div className="p-4 text-sm text-muted-foreground">Loading page...</div>
+    return <div className="p-4 text-sm text-muted-foreground">{m.extract_detail_loading_page()}</div>
   }
 
   if (!page) return null
@@ -294,7 +295,7 @@ export function ExtractPageDetail({
           return (
             <h3 className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground uppercase tracking-wider">
               <Image className="h-3 w-3" />
-              Extracted Images ({count})
+              {m.extract_detail_images_heading({ count: String(count) })}
               <VersionPicker
                 currentVersion={page.versions.imageClassification}
                 saving={savingImages}
@@ -315,7 +316,7 @@ export function ExtractPageDetail({
           <div className="rounded border overflow-hidden shadow-sm">
             <img
               src={`data:image/png;base64,${imageData.imageBase64}`}
-              alt={`Page ${page.pageNumber}`}
+              alt={m.extract_page_label({ pageNumber: String(page.pageNumber) })}
               className="w-full h-auto block"
               onLoad={(e) => {
                 const img = e.target as HTMLImageElement
@@ -335,7 +336,7 @@ export function ExtractPageDetail({
           <div className="flex aspect-[3/4] w-full items-center justify-center rounded border bg-muted/50 text-sm text-muted-foreground">
             <div className="flex flex-col items-center gap-2">
               <ImageOff className="h-6 w-6" />
-              No image available
+              {m.extract_detail_no_image_available()}
             </div>
           </div>
         )}
@@ -365,7 +366,7 @@ export function ExtractPageDetail({
           <div>
             <h3 className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">
               <FileText className="h-3 w-3" />
-              Extracted Text
+              {m.extract_detail_text_heading()}
             </h3>
             <div className="rounded border bg-muted/30 p-3 text-xs leading-relaxed whitespace-pre-wrap font-mono">
               {page.text}
@@ -373,7 +374,7 @@ export function ExtractPageDetail({
           </div>
         ) : (
           <div className="text-sm text-muted-foreground py-8 text-center">
-            No extracted text yet. Run the pipeline first.
+            {m.extract_detail_no_text()}
           </div>
         )}
 
@@ -382,7 +383,7 @@ export function ExtractPageDetail({
           <div className="mt-4">
             <h3 className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">
               <Layers className="h-3 w-3" />
-              Classified Text
+              {m.extract_detail_classified_heading()}
               <VersionPicker
                 currentVersion={page.versions.textClassification}
                 saving={savingText}
@@ -445,7 +446,7 @@ export function ExtractPageDetail({
                                 ? "bg-destructive hover:bg-destructive/80"
                                 : "opacity-0 group-hover/text:opacity-100 bg-black/30 hover:bg-black/50"
                             }`}
-                            title={t.isPruned ? "Unprune text" : "Prune text"}
+                            title={t.isPruned ? m.extract_detail_unprune_text() : m.extract_detail_prune_text()}
                           >
                             {t.isPruned
                               ? <EyeOff className="h-3 w-3 text-white" />

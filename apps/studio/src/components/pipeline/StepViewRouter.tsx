@@ -1,5 +1,6 @@
 import { createContext, useContext, useCallback, useState, type ReactNode } from "react"
 import { STAGES, toCamelLabel } from "./stage-config"
+import { msg } from "./pipeline-i18n"
 import {
   BookView,
   ExtractView,
@@ -12,7 +13,7 @@ import {
   ExportView,
 } from "./stages"
 import { cn } from "@/lib/utils"
-import { m } from "@/paraglide/messages"
+import * as m from "@/paraglide/messages"
 
 // Context for views to inject content into the step header
 interface StepHeaderControls {
@@ -69,7 +70,7 @@ export function StepViewRouter({ step, bookLabel, selectedPageId, onSelectPage }
   if (!entry || !stepConfig) {
     return (
       <div className="p-4 text-sm text-muted-foreground">
-        Unknown step: {step}
+        {m.pipeline_unknown_step({ step })}
       </div>
     )
   }
@@ -91,10 +92,10 @@ export function StepViewRouter({ step, bookLabel, selectedPageId, onSelectPage }
               onClick={labelClickHandler.fn}
               className="text-sm font-semibold hover:text-white/70 transition-colors"
             >
-             {step === "book" ? toCamelLabel(bookLabel) : m[stepConfig.labelKey]()}
+             {step === "book" ? toCamelLabel(bookLabel) : msg(stepConfig.labelKey)}
             </button>
           ) : (
-            <h2 className="text-sm font-semibold">{step === "book" ? toCamelLabel(bookLabel) : m[stepConfig.labelKey]()}</h2>
+            <h2 className="text-sm font-semibold">{step === "book" ? toCamelLabel(bookLabel) : msg(stepConfig.labelKey)}</h2>
           )}
           <div ref={setHeaderSlotEl} className="contents" />
           {headerExtra}
