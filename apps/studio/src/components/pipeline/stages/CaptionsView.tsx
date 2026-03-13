@@ -9,6 +9,7 @@ import { useBookRun } from "@/hooks/use-book-run"
 import { useApiKey } from "@/hooks/use-api-key"
 import { StageRunCard } from "../StageRunCard"
 import { useSectionNav } from "@/routes/books.$label"
+import * as m from "@/paraglide/messages"
 
 
 type CaptioningData = NonNullable<PageDetail["imageCaptioning"]>
@@ -78,7 +79,7 @@ function VersionPicker({
           onClick={onDiscard}
           className="text-[10px] font-medium rounded px-2 py-0.5 bg-muted hover:bg-accent hover:text-accent-foreground cursor-pointer transition-colors"
         >
-          Discard
+          {m.captions_discard()}
         </button>
         <button
           type="button"
@@ -86,7 +87,7 @@ function VersionPicker({
           className="flex items-center gap-1 text-[10px] font-medium rounded px-2 py-0.5 bg-green-600 hover:bg-green-500 text-white cursor-pointer transition-colors"
         >
           <Check className="h-3 w-3" />
-          Save
+          {m.captions_save()}
         </button>
       </div>
     )
@@ -122,7 +123,7 @@ function VersionPicker({
               </button>
             ))
           ) : (
-            <div className="px-3 py-1 text-xs text-muted-foreground">No versions</div>
+            <div className="px-3 py-1 text-xs text-muted-foreground">{m.captions_no_versions()}</div>
           )}
         </div>
       )}
@@ -256,7 +257,7 @@ function PageCaptions({
         <div className="w-12 h-12 rounded-full bg-teal-50 flex items-center justify-center mb-3">
           <ImageIcon className="w-6 h-6 text-teal-300" />
         </div>
-        <p className="text-sm font-medium">No images in this section</p>
+        <p className="text-sm font-medium">{m.captions_no_images_in_section()}</p>
       </div>
     )
   }
@@ -286,9 +287,9 @@ function PageCaptions({
     <div className="space-y-1.5">
       <div className="flex items-center gap-2 px-1">
         <span className="text-sm font-medium text-foreground">
-          Page {pageNumber}
+          {m.captions_page_heading({ pageNumber: String(pageNumber) })}
           {filterSectionIndex != null && (
-            <span className="text-muted-foreground"> / Section {filterSectionIndex + 1}</span>
+            <span className="text-muted-foreground"> {m.captions_section_heading({ index: String(filterSectionIndex + 1) })}</span>
           )}
         </span>
         <div className="ml-auto">
@@ -314,8 +315,10 @@ function PageCaptions({
             <div className="px-1 pt-1.5 pb-0.5">
               <span className="text-[9px] font-medium text-muted-foreground/70 uppercase tracking-wider">
                 {group.sectionIndex >= 0
-                  ? `Section ${group.sectionIndex + 1}${group.sectionType ? ` — ${group.sectionType}` : ""}`
-                  : "Other images"
+                  ? group.sectionType
+                    ? m.captions_group_section({ index: String(group.sectionIndex + 1), type: group.sectionType })
+                    : m.captions_group_section_no_type({ index: String(group.sectionIndex + 1) })
+                  : m.captions_group_other()
                 }
               </span>
             </div>
@@ -370,7 +373,7 @@ export function CaptionsView({ bookLabel, selectedPageId, onSelectPage }: { book
         {selectedPageSummary && (
           <>
             <span className="text-white/40 text-sm">/</span>
-            <span className="text-sm font-medium">Page {selectedPageSummary.pageNumber}</span>
+            <span className="text-sm font-medium">{m.captions_page_heading({ pageNumber: String(selectedPageSummary.pageNumber) })}</span>
             {hasSections && (
               <>
                 <span className="text-white/40 text-sm">/</span>
@@ -387,7 +390,7 @@ export function CaptionsView({ bookLabel, selectedPageId, onSelectPage }: { book
                             ? pruned ? "bg-white/20 text-white/50 line-through decoration-white/40" : "bg-white/30 text-white"
                             : pruned ? "bg-white/5 text-white/30 line-through decoration-white/20 hover:bg-white/10 hover:text-white/50" : "bg-white/10 text-white/60 hover:bg-white/20 hover:text-white"
                         }`}
-                        title={`Section ${i + 1}${pruned ? " (pruned)" : ""}`}
+                        title={pruned ? m.captions_section_title_pruned({ index: String(i + 1) }) : m.captions_section_title({ index: String(i + 1) })}
                       >
                         {i + 1}
                       </button>
@@ -399,8 +402,8 @@ export function CaptionsView({ bookLabel, selectedPageId, onSelectPage }: { book
           </>
         )}
         <div className="flex items-center gap-1.5 ml-auto">
-          <span className="text-[10px] bg-white/20 rounded-full px-2 py-0.5">{totalImages} images</span>
-          <span className="text-[10px] bg-white/20 rounded-full px-2 py-0.5">{displayPages.length} pages</span>
+          <span className="text-[10px] bg-white/20 rounded-full px-2 py-0.5">{m.captions_image_count({ count: String(totalImages) })}</span>
+          <span className="text-[10px] bg-white/20 rounded-full px-2 py-0.5">{m.captions_page_count({ count: String(displayPages.length) })}</span>
         </div>
       </>
     )
@@ -411,7 +414,7 @@ export function CaptionsView({ bookLabel, selectedPageId, onSelectPage }: { book
     return (
       <div className="flex items-center justify-center py-12 text-muted-foreground">
         <Loader2 className="w-4 h-4 animate-spin mr-2" />
-        <span className="text-sm">Loading pages...</span>
+        <span className="text-sm">{m.captions_loading()}</span>
       </div>
     )
   }
@@ -436,13 +439,13 @@ export function CaptionsView({ bookLabel, selectedPageId, onSelectPage }: { book
         <div className="w-12 h-12 rounded-full bg-teal-50 flex items-center justify-center mb-3">
           <ImageIcon className="w-6 h-6 text-teal-300" />
         </div>
-        <p className="text-sm font-medium">No images on this page</p>
+        <p className="text-sm font-medium">{m.captions_no_images_on_page()}</p>
         <button
           type="button"
           onClick={() => onSelectPage?.(null)}
           className="mt-3 text-xs font-medium text-teal-600 hover:text-teal-700 hover:underline transition-colors"
         >
-          Show all
+          {m.captions_show_all()}
         </button>
       </div>
     )
@@ -453,8 +456,8 @@ export function CaptionsView({ bookLabel, selectedPageId, onSelectPage }: { book
       <div className="w-12 h-12 rounded-full bg-teal-50 flex items-center justify-center mb-3">
         <ImageIcon className="w-6 h-6 text-teal-300" />
       </div>
-      <p className="text-sm font-medium">No captions for this page</p>
-      <p className="text-xs mt-1">This page has no captioned images</p>
+      <p className="text-sm font-medium">{m.captions_no_captions_title()}</p>
+      <p className="text-xs mt-1">{m.captions_no_captions_subtitle()}</p>
     </div>
   ) : undefined
 
@@ -467,7 +470,7 @@ export function CaptionsView({ bookLabel, selectedPageId, onSelectPage }: { book
             onClick={() => onSelectPage?.(null)}
             className="text-xs font-medium text-teal-600 hover:text-teal-700 hover:underline transition-colors"
           >
-            Show all
+            {m.captions_show_all()}
           </button>
         </div>
       )}
