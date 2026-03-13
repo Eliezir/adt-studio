@@ -12,6 +12,7 @@ import {
   ExportView,
 } from "./stages"
 import { cn } from "@/lib/utils"
+import { m } from "@/paraglide/messages"
 
 // Context for views to inject content into the step header
 interface StepHeaderControls {
@@ -90,10 +91,10 @@ export function StepViewRouter({ step, bookLabel, selectedPageId, onSelectPage }
               onClick={labelClickHandler.fn}
               className="text-sm font-semibold hover:text-white/70 transition-colors"
             >
-              {step === "book" ? toCamelLabel(bookLabel) : stepConfig.label}
+             {step === "book" ? toCamelLabel(bookLabel) : m[stepConfig.labelKey]()}
             </button>
           ) : (
-            <h2 className="text-sm font-semibold">{step === "book" ? toCamelLabel(bookLabel) : stepConfig.label}</h2>
+            <h2 className="text-sm font-semibold">{step === "book" ? toCamelLabel(bookLabel) : m[stepConfig.labelKey]()}</h2>
           )}
           <div ref={setHeaderSlotEl} className="contents" />
           {headerExtra}
