@@ -322,5 +322,8 @@
   "voice_mappings_col_language": "Idioma",
   "voice_mappings_col_openai": "Voz OpenAI",
   "voice_mappings_col_azure": "Voz Azure",
-  "voice_mappings_empty": "Nenhum mapeamento de voz configurado."
+  "voice_mappings_empty": "Nenhum mapeamento de voz configurado.",
+
+  "preview_packaging": "Empacotando prévia...",
+  "preview_iframe_title": "Prévia ADT"
 }

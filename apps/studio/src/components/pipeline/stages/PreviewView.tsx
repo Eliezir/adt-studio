@@ -3,6 +3,7 @@ import { Loader2, AlertCircle } from "lucide-react"
 import { useQueryClient } from "@tanstack/react-query"
 import { api, getAdtUrl } from "@/api/client"
 import { useBookRun } from "@/hooks/use-book-run"
+import * as m from "@/paraglide/messages"
 
 export function PreviewView({ bookLabel }: { bookLabel: string }) {
   const queryClient = useQueryClient()
@@ -64,7 +65,7 @@ export function PreviewView({ bookLabel }: { bookLabel: string }) {
     return (
       <div className="flex items-center justify-center py-12 text-muted-foreground">
         <Loader2 className="w-4 h-4 animate-spin mr-2" />
-        <span className="text-sm">Packaging preview...</span>
+        <span className="text-sm">{m.preview_packaging()}</span>
       </div>
     )
   }
@@ -84,7 +85,7 @@ export function PreviewView({ bookLabel }: { bookLabel: string }) {
       <iframe
         src={`${getAdtUrl(bookLabel)}/v-${Date.now()}/`}
         className="w-full h-full border-0"
-        title="ADT Preview"
+        title={m.preview_iframe_title()}
       />
     )
   }

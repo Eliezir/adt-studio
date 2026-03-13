@@ -320,5 +320,8 @@
   "voice_mappings_col_language": "Idioma",
   "voice_mappings_col_openai": "Voz OpenAI",
   "voice_mappings_col_azure": "Voz Azure",
-  "voice_mappings_empty": "No hay asignaciones de voz configuradas."
+  "voice_mappings_empty": "No hay asignaciones de voz configuradas.",
+
+  "preview_packaging": "Empaquetando vista previa...",
+  "preview_iframe_title": "Vista previa ADT"
 }

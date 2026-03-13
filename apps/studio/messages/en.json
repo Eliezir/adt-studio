@@ -321,5 +321,8 @@
   "voice_mappings_col_language": "Language",
   "voice_mappings_col_openai": "OpenAI Voice",
   "voice_mappings_col_azure": "Azure Voice",
-  "voice_mappings_empty": "No voice mappings configured."
+  "voice_mappings_empty": "No voice mappings configured.",
+
+  "preview_packaging": "Packaging preview...",
+  "preview_iframe_title": "ADT Preview"
 }
