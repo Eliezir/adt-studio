@@ -20,6 +20,7 @@ import { api } from "@/api/client"
 import { PromptViewer } from "@/components/pipeline/PromptViewer"
 import { useBookRun } from "@/hooks/use-book-run"
 import { useStepConfig } from "@/hooks/use-step-config"
+import * as m from "@/paraglide/messages"
 
 export function QuizzesSettings({ bookLabel, headerTarget, tab = "general" }: { bookLabel: string; headerTarget?: HTMLDivElement | null; tab?: string }) {
   const { data: bookConfigData } = useBookConfig(bookLabel)
@@ -120,7 +121,7 @@ export function QuizzesSettings({ bookLabel, headerTarget, tab = "general" }: { 
       {tab === "general" && (
         <>
           <div className="space-y-1.5">
-            <Label className="text-xs">Pages per Quiz</Label>
+            <Label className="text-xs">{m.quizzes_settings_pages_per_quiz()}</Label>
             <Input
               type="number"
               min={1}
@@ -130,15 +131,15 @@ export function QuizzesSettings({ bookLabel, headerTarget, tab = "general" }: { 
               className="w-32 h-8 text-xs"
             />
             <p className="text-xs text-muted-foreground">
-              Number of pages of content to include per quiz question.
+              {m.quizzes_settings_pages_per_quiz_hint()}
             </p>
           </div>
 
           {sectionTypeKeys.length > 0 && (
             <div className="space-y-2">
-              <Label className="text-xs">Quiz Section Types</Label>
+              <Label className="text-xs">{m.quizzes_settings_section_types()}</Label>
               <p className="text-xs text-muted-foreground">
-                Only pages containing these section types are counted when grouping pages for quiz generation.
+                {m.quizzes_settings_section_types_hint()}
               </p>
               <div className="rounded-md border divide-y">
                 {sectionTypeKeys.map((key) => {
@@ -169,8 +170,8 @@ export function QuizzesSettings({ bookLabel, headerTarget, tab = "general" }: { 
         <PromptViewer
           promptName="quiz_generation"
           bookLabel={bookLabel}
-          title="Quiz Generation Prompt"
-          description="The prompt template used to generate quiz questions from page content."
+          title={m.quizzes_settings_prompt_title()}
+          description={m.quizzes_settings_prompt_desc()}
           model={quiz.model}
           onModelChange={quiz.onModelChange}
           maxRetries={quiz.maxRetries}
@@ -188,7 +189,7 @@ export function QuizzesSettings({ bookLabel, headerTarget, tab = "general" }: { 
           disabled={updateConfig.isPending || !hasApiKey}
         >
           <Play className="mr-1.5 h-3.5 w-3.5" />
-          Save &amp; Rerun
+          {m.quizzes_settings_save_rerun()}
         </Button>,
         headerTarget
       )}
@@ -196,17 +197,17 @@ export function QuizzesSettings({ bookLabel, headerTarget, tab = "general" }: { 
       <Dialog open={showRerunDialog} onOpenChange={setShowRerunDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Save &amp; Rerun Quizzes</DialogTitle>
+            <DialogTitle>{m.quizzes_settings_save_rerun_title()}</DialogTitle>
             <DialogDescription>
-              This will save your settings and re-run quiz generation.
+              {m.quizzes_settings_save_rerun_desc()}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowRerunDialog(false)}>
-              Cancel
+              {m.quizzes_settings_cancel()}
             </Button>
             <Button onClick={confirmSaveAndRerun} disabled={updateConfig.isPending}>
-              {updateConfig.isPending ? "Saving..." : "Confirm Rerun"}
+              {updateConfig.isPending ? m.quizzes_settings_saving() : m.quizzes_settings_confirm_rerun()}
             </Button>
           </DialogFooter>
         </DialogContent>

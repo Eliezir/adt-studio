@@ -11,6 +11,7 @@ import { useBookRun } from "@/hooks/use-book-run"
 import { useApiKey } from "@/hooks/use-api-key"
 import { StageRunCard } from "../StageRunCard"
 import { getRequestedPageId, getQuizImageRenderState } from "./quizzes-image-state"
+import * as m from "@/paraglide/messages"
 
 
 type QuizData = QuizGenerationOutput
@@ -78,7 +79,7 @@ function VersionPicker({
           onClick={onDiscard}
           className="text-[10px] font-medium rounded px-2 py-0.5 bg-black/15 text-black hover:bg-black/25 cursor-pointer transition-colors"
         >
-          Discard
+          {m.quizzes_discard()}
         </button>
         <button
           type="button"
@@ -86,7 +87,7 @@ function VersionPicker({
           className="flex items-center gap-1 text-[10px] font-medium rounded px-2 py-0.5 bg-white text-orange-800 hover:bg-white/80 cursor-pointer transition-colors"
         >
           <Check className="h-3 w-3" />
-          Save
+          {m.quizzes_save()}
         </button>
       </div>
     )
@@ -122,7 +123,7 @@ function VersionPicker({
               </button>
             ))
           ) : (
-            <div className="px-3 py-1 text-xs text-muted-foreground">No versions</div>
+            <div className="px-3 py-1 text-xs text-muted-foreground">{m.quizzes_no_versions()}</div>
           )}
         </div>
       )}
@@ -181,24 +182,24 @@ function PageThumb({
       onClick={onClick}
       onMouseEnter={() => setRequestImage(true)}
       onFocus={() => setRequestImage(true)}
-      aria-label={`Open page preview for ${pageId}`}
+      aria-label={m.quizzes_page_preview_aria({ pageId })}
       className="shrink-0 rounded border border-border bg-muted/40 overflow-hidden hover:ring-2 hover:ring-ring transition-shadow cursor-pointer"
     >
       {imageState === "ready" ? (
         <img
           src={`data:image/png;base64,${imageData!.imageBase64}`}
-          alt={`Page ${pageId}`}
+          alt={m.quizzes_page_alt({ pageId })}
           loading="lazy"
           className="h-44 w-auto block"
         />
       ) : imageState === "error" ? (
         <div className="h-44 w-32 flex flex-col items-center justify-center gap-1 text-[10px] text-muted-foreground">
           <ImageOff className="h-4 w-4" />
-          <span>No image</span>
+          <span>{m.quizzes_no_image()}</span>
         </div>
       ) : (
         <div className="h-44 w-32 flex items-center justify-center px-2 text-[10px] text-muted-foreground">
-          Page {pageId}
+          {m.quizzes_page_alt({ pageId })}
         </div>
       )}
     </button>
@@ -230,33 +231,33 @@ function PageLightbox({
     <Dialog open={open} onOpenChange={onOpenChange}>
       {pageId && (
         <DialogContent className="w-auto max-w-[95vw] overflow-hidden gap-2 p-2 sm:max-w-[90vw] bg-white">
-          <DialogTitle className="sr-only">Page preview {pageId}</DialogTitle>
+          <DialogTitle className="sr-only">{m.quizzes_lightbox_title({ pageId })}</DialogTitle>
           <DialogDescription className="sr-only">
-            Full-size source page preview for the selected quiz.
+            {m.quizzes_lightbox_desc()}
           </DialogDescription>
           <div className="flex max-h-[90vh] max-w-[90vw] items-center justify-center overflow-hidden rounded-md bg-muted/20">
             {imageState === "ready" ? (
               <img
                 src={`data:image/png;base64,${imageData!.imageBase64}`}
-                alt={`Page ${pageId}`}
+                alt={m.quizzes_page_alt({ pageId })}
                 className="max-h-[90vh] max-w-[90vw] object-contain"
               />
             ) : imageState === "error" ? (
               <div className="flex h-64 w-52 flex-col items-center justify-center gap-2 text-sm text-muted-foreground">
                 <ImageOff className="h-5 w-5" />
-                <span>Image unavailable</span>
+                <span>{m.quizzes_image_unavailable()}</span>
                 <button
                   type="button"
                   onClick={() => void refetch()}
                   className="rounded border px-2 py-0.5 text-xs hover:bg-muted transition-colors cursor-pointer"
                 >
-                  Retry
+                  {m.quizzes_retry()}
                 </button>
               </div>
             ) : (
               <div className="flex h-64 w-52 items-center justify-center gap-2 text-sm text-muted-foreground">
                 <Loader2 className="h-4 w-4 animate-spin" />
-                <span>Loading image...</span>
+                <span>{m.quizzes_loading_image()}</span>
               </div>
             )}
           </div>
@@ -317,7 +318,7 @@ export function QuizzesView({ bookLabel, selectedPageId }: { bookLabel: string; 
     if (!data?.quizzes) return
     setExtra(
       <div className="flex items-center gap-1.5 ml-auto">
-        <span className="text-[10px] bg-white/20 rounded-full px-2 py-0.5">{displayQuizzes.length} questions</span>
+        <span className="text-[10px] bg-white/20 rounded-full px-2 py-0.5">{m.quizzes_question_count({ count: String(displayQuizzes.length) })}</span>
         <VersionPicker
           currentVersion={data.version}
           saving={saving}
@@ -373,7 +374,7 @@ export function QuizzesView({ bookLabel, selectedPageId }: { bookLabel: string; 
     return (
       <div className="flex items-center justify-center py-12 text-muted-foreground">
         <Loader2 className="w-4 h-4 animate-spin mr-2" />
-        <span className="text-sm">Loading quizzes...</span>
+        <span className="text-sm">{m.quizzes_loading()}</span>
       </div>
     )
   }
@@ -398,8 +399,8 @@ export function QuizzesView({ bookLabel, selectedPageId }: { bookLabel: string; 
         <div className="w-12 h-12 rounded-full bg-orange-50 flex items-center justify-center mb-3">
           <HelpCircle className="w-6 h-6 text-orange-300" />
         </div>
-        <p className="text-sm font-medium">No quizzes for this page</p>
-        <p className="text-xs mt-1">Quizzes are linked to other pages in this book</p>
+        <p className="text-sm font-medium">{m.quizzes_no_quizzes_title()}</p>
+        <p className="text-xs mt-1">{m.quizzes_no_quizzes_subtitle()}</p>
       </div>
     )
   }
@@ -416,7 +417,7 @@ export function QuizzesView({ bookLabel, selectedPageId }: { bookLabel: string; 
                 <PageThumb key={pageId} bookLabel={bookLabel} pageId={pageId} onClick={() => setLightboxPageId(pageId)} />
               ))
             ) : (
-              <span className="text-xs text-muted-foreground">After {quiz.afterPageId}</span>
+              <span className="text-xs text-muted-foreground">{m.quizzes_after_page({ pageId: quiz.afterPageId })}</span>
             )}
           </div>
           <div className="px-4 py-3">
@@ -427,7 +428,7 @@ export function QuizzesView({ bookLabel, selectedPageId }: { bookLabel: string; 
               rows={1}
             />
             <span className="text-[10px] text-muted-foreground mt-1 inline-block">
-              After {quiz.afterPageId}
+              {m.quizzes_after_page({ pageId: quiz.afterPageId })}
             </span>
           </div>
           <div className="px-4 pb-3 space-y-1.5">
