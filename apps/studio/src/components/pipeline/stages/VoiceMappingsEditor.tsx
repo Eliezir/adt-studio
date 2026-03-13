@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label"
 import { api } from "@/api/client"
 import { useBookConfig, useUpdateBookConfig } from "@/hooks/use-book-config"
 import { useActiveConfig } from "@/hooks/use-debug"
+import * as m from "@/paraglide/messages"
 
 interface VoiceMappingsEditorProps {
   bookLabel: string
@@ -134,7 +135,7 @@ export function VoiceMappingsEditor({ bookLabel, headerTarget }: VoiceMappingsEd
   }
 
   if (isLoading) {
-    return <div className="p-4 text-sm text-muted-foreground">Loading voice mappings...</div>
+    return <div className="p-4 text-sm text-muted-foreground">{m.voice_mappings_loading()}</div>
   }
 
   return (
@@ -147,14 +148,14 @@ export function VoiceMappingsEditor({ bookLabel, headerTarget }: VoiceMappingsEd
           disabled={saving || updateConfig.isPending || (!dirtyMappings && !dirtyDefaultVoice) || (dirtyDefaultVoice && isBookConfigLoading)}
         >
           <Save className="mr-1.5 h-3.5 w-3.5" />
-          {saving ? "Saving..." : "Save"}
+          {saving ? m.voice_mappings_saving() : m.voice_mappings_save()}
         </Button>,
         headerTarget
       )}
 
       <div className="space-y-1.5">
         <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-          Default Voice
+          {m.voice_mappings_default_voice_label()}
         </Label>
         <Input
           value={defaultVoice}
@@ -166,17 +167,17 @@ export function VoiceMappingsEditor({ bookLabel, headerTarget }: VoiceMappingsEd
           className="w-72 h-8 text-xs"
         />
         <p className="text-xs text-muted-foreground">
-          Default voice used when not specified for a language.
+          {m.voice_mappings_default_voice_hint()}
         </p>
       </div>
 
       <div className="flex items-center justify-between">
         <div>
           <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-            Voice Mappings
+            {m.voice_mappings_label()}
           </Label>
           <p className="text-xs text-muted-foreground mt-0.5">
-            Map language codes to voice names for each TTS provider.
+            {m.voice_mappings_hint()}
           </p>
         </div>
         <Button
@@ -186,7 +187,7 @@ export function VoiceMappingsEditor({ bookLabel, headerTarget }: VoiceMappingsEd
           onClick={() => setShowAddLang(true)}
         >
           <Plus className="mr-1 h-3 w-3" />
-          Add Language
+          {m.voice_mappings_add_language()}
         </Button>
       </div>
 
@@ -201,7 +202,7 @@ export function VoiceMappingsEditor({ bookLabel, headerTarget }: VoiceMappingsEd
             autoFocus
           />
           <Button size="sm" className="h-7 text-xs" onClick={addLanguage}>
-            Add
+            {m.voice_mappings_add()}
           </Button>
           <Button
             variant="ghost"
@@ -209,7 +210,7 @@ export function VoiceMappingsEditor({ bookLabel, headerTarget }: VoiceMappingsEd
             className="h-7 text-xs"
             onClick={() => { setShowAddLang(false); setNewLangKey("") }}
           >
-            Cancel
+            {m.voice_mappings_cancel()}
           </Button>
         </div>
       )}
@@ -219,9 +220,9 @@ export function VoiceMappingsEditor({ bookLabel, headerTarget }: VoiceMappingsEd
         <table className="w-full text-xs">
           <thead>
             <tr className="bg-muted/50 border-b">
-              <th className="text-left font-medium px-3 py-2 w-28">Language</th>
-              <th className="text-left font-medium px-3 py-2">OpenAI Voice</th>
-              <th className="text-left font-medium px-3 py-2">Azure Voice</th>
+              <th className="text-left font-medium px-3 py-2 w-28">{m.voice_mappings_col_language()}</th>
+              <th className="text-left font-medium px-3 py-2">{m.voice_mappings_col_openai()}</th>
+              <th className="text-left font-medium px-3 py-2">{m.voice_mappings_col_azure()}</th>
               <th className="w-10 px-2 py-2" />
             </tr>
           </thead>
@@ -264,7 +265,7 @@ export function VoiceMappingsEditor({ bookLabel, headerTarget }: VoiceMappingsEd
             {rows.length === 0 && (
               <tr>
                 <td colSpan={4} className="px-3 py-4 text-center text-muted-foreground italic">
-                  No voice mappings configured.
+                  {m.voice_mappings_empty()}
                 </td>
               </tr>
             )}

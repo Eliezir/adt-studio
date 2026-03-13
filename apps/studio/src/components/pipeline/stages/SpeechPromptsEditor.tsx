@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { api } from "@/api/client"
+import * as m from "@/paraglide/messages"
 
 interface SpeechPromptsEditorProps {
   bookLabel: string
@@ -64,7 +65,7 @@ export function SpeechPromptsEditor({ bookLabel, headerTarget }: SpeechPromptsEd
   }
 
   if (isLoading) {
-    return <div className="p-4 text-sm text-muted-foreground">Loading speech instructions...</div>
+    return <div className="p-4 text-sm text-muted-foreground">{m.speech_prompts_loading()}</div>
   }
 
   const defaultEntry = entries["default"] ?? ""
@@ -80,7 +81,7 @@ export function SpeechPromptsEditor({ bookLabel, headerTarget }: SpeechPromptsEd
           disabled={saving || !dirty}
         >
           <Save className="mr-1.5 h-3.5 w-3.5" />
-          {saving ? "Saving..." : "Save"}
+          {saving ? m.speech_prompts_saving() : m.speech_prompts_save()}
         </Button>,
         headerTarget
       )}
@@ -88,10 +89,10 @@ export function SpeechPromptsEditor({ bookLabel, headerTarget }: SpeechPromptsEd
       {/* Default prompt */}
       <div className="space-y-2">
         <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-          Default Prompt
+          {m.speech_prompts_default_label()}
         </Label>
         <p className="text-xs text-muted-foreground">
-          The default TTS instruction sent to OpenAI for all languages unless overridden below.
+          {m.speech_prompts_default_hint()}
         </p>
         <textarea
           value={defaultEntry}
@@ -105,7 +106,7 @@ export function SpeechPromptsEditor({ bookLabel, headerTarget }: SpeechPromptsEd
       <div className="space-y-3">
         <div className="flex items-center justify-between">
           <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-            Language-Specific Prompts
+            {m.speech_prompts_language_label()}
           </Label>
           <Button
             variant="outline"
@@ -114,7 +115,7 @@ export function SpeechPromptsEditor({ bookLabel, headerTarget }: SpeechPromptsEd
             onClick={() => setShowAddLang(true)}
           >
             <Plus className="mr-1 h-3 w-3" />
-            Add Language
+            {m.speech_prompts_add_language()}
           </Button>
         </div>
 
@@ -129,7 +130,7 @@ export function SpeechPromptsEditor({ bookLabel, headerTarget }: SpeechPromptsEd
               autoFocus
             />
             <Button size="sm" className="h-7 text-xs" onClick={addLanguage}>
-              Add
+              {m.speech_prompts_add()}
             </Button>
             <Button
               variant="ghost"
@@ -137,14 +138,14 @@ export function SpeechPromptsEditor({ bookLabel, headerTarget }: SpeechPromptsEd
               className="h-7 text-xs"
               onClick={() => { setShowAddLang(false); setNewLangKey("") }}
             >
-              Cancel
+              {m.speech_prompts_cancel()}
             </Button>
           </div>
         )}
 
         {languageKeys.length === 0 && !showAddLang && (
           <p className="text-xs text-muted-foreground italic">
-            No language-specific prompts configured.
+            {m.speech_prompts_empty()}
           </p>
         )}
 

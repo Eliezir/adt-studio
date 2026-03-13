@@ -12,6 +12,7 @@ import { StageRunCard } from "../StageRunCard"
 import { cn } from "@/lib/utils"
 import { normalizeLocale } from "@/lib/languages"
 import { resolveTranslationLanguageState } from "./translations-view-state"
+import * as m from "@/paraglide/messages"
 
 const IMAGE_ID_RE = /_im\d{3}/
 function isImageEntry(id: string): boolean {
@@ -89,7 +90,7 @@ function VersionPicker({
           onClick={onDiscard}
           className="text-[10px] font-medium rounded px-2 py-0.5 bg-black/15 text-black hover:bg-black/25 cursor-pointer transition-colors"
         >
-          Discard
+          {m.translations_discard()}
         </button>
         <button
           type="button"
@@ -97,7 +98,7 @@ function VersionPicker({
           className="flex items-center gap-1 text-[10px] font-medium rounded px-2 py-0.5 bg-white text-green-800 hover:bg-white/80 cursor-pointer transition-colors"
         >
           <Check className="h-3 w-3" />
-          Save
+          {m.translations_save()}
         </button>
       </div>
     )
@@ -133,7 +134,7 @@ function VersionPicker({
               </button>
             ))
           ) : (
-            <div className="px-3 py-1 text-xs text-muted-foreground">No versions</div>
+            <div className="px-3 py-1 text-xs text-muted-foreground">{m.translations_no_versions()}</div>
           )}
         </div>
       )}
@@ -265,12 +266,12 @@ export function TranslationsView({ bookLabel, selectedPageId, onSelectPage }: { 
     if (!catalog) return
     setExtra(
       <div className="flex items-center gap-1.5 ml-auto">
-        <span className="text-[10px] bg-white/20 rounded-full px-2 py-0.5">{displayEntries.length} texts</span>
+        <span className="text-[10px] bg-white/20 rounded-full px-2 py-0.5">{m.translations_text_count({ count: String(displayEntries.length) })}</span>
         {outputLanguages.length > 1 && (
-          <span className="text-[10px] bg-white/20 rounded-full px-2 py-0.5">{outputLanguages.length} languages</span>
+          <span className="text-[10px] bg-white/20 rounded-full px-2 py-0.5">{m.translations_language_count({ count: String(outputLanguages.length) })}</span>
         )}
         {totalAudioFiles > 0 && (
-          <span className="text-[10px] bg-white/20 rounded-full px-2 py-0.5">{totalAudioFiles} audio</span>
+          <span className="text-[10px] bg-white/20 rounded-full px-2 py-0.5">{m.translations_audio_count({ count: String(totalAudioFiles) })}</span>
         )}
         {selectedLang && translationVersion != null && !isSourceLang && (
           <VersionPicker
@@ -296,7 +297,7 @@ export function TranslationsView({ bookLabel, selectedPageId, onSelectPage }: { 
     return (
       <div className="flex items-center justify-center py-12 text-muted-foreground">
         <Loader2 className="w-4 h-4 animate-spin mr-2" />
-        <span className="text-sm">Loading text catalog...</span>
+        <span className="text-sm">{m.translations_loading()}</span>
       </div>
     )
   }
@@ -322,7 +323,7 @@ export function TranslationsView({ bookLabel, selectedPageId, onSelectPage }: { 
         onClick={() => onSelectPage?.(null)}
         className="text-xs font-medium text-pink-600 hover:text-pink-700 hover:underline transition-colors"
       >
-        Show all text &amp; speech
+        {m.translations_show_all()}
       </button>
     </div>
   ) : null
@@ -361,15 +362,15 @@ export function TranslationsView({ bookLabel, selectedPageId, onSelectPage }: { 
       {isSourceLanguagePending ? (
         <div className="flex items-center justify-center py-12 text-muted-foreground">
           <Loader2 className="w-4 h-4 animate-spin mr-2" />
-          <span className="text-sm">Resolving source language...</span>
+          <span className="text-sm">{m.translations_resolving_language()}</span>
         </div>
       ) : selectedPageId && displayEntries.length === 0 && entries.length > 0 ? (
         <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
           <div className="w-12 h-12 rounded-full bg-pink-50 flex items-center justify-center mb-3">
             <Languages className="w-6 h-6 text-pink-300" />
           </div>
-          <p className="text-sm font-medium">No translations for this page</p>
-          <p className="text-xs mt-1">This page has no translatable text entries</p>
+          <p className="text-sm font-medium">{m.translations_no_translations_title()}</p>
+          <p className="text-xs mt-1">{m.translations_no_translations_subtitle()}</p>
         </div>
       ) : (
       <div className="space-y-1">
@@ -428,7 +429,7 @@ export function TranslationsView({ bookLabel, selectedPageId, onSelectPage }: { 
                   <textarea
                     value={translated ?? ""}
                     onChange={(e) => updateEntry(entry.id, e.target.value)}
-                    placeholder="Pending..."
+                    placeholder={m.translations_pending_placeholder()}
                     className="w-full text-sm leading-relaxed mt-0.5 resize-none rounded border border-transparent bg-transparent p-1.5 -ml-1.5 hover:border-border hover:bg-muted/30 focus:border-ring focus:bg-white focus:outline-none focus:ring-1 focus:ring-ring transition-colors placeholder:text-muted-foreground placeholder:italic"
                     style={{ fieldSizing: "content" } as React.CSSProperties}
                     rows={1}
