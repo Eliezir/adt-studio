@@ -9,7 +9,6 @@ import { useStepHeader } from "../StepViewRouter"
 import { useBookRun } from "@/hooks/use-book-run"
 import { useApiKey } from "@/hooks/use-api-key"
 import { StageRunCard } from "../StageRunCard"
-import { STAGE_DESCRIPTIONS } from "../stage-config"
 
 
 type GlossaryData = Omit<GlossaryOutput, "version">
@@ -216,7 +215,6 @@ export function GlossaryView({ bookLabel }: { bookLabel: string }) {
       <div className="p-4">
         <StageRunCard
           stageSlug="glossary"
-          description={STAGE_DESCRIPTIONS.glossary}
           isRunning={glossaryRunning}
           completed={glossaryDone}
           onRun={handleRunGlossary}

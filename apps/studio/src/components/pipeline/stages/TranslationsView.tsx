@@ -9,7 +9,6 @@ import { useStepHeader } from "../StepViewRouter"
 import { useBookRun } from "@/hooks/use-book-run"
 import { useApiKey } from "@/hooks/use-api-key"
 import { StageRunCard } from "../StageRunCard"
-import { STAGE_DESCRIPTIONS } from "../stage-config"
 import { cn } from "@/lib/utils"
 import { normalizeLocale } from "@/lib/languages"
 import { resolveTranslationLanguageState } from "./translations-view-state"
@@ -307,7 +306,6 @@ export function TranslationsView({ bookLabel, selectedPageId, onSelectPage }: { 
       <div className="p-4">
         <StageRunCard
           stageSlug="text-and-speech"
-          description={STAGE_DESCRIPTIONS["text-and-speech"]}
           isRunning={isRunning}
           completed={textAndSpeechDone}
           onRun={handleRunTranslations}

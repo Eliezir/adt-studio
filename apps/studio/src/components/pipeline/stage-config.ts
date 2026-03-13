@@ -12,6 +12,7 @@ import {
 } from "lucide-react"
 
 export type PipelineStageLabelKey =
+  | "pipeline_stage_book_label"
   | "pipeline_stage_extract_label"
   | "pipeline_stage_storyboard_label"
   | "pipeline_stage_quizzes_label"
@@ -29,6 +30,43 @@ export type PipelineStageDescriptionKey =
   | "pipeline_stage_text_and_speech_description"
   | "pipeline_stage_preview_description"
 
+export type PipelineStageRunningLabelKey =
+  | "pipeline_stage_book_running_label"
+  | "pipeline_stage_extract_running_label"
+  | "pipeline_stage_storyboard_running_label"
+  | "pipeline_stage_quizzes_running_label"
+  | "pipeline_stage_captions_running_label"
+  | "pipeline_stage_glossary_running_label"
+  | "pipeline_stage_text_and_speech_running_label"
+  | "pipeline_stage_preview_running_label"
+
+export type PipelineStepLabelKey =
+  | "pipeline_step_extract_label"
+  | "pipeline_step_metadata_label"
+  | "pipeline_step_book_summary_label"
+  | "pipeline_step_image_filtering_label"
+  | "pipeline_step_image_segmentation_label"
+  | "pipeline_step_image_cropping_label"
+  | "pipeline_step_image_meaningfulness_label"
+  | "pipeline_step_text_classification_label"
+  | "pipeline_step_translation_label"
+  | "pipeline_step_page_sectioning_label"
+  | "pipeline_step_web_rendering_label"
+  | "pipeline_step_quiz_generation_label"
+  | "pipeline_step_image_captioning_label"
+  | "pipeline_step_glossary_label"
+  | "pipeline_step_text_catalog_label"
+  | "pipeline_step_catalog_translation_label"
+  | "pipeline_step_tts_label"
+  | "pipeline_step_package_web_label"
+
+export type PipelineMessageKey =
+  | PipelineStageLabelKey
+  | PipelineStageDescriptionKey
+  | PipelineStageRunningLabelKey
+  | PipelineStepLabelKey
+
+
 export const STAGES = [
   {
     slug: "book",
@@ -41,7 +79,8 @@ export const STAGES = [
     bgLight: "bg-gray-50",
     borderColor: "border-gray-200",
     borderDark: "border-gray-600",
-    labelKey: null,
+    labelKey: "pipeline_stage_book_label",
+    runningLabelKey: "pipeline_stage_book_running_label",
     descriptionKey: null,
   },
   {
@@ -56,6 +95,7 @@ export const STAGES = [
     borderColor: "border-blue-200",
     borderDark: "border-blue-600",
     labelKey: "pipeline_stage_extract_label",
+    runningLabelKey: "pipeline_stage_extract_running_label",
     descriptionKey: "pipeline_stage_extract_description",
   },
   {
@@ -70,6 +110,7 @@ export const STAGES = [
     borderColor: "border-violet-200",
     borderDark: "border-violet-600",
     labelKey: "pipeline_stage_storyboard_label",
+    runningLabelKey: "pipeline_stage_storyboard_running_label",
     descriptionKey: "pipeline_stage_storyboard_description",
   },
   {
@@ -84,6 +125,7 @@ export const STAGES = [
     borderColor: "border-orange-200",
     borderDark: "border-orange-600",
     labelKey: "pipeline_stage_quizzes_label",
+    runningLabelKey: "pipeline_stage_quizzes_running_label",
     descriptionKey: "pipeline_stage_quizzes_description",
   },
   {
@@ -98,6 +140,7 @@ export const STAGES = [
     borderColor: "border-teal-200",
     borderDark: "border-teal-600",
     labelKey: "pipeline_stage_captions_label",
+    runningLabelKey: "pipeline_stage_captions_running_label",
     descriptionKey: "pipeline_stage_captions_description",
   },
   {
@@ -112,6 +155,7 @@ export const STAGES = [
     borderColor: "border-lime-200",
     borderDark: "border-lime-600",
     labelKey: "pipeline_stage_glossary_label",
+    runningLabelKey: "pipeline_stage_glossary_running_label",
     descriptionKey: "pipeline_stage_glossary_description",
   },
   {
@@ -126,6 +170,7 @@ export const STAGES = [
     borderColor: "border-pink-200",
     borderDark: "border-pink-600",
     labelKey: "pipeline_stage_text_and_speech_label",
+    runningLabelKey: "pipeline_stage_text_and_speech_running_label",
     descriptionKey: "pipeline_stage_text_and_speech_description",
   },
   {
@@ -140,6 +185,7 @@ export const STAGES = [
     borderColor: "border-gray-200",
     borderDark: "border-gray-600",
     labelKey: "pipeline_stage_preview_label",
+    runningLabelKey: "pipeline_stage_preview_running_label",
     descriptionKey: "pipeline_stage_preview_description",
   },
   {
@@ -167,7 +213,8 @@ export const STAGES = [
   bgLight: string
   borderColor: string
   borderDark: string
-  labelKey: PipelineStageLabelKey | null
+  labelKey: PipelineStageLabelKey
+  runningLabelKey: PipelineStageRunningLabelKey
   descriptionKey: PipelineStageDescriptionKey | null
 }>
 
@@ -175,16 +222,6 @@ export type StageSlug = (typeof STAGES)[number]["slug"]
 export type PipelineStageSlug = Exclude<StageSlug, "book" | "export">
 export type StageDefinition = (typeof STAGES)[number]
 export type PipelineStageDefinition = Extract<StageDefinition, { slug: PipelineStageSlug }>
-
-export const STAGE_DESCRIPTIONS: Record<PipelineStageSlug, string> = {
-  extract: "Extract text and images from each page of the PDF using AI-powered analysis.",
-  storyboard: "Arrange extracted content into a structured storyboard with pages, sections, and layouts.",
-  quizzes: "Generate comprehension quizzes and activities based on the book content.",
-  captions: "Create descriptive captions for images to improve accessibility.",
-  glossary: "Build a glossary of key terms and definitions found in the text.",
-  "text-and-speech": "Translate the book content and generate audio narration.",
-  preview: "Package and preview the final ADT web application.",
-}
 
 /** Stages that have a per-page navigation panel. */
 export const STAGES_WITH_PAGES = new Set<StageSlug>([

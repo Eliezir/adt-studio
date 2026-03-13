@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest"
 import {
   STAGES,
-  STAGE_DESCRIPTIONS,
   getPipelineStages,
   isPipelineStage,
   isStageCompleted,
@@ -22,11 +21,6 @@ describe("stage-config", () => {
     ])
   })
 
-  it("provides a description for every pipeline stage", () => {
-    for (const stage of STAGES.filter(isPipelineStage)) {
-      expect(STAGE_DESCRIPTIONS[stage.slug]).toBeTruthy()
-    }
-  })
 
   it("converts labels to upper camel case", () => {
     expect(toCamelLabel("my-book_label")).toBe("MyBookLabel")

@@ -5,7 +5,6 @@ import { useStepHeader } from "../StepViewRouter"
 import { useBookRun } from "@/hooks/use-book-run"
 import { useApiKey } from "@/hooks/use-api-key"
 import { StageRunCard } from "../StageRunCard"
-import { STAGE_DESCRIPTIONS } from "../stage-config"
 import { StoryboardSectionDetail } from "./StoryboardSectionDetail"
 import { useSectionNav } from "@/routes/books.$label"
 
@@ -222,7 +221,6 @@ export function StoryboardView({ bookLabel, selectedPageId: selectedPageIdProp, 
       <div className="p-4">
         <StageRunCard
           stageSlug="storyboard"
-          description={STAGE_DESCRIPTIONS.storyboard}
           isRunning={storyboardRunning}
           completed={storyboardDone}
           onRun={handleRunStoryboard}
@@ -265,7 +263,6 @@ export function StoryboardView({ bookLabel, selectedPageId: selectedPageIdProp, 
       <div className="p-4">
         <StageRunCard
           stageSlug="storyboard"
-          description={STAGE_DESCRIPTIONS.storyboard}
           isRunning={storyboardRunning}
           completed={storyboardDone}
           onRun={handleRunStoryboard}

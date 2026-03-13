@@ -8,7 +8,6 @@ import { useStepHeader } from "../StepViewRouter"
 import { useBookRun } from "@/hooks/use-book-run"
 import { useApiKey } from "@/hooks/use-api-key"
 import { StageRunCard } from "../StageRunCard"
-import { STAGE_DESCRIPTIONS } from "../stage-config"
 import { useSectionNav } from "@/routes/books.$label"
 
 
@@ -422,7 +421,6 @@ export function CaptionsView({ bookLabel, selectedPageId, onSelectPage }: { book
       <div className="p-4">
         <StageRunCard
           stageSlug="captions"
-          description={STAGE_DESCRIPTIONS.captions}
           isRunning={captionsRunning}
           completed={captionsDone}
           onRun={handleRunCaptions}

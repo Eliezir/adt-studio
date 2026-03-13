@@ -6,21 +6,32 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { PIPELINE } from "@adt/types"
 import type { StageName } from "@adt/types"
 import { STAGES } from "./stage-config"
+import type { PipelineMessageKey } from "./stage-config"
 import { useBookRun } from "@/hooks/use-book-run"
+import * as m from "@/paraglide/messages"
+
+/** Type-safe dynamic lookup for parameterless paraglide pipeline messages. */
+function msg(key: PipelineMessageKey): string {
+  return (m as unknown as Record<string, () => string>)[key]()
+}
 
 export interface StageSubStep {
   key: string
   label: string
+  labelKey: PipelineMessageKey
 }
 
 /** Sub-steps for each stage, derived from the shared PIPELINE definition */
 export const STAGE_SUB_STEPS: Record<StageName, StageSubStep[]> = Object.fromEntries(
-  PIPELINE.map((stage) => [stage.name, stage.steps.map((s) => ({ key: s.name, label: s.label }))])
+  PIPELINE.map((stage) => [stage.name, stage.steps.map((s) => ({
+    key: s.name,
+    label: s.label,
+    labelKey: `pipeline_step_${s.name.replace(/-/g, "_")}_label` as PipelineMessageKey,
+  }))])
 ) as Record<StageName, StageSubStep[]>
 
 interface StageRunCardProps {
   stageSlug: string
-  description?: string
   isRunning: boolean
   completed?: boolean
   showRunButton?: boolean
@@ -41,7 +52,6 @@ const HOVER_BG_BY_COLOR: Record<string, string> = {
 
 export function StageRunCard({
   stageSlug,
-  description,
   isRunning,
   completed,
   showRunButton = true,
@@ -74,12 +84,12 @@ export function StageRunCard({
         </div>
         <CardTitle className="text-sm leading-normal tracking-normal">
           {isRunning
-            ? `${stage.runningLabel}...`
-            : stage.label}
+            ? msg(stage.runningLabelKey)
+            : msg(stage.labelKey)}
         </CardTitle>
       </CardHeader>
 
-      {/* Main row: sub-steps | button | description */}
+      {/* Main row: sub-steps | button | description */}  
       <CardContent
         className={cn(
           "flex items-center px-5 py-3",
@@ -89,7 +99,7 @@ export function StageRunCard({
         {/* Sub-steps */}
         {hasSubSteps && (
           <div className="space-y-1.5 w-48 shrink-0">
-            {subSteps.map(({ key, label }) => {
+            {subSteps.map(({ key, label, labelKey }) => {
               const state = stepState(key)
               const progress = stepProgress(key)
               const errorMsg = stepError(key)
@@ -126,7 +136,7 @@ export function StageRunCard({
                     ) : (
                       <div className="w-4 h-4 rounded-full border border-current opacity-30 shrink-0" />
                     )}
-                    <span>{label}</span>
+                    <span>{msg(labelKey)}</span>
                     {isSubRunning && hasPages && (
                       <span className="text-muted-foreground tabular-nums">{progress?.page}/{progress?.totalPages}</span>
                     )}
@@ -165,10 +175,10 @@ export function StageRunCard({
                 onClick={(e) => { e.stopPropagation(); e.preventDefault(); onRun() }}
                 title={
                   hasError
-                    ? "Retry"
+                    ? m.pipeline_action_retry()
                     : isCompleted
-                      ? `Re-run ${stage.label.toLowerCase()}`
-                      : `Run ${stage.label.toLowerCase()}`
+                      ? m.pipeline_action_rerun({ stageName: msg(stage.labelKey) })
+                      : m.pipeline_action_run({ stageName: msg(stage.labelKey) })
                 }
               >
                 {hasError || isCompleted ? <RotateCcw className="w-5 h-5" /> : <Play className="w-5 h-5 ml-0.5" />}
@@ -178,14 +188,14 @@ export function StageRunCard({
         )}
 
         {/* Description */}
-        {description && (
+        {stage.descriptionKey && (
           <p
             className={cn(
               "min-w-0 text-xs text-muted-foreground leading-relaxed",
               showRunButton || hasSubSteps ? "flex-1" : "max-w-md text-center"
             )}
           >
-            {description}
+            {msg(stage.descriptionKey)}
           </p>
         )}
       </CardContent>
