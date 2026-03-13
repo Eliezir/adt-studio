@@ -245,5 +245,18 @@
   "captions_settings_save_rerun_desc": "This will save your settings and re-run image captioning.",
   "captions_settings_cancel": "Cancel",
   "captions_settings_saving": "Saving...",
-  "captions_settings_confirm_rerun": "Confirm Rerun"
+  "captions_settings_confirm_rerun": "Confirm Rerun",
+  "glossary_settings_prompt_title": "Glossary Prompt",
+  "glossary_settings_prompt_desc": "The prompt template used to generate glossary terms from book content.",
+  "glossary_settings_save_rerun": "Save & Rerun",
+  "glossary_settings_save_rerun_title": "Save & Rerun Glossary",
+  "glossary_settings_save_rerun_desc": "This will save your settings and re-run glossary generation.",
+  "glossary_settings_cancel": "Cancel",
+  "glossary_settings_saving": "Saving...",
+  "glossary_settings_confirm_rerun": "Confirm Rerun",
+  "glossary_discard": "Discard",
+  "glossary_save": "Save",
+  "glossary_no_versions": "No versions",
+  "glossary_term_count": "{count} terms",
+  "glossary_loading": "Loading glossary..."
 }

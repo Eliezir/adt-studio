@@ -244,5 +244,18 @@
   "captions_settings_save_rerun_desc": "Esto guardará tus ajustes y reejecutará la generación de leyendas de imágenes.",
   "captions_settings_cancel": "Cancelar",
   "captions_settings_saving": "Guardando...",
-  "captions_settings_confirm_rerun": "Confirmar reejecutar"
+  "captions_settings_confirm_rerun": "Confirmar reejecutar",
+  "glossary_settings_prompt_title": "Prompt de glosario",
+  "glossary_settings_prompt_desc": "La plantilla de prompt usada para generar términos de glosario a partir del contenido del libro.",
+  "glossary_settings_save_rerun": "Guardar y reejecutar",
+  "glossary_settings_save_rerun_title": "Guardar y reejecutar glosario",
+  "glossary_settings_save_rerun_desc": "Esto guardará tus ajustes y reejecutará la generación del glosario.",
+  "glossary_settings_cancel": "Cancelar",
+  "glossary_settings_saving": "Guardando...",
+  "glossary_settings_confirm_rerun": "Confirmar reejecutar",
+  "glossary_discard": "Descartar",
+  "glossary_save": "Guardar",
+  "glossary_no_versions": "Sin versiones",
+  "glossary_term_count": "{count} términos",
+  "glossary_loading": "Cargando glosario..."
 }

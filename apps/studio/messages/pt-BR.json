@@ -246,5 +246,18 @@
   "captions_settings_save_rerun_desc": "Isso salvará suas configurações e reexecutará a legendagem de imagens.",
   "captions_settings_cancel": "Cancelar",
   "captions_settings_saving": "Salvando...",
-  "captions_settings_confirm_rerun": "Confirmar reexecução"
+  "captions_settings_confirm_rerun": "Confirmar reexecução",
+  "glossary_settings_prompt_title": "Prompt de glossário",
+  "glossary_settings_prompt_desc": "O template de prompt usado para gerar termos de glossário a partir do conteúdo do livro.",
+  "glossary_settings_save_rerun": "Salvar e reexecutar",
+  "glossary_settings_save_rerun_title": "Salvar e reexecutar glossário",
+  "glossary_settings_save_rerun_desc": "Isso salvará suas configurações e reexecutará a geração do glossário.",
+  "glossary_settings_cancel": "Cancelar",
+  "glossary_settings_saving": "Salvando...",
+  "glossary_settings_confirm_rerun": "Confirmar reexecução",
+  "glossary_discard": "Descartar",
+  "glossary_save": "Salvar",
+  "glossary_no_versions": "Sem versões",
+  "glossary_term_count": "{count} termos",
+  "glossary_loading": "Carregando glossário..."
 }

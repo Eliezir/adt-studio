@@ -9,6 +9,7 @@ import { useStepHeader } from "../StepViewRouter"
 import { useBookRun } from "@/hooks/use-book-run"
 import { useApiKey } from "@/hooks/use-api-key"
 import { StageRunCard } from "../StageRunCard"
+import * as m from "@/paraglide/messages"
 
 
 type GlossaryData = Omit<GlossaryOutput, "version">
@@ -76,7 +77,7 @@ function VersionPicker({
           onClick={onDiscard}
           className="text-[10px] font-medium rounded px-2 py-0.5 bg-black/15 text-black hover:bg-black/25 cursor-pointer transition-colors"
         >
-          Discard
+          {m.glossary_discard()}
         </button>
         <button
           type="button"
@@ -84,7 +85,7 @@ function VersionPicker({
           className="flex items-center gap-1 text-[10px] font-medium rounded px-2 py-0.5 bg-white text-green-800 hover:bg-white/80 cursor-pointer transition-colors"
         >
           <Check className="h-3 w-3" />
-          Save
+          {m.glossary_save()}
         </button>
       </div>
     )
@@ -120,7 +121,7 @@ function VersionPicker({
               </button>
             ))
           ) : (
-            <div className="px-3 py-1 text-xs text-muted-foreground">No versions</div>
+            <div className="px-3 py-1 text-xs text-muted-foreground">{m.glossary_no_versions()}</div>
           )}
         </div>
       )}
@@ -175,7 +176,7 @@ export function GlossaryView({ bookLabel }: { bookLabel: string }) {
     if (!data) return
     setExtra(
       <div className="flex items-center gap-1.5 ml-auto">
-        <span className="text-[10px] bg-white/20 rounded-full px-2 py-0.5">{items.length} terms</span>
+        <span className="text-[10px] bg-white/20 rounded-full px-2 py-0.5">{m.glossary_term_count({ count: String(items.length) })}</span>
         <VersionPicker
           currentVersion={data.version}
           saving={saving}
@@ -205,7 +206,7 @@ export function GlossaryView({ bookLabel }: { bookLabel: string }) {
     return (
       <div className="flex items-center justify-center py-12 text-muted-foreground">
         <Loader2 className="w-4 h-4 animate-spin mr-2" />
-        <span className="text-sm">Loading glossary...</span>
+        <span className="text-sm">{m.glossary_loading()}</span>
       </div>
     )
   }

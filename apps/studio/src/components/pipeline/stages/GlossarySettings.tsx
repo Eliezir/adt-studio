@@ -18,6 +18,7 @@ import { api } from "@/api/client"
 import { PromptViewer } from "@/components/pipeline/PromptViewer"
 import { useBookRun } from "@/hooks/use-book-run"
 import { useStepConfig } from "@/hooks/use-step-config"
+import * as m from "@/paraglide/messages"
 
 export function GlossarySettings({ bookLabel, headerTarget }: { bookLabel: string; headerTarget?: HTMLDivElement | null; tab?: string }) {
   const { data: bookConfigData } = useBookConfig(bookLabel)
@@ -74,8 +75,8 @@ export function GlossarySettings({ bookLabel, headerTarget }: { bookLabel: strin
       <PromptViewer
         promptName="glossary"
         bookLabel={bookLabel}
-        title="Glossary Prompt"
-        description="The prompt template used to generate glossary terms from book content."
+        title={m.glossary_settings_prompt_title()}
+        description={m.glossary_settings_prompt_desc()}
         model={glossary.model}
         onModelChange={glossary.onModelChange}
         maxRetries={glossary.maxRetries}
@@ -91,7 +92,7 @@ export function GlossarySettings({ bookLabel, headerTarget }: { bookLabel: strin
           disabled={updateConfig.isPending || !hasApiKey}
         >
           <Play className="mr-1.5 h-3.5 w-3.5" />
-          Save &amp; Rerun
+          {m.glossary_settings_save_rerun()}
         </Button>,
         headerTarget
       )}
@@ -99,17 +100,17 @@ export function GlossarySettings({ bookLabel, headerTarget }: { bookLabel: strin
       <Dialog open={showRerunDialog} onOpenChange={setShowRerunDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Save &amp; Rerun Glossary</DialogTitle>
+            <DialogTitle>{m.glossary_settings_save_rerun_title()}</DialogTitle>
             <DialogDescription>
-              This will save your settings and re-run glossary generation.
+              {m.glossary_settings_save_rerun_desc()}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowRerunDialog(false)}>
-              Cancel
+              {m.glossary_settings_cancel()}
             </Button>
             <Button onClick={confirmSaveAndRerun} disabled={updateConfig.isPending}>
-              {updateConfig.isPending ? "Saving..." : "Confirm Rerun"}
+              {updateConfig.isPending ? m.glossary_settings_saving() : m.glossary_settings_confirm_rerun()}
             </Button>
           </DialogFooter>
         </DialogContent>
