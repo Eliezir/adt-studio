@@ -2,29 +2,34 @@ import { useState, useMemo } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { Sparkles, X, Pencil, ImagePlus, ChevronDown, Image as ImageIcon } from "lucide-react"
 import { api, BASE_URL } from "@/api/client"
+import * as m from "@/paraglide/messages"
 
-const STYLE_PRESETS = [
-  { value: "", label: "Default (from prompt)" },
-  { value: "watercolor", label: "Watercolor" },
-  { value: "flat-vector", label: "Flat Vector" },
-  { value: "cartoon", label: "Cartoon" },
-  { value: "realistic", label: "Realistic / Photo" },
-  { value: "pencil-sketch", label: "Pencil Sketch" },
-  { value: "collage", label: "Paper Collage" },
-  { value: "pixel-art", label: "Pixel Art" },
-  { value: "storybook", label: "Classic Storybook" },
-] as const
+const STYLE_PRESET_VALUES = ["", "watercolor", "flat-vector", "cartoon", "realistic", "pencil-sketch", "collage", "pixel-art", "storybook"] as const
 
-const IMAGE_TYPES = [
-  { value: "", label: "Auto" },
-  { value: "illustration", label: "Illustration" },
-  { value: "photograph", label: "Photograph" },
-  { value: "diagram", label: "Diagram" },
-  { value: "chart", label: "Chart / Graph" },
-  { value: "infographic", label: "Infographic" },
-  { value: "map", label: "Map" },
-  { value: "cartoon", label: "Cartoon" },
-] as const
+const STYLE_LABELS: Record<string, () => string> = {
+  "": m.ai_image_style_default,
+  watercolor: m.ai_image_style_watercolor,
+  "flat-vector": m.ai_image_style_flat_vector,
+  cartoon: m.ai_image_style_cartoon,
+  realistic: m.ai_image_style_realistic,
+  "pencil-sketch": m.ai_image_style_pencil_sketch,
+  collage: m.ai_image_style_collage,
+  "pixel-art": m.ai_image_style_pixel_art,
+  storybook: m.ai_image_style_storybook,
+}
+
+const IMAGE_TYPE_VALUES = ["", "illustration", "photograph", "diagram", "chart", "infographic", "map", "cartoon"] as const
+
+const IMAGE_TYPE_LABELS: Record<string, () => string> = {
+  "": m.ai_image_type_auto,
+  illustration: m.ai_image_type_illustration,
+  photograph: m.ai_image_type_photograph,
+  diagram: m.ai_image_type_diagram,
+  chart: m.ai_image_type_chart,
+  infographic: m.ai_image_type_infographic,
+  map: m.ai_image_type_map,
+  cartoon: m.ai_image_type_cartoon,
+}
 
 interface AiImageDialogProps {
   /** Current image URL (for reference) */
@@ -95,7 +100,7 @@ export function AiImageDialog({
         <div className="flex items-center justify-between px-5 py-3.5 border-b shrink-0">
           <div className="flex items-center gap-2">
             <Sparkles className="h-4 w-4 text-purple-500" />
-            <h2 className="text-sm font-semibold">AI Image</h2>
+            <h2 className="text-sm font-semibold">{m.ai_image_title()}</h2>
           </div>
           <button
             type="button"
@@ -122,10 +127,10 @@ export function AiImageDialog({
               <Pencil className={`h-4 w-4 mt-0.5 shrink-0 ${mode === "edit" ? "text-purple-600" : "text-muted-foreground"}`} />
               <div>
                 <p className={`text-xs font-semibold ${mode === "edit" ? "text-purple-700 dark:text-purple-300" : ""}`}>
-                  Edit this image
+                  {m.ai_image_mode_edit()}
                 </p>
                 <p className="text-[10px] text-muted-foreground mt-0.5">
-                  AI sees the current image and modifies it
+                  {m.ai_image_mode_edit_desc()}
                 </p>
               </div>
             </button>
@@ -141,10 +146,10 @@ export function AiImageDialog({
               <ImagePlus className={`h-4 w-4 mt-0.5 shrink-0 ${mode === "generate" ? "text-purple-600" : "text-muted-foreground"}`} />
               <div>
                 <p className={`text-xs font-semibold ${mode === "generate" ? "text-purple-700 dark:text-purple-300" : ""}`}>
-                  Generate new
+                  {m.ai_image_mode_generate()}
                 </p>
                 <p className="text-[10px] text-muted-foreground mt-0.5">
-                  Create from scratch using your description
+                  {m.ai_image_mode_generate_desc()}
                 </p>
               </div>
             </button>
@@ -154,12 +159,12 @@ export function AiImageDialog({
           <div className="flex gap-3">
             <img
               src={currentImageSrc}
-              alt="Current"
+              alt={m.ai_image_current_alt()}
               className="w-20 h-20 rounded-lg border object-cover bg-muted/30 shrink-0"
             />
             <div className="flex-1 min-w-0">
               <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider block mb-1">
-                {mode === "edit" ? "What should the AI change?" : "Describe the image"}
+                {mode === "edit" ? m.ai_image_prompt_edit_label() : m.ai_image_prompt_describe_label()}
               </label>
               <textarea
                 value={prompt}
@@ -172,8 +177,8 @@ export function AiImageDialog({
                 }}
                 placeholder={
                   mode === "edit"
-                    ? "e.g., Make the background brighter, add more trees..."
-                    : "e.g., A cheerful leopard family in a green forest..."
+                    ? m.ai_image_prompt_edit_placeholder()
+                    : m.ai_image_prompt_generate_placeholder()
                 }
                 rows={3}
                 autoFocus
@@ -187,7 +192,7 @@ export function AiImageDialog({
             {/* Style preset */}
             <div>
               <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider block mb-1">
-                Style
+                {m.ai_image_style_label()}
               </label>
               <div className="relative">
                 <select
@@ -201,10 +206,10 @@ export function AiImageDialog({
                   }}
                   className="w-full text-xs border rounded-lg px-3 py-2 pr-7 appearance-none bg-background focus:outline-none focus:ring-2 focus:ring-purple-500/30 cursor-pointer"
                 >
-                  {STYLE_PRESETS.map((s) => (
-                    <option key={s.value} value={s.value}>{s.label}</option>
+                  {STYLE_PRESET_VALUES.map((v) => (
+                    <option key={v || "default"} value={v}>{STYLE_LABELS[v]()}</option>
                   ))}
-                  <option value="custom-image">From reference image...</option>
+                  <option value="custom-image">{m.ai_image_style_from_reference()}</option>
                 </select>
                 <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
               </div>
@@ -214,7 +219,7 @@ export function AiImageDialog({
             {mode === "generate" && (
               <div>
                 <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider block mb-1">
-                  Image Type
+                  {m.ai_image_type_label()}
                 </label>
                 <div className="relative">
                   <select
@@ -222,8 +227,8 @@ export function AiImageDialog({
                     onChange={(e) => setImageType(e.target.value)}
                     className="w-full text-xs border rounded-lg px-3 py-2 pr-7 appearance-none bg-background focus:outline-none focus:ring-2 focus:ring-purple-500/30 cursor-pointer"
                   >
-                    {IMAGE_TYPES.map((t) => (
-                      <option key={t.value} value={t.value}>{t.label}</option>
+                    {IMAGE_TYPE_VALUES.map((v) => (
+                      <option key={v || "auto"} value={v}>{IMAGE_TYPE_LABELS[v]()}</option>
                     ))}
                   </select>
                   <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
@@ -236,7 +241,7 @@ export function AiImageDialog({
           {stylePreset === "custom-image" && (
             <div className="space-y-2">
               <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider block">
-                Style reference image
+                {m.ai_image_style_ref_label()}
               </label>
               {!showStylePicker ? (
                 <button
@@ -246,13 +251,13 @@ export function AiImageDialog({
                 >
                   <ImageIcon className="h-4 w-4 text-muted-foreground" />
                   <span className="text-xs text-muted-foreground">
-                    {styleImageId ? `Selected: ${styleImageId}` : "Click to pick a style reference image"}
+                    {styleImageId ? m.ai_image_style_ref_selected({ imageId: styleImageId }) : m.ai_image_style_ref_pick()}
                   </span>
                 </button>
               ) : (
                 <div className="border rounded-lg p-2 max-h-[140px] overflow-y-auto">
                   {imagesQuery.isLoading && (
-                    <p className="text-xs text-muted-foreground text-center py-4">Loading...</p>
+                    <p className="text-xs text-muted-foreground text-center py-4">{m.ai_image_loading()}</p>
                   )}
                   {selectableImages.length > 0 && (
                     <div className="grid grid-cols-5 gap-1.5">
@@ -281,7 +286,7 @@ export function AiImageDialog({
                     </div>
                   )}
                   {selectableImages.length === 0 && !imagesQuery.isLoading && (
-                    <p className="text-xs text-muted-foreground text-center py-4">No images in this book</p>
+                    <p className="text-xs text-muted-foreground text-center py-4">{m.ai_image_no_images()}</p>
                   )}
                 </div>
               )}
@@ -289,7 +294,7 @@ export function AiImageDialog({
                 <div className="flex items-center gap-2">
                   <img
                     src={`${BASE_URL}/books/${bookLabel}/images/${styleImageId}`}
-                    alt="Style reference"
+                    alt={m.ai_image_style_ref_alt()}
                     className="w-10 h-10 rounded border object-cover"
                   />
                   <span className="text-[10px] text-muted-foreground flex-1 truncate">{styleImageId}</span>
@@ -298,7 +303,7 @@ export function AiImageDialog({
                     onClick={() => { setStyleImageId(null); setShowStylePicker(false) }}
                     className="text-[10px] text-red-500 hover:text-red-400 cursor-pointer"
                   >
-                    Remove
+                    {m.ai_image_remove()}
                   </button>
                 </div>
               )}
@@ -307,15 +312,15 @@ export function AiImageDialog({
 
           <p className="text-[10px] text-muted-foreground">
             {mode === "edit"
-              ? "The AI will preserve the original style while applying your changes."
-              : "Be descriptive — include subject, colors, mood, and composition."}
+              ? m.ai_image_hint_edit()
+              : m.ai_image_hint_generate()}
           </p>
         </div>
 
         {/* Footer */}
         <div className="flex items-center justify-between px-5 py-3.5 border-t shrink-0">
           <p className="text-[10px] text-muted-foreground">
-            Runs in background — you can keep editing
+            {m.ai_image_runs_in_background()}
           </p>
           <div className="flex items-center gap-2">
             <button
@@ -323,7 +328,7 @@ export function AiImageDialog({
               onClick={onClose}
               className="text-xs font-medium rounded px-3 py-1.5 bg-muted hover:bg-accent transition-colors cursor-pointer"
             >
-              Cancel
+              {m.ai_image_cancel()}
             </button>
             <button
               type="button"
@@ -332,7 +337,7 @@ export function AiImageDialog({
               className="flex items-center gap-1 text-xs font-medium rounded px-3 py-1.5 bg-purple-600 hover:bg-purple-500 text-white cursor-pointer transition-colors disabled:opacity-50"
             >
               <Sparkles className="h-3 w-3" />
-              {mode === "edit" ? "Edit" : "Generate"}
+              {mode === "edit" ? m.ai_image_submit_edit() : m.ai_image_submit_generate()}
             </button>
           </div>
         </div>

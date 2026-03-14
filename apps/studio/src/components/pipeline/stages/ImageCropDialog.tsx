@@ -2,19 +2,20 @@ import { useState, useCallback, useEffect } from "react"
 import Cropper from "react-easy-crop"
 import type { Area } from "react-easy-crop"
 import { Loader2 } from "lucide-react"
-
-const ASPECT_PRESETS = [
-  { label: "Free", value: null },
-  { label: "Original", value: "original" as const },
-  { label: "1:1", value: 1 },
-  { label: "4:3", value: 4 / 3 },
-  { label: "3:2", value: 3 / 2 },
-  { label: "16:9", value: 16 / 9 },
-  { label: "3:4", value: 3 / 4 },
-  { label: "2:3", value: 2 / 3 },
-] as const
+import * as m from "@/paraglide/messages"
 
 type AspectValue = null | "original" | number
+
+const ASPECT_PRESETS: Array<{ value: AspectValue; getLabel: () => string }> = [
+  { value: null, getLabel: m.crop_aspect_free },
+  { value: "original", getLabel: m.crop_aspect_original },
+  { value: 1, getLabel: () => "1:1" },
+  { value: 4 / 3, getLabel: () => "4:3" },
+  { value: 3 / 2, getLabel: () => "3:2" },
+  { value: 16 / 9, getLabel: () => "16:9" },
+  { value: 3 / 4, getLabel: () => "3:4" },
+  { value: 2 / 3, getLabel: () => "2:3" },
+]
 
 interface ImageCropDialogProps {
   /** Image URL to crop */
@@ -102,7 +103,7 @@ export function ImageCropDialog({ imageSrc, onApply, onClose }: ImageCropDialogP
     <div className="fixed inset-0 z-[100] bg-black/80 flex flex-col">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 bg-background border-b shrink-0">
-        <h2 className="text-sm font-medium">Crop Image</h2>
+        <h2 className="text-sm font-medium">{m.crop_title()}</h2>
         <div className="flex items-center gap-2">
           <button
             type="button"
@@ -110,7 +111,7 @@ export function ImageCropDialog({ imageSrc, onApply, onClose }: ImageCropDialogP
             disabled={applying}
             className="text-xs font-medium rounded px-3 py-1.5 bg-muted hover:bg-accent transition-colors cursor-pointer disabled:opacity-50"
           >
-            Cancel
+            {m.crop_cancel()}
           </button>
           <button
             type="button"
@@ -119,7 +120,7 @@ export function ImageCropDialog({ imageSrc, onApply, onClose }: ImageCropDialogP
             className="flex items-center gap-1 text-xs font-medium rounded px-3 py-1.5 bg-green-600 hover:bg-green-500 text-white cursor-pointer transition-colors disabled:opacity-50"
           >
             {applying && <Loader2 className="h-3 w-3 animate-spin" />}
-            Apply
+            {m.crop_apply()}
           </button>
         </div>
       </div>
@@ -141,10 +142,10 @@ export function ImageCropDialog({ imageSrc, onApply, onClose }: ImageCropDialogP
       <div className="bg-background border-t shrink-0">
         {/* Aspect ratio presets */}
         <div className="flex items-center justify-center gap-1 px-4 pt-3 pb-1.5 flex-wrap">
-          <span className="text-[10px] text-muted-foreground mr-1.5">Aspect:</span>
+          <span className="text-[10px] text-muted-foreground mr-1.5">{m.crop_aspect_label()}</span>
           {ASPECT_PRESETS.map((preset) => (
             <button
-              key={preset.label}
+              key={preset.value === null ? "free" : String(preset.value)}
               type="button"
               onClick={() => handleAspectChange(preset.value)}
               className={`text-[10px] font-medium rounded px-2 py-1 transition-colors cursor-pointer ${
@@ -153,7 +154,7 @@ export function ImageCropDialog({ imageSrc, onApply, onClose }: ImageCropDialogP
                   : "bg-muted hover:bg-accent"
               }`}
             >
-              {preset.label}
+              {preset.getLabel()}
             </button>
           ))}
           <button
@@ -163,7 +164,7 @@ export function ImageCropDialog({ imageSrc, onApply, onClose }: ImageCropDialogP
               showCustom ? "bg-primary text-primary-foreground" : "bg-muted hover:bg-accent"
             }`}
           >
-            Custom
+            {m.crop_aspect_custom()}
           </button>
         </div>
 
@@ -190,14 +191,14 @@ export function ImageCropDialog({ imageSrc, onApply, onClose }: ImageCropDialogP
               onClick={applyCustomAspect}
               className="text-[10px] font-medium rounded px-2 py-1 bg-primary text-primary-foreground cursor-pointer"
             >
-              Set
+              {m.crop_aspect_set()}
             </button>
           </div>
         )}
 
         {/* Zoom slider */}
         <div className="flex items-center justify-center gap-3 px-4 pb-3 pt-1.5">
-          <span className="text-[10px] text-muted-foreground">Zoom</span>
+          <span className="text-[10px] text-muted-foreground">{m.crop_zoom()}</span>
           <input
             type="range"
             min={1}

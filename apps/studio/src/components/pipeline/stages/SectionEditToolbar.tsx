@@ -6,6 +6,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import * as m from "@/paraglide/messages"
 
 export interface SectionEditToolbarProps {
   /** The data-id of the selected element */
@@ -106,7 +107,7 @@ export function SectionEditToolbar({
                 className="flex items-center gap-1 text-[10px] font-medium rounded px-2 py-1 bg-muted hover:bg-accent transition-colors cursor-pointer"
               >
                 <Crop className="h-3 w-3" />
-                Crop
+                {m.section_edit_toolbar_crop()}
               </button>
             )}
             {onReplace && (
@@ -116,7 +117,7 @@ export function SectionEditToolbar({
                 className="flex items-center gap-1 text-[10px] font-medium rounded px-2 py-1 bg-muted hover:bg-accent transition-colors cursor-pointer"
               >
                 <Upload className="h-3 w-3" />
-                Replace
+                {m.section_edit_toolbar_replace()}
               </button>
             )}
             {onAiImage && (
@@ -126,7 +127,7 @@ export function SectionEditToolbar({
                 className="flex items-center gap-1 text-[10px] font-medium rounded px-2 py-1 bg-purple-100 hover:bg-purple-200 text-purple-700 transition-colors cursor-pointer"
               >
                 <Sparkles className="h-3 w-3" />
-                AI
+                {m.section_edit_toolbar_ai()}
               </button>
             )}
             {onSegment && (
@@ -137,7 +138,7 @@ export function SectionEditToolbar({
                 className="flex items-center gap-1 text-[10px] font-medium rounded px-2 py-1 bg-orange-100 hover:bg-orange-200 text-orange-700 transition-colors cursor-pointer disabled:opacity-50"
               >
                 <Scissors className="h-3 w-3" />
-                {segmenting ? "Segmenting..." : "Segment"}
+                {segmenting ? m.section_edit_toolbar_segmenting() : m.section_edit_toolbar_segment()}
               </button>
             )}
             {onDelete && (
@@ -145,10 +146,10 @@ export function SectionEditToolbar({
                 type="button"
                 onClick={() => onDelete(dataId)}
                 className="flex items-center gap-1 text-[10px] font-medium rounded px-2 py-1 bg-red-100 hover:bg-red-200 text-red-700 transition-colors cursor-pointer"
-                title="Remove this block"
+                title={m.section_edit_toolbar_remove_block()}
               >
                 <Trash2 className="h-3 w-3" />
-                Delete
+                {m.section_edit_toolbar_delete()}
               </button>
             )}
             {onTogglePrune && (
@@ -156,17 +157,17 @@ export function SectionEditToolbar({
                 type="button"
                 onClick={() => onTogglePrune(dataId)}
                 className="flex items-center gap-1 text-[10px] font-medium rounded px-2 py-1 hover:bg-accent transition-colors cursor-pointer ml-auto"
-                title={isPruned ? "Restore element" : "Prune element"}
+                title={isPruned ? m.section_edit_toolbar_restore_element() : m.section_edit_toolbar_prune_element()}
               >
                 {isPruned ? (
                   <>
                     <EyeOff className="h-3 w-3 text-destructive" />
-                    <span className="text-destructive">Pruned</span>
+                    <span className="text-destructive">{m.section_edit_toolbar_pruned()}</span>
                   </>
                 ) : (
                   <>
                     <Eye className="h-3 w-3 text-muted-foreground" />
-                    <span>Prune</span>
+                    <span>{m.section_edit_toolbar_prune()}</span>
                   </>
                 )}
               </button>
@@ -222,7 +223,7 @@ export function SectionEditToolbar({
 
       <span className="flex items-center gap-0.5 text-[10px] text-blue-500">
         <Pencil className="h-2.5 w-2.5" />
-        Editing
+        {m.section_edit_toolbar_editing()}
       </span>
 
       {onDelete && (
@@ -230,7 +231,7 @@ export function SectionEditToolbar({
           type="button"
           onClick={() => onDelete(dataId)}
           className="p-0.5 rounded hover:bg-red-100 transition-colors cursor-pointer"
-          title="Remove this block"
+          title={m.section_edit_toolbar_remove_block()}
         >
           <Trash2 className="h-3 w-3 text-red-600" />
         </button>
@@ -241,7 +242,7 @@ export function SectionEditToolbar({
           type="button"
           onClick={() => onTogglePrune(dataId)}
           className="p-0.5 rounded hover:bg-accent transition-colors cursor-pointer"
-          title={isPruned ? "Restore element" : "Prune element"}
+          title={isPruned ? m.section_edit_toolbar_restore_element() : m.section_edit_toolbar_prune_element()}
         >
           {isPruned ? (
             <EyeOff className="h-3 w-3 text-destructive" />

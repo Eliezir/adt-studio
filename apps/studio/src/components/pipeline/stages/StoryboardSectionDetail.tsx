@@ -22,6 +22,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Input } from "@/components/ui/input"
+import * as m from "@/paraglide/messages"
 import {
   Dialog,
   DialogContent,
@@ -33,18 +34,20 @@ import {
 
 // -- AI loading messages --
 
-const AI_MESSAGES = [
-  "Rewriting the story of this section...",
-  "Teaching the pixels new tricks...",
-  "Asking the AI to put on its creative hat...",
-  "Rearranging atoms of HTML...",
-  "Consulting the style council...",
-  "Sprinkling some digital fairy dust...",
-  "The AI is having a think...",
-  "Brewing a fresh batch of HTML...",
-  "Polishing paragraphs to perfection...",
-  "Untangling nested divs with care...",
-]
+function getAiMessages() {
+  return [
+    m.storyboard_detail_ai_msg_1(),
+    m.storyboard_detail_ai_msg_2(),
+    m.storyboard_detail_ai_msg_3(),
+    m.storyboard_detail_ai_msg_4(),
+    m.storyboard_detail_ai_msg_5(),
+    m.storyboard_detail_ai_msg_6(),
+    m.storyboard_detail_ai_msg_7(),
+    m.storyboard_detail_ai_msg_8(),
+    m.storyboard_detail_ai_msg_9(),
+    m.storyboard_detail_ai_msg_10(),
+  ]
+}
 
 // -- VersionPicker (same as ExtractPageDetail) --
 
@@ -122,7 +125,7 @@ function VersionPicker({
               : "bg-muted hover:bg-accent hover:text-accent-foreground"
           }`}
         >
-          Discard
+          {m.storyboard_detail_discard()}
         </button>
         {onSave && (
           <button
@@ -131,7 +134,7 @@ function VersionPicker({
             className="flex items-center gap-1 text-[10px] font-medium rounded px-2 py-0.5 bg-green-600 hover:bg-green-500 text-white cursor-pointer transition-colors"
           >
             <Check className="h-3 w-3" />
-            Save
+            {m.storyboard_detail_save()}
           </button>
         )}
       </div>
@@ -172,7 +175,7 @@ function VersionPicker({
               </button>
             ))
           ) : (
-            <div className="px-3 py-1 text-xs text-muted-foreground">No versions</div>
+            <div className="px-3 py-1 text-xs text-muted-foreground">{m.storyboard_detail_no_versions()}</div>
           )}
         </div>
       )}
@@ -393,13 +396,15 @@ export function StoryboardSectionDetail({
   const [aiMessageIdx, setAiMessageIdx] = useState(0)
 
   // Rotating witty messages during AI generation
+  const aiMessages = getAiMessages()
+
   useEffect(() => {
     if (!aiLoading) {
-      setAiMessageIdx(Math.floor(Math.random() * AI_MESSAGES.length))
+      setAiMessageIdx(Math.floor(Math.random() * aiMessages.length))
       return
     }
     const rotate = setInterval(
-      () => setAiMessageIdx((i) => (i + 1) % AI_MESSAGES.length),
+      () => setAiMessageIdx((i) => (i + 1) % aiMessages.length),
       3000
     )
     return () => clearInterval(rotate)
@@ -1905,7 +1910,7 @@ export function StoryboardSectionDetail({
             ? "bg-amber-500/30 hover:bg-amber-500/40"
             : "bg-white/10 hover:bg-white/20"
         }`}
-        title={section?.isPruned ? "Restore section to flow" : "Prune section from flow"}
+        title={section?.isPruned ? m.storyboard_detail_restore_section_title() : m.storyboard_detail_prune_section_title()}
       >
         {section?.isPruned ? (
           <EyeOff className="h-3.5 w-3.5 text-amber-200" />
@@ -1940,7 +1945,7 @@ export function StoryboardSectionDetail({
                 handleAiEdit()
               }
             }}
-            placeholder={aiLoading ? "Generating..." : "Ask AI to edit..."}
+            placeholder={aiLoading ? m.storyboard_detail_ai_generating() : m.storyboard_detail_ai_placeholder()}
             disabled={aiLoading}
             className={`pl-7 h-7 text-[11px] bg-white border-white/40 text-gray-900 placeholder:text-gray-400 focus-visible:ring-white/50 ${aiLoading ? "opacity-60" : ""}`}
           />
@@ -1955,7 +1960,7 @@ export function StoryboardSectionDetail({
           className={`flex items-center gap-1 px-2 py-1 rounded transition-colors cursor-pointer shrink-0 ${
             htmlPreview ? "bg-white/30" : "bg-white/10 hover:bg-white/20"
           }`}
-          title={htmlPreview ? "Back to preview" : "View HTML source"}
+          title={htmlPreview ? m.storyboard_detail_html_back_to_preview() : m.storyboard_detail_html_view_source()}
         >
           <Code className="h-3.5 w-3.5" />
           <span className="text-[10px]">HTML</span>
@@ -1965,15 +1970,15 @@ export function StoryboardSectionDetail({
         type="button"
         onClick={() => setPanelOpen((v) => !v)}
         className="flex items-center gap-1 px-2 py-1 rounded bg-white/10 hover:bg-white/20 transition-colors cursor-pointer shrink-0"
-        title={panelOpen ? "Close section data" : "Open section data"}
+        title={panelOpen ? m.storyboard_detail_close_panel() : m.storyboard_detail_open_panel()}
       >
         {panelOpen ? (
           <PanelRightClose className="h-3.5 w-3.5" />
         ) : (
           <PanelRightOpen className="h-3.5 w-3.5" />
         )}
-        <span className="text-[10px]">Section Data</span>
-        {dirty && <span className="w-1.5 h-1.5 rounded-full bg-amber-400" title="Unsaved changes" />}
+        <span className="text-[10px]">{m.storyboard_detail_section_data()}</span>
+        {dirty && <span className="w-1.5 h-1.5 rounded-full bg-amber-400" title={m.storyboard_detail_unsaved_changes()} />}
       </button>
       {navigationArrows}
     </>
@@ -1982,7 +1987,7 @@ export function StoryboardSectionDetail({
   if (!section) {
     return (
       <div className="p-4 text-sm text-muted-foreground">
-        Section not found.
+        {m.storyboard_detail_section_not_found()}
       </div>
     )
   }
@@ -2007,7 +2012,7 @@ export function StoryboardSectionDetail({
                 <ChevronRight
                   className={`h-3 w-3 transition-transform ${aiReasoningOpen ? "rotate-90" : ""}`}
                 />
-                AI reasoning
+                {m.storyboard_detail_ai_reasoning()}
               </button>
               {aiReasoningOpen && (
                 <p className="text-[10px] text-muted-foreground mt-1 pl-4 whitespace-pre-wrap max-h-20 overflow-auto">
@@ -2026,8 +2031,8 @@ export function StoryboardSectionDetail({
             <div className="w-12 h-12 rounded-full bg-muted/50 flex items-center justify-center mb-3">
               <LayoutGrid className="w-6 h-6 text-muted-foreground/40" />
             </div>
-            <p className="text-sm font-medium">No sections on this page</p>
-            <p className="text-xs mt-1">All sections have been deleted</p>
+            <p className="text-sm font-medium">{m.storyboard_detail_no_sections_title()}</p>
+            <p className="text-xs mt-1">{m.storyboard_detail_no_sections_subtitle()}</p>
           </div>
         ) : renderedSection?.html ? (
           <>
@@ -2057,8 +2062,8 @@ export function StoryboardSectionDetail({
             <div className="w-12 h-12 rounded-full bg-violet-50 flex items-center justify-center mb-3">
               <LayoutGrid className="w-6 h-6 text-violet-300" />
             </div>
-            <p className="text-sm font-medium">No rendered content for this section</p>
-            <p className="text-xs mt-1">This section has no storyboard rendering yet</p>
+            <p className="text-sm font-medium">{m.storyboard_detail_no_rendered_title()}</p>
+            <p className="text-xs mt-1">{m.storyboard_detail_no_rendered_subtitle()}</p>
           </div>
         )}
 
@@ -2069,13 +2074,13 @@ export function StoryboardSectionDetail({
               <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center">
                 <EyeOff className="w-5 h-5 text-amber-600" />
               </div>
-              <p className="text-sm font-medium text-muted-foreground">Section pruned from flow</p>
+              <p className="text-sm font-medium text-muted-foreground">{m.storyboard_detail_section_pruned()}</p>
               <button
                 type="button"
                 onClick={toggleSectionPruned}
                 className="text-xs font-medium rounded px-3 py-1.5 bg-muted hover:bg-accent hover:text-accent-foreground transition-colors cursor-pointer"
               >
-                Restore
+                {m.storyboard_detail_restore()}
               </button>
             </div>
           </div>
@@ -2092,14 +2097,14 @@ export function StoryboardSectionDetail({
                 <span className="w-2.5 h-2.5 rounded-full bg-purple-300 animate-bounce [animation-delay:300ms]" />
               </div>
               <p className="text-sm font-medium text-foreground animate-pulse">
-                {AI_MESSAGES[aiMessageIdx]}
+                {aiMessages[aiMessageIdx]}
               </p>
               <button
                 type="button"
                 onClick={() => aiAbortRef.current?.abort()}
                 className="text-xs font-medium rounded px-3 py-1.5 bg-muted hover:bg-accent transition-colors cursor-pointer"
               >
-                Cancel
+                {m.storyboard_detail_cancel()}
               </button>
             </div>
           </div>
@@ -2115,7 +2120,7 @@ export function StoryboardSectionDetail({
                 <span className="w-2.5 h-2.5 rounded-full bg-muted-foreground/20 animate-bounce [animation-delay:300ms]" />
               </div>
               <p className="text-sm font-medium text-foreground animate-pulse">
-                Re-rendering page...
+                {m.storyboard_detail_rerendering()}
               </p>
             </div>
           </div>
@@ -2193,7 +2198,7 @@ export function StoryboardSectionDetail({
             {aiImageGen.status === "generating" && (
               <>
                 <Loader2 className="h-3 w-3 animate-spin" />
-                <span>Generating image...</span>
+                <span>{m.storyboard_detail_generating_image()}</span>
                 <button
                   type="button"
                   onClick={() => {
@@ -2209,12 +2214,12 @@ export function StoryboardSectionDetail({
             {aiImageGen.status === "done" && (
               <>
                 <Sparkles className="h-3 w-3" />
-                <span>Image generated</span>
+                <span>{m.storyboard_detail_image_generated()}</span>
               </>
             )}
             {aiImageGen.status === "error" && (
               <>
-                <span>{aiImageGen.error ?? "Generation failed"}</span>
+                <span>{aiImageGen.error ?? m.storyboard_detail_generation_failed()}</span>
                 <button
                   type="button"
                   onClick={() => setAiImageGen(null)}
@@ -2233,7 +2238,7 @@ export function StoryboardSectionDetail({
         <div className="absolute bottom-4 right-16 z-30 flex items-center gap-2">
           {activityPreviewMode && renderingDirty && (
             <span className="text-[10px] text-amber-600 bg-white/90 px-2 py-1 rounded shadow-sm">
-              Save changes first to preview the latest version
+              {m.storyboard_detail_save_changes_first()}
             </span>
           )}
           <button
@@ -2242,9 +2247,9 @@ export function StoryboardSectionDetail({
             className="flex items-center gap-1.5 h-8 px-3 rounded-full text-xs font-medium bg-blue-50 text-blue-700 hover:bg-blue-100 shadow-md border border-blue-200 transition-colors cursor-pointer opacity-80 hover:opacity-100"
           >
             {activityPreviewMode ? (
-              <><PenLine className="h-3 w-3" />Back to Editor</>
+              <><PenLine className="h-3 w-3" />{m.storyboard_detail_back_to_editor()}</>
             ) : (
-              <><Play className="h-3 w-3" />Try Activity</>
+              <><Play className="h-3 w-3" />{m.storyboard_detail_try_activity()}</>
             )}
           </button>
         </div>
@@ -2255,9 +2260,9 @@ export function StoryboardSectionDetail({
         <div className="absolute bottom-4 left-1/2 z-40 -translate-x-1/2 animate-in slide-in-from-bottom-4 fade-in duration-200">
           <div className="flex items-center gap-3 rounded-lg border bg-background px-4 py-2.5 shadow-lg">
             <span className="text-sm text-muted-foreground">
-              Unsaved:{" "}
+              {m.storyboard_detail_unsaved_label()}{" "}
               <span className="font-medium text-foreground">
-                {[dirty && "sections", renderingDirty && "rendering"].filter(Boolean).join(", ")}
+                {[dirty && m.storyboard_detail_unsaved_sections(), renderingDirty && m.storyboard_detail_unsaved_rendering()].filter(Boolean).join(", ")}
               </span>
             </span>
             <div className="flex items-center gap-2">
@@ -2270,7 +2275,7 @@ export function StoryboardSectionDetail({
                 className="flex items-center gap-1 text-xs font-medium rounded px-3 py-1.5 bg-green-600 hover:bg-green-500 text-white cursor-pointer transition-colors"
               >
                 <Save className="h-3 w-3" />
-                Save
+                {m.storyboard_detail_save()}
               </button>
               <button
                 type="button"
@@ -2282,7 +2287,7 @@ export function StoryboardSectionDetail({
                 className="flex items-center gap-1 text-xs font-medium rounded px-3 py-1.5 bg-muted hover:bg-accent hover:text-accent-foreground cursor-pointer transition-colors"
               >
                 <X className="h-3 w-3" />
-                Discard
+                {m.storyboard_detail_discard()}
               </button>
             </div>
           </div>
@@ -2436,9 +2441,9 @@ export function StoryboardSectionDetail({
     <Dialog open={confirmDeleteSection} onOpenChange={setConfirmDeleteSection}>
       <DialogContent className="max-w-sm">
         <DialogHeader>
-          <DialogTitle>Delete section</DialogTitle>
+          <DialogTitle>{m.storyboard_detail_delete_section_title()}</DialogTitle>
           <DialogDescription>
-            Are you sure you want to delete this section? This action cannot be undone.
+            {m.storyboard_detail_delete_section_desc()}
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>
@@ -2447,14 +2452,14 @@ export function StoryboardSectionDetail({
             onClick={() => setConfirmDeleteSection(false)}
             className="px-3 py-1.5 text-sm rounded border hover:bg-accent transition-colors cursor-pointer"
           >
-            Cancel
+            {m.storyboard_detail_cancel()}
           </button>
           <button
             type="button"
             onClick={confirmAndDeleteSection}
             className="px-3 py-1.5 text-sm rounded bg-destructive text-destructive-foreground hover:bg-destructive/90 transition-colors cursor-pointer"
           >
-            Delete
+            {m.storyboard_detail_delete()}
           </button>
         </DialogFooter>
       </DialogContent>

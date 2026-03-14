@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { Check, ImagePlus, Upload, Sparkles, X, ArrowLeft, Search, Loader2 } from "lucide-react"
 import { api, BASE_URL } from "@/api/client"
+import * as m from "@/paraglide/messages"
 
 type Step = "choose" | "pick" | "upload" | "generate"
 
@@ -99,10 +100,10 @@ export function AddImageDialog({
             )}
             <ImagePlus className="h-4 w-4 text-blue-500" />
             <h2 className="text-sm font-semibold">
-              {step === "choose" && "Add Image"}
-              {step === "pick" && "Pick from Book"}
-              {step === "upload" && "Upload Image"}
-              {step === "generate" && "Generate with AI"}
+              {step === "choose" && m.add_image_title()}
+              {step === "pick" && m.add_image_pick_title()}
+              {step === "upload" && m.add_image_upload_title()}
+              {step === "generate" && m.add_image_generate_title()}
             </h2>
           </div>
           <button
@@ -121,20 +122,20 @@ export function AddImageDialog({
             <div className="p-5 space-y-2">
               <MethodCard
                 icon={<ImagePlus className="h-4 w-4" />}
-                title="Pick from book"
-                description="Choose an existing image from this project"
+                title={m.add_image_method_pick()}
+                description={m.add_image_method_pick_desc()}
                 onClick={() => setStep("pick")}
               />
               <MethodCard
                 icon={<Upload className="h-4 w-4" />}
-                title="Upload image"
-                description="Upload a new image file from your computer"
+                title={m.add_image_method_upload()}
+                description={m.add_image_method_upload_desc()}
                 onClick={() => setStep("upload")}
               />
               <MethodCard
                 icon={<Sparkles className="h-4 w-4" />}
-                title="Generate with AI"
-                description="Create a new image from a text description"
+                title={m.add_image_method_generate()}
+                description={m.add_image_method_generate_desc()}
                 onClick={() => setStep("generate")}
               />
             </div>
@@ -149,7 +150,7 @@ export function AddImageDialog({
                   type="text"
                   value={filter}
                   onChange={(e) => setFilter(e.target.value)}
-                  placeholder="Filter by image ID..."
+                  placeholder={m.add_image_filter_placeholder()}
                   className="w-full text-sm border rounded-lg pl-8 pr-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500/30"
                   autoFocus
                 />
@@ -163,7 +164,7 @@ export function AddImageDialog({
 
               {selectableImages && selectableImages.length === 0 && (
                 <p className="text-center text-sm text-muted-foreground py-8">
-                  {filter ? "No images match your filter" : "No images in this book"}
+                  {filter ? m.add_image_no_filter_match() : m.add_image_no_images()}
                 </p>
               )}
 
@@ -232,14 +233,14 @@ export function AddImageDialog({
                 >
                   <Upload className="h-8 w-8 text-muted-foreground" />
                   <span className="text-sm text-muted-foreground">
-                    Click to select an image
+                    {m.add_image_click_to_select()}
                   </span>
                 </button>
               ) : (
                 <div className="space-y-3">
                   <img
                     src={uploadPreview}
-                    alt="Preview"
+                    alt={m.add_image_preview_alt()}
                     className="max-w-full max-h-[300px] mx-auto rounded-lg border object-contain"
                   />
                   <div className="flex items-center justify-between">
@@ -251,7 +252,7 @@ export function AddImageDialog({
                       onClick={() => fileInputRef.current?.click()}
                       className="text-xs text-blue-500 hover:text-blue-400 cursor-pointer"
                     >
-                      Change
+                      {m.add_image_change()}
                     </button>
                   </div>
                 </div>
@@ -264,7 +265,7 @@ export function AddImageDialog({
             <div className="p-5 space-y-4">
               <div>
                 <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider block mb-1">
-                  Describe the image
+                  {m.add_image_describe_label()}
                 </label>
                 <textarea
                   value={prompt}
@@ -275,13 +276,13 @@ export function AddImageDialog({
                       handleGenerateSubmit()
                     }
                   }}
-                  placeholder="e.g., A cheerful leopard family in a green forest, children's book style..."
+                  placeholder={m.add_image_describe_placeholder()}
                   rows={4}
                   autoFocus
                   className="w-full text-sm border rounded-lg px-3 py-2 resize-none focus:outline-none focus:ring-2 focus:ring-purple-500/30"
                 />
                 <p className="text-[10px] text-muted-foreground mt-1">
-                  Be descriptive — include style, colors, mood, and composition.
+                  {m.add_image_describe_hint()}
                 </p>
               </div>
             </div>
@@ -293,11 +294,11 @@ export function AddImageDialog({
           <div className="flex items-center justify-between px-5 py-3.5 border-t shrink-0">
             <p className="text-[10px] text-muted-foreground">
               {step === "pick" && selected.size > 0
-                ? `${selected.size} image${selected.size === 1 ? "" : "s"} selected`
+                ? (selected.size === 1 ? m.add_image_selected_one() : m.add_image_selected_other({ count: String(selected.size) }))
                 : step === "pick"
-                  ? "Click images to select"
+                  ? m.add_image_click_to_pick()
                   : step === "generate"
-                    ? "Runs in background — you can keep editing"
+                    ? m.add_image_runs_in_background()
                     : ""}
             </p>
             <div className="flex items-center gap-2">
@@ -306,7 +307,7 @@ export function AddImageDialog({
                 onClick={onClose}
                 className="text-xs font-medium rounded px-3 py-1.5 bg-muted hover:bg-accent transition-colors cursor-pointer"
               >
-                Cancel
+                {m.add_image_cancel()}
               </button>
               {step === "pick" && (
                 <button
@@ -316,7 +317,7 @@ export function AddImageDialog({
                   className="flex items-center gap-1 text-xs font-medium rounded px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white cursor-pointer transition-colors disabled:opacity-50"
                 >
                   <ImagePlus className="h-3 w-3" />
-                  {selected.size <= 1 ? "Add Image" : `Add ${selected.size} Images`}
+                  {selected.size <= 1 ? m.add_image_add_one() : m.add_image_add_many({ count: String(selected.size) })}
                 </button>
               )}
               {step === "upload" && (
@@ -327,7 +328,7 @@ export function AddImageDialog({
                   className="flex items-center gap-1 text-xs font-medium rounded px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white cursor-pointer transition-colors disabled:opacity-50"
                 >
                   <Upload className="h-3 w-3" />
-                  Add Image
+                  {m.add_image_add_single()}
                 </button>
               )}
               {step === "generate" && (
@@ -338,7 +339,7 @@ export function AddImageDialog({
                   className="flex items-center gap-1 text-xs font-medium rounded px-3 py-1.5 bg-purple-600 hover:bg-purple-500 text-white cursor-pointer transition-colors disabled:opacity-50"
                 >
                   <Sparkles className="h-3 w-3" />
-                  Generate
+                  {m.add_image_generate_button()}
                 </button>
               )}
             </div>

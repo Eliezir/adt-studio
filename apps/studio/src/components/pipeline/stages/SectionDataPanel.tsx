@@ -22,6 +22,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import type { PageSection } from "@adt/types"
+import * as m from "@/paraglide/messages"
 
 // -- Types --
 
@@ -93,7 +94,7 @@ function ImageCard({
   return (
     <div
       className={`relative rounded border overflow-hidden bg-card flex flex-col items-center min-h-[80px] transition-opacity duration-300 ${isPruned ? "opacity-40" : ""}`}
-      title={isPruned ? `Pruned: ${reason}` : undefined}
+      title={isPruned ? m.section_data_pruned_title({ reason: reason ?? "" }) : undefined}
     >
       <img
         src={`${BASE_URL}/books/${bookLabel}/images/${imageId}`}
@@ -340,7 +341,7 @@ export function SectionDataPanel({
       {/* Panel header */}
       <div className="border-b">
         <div className="flex items-center gap-2 px-4 py-2 text-xs text-muted-foreground">
-          <span className="font-medium uppercase tracking-wider">Content</span>
+          <span className="font-medium uppercase tracking-wider">{m.section_data_content()}</span>
           {sectionTypes ? (
             <Select
               value={section.sectionType}
@@ -372,10 +373,10 @@ export function SectionDataPanel({
               className="p-0.5 rounded hover:bg-accent transition-colors cursor-pointer disabled:opacity-30 disabled:cursor-default"
               title={
                 !hasApiKey
-                  ? "API key required to re-render"
+                  ? m.section_data_rerender_need_key()
                   : dirty || renderingDirty
-                    ? "Save changes before re-rendering"
-                    : "Re-render this section"
+                    ? m.section_data_rerender_need_save()
+                    : m.section_data_rerender_title()
               }
             >
               {rerendering ? (
@@ -386,11 +387,11 @@ export function SectionDataPanel({
             </button>
             {rerenderOpen && (
               <div className="absolute left-0 top-full mt-1 z-50 w-72 rounded-lg border bg-popover p-3 shadow-lg">
-                <p className="text-xs font-medium mb-2">Re-render section</p>
+                <p className="text-xs font-medium mb-2">{m.section_data_rerender_heading()}</p>
                 <textarea
                   value={rerenderPrompt}
                   onChange={(e) => setRerenderPrompt(e.target.value)}
-                  placeholder="Optional instructions for the LLM..."
+                  placeholder={m.section_data_rerender_placeholder()}
                   className="w-full text-xs rounded border bg-background px-2 py-1.5 resize-none focus:outline-none focus:ring-1 focus:ring-ring"
                   rows={3}
                 />
@@ -403,7 +404,7 @@ export function SectionDataPanel({
                     }}
                     className="text-xs px-2 py-1 rounded hover:bg-accent transition-colors cursor-pointer"
                   >
-                    Cancel
+                    {m.section_data_cancel()}
                   </button>
                   <button
                     type="button"
@@ -414,7 +415,7 @@ export function SectionDataPanel({
                     }}
                     className="text-xs px-2.5 py-1 rounded bg-primary text-primary-foreground hover:bg-primary/90 transition-colors cursor-pointer"
                   >
-                    Re-render
+                    {m.section_data_rerender_button()}
                   </button>
                 </div>
               </div>
@@ -427,8 +428,8 @@ export function SectionDataPanel({
               className="p-0.5 rounded hover:bg-accent transition-colors cursor-pointer"
               title={
                 section.isPruned
-                  ? "Include section in render"
-                  : "Exclude section from render"
+                  ? m.section_data_include_section()
+                  : m.section_data_exclude_section()
               }
             >
               {section.isPruned ? (
@@ -445,8 +446,8 @@ export function SectionDataPanel({
                 className="p-0.5 rounded hover:bg-accent transition-colors cursor-pointer disabled:opacity-30 disabled:cursor-default"
                 title={
                   dirty || renderingDirty
-                    ? "Save changes before merging"
-                    : "Merge with previous section"
+                    ? m.section_data_save_before_merge()
+                    : m.section_data_merge_prev()
                 }
               >
                 {merging ? (
@@ -464,8 +465,8 @@ export function SectionDataPanel({
                 className="p-0.5 rounded hover:bg-accent transition-colors cursor-pointer disabled:opacity-30 disabled:cursor-default"
                 title={
                   dirty || renderingDirty
-                    ? "Save changes before merging"
-                    : "Merge with next section"
+                    ? m.section_data_save_before_merge()
+                    : m.section_data_merge_next()
                 }
               >
                 {merging ? (
@@ -482,8 +483,8 @@ export function SectionDataPanel({
               className="p-0.5 rounded hover:bg-accent transition-colors cursor-pointer disabled:opacity-30 disabled:cursor-default"
               title={
                 dirty || renderingDirty
-                  ? "Save changes before cloning"
-                  : "Clone this section"
+                  ? m.section_data_save_before_clone()
+                  : m.section_data_clone_section()
               }
             >
               {cloning ? (
@@ -499,8 +500,8 @@ export function SectionDataPanel({
               className="p-0.5 rounded hover:bg-red-100 transition-colors cursor-pointer disabled:opacity-30 disabled:cursor-default"
               title={
                 dirty || renderingDirty
-                  ? "Save changes before deleting"
-                  : "Delete this section"
+                  ? m.section_data_save_before_delete()
+                  : m.section_data_delete_section()
               }
             >
               {deleting ? (
@@ -522,17 +523,17 @@ export function SectionDataPanel({
         {/* Page row — background & text color */}
         {!section.isPruned && (
           <div className="flex items-center gap-2 px-4 py-1.5 text-xs text-muted-foreground border-t">
-            <span className="font-medium uppercase tracking-wider">Page</span>
+            <span className="font-medium uppercase tracking-wider">{m.section_data_page()}</span>
             <span
               className="w-3.5 h-3.5 rounded border"
               style={{ backgroundColor: section.backgroundColor }}
-              title={`Background: ${section.backgroundColor}`}
+              title={m.section_data_background({ color: section.backgroundColor })}
             />
             <span className="text-[10px]">{section.backgroundColor}</span>
             <span
               className="w-3.5 h-3.5 rounded border ml-2"
               style={{ backgroundColor: section.textColor }}
-              title={`Text color: ${section.textColor}`}
+              title={m.section_data_text_color({ color: section.textColor })}
             />
             <span className="text-[10px]">{section.textColor}</span>
           </div>
@@ -545,7 +546,7 @@ export function SectionDataPanel({
         <div>
           <h3 className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">
             <Layers className="h-3 w-3" />
-            Text Groups
+            {m.section_data_text_groups()}
           </h3>
           {hasTextParts && (
             <div>
@@ -579,7 +580,7 @@ export function SectionDataPanel({
                         onDragStart={(e) => handleGroupDragStart(e, partIndex)}
                         onDragEnd={handleGroupDragEnd}
                         className="cursor-grab active:cursor-grabbing p-0.5 -ml-1 rounded hover:bg-accent transition-colors opacity-0 group-hover/card:opacity-100"
-                        title="Drag to reorder"
+                        title={m.section_data_drag_reorder()}
                       >
                         <GripVertical className="h-3 w-3 text-muted-foreground" />
                       </div>
@@ -610,7 +611,7 @@ export function SectionDataPanel({
                           type="button"
                           onClick={() => onDuplicateGroup(partIndex)}
                           className="p-0.5 rounded hover:bg-accent transition-colors cursor-pointer"
-                          title="Duplicate group"
+                          title={m.section_data_duplicate_group()}
                         >
                           <Copy className="h-3 w-3 text-muted-foreground" />
                         </button>
@@ -619,7 +620,7 @@ export function SectionDataPanel({
                             type="button"
                             onClick={() => onDeleteGroup(partIndex)}
                             className="p-0.5 rounded hover:bg-red-100 transition-colors cursor-pointer"
-                            title="Delete group"
+                            title={m.section_data_delete_group()}
                           >
                             <Trash2 className="h-3 w-3 text-red-600" />
                           </button>
@@ -630,8 +631,8 @@ export function SectionDataPanel({
                           className="p-0.5 rounded hover:bg-accent transition-colors cursor-pointer"
                           title={
                             p.isPruned
-                              ? "Include in render"
-                              : "Exclude from render"
+                              ? m.section_data_include_render()
+                              : m.section_data_exclude_render()
                           }
                         >
                           {p.isPruned ? (
@@ -653,7 +654,7 @@ export function SectionDataPanel({
                     >
                       {p.texts.length === 0 && (
                         <div className="px-3 py-3 text-xs text-muted-foreground/50 italic text-center">
-                          Empty group — drag text entries here
+                          {m.section_data_empty_group()}
                         </div>
                       )}
                       {p.texts.map((t, ti) => {
@@ -687,7 +688,7 @@ export function SectionDataPanel({
                               }
                               onDragEnd={handleTextDragEnd}
                               className="shrink-0 cursor-grab active:cursor-grabbing p-0.5 mt-0.5 rounded hover:bg-accent transition-colors opacity-0 group-hover/text:opacity-100"
-                              title="Drag to reorder or move to another group"
+                              title={m.section_data_drag_reorder_or_move()}
                             >
                               <GripVertical className="h-3 w-3 text-muted-foreground/50" />
                             </div>
@@ -731,7 +732,7 @@ export function SectionDataPanel({
                                 type="button"
                                 onClick={() => onDuplicateTextEntry(partIndex, ti)}
                                 className="p-0.5 rounded hover:bg-accent transition-colors cursor-pointer"
-                                title="Duplicate text entry"
+                                title={m.section_data_duplicate_text()}
                               >
                                 <Copy className="h-3 w-3 text-muted-foreground" />
                               </button>
@@ -740,7 +741,7 @@ export function SectionDataPanel({
                                   type="button"
                                   onClick={() => onDeleteTextEntry(partIndex, ti)}
                                   className="p-0.5 rounded hover:bg-red-100 transition-colors cursor-pointer"
-                                  title="Delete text entry"
+                                  title={m.section_data_delete_text()}
                                 >
                                   <Trash2 className="h-3 w-3 text-red-600" />
                                 </button>
@@ -751,8 +752,8 @@ export function SectionDataPanel({
                                 className="p-0.5 rounded hover:bg-accent transition-colors cursor-pointer"
                                 title={
                                   t.isPruned
-                                    ? "Include in render"
-                                    : "Exclude from render"
+                                    ? m.section_data_include_render()
+                                    : m.section_data_exclude_render()
                                 }
                               >
                                 {t.isPruned ? (
@@ -799,14 +800,14 @@ export function SectionDataPanel({
             className="flex items-center justify-center gap-1.5 w-full rounded border border-dashed border-muted-foreground/30 hover:border-muted-foreground/60 py-3 text-xs text-muted-foreground hover:text-foreground transition-colors cursor-pointer mt-3"
           >
             <Plus className="h-3.5 w-3.5" />
-            Add Group
+            {m.section_data_add_group()}
           </button>
         </div>
 
         {/* Images */}
         <div>
           <h3 className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">
-            Images
+            {m.section_data_images()}
             {hasImageParts &&
               parts.some((p) => p.type === "image" && p.isPruned) && (
                 <button
@@ -815,8 +816,8 @@ export function SectionDataPanel({
                   className="ml-auto flex items-center gap-1 text-[10px] font-normal normal-case tracking-normal text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
                   title={
                     showPrunedImages
-                      ? "Hide pruned images"
-                      : "Show pruned images"
+                      ? m.section_data_hide_pruned()
+                      : m.section_data_show_pruned()
                   }
                 >
                   {showPrunedImages ? (
@@ -824,7 +825,7 @@ export function SectionDataPanel({
                   ) : (
                     <EyeOff className="h-3 w-3" />
                   )}
-                  {showPrunedImages ? "Hide Pruned" : "Show Pruned"}
+                  {showPrunedImages ? m.section_data_hide_pruned_short() : m.section_data_show_pruned_short()}
                 </button>
               )}
           </h3>
@@ -847,8 +848,8 @@ export function SectionDataPanel({
                       className="absolute top-1 right-1 p-1 rounded bg-background/80 hover:bg-accent transition-colors cursor-pointer opacity-0 group-hover:opacity-100"
                       title={
                         p.isPruned
-                          ? "Include in render"
-                          : "Exclude from render"
+                          ? m.section_data_include_render()
+                          : m.section_data_exclude_render()
                       }
                     >
                       {p.isPruned ? (
@@ -868,7 +869,7 @@ export function SectionDataPanel({
             className="flex items-center justify-center gap-1.5 w-full rounded border border-dashed border-muted-foreground/30 hover:border-muted-foreground/60 py-3 text-xs text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
           >
             <ImagePlus className="h-3.5 w-3.5" />
-            Add Image
+            {m.section_data_add_image()}
           </button>
         </div>
       </div>

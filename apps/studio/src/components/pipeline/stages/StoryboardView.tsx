@@ -7,6 +7,7 @@ import { useApiKey } from "@/hooks/use-api-key"
 import { StageRunCard } from "../StageRunCard"
 import { StoryboardSectionDetail } from "./StoryboardSectionDetail"
 import { useSectionNav } from "@/routes/books.$label"
+import * as m from "@/paraglide/messages"
 
 
 export function StoryboardView({ bookLabel, selectedPageId: selectedPageIdProp, onSelectPage }: { bookLabel: string; selectedPageId?: string; onSelectPage?: (pageId: string | null) => void }) {
@@ -71,7 +72,7 @@ export function StoryboardView({ bookLabel, selectedPageId: selectedPageIdProp, 
   const canGoNext = sectionIndex < sectionCount - 1 || !!nextPageId
 
   const goPrev = () => {
-    if (isGeneratingRef.current && !window.confirm("An AI image is being generated. Cancel it and navigate?")) return
+    if (isGeneratingRef.current && !window.confirm(m.storyboard_view_confirm_navigate_ai())) return
     if (sectionIndex > 0) {
       setSectionIndex(sectionIndex - 1)
     } else if (prevPageId) {
@@ -82,7 +83,7 @@ export function StoryboardView({ bookLabel, selectedPageId: selectedPageIdProp, 
   }
 
   const goNext = () => {
-    if (isGeneratingRef.current && !window.confirm("An AI image is being generated. Cancel it and navigate?")) return
+    if (isGeneratingRef.current && !window.confirm(m.storyboard_view_confirm_navigate_ai())) return
     if (sectionIndex < sectionCount - 1) {
       setSectionIndex(sectionIndex + 1)
     } else if (nextPageId) {
@@ -98,7 +99,7 @@ export function StoryboardView({ bookLabel, selectedPageId: selectedPageIdProp, 
     <>
       <span className="text-white/40 text-sm">/</span>
       <span className="text-sm font-medium">
-        Page {selectedPageSummary.pageNumber}
+        {m.storyboard_view_page_label({ pageNumber: String(selectedPageSummary.pageNumber) })}
       </span>
       <span className="text-white/40 text-sm">/</span>
       <div className="flex items-center gap-0.5">
@@ -110,7 +111,7 @@ export function StoryboardView({ bookLabel, selectedPageId: selectedPageIdProp, 
               key={i}
               type="button"
               onClick={() => {
-                if (isGeneratingRef.current && !window.confirm("An AI image is being generated. Cancel it and navigate?")) return
+                if (isGeneratingRef.current && !window.confirm(m.storyboard_view_confirm_navigate_ai())) return
                 setSectionIndex(i)
               }}
               className={`flex items-center justify-center min-w-[20px] h-5 px-1 rounded text-[10px] font-medium transition-colors ${
@@ -118,7 +119,7 @@ export function StoryboardView({ bookLabel, selectedPageId: selectedPageIdProp, 
                   ? pruned ? "bg-white/20 text-white/50 line-through decoration-white/40" : "bg-white/30 text-white"
                   : pruned ? "bg-white/5 text-white/30 line-through decoration-white/20 hover:bg-white/10 hover:text-white/50" : "bg-white/10 text-white/60 hover:bg-white/20 hover:text-white"
               }`}
-              title={`Section ${i + 1}${pruned ? " (pruned)" : ""}`}
+              title={pruned ? m.storyboard_view_section_chip_pruned({ index: String(i + 1) }) : m.storyboard_view_section_chip({ index: String(i + 1) })}
             >
               {i + 1}
             </button>
@@ -168,7 +169,7 @@ export function StoryboardView({ bookLabel, selectedPageId: selectedPageIdProp, 
       setExtra(
         <>
           <span className="text-white/40 text-sm">/</span>
-          <span className="text-sm font-medium">Page {selectedPageSummary.pageNumber}</span>
+          <span className="text-sm font-medium">{m.storyboard_view_page_label({ pageNumber: String(selectedPageSummary.pageNumber) })}</span>
           <div className="ml-auto flex gap-1">
             <button
               type="button"
@@ -234,7 +235,7 @@ export function StoryboardView({ bookLabel, selectedPageId: selectedPageIdProp, 
     return (
       <div className="flex items-center gap-2 p-4 text-sm text-muted-foreground">
         <Loader2 className="h-4 w-4 animate-spin" />
-        Loading pages...
+        {m.storyboard_view_loading_pages()}
       </div>
     )
   }
@@ -243,7 +244,7 @@ export function StoryboardView({ bookLabel, selectedPageId: selectedPageIdProp, 
     return (
       <div className="p-4">
         <p className="text-sm text-muted-foreground">
-          No pages extracted yet. Run the pipeline to extract content.
+          {m.storyboard_view_no_pages()}
         </p>
       </div>
     )
@@ -253,7 +254,7 @@ export function StoryboardView({ bookLabel, selectedPageId: selectedPageIdProp, 
     return (
       <div className="flex items-center gap-2 p-4 text-sm text-muted-foreground">
         <Loader2 className="h-4 w-4 animate-spin" />
-        Loading page...
+        {m.storyboard_view_loading_page()}
       </div>
     )
   }
@@ -278,8 +279,8 @@ export function StoryboardView({ bookLabel, selectedPageId: selectedPageIdProp, 
         <div className="w-12 h-12 rounded-full bg-violet-50 flex items-center justify-center mb-3">
           <LayoutGrid className="w-6 h-6 text-violet-300" />
         </div>
-        <p className="text-sm font-medium">No sections for this page</p>
-        <p className="text-xs mt-1">This page has no storyboard sections</p>
+        <p className="text-sm font-medium">{m.storyboard_view_no_sections_title()}</p>
+        <p className="text-xs mt-1">{m.storyboard_view_no_sections_subtitle()}</p>
       </div>
     )
   }
