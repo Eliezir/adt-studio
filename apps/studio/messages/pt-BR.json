@@ -1,6 +1,6 @@
 {
- 
- 
+  "$schema": "https://inlang.com/schema/inlang-message-format",
+
   "book_row_needs_rebuild": "Precisa ser reconstruído",
   "book_row_page_count": "{count, plural, one {# página} other {# páginas}}",
   "book_row_new": "Novo",

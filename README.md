@@ -190,6 +190,10 @@ pnpm typecheck        # TypeScript strict mode check
 pnpm lint             # Lint all packages
 ```
 
+## Internationalization (i18n)
+
+- To add a new UI language in Studio, see [docs/I18N_ADD_LANGUAGE.md](docs/I18N_ADD_LANGUAGE.md).
+
 ## Core Principles
 
 1. **Book-Level Storage** — All book data isolated to a single, zippable directory
