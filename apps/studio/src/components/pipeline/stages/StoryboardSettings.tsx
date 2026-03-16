@@ -45,14 +45,21 @@ function titleCase(slug: string): string {
   return slug.split("_").map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ")
 }
 
-/** Human-friendly display names for strategy keys */
-const STRATEGY_DISPLAY_NAMES: Record<string, string> = {
-  llm: "AI Generated",
-  "llm-overlay": "AI Overlay",
+const STRATEGY_LABEL_KEYS: Record<string, string> = {
+  llm: "storyboard_settings_strategy_label_llm",
+  "llm-overlay": "storyboard_settings_strategy_label_llm_overlay",
 }
 
 function strategyDisplayName(slug: string): string {
-  return STRATEGY_DISPLAY_NAMES[slug] ?? titleCase(slug)
+  const key = STRATEGY_LABEL_KEYS[slug]
+  if (key && key in m) return (m as unknown as Record<string, () => string>)[key]()
+  return titleCase(slug.replace(/_/g, " "))
+}
+
+function getSectionTypeDisplayLabel(value: string): string {
+  const labelKey = getSectionTypeLabelKey(value)
+  if (labelKey && labelKey in m) return (m as unknown as Record<string, () => string>)[labelKey]()
+  return value.replace(/_/g, " ")
 }
 
 const STRATEGY_DESCRIPTION_KEYS: Record<string, string> = {
@@ -620,7 +627,7 @@ export function StoryboardSettings({ bookLabel, headerTarget, tab = "general" }:
                   >
                     <PruneToggle pruned={pruned} onToggle={() => togglePruned(key)} />
                     <span className={`text-xs shrink-0 w-40 truncate font-mono ${disabled ? "text-muted-foreground line-through" : pruned ? "text-muted-foreground line-through" : "font-medium"}`}>
-                      {key}
+                      {getSectionTypeDisplayLabel(key)}
                     </span>
                     <Input
                       value={description}

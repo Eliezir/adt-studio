@@ -25,6 +25,7 @@ import { useBookRun } from "@/hooks/use-book-run"
 import { useStepConfig } from "@/hooks/use-step-config"
 import { normalizeLocale } from "@/lib/languages"
 import * as m from "@/paraglide/messages"
+import { getTextTypeLabel } from "@/lib/text-type-labels"
 
 export function ExtractSettings({ bookLabel, headerTarget, tab = "general" }: { bookLabel: string; headerTarget?: HTMLDivElement | null; tab?: string }) {
   const { data: bookConfigData } = useBookConfig(bookLabel)
@@ -434,7 +435,7 @@ export function ExtractSettings({ bookLabel, headerTarget, tab = "general" }: { 
                 >
                   <PruneToggle pruned={pruned} onToggle={() => togglePruned(key)} />
                   <span className={`text-xs shrink-0 w-40 truncate font-mono ${pruned ? "text-muted-foreground line-through" : "font-medium"}`}>
-                    {key}
+                    {getTextTypeLabel(key)}
                   </span>
                   <Input
                     value={description}

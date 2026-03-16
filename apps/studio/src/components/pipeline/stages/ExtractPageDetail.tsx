@@ -6,6 +6,7 @@ import { api, BASE_URL } from "@/api/client"
 import type { VersionEntry } from "@/api/client"
 import { useActiveConfig } from "@/hooks/use-debug"
 import * as m from "@/paraglide/messages"
+import { getTextGroupLabel, getTextTypeLabel } from "@/lib/text-type-labels"
 
 function VersionPicker({
   currentVersion,
@@ -403,7 +404,9 @@ export function ExtractPageDetail({
                 return (
                   <div key={group.groupId} className="rounded border overflow-hidden">
                     <div className="px-3 py-1.5 bg-muted/50 border-b flex items-center gap-1.5">
-                      <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{group.groupType}</span>
+                      <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                        {getTextGroupLabel(group.groupType)}
+                      </span>
                     </div>
                     <div className="divide-y">
                       {group.texts.map((t, i) => (
@@ -415,10 +418,12 @@ export function ExtractPageDetail({
                             style={{ width: colWidth }}
                           >
                             {configuredTextTypes.includes(t.textType) ? null : (
-                              <option value={t.textType}>{t.textType}</option>
+                              <option value={t.textType}>{getTextTypeLabel(t.textType)}</option>
                             )}
                             {configuredTextTypes.map((tt) => (
-                              <option key={tt} value={tt}>{tt}</option>
+                              <option key={tt} value={tt}>
+                                {getTextTypeLabel(tt)}
+                              </option>
                             ))}
                           </select>
                           <textarea

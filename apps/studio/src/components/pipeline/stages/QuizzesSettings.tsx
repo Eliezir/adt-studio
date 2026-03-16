@@ -21,6 +21,19 @@ import { PromptViewer } from "@/components/pipeline/PromptViewer"
 import { useBookRun } from "@/hooks/use-book-run"
 import { useStepConfig } from "@/hooks/use-step-config"
 import * as m from "@/paraglide/messages"
+import { getSectionTypeDescKey, getSectionTypeLabelKey } from "@/lib/section-constants"
+
+function getSectionTypeDisplayLabel(value: string): string {
+  const labelKey = getSectionTypeLabelKey(value)
+  if (labelKey && labelKey in m) return (m as unknown as Record<string, () => string>)[labelKey]()
+  return value.replace(/_/g, " ")
+}
+
+function getSectionTypeDisplayDescription(value: string, configDesc: string): string {
+  const descKey = getSectionTypeDescKey(value)
+  if (descKey && descKey in m) return (m as unknown as Record<string, () => string>)[descKey]()
+  return configDesc
+}
 
 export function QuizzesSettings({ bookLabel, headerTarget, tab = "general" }: { bookLabel: string; headerTarget?: HTMLDivElement | null; tab?: string }) {
   const { data: bookConfigData } = useBookConfig(bookLabel)
@@ -155,8 +168,10 @@ export function QuizzesSettings({ bookLabel, headerTarget, tab = "general" }: { 
                         onChange={() => toggleQuizSectionType(key)}
                         className="h-3.5 w-3.5 rounded border-border accent-primary"
                       />
-                      <span className="text-xs font-mono">{key}</span>
-                      <span className="text-xs text-muted-foreground truncate">{sectionTypes[key]}</span>
+                      <span className="text-xs font-mono">{getSectionTypeDisplayLabel(key)}</span>
+                      <span className="text-xs text-muted-foreground truncate">
+                        {getSectionTypeDisplayDescription(key, sectionTypes[key])}
+                      </span>
                     </label>
                   )
                 })}

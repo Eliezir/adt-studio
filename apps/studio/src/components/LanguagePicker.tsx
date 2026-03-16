@@ -11,6 +11,7 @@ import {
   normalizeLocale,
   type Language,
 } from "@/lib/languages"
+import * as m from "@/paraglide/messages"
 
 interface DropdownItem {
   code: string
@@ -235,8 +236,10 @@ export function LanguagePicker({
   }
 
   const placeholderText = () => {
-    if (open && lockedLang) return `${lockedLang.name} — type country or Enter for base`
-    return "Search languages..."
+    if (open && lockedLang) {
+      return m.language_picker_country_placeholder({ language: lockedLang.name })
+    }
+    return m.language_picker_search_placeholder()
   }
 
   return (
@@ -306,7 +309,7 @@ export function LanguagePicker({
             )}
             <button
               type="button"
-              aria-label="Clear language"
+              aria-label={m.language_picker_clear_aria()}
               onClick={clearSelection}
               className="rounded-full p-0.5 text-muted-foreground hover:bg-muted-foreground/20 hover:text-foreground"
             >
@@ -345,7 +348,7 @@ export function LanguagePicker({
               })}
               {items.length === 0 && (
                 <p className="px-2 py-1.5 text-xs text-muted-foreground">
-                  No matches for &ldquo;{search}&rdquo;
+                  {m.language_picker_no_matches({ query: search || "" })}
                 </p>
               )}
             </div>
