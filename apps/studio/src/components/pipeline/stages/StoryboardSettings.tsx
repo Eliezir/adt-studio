@@ -37,6 +37,7 @@ import {
   listSelectableRenderStrategies,
   normalizeDefaultRenderStrategy,
 } from "@/lib/render-strategy"
+import { getSectionTypeLabelKey } from "@/lib/section-constants"
 import { hasSectioningChanges, hasSectioningData } from "./storyboard-rerun-policy"
 
 /** "two_column_story" → "Two Column Story" */
@@ -54,11 +55,23 @@ function strategyDisplayName(slug: string): string {
   return STRATEGY_DISPLAY_NAMES[slug] ?? titleCase(slug)
 }
 
-const RENDER_STRATEGY_DESCRIPTIONS: Record<string, string> = {
-  llm: "LLM generates HTML from section content",
-  "llm-overlay": "LLM positions text over background images",
-  two_column: "Fixed two-column template layout",
-  two_column_story: "Two-column template for story content",
+const STRATEGY_DESCRIPTION_KEYS: Record<string, string> = {
+  llm: "storyboard_settings_strategy_desc_llm",
+  "llm-overlay": "storyboard_settings_strategy_desc_llm_overlay",
+  two_column: "storyboard_settings_strategy_desc_two_column",
+  two_column_story: "storyboard_settings_strategy_desc_two_column_story",
+}
+
+function strategyDescription(name: string): string {
+  const key = STRATEGY_DESCRIPTION_KEYS[name]
+  if (!key || !(key in m)) return ""
+  return (m as unknown as Record<string, () => string>)[key]()
+}
+
+function getActivityLabel(name: string): string {
+  const labelKey = getSectionTypeLabelKey(name)
+  if (labelKey && labelKey in m) return (m as unknown as Record<string, () => string>)[labelKey]()
+  return titleCase(name.replace(/^activity_/, ""))
 }
 
 function PageThumb({
@@ -563,9 +576,9 @@ export function StoryboardSettings({ bookLabel, headerTarget, tab = "general" }:
                           {strategyDisplayName(name)}
                           {isTemplate && <span className="text-muted-foreground ml-1">{m.storyboard_settings_template_badge()}</span>}
                         </span>
-                        {RENDER_STRATEGY_DESCRIPTIONS[name] && (
+                        {strategyDescription(name) && (
                           <span className="text-xs text-muted-foreground">
-                            {RENDER_STRATEGY_DESCRIPTIONS[name]}
+                            {strategyDescription(name)}
                           </span>
                         )}
                       </div>
@@ -985,13 +998,13 @@ export function StoryboardSettings({ bookLabel, headerTarget, tab = "general" }:
             >
               <SelectTrigger className="w-72">
                 <SelectValue placeholder={m.storyboard_settings_select_activity()}>
-                  {activityStrategyName ? titleCase(activityStrategyName.replace(/^activity_/, "")) : m.storyboard_settings_select_activity()}
+                  {activityStrategyName ? getActivityLabel(activityStrategyName) : m.storyboard_settings_select_activity()}
                 </SelectValue>
               </SelectTrigger>
               <SelectContent align="start">
                 {activityNames.map((name) => (
                   <SelectItem key={name} value={name}>
-                    {titleCase(name.replace(/^activity_/, ""))}
+                    {getActivityLabel(name)}
                   </SelectItem>
                 ))}
               </SelectContent>

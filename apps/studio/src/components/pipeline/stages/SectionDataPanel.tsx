@@ -23,6 +23,19 @@ import {
 } from "@/components/ui/select"
 import type { PageSection } from "@adt/types"
 import * as m from "@/paraglide/messages"
+import { getSectionTypeDescKey, getSectionTypeLabelKey } from "@/lib/section-constants"
+
+function getSectionTypeDisplayLabel(value: string): string {
+  const labelKey = getSectionTypeLabelKey(value)
+  if (labelKey && labelKey in m) return (m as unknown as Record<string, () => string>)[labelKey]()
+  return value.replace(/_/g, " ")
+}
+
+function getSectionTypeDisplayDescription(value: string, configDesc: string): string {
+  const descKey = getSectionTypeDescKey(value)
+  if (descKey && descKey in m) return (m as unknown as Record<string, () => string>)[descKey]()
+  return configDesc
+}
 
 // -- Types --
 
@@ -348,21 +361,23 @@ export function SectionDataPanel({
               onValueChange={onChangeSectionType}
             >
               <SelectTrigger className="h-6 text-[10px] font-medium px-1.5 py-0 w-auto min-w-[80px] border-0 bg-muted/50">
-                <SelectValue>{section.sectionType}</SelectValue>
+                <SelectValue>
+                  {getSectionTypeDisplayLabel(section.sectionType)}
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 {Object.entries(sectionTypes).map(([key, desc]) => (
                   <SelectItem key={key} value={key} className="text-xs">
-                    {key}
+                    {getSectionTypeDisplayLabel(key)}
                     <span className="ml-1 text-muted-foreground text-[10px]">
-                      {desc}
+                      {getSectionTypeDisplayDescription(key, desc)}
                     </span>
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           ) : (
-            <span className="font-medium">{section.sectionType}</span>
+            <span className="font-medium">{getSectionTypeDisplayLabel(section.sectionType)}</span>
           )}
           {/* Re-render button — right next to section type */}
           <div className="relative">
