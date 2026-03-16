@@ -1,7 +1,7 @@
 import { StrictMode } from "react"
 import { createRoot } from "react-dom/client"
 import { RouterProvider, createRouter } from "@tanstack/react-router"
-import { deLocalizeUrl, localizeUrl } from './paraglide/runtime'
+import { deLocalizeUrl, extractLocaleFromUrl, localizeUrl, setLocale } from "./paraglide/runtime"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { routeTree } from "./routeTree.gen"
 import "./styles/globals.css"
@@ -18,7 +18,11 @@ const queryClient = new QueryClient({
 const router = createRouter({
   routeTree,
   rewrite: {
-    input: ({ url }) => deLocalizeUrl(url),
+    input: ({ url }) => {
+      const nextLocale = extractLocaleFromUrl(url.href)
+      if (nextLocale) void setLocale(nextLocale, { reload: false })
+      return deLocalizeUrl(url)
+    },
     output: ({ url }) => localizeUrl(url),
   },
 })
