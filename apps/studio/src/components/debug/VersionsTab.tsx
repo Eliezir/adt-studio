@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/select"
 import { Input } from "@/components/ui/input"
 import { useVersionHistory } from "@/hooks/use-debug"
+import * as m from "@/paraglide/messages"
 
 const NODE_TYPES = [
   "text-classification",
@@ -38,7 +39,9 @@ function VersionRow({ version, data }: { version: number; data?: unknown }) {
         ) : (
           <ChevronRight className="h-3.5 w-3.5 shrink-0" />
         )}
-        <span className="font-medium">Version {version}</span>
+        <span className="font-medium">
+          {m.versions_version_label({ version: String(version) })}
+        </span>
       </Button>
       {expanded && data != null && (
         <div className="px-4 py-3 bg-muted/20">
@@ -49,7 +52,7 @@ function VersionRow({ version, data }: { version: number; data?: unknown }) {
       )}
       {expanded && data == null && (
         <div className="px-4 py-3 text-xs text-muted-foreground">
-          No data available for this version.
+          {m.versions_no_data()}
         </div>
       )}
     </div>
@@ -72,7 +75,7 @@ export function VersionsTab({ label }: VersionsTabProps) {
       <div className="flex items-center gap-3 px-4 py-2.5 border-b border-border shrink-0">
         <Select value={node} onValueChange={setNode}>
           <SelectTrigger className="h-7 w-48 text-xs">
-            <SelectValue placeholder="Select node type" />
+            <SelectValue placeholder={m.versions_select_node_type()} />
           </SelectTrigger>
           <SelectContent>
             {NODE_TYPES.map((n) => (
@@ -84,7 +87,7 @@ export function VersionsTab({ label }: VersionsTabProps) {
         </Select>
 
         <Input
-          placeholder="Item ID (e.g. book_p1)"
+          placeholder={m.versions_item_id_placeholder()}
           className="h-7 w-56 text-xs"
           value={itemId}
           onChange={(e) => setItemId(e.target.value)}
@@ -94,17 +97,19 @@ export function VersionsTab({ label }: VersionsTabProps) {
       <div className="flex-1 overflow-auto min-h-0">
         {!node || !itemId ? (
           <div className="p-6 text-xs text-muted-foreground">
-            Select a node type and enter an item ID to view version history.
+            {m.versions_select_prompt()}
           </div>
         ) : isLoading ? (
-          <div className="p-6 text-xs text-muted-foreground">Loading versions...</div>
+          <div className="p-6 text-xs text-muted-foreground">
+            {m.versions_loading()}
+          </div>
         ) : error ? (
           <div className="p-6 text-xs text-destructive">
-            Failed to load versions: {error.message}
+            {m.versions_failed()} {error.message}
           </div>
         ) : data && data.versions.length === 0 ? (
           <div className="p-6 text-xs text-muted-foreground">
-            No versions found for {node} / {itemId}.
+            {m.versions_none_found({ node, itemId })}
           </div>
         ) : (
           data?.versions.map((v) => (

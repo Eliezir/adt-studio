@@ -1,5 +1,6 @@
 import { useActiveConfig } from "@/hooks/use-debug"
 import { Badge } from "@/components/ui/badge"
+import * as m from "@/paraglide/messages"
 
 interface ConfigTabProps {
   label: string
@@ -24,13 +25,17 @@ export function ConfigTab({ label }: ConfigTabProps) {
   const { data, isLoading, error } = useActiveConfig(label)
 
   if (isLoading) {
-    return <div className="p-6 text-sm text-muted-foreground">Loading config...</div>
+    return (
+      <div className="p-6 text-sm text-muted-foreground">
+        {m.config_loading()}
+      </div>
+    )
   }
 
   if (error) {
     return (
       <div className="p-6 text-sm text-destructive">
-        Failed to load config: {error.message}
+        {m.config_failed()} {error.message}
       </div>
     )
   }
@@ -41,16 +46,16 @@ export function ConfigTab({ label }: ConfigTabProps) {
   const config = merged as Record<string, unknown>
 
   const sections = [
-    { key: "text_types", title: "Text Types" },
-    { key: "group_types", title: "Group Types" },
-    { key: "section_types", title: "Section Types" },
-    { key: "metadata_extraction", title: "Metadata Extraction" },
-    { key: "text_classification", title: "Text Classification" },
-    { key: "image_filters", title: "Image Filtering" },
-    { key: "page_sectioning", title: "Page Sectioning" },
-    { key: "default_render_strategy", title: "Default Render Strategy" },
-    { key: "render_strategies", title: "Render Strategies" },
-    { key: "section_render_strategies", title: "Section Render Strategies" },
+    { key: "text_types", title: m.config_text_types() },
+    { key: "group_types", title: m.config_group_types() },
+    { key: "section_types", title: m.config_section_types() },
+    { key: "metadata_extraction", title: m.config_metadata_extraction() },
+    { key: "text_classification", title: m.config_text_classification() },
+    { key: "image_filters", title: m.config_image_filters() },
+    { key: "page_sectioning", title: m.config_page_sectioning() },
+    { key: "default_render_strategy", title: m.config_default_render_strategy() },
+    { key: "render_strategies", title: m.config_render_strategies() },
+    { key: "section_render_strategies", title: m.config_section_render_strategies() },
   ]
 
   const knownKeys = new Set(sections.map((s) => s.key))
@@ -59,11 +64,17 @@ export function ConfigTab({ label }: ConfigTabProps) {
   return (
     <div className="p-6 space-y-4">
       <div className="flex items-center gap-3">
-        <span className="text-sm font-medium">Active Configuration</span>
+        <span className="text-sm font-medium">
+          {m.config_active_configuration()}
+        </span>
         {hasBookOverride ? (
-          <Badge variant="default" className="text-xs">Book Override</Badge>
+          <Badge variant="default" className="text-xs">
+            {m.config_book_override()}
+          </Badge>
         ) : (
-          <Badge variant="secondary" className="text-xs">Global Only</Badge>
+          <Badge variant="secondary" className="text-xs">
+            {m.config_global_only()}
+          </Badge>
         )}
       </div>
 

@@ -13,6 +13,7 @@ import {
 import { cn } from "@/lib/utils"
 import { useLlmLogs } from "@/hooks/use-debug"
 import { BASE_URL, type LlmLogEntry } from "@/api/client"
+import * as m from "@/paraglide/messages"
 
 const STEPS = [
   "extract",
@@ -48,9 +49,9 @@ const STATUS_DOT: Record<RowStatus, string> = {
 }
 
 const STATUS_LABEL: Record<RowStatus, string> = {
-  success: "Success",
-  cached: "Cached",
-  error: "Error",
+  success: m.llm_logs_status_success(),
+  cached: m.llm_logs_status_cached(),
+  error: m.llm_logs_status_error(),
 }
 
 function formatSeconds(ms: number): string {
@@ -62,8 +63,12 @@ function formatSeconds(ms: number): string {
 function formatTimestamp(iso: string): string {
   const d = new Date(iso)
   const diff = Date.now() - d.getTime()
-  if (diff < 60_000) return `${Math.floor(diff / 1000)}s ago`
-  if (diff < 3600_000) return `${Math.floor(diff / 60_000)}m ago`
+  if (diff < 60_000) {
+    return m.llm_logs_seconds_ago({ seconds: String(Math.floor(diff / 1000)) })
+  }
+  if (diff < 3600_000) {
+    return m.llm_logs_minutes_ago({ minutes: String(Math.floor(diff / 60_000)) })
+  }
   return d.toLocaleTimeString()
 }
 
@@ -79,31 +84,43 @@ function LogDetail({ data, label }: { data: LlmLogEntry["data"]; label: string }
       <div className="px-4 py-3 bg-muted/20 space-y-3 text-xs">
         <div className="grid grid-cols-4 lg:grid-cols-6 gap-3">
           <div>
-            <div className="text-muted-foreground mb-0.5">Prompt</div>
+            <div className="text-muted-foreground mb-0.5">
+              {m.llm_logs_prompt()}
+            </div>
             <div className="font-medium">{data.promptName}</div>
           </div>
           <div>
-            <div className="text-muted-foreground mb-0.5">Model</div>
+            <div className="text-muted-foreground mb-0.5">
+              {m.llm_logs_model()}
+            </div>
             <div className="font-medium">{data.modelId}</div>
           </div>
           <div>
-            <div className="text-muted-foreground mb-0.5">Duration</div>
+            <div className="text-muted-foreground mb-0.5">
+              {m.llm_logs_duration()}
+            </div>
             <div className="font-medium">{formatSeconds(data.durationMs)}</div>
           </div>
           <div>
-            <div className="text-muted-foreground mb-0.5">Cache</div>
+            <div className="text-muted-foreground mb-0.5">
+              {m.llm_logs_cache()}
+            </div>
             <div className="font-medium">{data.cacheHit ? "Hit" : "Miss"}</div>
           </div>
           {data.usage && (
             <>
               <div>
-                <div className="text-muted-foreground mb-0.5">Input Tokens</div>
+                <div className="text-muted-foreground mb-0.5">
+                  {m.llm_logs_input_tokens()}
+                </div>
                 <div className="font-medium tabular-nums">
                   {data.usage.inputTokens.toLocaleString()}
                 </div>
               </div>
               <div>
-                <div className="text-muted-foreground mb-0.5">Output Tokens</div>
+                <div className="text-muted-foreground mb-0.5">
+                  {m.llm_logs_output_tokens()}
+                </div>
                 <div className="font-medium tabular-nums">
                   {data.usage.outputTokens.toLocaleString()}
                 </div>
@@ -114,7 +131,9 @@ function LogDetail({ data, label }: { data: LlmLogEntry["data"]; label: string }
 
         {data.system && (
           <div>
-            <div className="font-medium text-muted-foreground mb-1">System Prompt</div>
+            <div className="font-medium text-muted-foreground mb-1">
+              {m.llm_logs_system_prompt()}
+            </div>
             <pre className="bg-muted p-3 rounded text-[11px] whitespace-pre-wrap max-h-48 overflow-auto">
               {data.system}
             </pre>
@@ -123,7 +142,9 @@ function LogDetail({ data, label }: { data: LlmLogEntry["data"]; label: string }
 
         {data.messages.length > 0 && (
           <div>
-            <div className="font-medium text-muted-foreground mb-1">Messages</div>
+            <div className="font-medium text-muted-foreground mb-1">
+              {m.llm_logs_messages()}
+            </div>
             <div className="space-y-2">
               {data.messages.map((msg, i) => (
                 <div key={i} className="bg-muted p-3 rounded">
@@ -161,7 +182,9 @@ function LogDetail({ data, label }: { data: LlmLogEntry["data"]; label: string }
           <div>
             <div className="font-medium text-destructive mb-1 flex items-center gap-1">
               <AlertTriangle className="h-3 w-3" />
-              Validation Errors ({data.validationErrors.length})
+              {m.llm_logs_validation_errors({
+                count: String(data.validationErrors.length),
+              })}
             </div>
             <pre className="bg-red-50 dark:bg-red-950/30 p-3 rounded text-[11px] whitespace-pre-wrap text-destructive">
               {data.validationErrors.join("\n")}
@@ -245,16 +268,22 @@ export function LlmLogsTab({ label, isRunning }: LlmLogsTabProps) {
         {isRunning && (
           <span className="flex items-center gap-1.5 text-xs text-green-600 dark:text-green-400 font-medium shrink-0">
             <span className="inline-block h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse" />
-            Live
+            {m.llm_logs_live()}
           </span>
         )}
 
-        <Select value={stepFilter} onValueChange={(v) => { setStepFilter(v === " " ? "" : v); setOffset(0) }}>
+        <Select
+          value={stepFilter}
+          onValueChange={(v) => {
+            setStepFilter(v === " " ? "" : v)
+            setOffset(0)
+          }}
+        >
           <SelectTrigger className="h-7 w-36 text-xs">
-            <SelectValue placeholder="All steps" />
+            <SelectValue placeholder={m.llm_logs_all_steps()} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value=" ">All steps</SelectItem>
+            <SelectItem value=" ">{m.llm_logs_all_steps()}</SelectItem>
             {STEPS.map((s) => (
               <SelectItem key={s} value={s}>{s}</SelectItem>
             ))}
@@ -262,10 +291,13 @@ export function LlmLogsTab({ label, isRunning }: LlmLogsTabProps) {
         </Select>
 
         <Input
-          placeholder="Filter by item ID..."
+          placeholder={m.llm_logs_filter_item_id()}
           className="h-7 w-36 text-xs"
           value={itemIdFilter}
-          onChange={(e) => { setItemIdFilter(e.target.value); setOffset(0) }}
+          onChange={(e) => {
+            setItemIdFilter(e.target.value)
+            setOffset(0)
+          }}
         />
 
         <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => void refetch()}>
@@ -276,13 +308,16 @@ export function LlmLogsTab({ label, isRunning }: LlmLogsTabProps) {
 
         <div className="hidden lg:flex items-center gap-3 text-[10px] text-muted-foreground">
           <span className="flex items-center gap-1">
-            <span className="h-2 w-2 rounded-full bg-green-500" /> Success
+            <span className="h-2 w-2 rounded-full bg-green-500" />{" "}
+            {m.llm_logs_status_success()}
           </span>
           <span className="flex items-center gap-1">
-            <span className="h-2 w-2 rounded-full bg-yellow-400" /> Cached
+            <span className="h-2 w-2 rounded-full bg-yellow-400" />{" "}
+            {m.llm_logs_status_cached()}
           </span>
           <span className="flex items-center gap-1">
-            <span className="h-2 w-2 rounded-full bg-red-500" /> Error
+            <span className="h-2 w-2 rounded-full bg-red-500" />{" "}
+            {m.llm_logs_status_error()}
           </span>
         </div>
       </div>
@@ -292,13 +327,13 @@ export function LlmLogsTab({ label, isRunning }: LlmLogsTabProps) {
           <thead className="sticky top-0 bg-muted/50 backdrop-blur-sm z-10">
             <tr className="border-b border-border/50 text-[10px] text-muted-foreground font-medium">
               <th className="w-6 py-1.5 pl-4 pr-1 text-left" />
-              <th className="py-1.5 px-2 text-left whitespace-nowrap">Time</th>
-              <th className="py-1.5 px-2 text-left">Step</th>
-              <th className="py-1.5 px-2 text-left">Item</th>
-              <th className="py-1.5 px-2 text-left">Prompt</th>
-              <th className="py-1.5 px-2 text-left">Model</th>
-              <th className="py-1.5 px-2 text-right whitespace-nowrap">Duration</th>
-              <th className="py-1.5 px-2 pr-4 text-right">Tokens</th>
+              <th className="py-1.5 px-2 text-left whitespace-nowrap">{m.llm_logs_time()}</th>
+              <th className="py-1.5 px-2 text-left">{m.llm_logs_step()}</th>
+              <th className="py-1.5 px-2 text-left">{m.llm_logs_item()}</th>
+              <th className="py-1.5 px-2 text-left">{m.llm_logs_prompt()}</th>
+              <th className="py-1.5 px-2 text-left">{m.llm_logs_model()}</th>
+              <th className="py-1.5 px-2 text-right whitespace-nowrap">{m.llm_logs_duration()}</th>
+              <th className="py-1.5 px-2 pr-4 text-right">{m.llm_logs_tokens()}</th>
             </tr>
           </thead>
           <tbody>
@@ -337,7 +372,7 @@ export function LlmLogsTab({ label, isRunning }: LlmLogsTabProps) {
                 disabled={offset === 0}
                 onClick={() => setOffset(Math.max(0, offset - limit))}
               >
-                Prev
+                {m.llm_logs_prev()}
               </Button>
               <Button
                 variant="outline"
@@ -346,7 +381,7 @@ export function LlmLogsTab({ label, isRunning }: LlmLogsTabProps) {
                 disabled={offset + limit >= data.total}
                 onClick={() => setOffset(offset + limit)}
               >
-                Next
+                {m.llm_logs_next()}
               </Button>
             </div>
           </div>

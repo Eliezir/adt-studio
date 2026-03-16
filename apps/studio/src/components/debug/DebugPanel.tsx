@@ -6,6 +6,7 @@ import { StatsTab } from "./StatsTab"
 import { LlmLogsTab } from "./LlmLogsTab"
 import { ConfigTab } from "./ConfigTab"
 import { VersionsTab } from "./VersionsTab"
+import * as m from "@/paraglide/messages"
 
 const MIN_HEIGHT = 200
 const MAX_HEIGHT_VH = 0.8
@@ -72,30 +73,32 @@ export function DebugPanel({ label, isRunning, onClose }: DebugPanelProps) {
         <div className="flex items-center gap-2 px-3 py-1 border-b border-border shrink-0">
           <TabsList className="h-8">
             <TabsTrigger value="stats" className="text-xs px-2 py-1">
-              Stats
+              {m.debug_tab_stats()}
             </TabsTrigger>
             <TabsTrigger value="logs" className="text-xs px-2 py-1">
-              Logs
+              {m.debug_tab_logs()}
               {isRunning && (
                 <span className="ml-1 inline-flex h-2 w-2 rounded-full bg-green-500 animate-pulse" />
               )}
             </TabsTrigger>
             <TabsTrigger value="config" className="text-xs px-2 py-1">
-              Config
+              {m.debug_tab_config()}
             </TabsTrigger>
             <TabsTrigger value="versions" className="text-xs px-2 py-1">
-              Versions
+              {m.debug_tab_versions()}
             </TabsTrigger>
           </TabsList>
 
           <div className="flex-1" />
-          <span className="text-xs text-muted-foreground">Debug Panel</span>
+          <span className="text-xs text-muted-foreground">
+            {m.debug_panel_title()}
+          </span>
 
           <Button
             variant="ghost"
             size="icon"
             className="h-6 w-6"
-            title="Pop out to new window"
+            title={m.debug_popout_title()}
             onClick={() => {
               window.open(
                 `/books/${label}/debug`,
