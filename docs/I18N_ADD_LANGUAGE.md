@@ -38,6 +38,11 @@ It must include the Inlang schema header:
 
 Then add translations for the keys you need. The keys are shared across all locales.
 
+Fallback behavior:
+
+- **Missing keys fall back to English (`en`)** at runtime (the base locale).
+- If a key is missing in `en` itself, it’s treated as missing content (so always add new keys to `en.json` first).
+
 ### Message keys and naming convention
 
 Paraglide compiles each message key into a **tree-shakeable function** (e.g. `m.storyboard_settings_save()`), which is why keys must be **stable** and **valid JS identifiers**.
@@ -96,8 +101,4 @@ Verify:
 - Visiting a localized URL renders the correct locale.
 - Navigating to an unlocalized URL returns to the base locale.
 
-### 5) Sanity check
-
-- Run `pnpm typecheck` and/or `pnpm lint`
-- Open the app and spot-check key screens in the new locale.
 
