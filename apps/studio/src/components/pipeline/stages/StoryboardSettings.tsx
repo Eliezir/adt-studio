@@ -712,7 +712,7 @@ export function StoryboardSettings({ bookLabel, headerTarget, tab = "general" }:
                   markDirty("page_sectioning")
                 }}
               >
-                <SelectTrigger className="w-72">
+                <SelectTrigger className="w-72 h-fit">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent align="start">
