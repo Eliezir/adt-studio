@@ -7,6 +7,7 @@ import {
   BookOpen,
   Languages,
   Eye,
+  FileDown,
   type LucideIcon,
 } from "lucide-react"
 
@@ -19,6 +20,7 @@ export const STAGES = [
   { slug: "glossary", label: "Glossary", runningLabel: "Generating Glossary", icon: BookOpen, color: "bg-lime-600", hex: "#65a30d", textColor: "text-lime-600", bgLight: "bg-lime-50", borderColor: "border-lime-200", borderDark: "border-lime-600" },
   { slug: "text-and-speech", label: "Text & Speech", runningLabel: "Generating Text & Speech", icon: Languages, color: "bg-pink-600", hex: "#db2777", textColor: "text-pink-600", bgLight: "bg-pink-50", borderColor: "border-pink-200", borderDark: "border-pink-600" },
   { slug: "preview", label: "Preview", runningLabel: "Building Preview", icon: Eye, color: "bg-gray-600", hex: "#4b5563", textColor: "text-gray-600", bgLight: "bg-gray-50", borderColor: "border-gray-200", borderDark: "border-gray-600" },
+  { slug: "export", label: "Export", runningLabel: "Exporting", icon: FileDown, color: "bg-emerald-600", hex: "#059669", textColor: "text-emerald-600", bgLight: "bg-emerald-50", borderColor: "border-emerald-200", borderDark: "border-emerald-600" },
 ] as const satisfies ReadonlyArray<{
   slug: string
   label: string
@@ -33,7 +35,7 @@ export const STAGES = [
 }>
 
 export type StageSlug = (typeof STAGES)[number]["slug"]
-export type PipelineStageSlug = Exclude<StageSlug, "book">
+export type PipelineStageSlug = Exclude<StageSlug, "book" | "export">
 export type StageDefinition = (typeof STAGES)[number]
 export type PipelineStageDefinition = Extract<StageDefinition, { slug: PipelineStageSlug }>
 
@@ -66,7 +68,7 @@ export function hasStagePages(slug: string): boolean {
 }
 
 export function isPipelineStage(stage: StageDefinition): stage is PipelineStageDefinition {
-  return stage.slug !== "book"
+  return stage.slug !== "book" && stage.slug !== "export"
 }
 
 export function getPipelineStages(): PipelineStageDefinition[] {

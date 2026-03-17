@@ -2,8 +2,6 @@ import { useState, useEffect, useRef, useCallback } from "react"
 import { createPortal } from "react-dom"
 import { Link, useMatchRoute, useSearch } from "@tanstack/react-router"
 import {
-  FileDown,
-  Loader2,
   RotateCcw,
   Settings,
 } from "lucide-react"
@@ -12,7 +10,6 @@ import { Button } from "@/components/ui/button"
 import { useBookRun } from "@/hooks/use-book-run"
 import { StepProgressRing } from "./StepProgressRing"
 import { usePages, usePageImage } from "@/hooks/use-pages"
-import { useExportBook } from "@/hooks/use-books"
 import {
   STAGES,
   hasStagePages,
@@ -113,6 +110,8 @@ export function StageSidebar({
     flex1:     "flex-1",
   }
 
+  const storyboardDone = stageState("storyboard") === "done"
+
   const stageItems = STAGES.map((step, index) => {
     const isActive = step.slug === activeStep
     const Icon = step.icon
@@ -121,6 +120,15 @@ export function StageSidebar({
     const state = stageState(step.slug)
     const stageCompleted = state === "done"
     const ringState = state
+
+    // "book" is always filled; "preview" and "export" fill once storyboard is done;
+    // pipeline stages fill when their own stage is completed.
+    const iconFilled =
+      step.slug === "book"
+        ? true
+        : step.slug === "preview" || step.slug === "export"
+          ? storyboardDone
+          : stageCompleted
 
     return (
       <div key={step.slug} className="relative">
@@ -151,7 +159,7 @@ export function StageSidebar({
               <div
                 className={cn(
                   "flex items-center justify-center w-7 h-7 rounded-full transition-colors",
-                  step.slug === "book" || stageCompleted
+                  iconFilled
                     ? isActive
                       ? "bg-white/20 text-white"
                       : cn(step.color, "text-white")
@@ -283,10 +291,6 @@ export function StageSidebar({
         )}
       </div>
 
-      {/* Export button — fixed at the bottom, outside the expanding rail */}
-      <div className="shrink-0 border-t py-2 px-1.5">
-        <ExportButton bookLabel={bookLabel} />
-      </div>
     </nav>
   )
 }
@@ -484,43 +488,3 @@ function PageRow({
   )
 }
 
-/* ---------- ExportButton ---------- */
-
-function ExportButton({ bookLabel }: { bookLabel: string }) {
-  const exportBook = useExportBook()
-
-  const errorMessage = exportBook.isError
-    ? exportBook.error.name === "TimeoutError"
-      ? "Export timed out — the book may be too large"
-      : exportBook.error.message
-    : null
-
-  return (
-    <div className="flex flex-col gap-1">
-      <Button
-        variant="outline"
-        size="sm"
-        className={cn(
-          "w-full h-7 text-xs",
-          exportBook.isError
-            ? "bg-red-50 text-red-600 border-red-200 hover:bg-red-100"
-            : "bg-violet-50 text-violet-600 border-violet-200 hover:bg-violet-100",
-        )}
-        onClick={() => exportBook.mutate(bookLabel)}
-        disabled={exportBook.isPending}
-      >
-        {exportBook.isPending ? (
-          <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
-        ) : (
-          <FileDown className="mr-1.5 h-3.5 w-3.5" />
-        )}
-        {exportBook.isError ? "Retry Export" : "Export"}
-      </Button>
-      {errorMessage && (
-        <p className="text-[10px] leading-tight text-red-500 px-0.5">
-          {errorMessage}
-        </p>
-      )}
-    </div>
-  )
-}

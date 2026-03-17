@@ -722,4 +722,20 @@ export const api = {
     const buf = await res.arrayBuffer()
     return new Blob([buf], { type: "application/zip" })
   },
+
+  exportWebpub: async (label: string): Promise<Blob> => {
+    const url = `${BASE_URL}/books/${label}/export-webpub`
+    const res = await fetch(url, {
+      method: "GET",
+      headers: { Accept: "application/zip" },
+      mode: "cors",
+      signal: AbortSignal.timeout(300_000),
+    })
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({ error: res.statusText }))
+      throw new Error(body.error ?? `WebPub export failed: ${res.status}`)
+    }
+    const buf = await res.arrayBuffer()
+    return new Blob([buf], { type: "application/zip" })
+  },
 }

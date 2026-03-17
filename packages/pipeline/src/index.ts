@@ -173,6 +173,7 @@ export {
 } from "./dag.js"
 export {
   packageAdtWeb,
+  packageWebpub,
   type PackageAdtWebOptions,
   renderPageHtml,
   NAV_HTML,

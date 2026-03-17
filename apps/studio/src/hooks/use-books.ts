@@ -84,6 +84,42 @@ export function useExportBook() {
   })
 }
 
+export function useExportWebpub() {
+  return useMutation({
+    mutationFn: (label: string) => api.exportWebpub(label),
+    onSuccess: async (blob, label) => {
+      if (BASE_URL.startsWith("http")) {
+        try {
+          const { save } = await import("@tauri-apps/plugin-dialog")
+          const { writeFile } = await import("@tauri-apps/plugin-fs")
+          const savePath = await save({
+            defaultPath: `${label}.webpub`,
+            filters: [{ name: "WebPub", extensions: ["webpub"] }],
+          })
+          if (savePath) {
+            const buf = await blob.arrayBuffer()
+            await writeFile(savePath, new Uint8Array(buf))
+          }
+        } catch (err) {
+          console.error("WebPub export failed:", err)
+          throw err
+        }
+      } else {
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement("a")
+        a.href = url
+        a.download = `${label}.webpub`
+        document.body.appendChild(a)
+        a.click()
+        setTimeout(() => {
+          document.body.removeChild(a)
+          URL.revokeObjectURL(url)
+        }, 1500)
+      }
+    },
+  })
+}
+
 export function usePackageAdt() {
   const queryClient = useQueryClient()
   return useMutation({

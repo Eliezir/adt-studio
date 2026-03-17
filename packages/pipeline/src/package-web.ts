@@ -8,6 +8,7 @@ import type {
   GlossaryOutput,
   QuizGenerationOutput,
   BookSummaryOutput,
+  BookMetadata,
   TTSOutput,
   Quiz,
 } from "@adt/types"
@@ -433,6 +434,214 @@ export async function packageAdtWeb(
 
   progress.emit({ type: "step-complete", step })
 }
+
+// ---------------------------------------------------------------------------
+// WebPub packaging
+// ---------------------------------------------------------------------------
+
+const WEBPUB_MIME_TYPES: Record<string, string> = {
+  ".html": "text/html",
+  ".css": "text/css",
+  ".png": "image/png",
+  ".jpg": "image/jpeg",
+  ".jpeg": "image/jpeg",
+  ".mp3": "audio/mpeg",
+  ".js": "application/javascript",
+  ".json": "application/json",
+}
+
+/**
+ * Package the book as a Readium WebPub directory at `{bookDir}/webpub/`.
+ *
+ * Assumes ADT web packaging has already been run (i.e. `{bookDir}/adt/` exists).
+ * Copies the ADT directory to `{bookDir}/webpub/`, adds a Readium WebPub
+ * manifest, and tweaks config for embedded reading. The caller is responsible
+ * for zipping the result into a `.webpub` file.
+ */
+export function packageWebpub(
+  storage: Storage,
+  options: PackageAdtWebOptions,
+): void {
+  const { bookDir, title } = options
+
+  const adtDir = path.join(bookDir, "adt")
+  if (!fs.existsSync(adtDir)) {
+    throw new Error("ADT package not found — run packageAdtWeb first")
+  }
+
+  const webpubDir = path.join(bookDir, "webpub")
+
+  // Copy adt/ -> webpub/
+  if (fs.existsSync(webpubDir)) fs.rmSync(webpubDir, { recursive: true })
+  copyDirRecursive(adtDir, webpubDir)
+
+  // Override config: disable navigation controls and tutorial for embedded reading
+  const configPath = path.join(webpubDir, "assets", "config.json")
+  if (fs.existsSync(configPath)) {
+    const config = JSON.parse(fs.readFileSync(configPath, "utf-8"))
+    config.features.showNavigationControls = false
+    config.features.showTutorial = false
+    writeJson(configPath, config)
+  }
+
+  // Inject CSS into HTML pages to prevent readers (e.g. Thorium) from applying
+  // column-based pagination which breaks the single-page ADT layout.
+  injectWebpubStyles(webpubDir)
+
+  // Load metadata for manifest
+  const metadataRow = storage.getLatestNodeData("metadata", "book")
+  const metadata = metadataRow?.data as BookMetadata | undefined
+
+  const manifestMetadata: Record<string, unknown> = {
+    "@type": "http://schema.org/Book",
+    title,
+    language: options.language,
+    modified: new Date().toISOString(),
+    // Tell readers to scroll each page rather than paginating into columns,
+    // and not to display two pages side-by-side (spread).
+    presentation: {
+      overflow: "scrolled",
+      spread: "none",
+    },
+  }
+  if (metadata?.authors?.length) {
+    manifestMetadata.author = metadata.authors.join(", ")
+  }
+  if (metadata?.publisher) {
+    manifestMetadata.publisher = metadata.publisher
+  }
+
+  // Links
+  const links: Array<Record<string, string>> = [
+    { rel: "self", href: "manifest.json", type: "application/webpub+json" },
+  ]
+  for (const [filename, mimeType] of [
+    ["cover.png", "image/png"],
+    ["cover.jpg", "image/jpeg"],
+    ["cover.jpeg", "image/jpeg"],
+  ] as const) {
+    if (fs.existsSync(path.join(webpubDir, filename))) {
+      links.push({ rel: "cover", href: filename, type: mimeType })
+      break
+    }
+  }
+
+  // Reading order from pages.json
+  const pagesPath = path.join(webpubDir, "content", "pages.json")
+  const pageList = JSON.parse(fs.readFileSync(pagesPath, "utf-8")) as PageEntry[]
+  const readingOrder = pageList.map((page) => ({
+    href: page.href,
+    type: "text/html",
+    title: page.page_number != null ? String(page.page_number) : page.section_id,
+  }))
+
+  // Enumerate all files as resources
+  const resources: Array<{ href: string; type: string }> = []
+  collectWebpubResources(webpubDir, webpubDir, resources)
+
+  // Write manifest
+  const manifest = {
+    "@context": "https://readium.org/webpub-manifest/context.jsonld",
+    metadata: manifestMetadata,
+    links,
+    readingOrder,
+    resources,
+  }
+  writeJson(path.join(webpubDir, "manifest.json"), manifest)
+}
+
+const WEBPUB_OVERRIDE_CSS = `<style>
+/* ── WebPub / EPUB reader overrides ──
+   EPUB readers like Thorium inject their own column-based pagination.
+   The ADT pages use Tailwind flex centering and responsive breakpoints
+   that don't work well in reflowable EPUB viewports. Override everything
+   to simple block flow with single-column layout. */
+
+/* Prevent reader column pagination */
+:root, html, body {
+  columns: auto !important;
+  column-width: auto !important;
+  column-count: auto !important;
+  column-gap: normal !important;
+  overflow: visible !important;
+}
+
+/* Body: block flow, no flex centering, no viewport-height minimum */
+body {
+  display: block !important;
+  min-height: auto !important;
+  height: auto !important;
+  max-width: none !important;
+  max-height: none !important;
+}
+
+/* Content wrapper: block flow, visible (JS fade-in won't run in readers) */
+#content {
+  display: block !important;
+  min-height: auto !important;
+  height: auto !important;
+  max-width: 100% !important;
+  opacity: 1 !important;
+}
+
+/* Force single-column layout for all section containers.
+   Side-by-side (lg:flex-row) layouts squeeze text in narrow
+   reader viewports. */
+section > div {
+  flex-direction: column !important;
+  max-width: 100% !important;
+}
+
+/* Remove max-width constraints on nested containers (max-w-6xl, max-w-xl, etc.) */
+.container,
+section [class*="max-w-"] {
+  max-width: 100% !important;
+}
+
+/* Responsive images */
+img {
+  max-width: 100% !important;
+  height: auto !important;
+}
+</style>`
+
+/**
+ * Walk all .html files in `dir` and inject a `<style>` block right before
+ * `</head>` that overrides reader-injected column pagination CSS.
+ */
+function injectWebpubStyles(dir: string): void {
+  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+    const fullPath = path.join(dir, entry.name)
+    if (entry.isDirectory()) {
+      injectWebpubStyles(fullPath)
+    } else if (entry.isFile() && entry.name.endsWith(".html")) {
+      let html = fs.readFileSync(fullPath, "utf-8")
+      html = html.replace("</head>", `${WEBPUB_OVERRIDE_CSS}\n</head>`)
+      fs.writeFileSync(fullPath, html)
+    }
+  }
+}
+
+function collectWebpubResources(
+  baseDir: string,
+  dir: string,
+  out: Array<{ href: string; type: string }>,
+): void {
+  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+    const fullPath = path.join(dir, entry.name)
+    if (entry.isDirectory()) {
+      collectWebpubResources(baseDir, fullPath, out)
+    } else if (entry.isFile()) {
+      const relPath = path.relative(baseDir, fullPath).replace(/\\/g, "/")
+      const ext = path.extname(entry.name).toLowerCase()
+      out.push({
+        href: relPath,
+        type: WEBPUB_MIME_TYPES[ext] ?? "application/octet-stream",
+      })
+    }
+  }
+}
+
 
 // ---------------------------------------------------------------------------
 // HTML generation

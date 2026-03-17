@@ -12,7 +12,7 @@ import {
   getBookConfig,
   updateBookConfig,
 } from "../services/book-service.js"
-import { exportBook } from "../services/export-service.js"
+import { exportBook, exportWebpub } from "../services/export-service.js"
 
 const MIME_TYPES: Record<string, string> = {
   ".html": "text/html; charset=utf-8",
@@ -152,6 +152,31 @@ export function createBookRoutes(
         `attachment; filename="${result.filename}"`
       )
       return c.body(Buffer.from(result.zipBuffer))
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err)
+      if (message.includes("Web assets directory not found")) {
+        throw new HTTPException(500, { message })
+      }
+      if (message.includes("Book not found")) {
+        throw new HTTPException(404, { message })
+      }
+      throw new HTTPException(400, { message })
+    }
+  })
+
+  // GET /books/:label/export-webpub — Download book as WebPub
+  app.get("/books/:label/export-webpub", async (c) => {
+    const { label } = c.req.param()
+    try {
+      const result = await exportWebpub(label, booksDir, webAssetsDir ?? "", configPath)
+      c.header("Content-Type", "application/zip")
+      // Use RFC 5987 filename* for non-ASCII titles, with ASCII fallback
+      const encodedName = encodeURIComponent(result.filename)
+      c.header(
+        "Content-Disposition",
+        `attachment; filename="${result.safeFilename}"; filename*=UTF-8''${encodedName}`
+      )
+      return c.body(Buffer.from(result.webpubBuffer))
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err)
       if (message.includes("Web assets directory not found")) {

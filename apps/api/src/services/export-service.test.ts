@@ -2,9 +2,9 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest"
 import fs from "node:fs"
 import os from "node:os"
 import path from "node:path"
-import { openBookDb } from "@adt/storage"
+import { openBookDb, createBookStorage } from "@adt/storage"
 import { unzipSync } from "fflate"
-import { exportBook } from "./export-service.js"
+import { exportBook, exportWebpub } from "./export-service.js"
 
 let tmpDir: string
 let webAssetsDir: string
@@ -160,5 +160,163 @@ describe("exportBook", () => {
     expect(paths).toContain("config.yaml")
     expect(paths).toContain("images/img-a.png")
     expect(paths).toContain("images/img-b.png")
+  })
+})
+
+function createBookWithMetadata(label: string, title: string): void {
+  const bookDir = path.join(tmpDir, label)
+  fs.mkdirSync(bookDir, { recursive: true })
+  fs.mkdirSync(path.join(bookDir, "images"), { recursive: true })
+  const db = openBookDb(path.join(bookDir, `${label}.db`))
+  db.run(
+    "INSERT INTO node_data (node, item_id, version, data) VALUES (?, ?, ?, ?)",
+    [
+      "metadata",
+      "book",
+      1,
+      JSON.stringify({
+        title,
+        authors: ["Author"],
+        publisher: null,
+        language_code: "en",
+        cover_page_number: 1,
+        reasoning: "test",
+      }),
+    ]
+  )
+  db.close()
+}
+
+function addPagesAndRenderings(label: string, count: number): void {
+  const storage = createBookStorage(label, tmpDir)
+  try {
+    for (let i = 1; i <= count; i++) {
+      const pageId = `${label}_p${i}`
+      const sectionId = `${pageId}_sec001`
+      storage.putExtractedPage({
+        pageId,
+        pageNumber: i,
+        text: `Page ${i}`,
+        pageImage: {
+          imageId: `${pageId}_page`,
+          buffer: Buffer.from("fake-png"),
+          format: "png",
+          hash: `hash${i}`,
+          width: 800,
+          height: 600,
+        },
+        images: [],
+      })
+      storage.putNodeData("page-sectioning", pageId, {
+        reasoning: "ok",
+        sections: [
+          {
+            sectionId,
+            sectionType: "content",
+            parts: [],
+            backgroundColor: "#fff",
+            textColor: "#000",
+            pageNumber: i,
+            isPruned: false,
+          },
+        ],
+      })
+      storage.putNodeData("web-rendering", pageId, {
+        sections: [
+          {
+            sectionIndex: 0,
+            sectionType: "content",
+            reasoning: "ok",
+            html: `<p>Rendered page ${i}</p>`,
+          },
+        ],
+      })
+    }
+  } finally {
+    storage.close()
+  }
+}
+
+describe("exportWebpub", () => {
+  it("produces a valid ZIP of the webpub directory", async () => {
+    createBookWithMetadata("webpub-test", "Test Book")
+    addPagesAndRenderings("webpub-test", 1)
+
+    const result = await exportWebpub("webpub-test", tmpDir, webAssetsDir)
+    expect(result.webpubBuffer).toBeInstanceOf(Uint8Array)
+    expect(result.filename).toBe("Test Book.webpub")
+    expect(result.safeFilename).toBe("webpub-test.webpub")
+
+    const files = unzipSync(result.webpubBuffer)
+    expect(files["manifest.json"]).toBeDefined()
+  })
+
+  it("returns safeFilename for non-ASCII titles", async () => {
+    createBookWithMetadata("sinhala-book", "\u0DC3\u0DD2\u0D82\u0DC4\u0DBD \u0DB4\u0DD9\u0DA7")
+    addPagesAndRenderings("sinhala-book", 1)
+
+    const result = await exportWebpub("sinhala-book", tmpDir, webAssetsDir)
+    expect(result.filename).toBe("\u0DC3\u0DD2\u0D82\u0DC4\u0DBD \u0DB4\u0DD9\u0DA7.webpub")
+    expect(result.safeFilename).toBe("sinhala-book.webpub")
+  })
+
+  it("falls back to label when metadata has no title", async () => {
+    createTestDb("no-title")
+    addPages("no-title", 1)
+
+    const result = await exportWebpub("no-title", tmpDir, webAssetsDir)
+    expect(result.filename).toBe("no-title.webpub")
+    expect(result.safeFilename).toBe("no-title.webpub")
+  })
+
+  it("disables navigation controls and tutorial in webpub config", async () => {
+    createBookWithMetadata("webpub-config", "Config Test")
+    addPagesAndRenderings("webpub-config", 1)
+
+    await exportWebpub("webpub-config", tmpDir, webAssetsDir)
+
+    const configPath = path.join(tmpDir, "webpub-config", "webpub", "assets", "config.json")
+    const config = JSON.parse(fs.readFileSync(configPath, "utf-8"))
+    expect(config.features.showNavigationControls).toBe(false)
+    expect(config.features.showTutorial).toBe(false)
+  })
+
+  it("injects webpub CSS overrides into HTML pages", async () => {
+    createBookWithMetadata("webpub-css", "CSS Test")
+    addPagesAndRenderings("webpub-css", 1)
+
+    await exportWebpub("webpub-css", tmpDir, webAssetsDir)
+
+    const indexPath = path.join(tmpDir, "webpub-css", "webpub", "index.html")
+    const html = fs.readFileSync(indexPath, "utf-8")
+    expect(html).toContain("WebPub / EPUB reader overrides")
+    expect(html).toContain("columns: auto !important")
+  })
+
+  it("includes readingOrder in manifest", async () => {
+    createBookWithMetadata("webpub-manifest", "Manifest Test")
+    addPagesAndRenderings("webpub-manifest", 2)
+
+    await exportWebpub("webpub-manifest", tmpDir, webAssetsDir)
+
+    const manifestPath = path.join(tmpDir, "webpub-manifest", "webpub", "manifest.json")
+    const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf-8"))
+    expect(manifest.metadata.title).toBe("Manifest Test")
+    expect(manifest.metadata.presentation.overflow).toBe("scrolled")
+    expect(manifest.metadata.presentation.spread).toBe("none")
+    expect(manifest.readingOrder.length).toBeGreaterThan(0)
+    expect(manifest.readingOrder[0].type).toBe("text/html")
+  })
+
+  it("throws for non-existent book", async () => {
+    await expect(exportWebpub("ghost", tmpDir, webAssetsDir)).rejects.toThrow("not found")
+  })
+
+  it("throws when web assets directory is missing", async () => {
+    createBookWithMetadata("missing-assets", "Missing")
+    addPagesAndRenderings("missing-assets", 1)
+
+    await expect(exportWebpub("missing-assets", tmpDir, path.join(tmpDir, "no-assets")))
+      .rejects.toThrow("Web assets directory not found")
   })
 })

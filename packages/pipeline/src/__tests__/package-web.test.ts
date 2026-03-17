@@ -3,7 +3,7 @@ import fs from "node:fs"
 import os from "node:os"
 import path from "node:path"
 import type { Storage, PageData } from "@adt/storage"
-import { packageAdtWeb, renderPageHtml, rewriteImageUrls } from "../package-web.js"
+import { packageAdtWeb, packageWebpub, renderPageHtml, rewriteImageUrls } from "../package-web.js"
 
 function createMockStorage(
   pages: PageData[],
@@ -497,5 +497,172 @@ describe("rewriteImageUrls", () => {
     const imageMap = new Map<string, string>()
     const { html: out } = rewriteImageUrls(html, "mybook", imageMap)
     expect(out).toContain('src="https://example.com/photo.jpg"')
+  })
+})
+
+describe("packageWebpub", () => {
+  let tmpDir: string
+
+  beforeEach(() => {
+    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "package-webpub-"))
+  })
+
+  afterEach(() => {
+    fs.rmSync(tmpDir, { recursive: true, force: true })
+  })
+
+  async function buildAdtFirst(
+    bookDir: string,
+    webAssetsDir: string,
+    storage: Storage,
+    title = "Test Book",
+  ) {
+    await packageAdtWeb(storage, {
+      bookDir,
+      label: "book",
+      language: "en",
+      outputLanguages: ["en"],
+      title,
+      webAssetsDir,
+    })
+  }
+
+  function setupBook() {
+    const bookDir = path.join(tmpDir, "book")
+    const webAssetsDir = path.join(tmpDir, "assets-web")
+    fs.mkdirSync(bookDir, { recursive: true })
+    createWebAssets(webAssetsDir)
+
+    const pages: PageData[] = [
+      { pageId: "pg001", pageNumber: 1, text: "Page one" },
+    ]
+
+    const storage = createMockStorage(pages, {
+      "web-rendering": {
+        pg001: {
+          sections: [
+            {
+              sectionIndex: 0,
+              sectionType: "content",
+              reasoning: "ok",
+              html: "<div>First page</div>",
+            },
+          ],
+        },
+      },
+      "page-sectioning": {
+        pg001: {
+          reasoning: "ok",
+          sections: [
+            {
+              sectionId: "pg001_sec001",
+              sectionType: "content",
+              parts: [],
+              backgroundColor: "#fff",
+              textColor: "#000",
+              pageNumber: 1,
+              isPruned: false,
+            },
+          ],
+        },
+      },
+      metadata: {
+        book: {
+          title: "Test Book",
+          authors: ["Author"],
+          publisher: "Publisher",
+          language_code: "en",
+        },
+      },
+    })
+
+    return { bookDir, webAssetsDir, storage }
+  }
+
+  it("disables showNavigationControls and showTutorial in config", async () => {
+    const { bookDir, webAssetsDir, storage } = setupBook()
+    await buildAdtFirst(bookDir, webAssetsDir, storage)
+    packageWebpub(storage, {
+      bookDir,
+      label: "book",
+      language: "en",
+      outputLanguages: ["en"],
+      title: "Test Book",
+      webAssetsDir,
+    })
+
+    const config = JSON.parse(
+      fs.readFileSync(path.join(bookDir, "webpub", "assets", "config.json"), "utf-8"),
+    )
+    expect(config.features.showNavigationControls).toBe(false)
+    expect(config.features.showTutorial).toBe(false)
+  })
+
+  it("injects CSS overrides into HTML pages", async () => {
+    const { bookDir, webAssetsDir, storage } = setupBook()
+    await buildAdtFirst(bookDir, webAssetsDir, storage)
+    packageWebpub(storage, {
+      bookDir,
+      label: "book",
+      language: "en",
+      outputLanguages: ["en"],
+      title: "Test Book",
+      webAssetsDir,
+    })
+
+    const html = fs.readFileSync(path.join(bookDir, "webpub", "index.html"), "utf-8")
+    expect(html).toContain("columns: auto !important")
+    expect(html).toContain("flex-direction: column !important")
+    expect(html).toContain("max-width: 100% !important")
+  })
+
+  it("writes a valid webpub manifest with scrolled presentation", async () => {
+    const { bookDir, webAssetsDir, storage } = setupBook()
+    await buildAdtFirst(bookDir, webAssetsDir, storage)
+    packageWebpub(storage, {
+      bookDir,
+      label: "book",
+      language: "en",
+      outputLanguages: ["en"],
+      title: "My Test Book",
+      webAssetsDir,
+    })
+
+    const manifest = JSON.parse(
+      fs.readFileSync(path.join(bookDir, "webpub", "manifest.json"), "utf-8"),
+    )
+    expect(manifest["@context"]).toBe("https://readium.org/webpub-manifest/context.jsonld")
+    expect(manifest.metadata.title).toBe("My Test Book")
+    expect(manifest.metadata.language).toBe("en")
+    expect(manifest.metadata.presentation.overflow).toBe("scrolled")
+    expect(manifest.metadata.presentation.spread).toBe("none")
+    expect(manifest.metadata.author).toBe("Author")
+    expect(manifest.metadata.publisher).toBe("Publisher")
+    expect(manifest.readingOrder).toHaveLength(1)
+    expect(manifest.readingOrder[0].type).toBe("text/html")
+    expect(manifest.readingOrder[0].href).toBe("index.html")
+    expect(manifest.links[0]).toEqual({
+      rel: "self",
+      href: "manifest.json",
+      type: "application/webpub+json",
+    })
+    expect(manifest.resources.length).toBeGreaterThan(0)
+  })
+
+  it("throws when ADT package has not been built", () => {
+    const bookDir = path.join(tmpDir, "book")
+    fs.mkdirSync(bookDir, { recursive: true })
+    const storage = createMockStorage([], {})
+
+    expect(() =>
+      packageWebpub(storage, {
+        bookDir,
+        label: "book",
+        language: "en",
+        outputLanguages: ["en"],
+        title: "Test",
+        webAssetsDir: tmpDir,
+      })
+    ).toThrow("ADT package not found")
   })
 })

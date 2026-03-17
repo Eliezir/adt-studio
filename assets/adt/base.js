@@ -264,6 +264,7 @@ function hideLoadingIndicator() {
 }
 
 function restoreNavAndSidebar() {
+  if (!isFeatureEnabled('showNavigationControls')) return;
   const navPopup = document.getElementById("navPopup");
   const sidebar = document.getElementById("sidebar");
 
@@ -312,22 +313,28 @@ async function initializeCoreFunctionality() {
 }
 
 function initializeLanguage() {
-  const cookieLanguage = getCookie("currentLanguage");
+  // In webpub/EPUB mode (showNavigationControls disabled), cookies don't persist
+  // across page navigations, so use localStorage as the primary store. On the web,
+  // multiple books share the same origin so we stick to cookies with basePath scoping.
+  const isWebpub = !isFeatureEnabled('showNavigationControls');
+  const storedLanguage = isWebpub
+    ? (localStorage.getItem("currentLanguage") || getCookie("currentLanguage"))
+    : getCookie("currentLanguage");
   const htmlLang = document.getElementsByTagName("html")[0].getAttribute("lang");
   const defaultLanguage = window.appConfig?.languages?.default || htmlLang || "en";
   const availableLanguages = window.appConfig?.languages?.available || [];
 
   let selectedLanguage = null;
 
-  // If we have config loaded, validate the cookie language
+  // If we have config loaded, validate the stored language
   if (availableLanguages.length > 0) {
-    // Check if cookie language is valid
-    if (cookieLanguage && availableLanguages.includes(cookieLanguage)) {
-      selectedLanguage = cookieLanguage;
+    // Check if stored language is valid
+    if (storedLanguage && availableLanguages.includes(storedLanguage)) {
+      selectedLanguage = storedLanguage;
     } else {
-      // Cookie is invalid or missing, use default
-      if (cookieLanguage && !availableLanguages.includes(cookieLanguage)) {
-        console.warn(`Cookie language "${cookieLanguage}" not available. Available languages:`, availableLanguages, ". Using default:", defaultLanguage);
+      // Stored language is invalid or missing, use default
+      if (storedLanguage && !availableLanguages.includes(storedLanguage)) {
+        console.warn(`Stored language "${storedLanguage}" not available. Available languages:`, availableLanguages, ". Using default:", defaultLanguage);
         // Clear invalid cookie on root path
         eraseCookie("currentLanguage", "/");
         // Also clear cookie on current page path (in case it was set with specific path)
@@ -335,14 +342,16 @@ function initializeLanguage() {
         if (currentPath !== "/") {
           eraseCookie("currentLanguage", currentPath);
         }
+        if (isWebpub) localStorage.removeItem("currentLanguage");
       }
       selectedLanguage = defaultLanguage;
-      // Set the cookie to the correct language
+      // Persist the correct language
       setCookie("currentLanguage", defaultLanguage, 7);
+      if (isWebpub) localStorage.setItem("currentLanguage", defaultLanguage);
     }
   } else {
-    // Config not loaded yet, use cookie or fallback
-    selectedLanguage = cookieLanguage || defaultLanguage;
+    // Config not loaded yet, use stored or fallback
+    selectedLanguage = storedLanguage || defaultLanguage;
   }
 
   // Always update state
@@ -470,14 +479,24 @@ function applyFeatureFlags(features) {
         }
       }
     } else if (feature === 'showNavigationControls') {
-      // Hide/show the navigation controls wrapper and ensure it is inert when hidden
+      // Hide/show all navigation chrome: back/forward buttons, nav popup, and sidebar
       const navButtons = document.getElementById('back-forward-buttons');
       const backButton = document.getElementById('back-button');
       const forwardButton = document.getElementById('forward-button');
+      const navPopup = document.getElementById('navPopup');
+      const navPopupButton = document.getElementById('nav-popup');
 
       if (navButtons) {
         navButtons.classList.toggle('hidden', !enabled);
         navButtons.setAttribute('aria-hidden', (!enabled).toString());
+      }
+      if (navPopup) {
+        navPopup.classList.toggle('hidden', !enabled);
+        navPopup.setAttribute('aria-hidden', (!enabled).toString());
+      }
+      if (navPopupButton) {
+        navPopupButton.classList.toggle('hidden', !enabled);
+        navPopupButton.setAttribute('aria-hidden', (!enabled).toString());
       }
 
       [backButton, forwardButton].forEach(button => {
@@ -756,9 +775,11 @@ const finalizeInitialization = async () => {
   const sidebar = elementCache.get("sidebar");
 
   setTimeout(async () => {
-    // Show navigation and sidebar
-    if (navPopup) navPopup.classList.remove("hidden");
-    if (sidebar) sidebar.classList.remove("hidden");
+    // Show navigation and sidebar (only when navigation controls are enabled)
+    if (isFeatureEnabled('showNavigationControls')) {
+      if (navPopup) navPopup.classList.remove("hidden");
+      if (sidebar) sidebar.classList.remove("hidden");
+    }
 
     // Initialize autoplay if needed
     if (isFeatureEnabled('readAloud') && isFeatureEnabled('autoplay')) {

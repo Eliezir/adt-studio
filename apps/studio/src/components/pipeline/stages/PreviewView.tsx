@@ -1,11 +1,14 @@
 import { useState, useEffect, useRef, useCallback } from "react"
-import { Loader2 } from "lucide-react"
+import { Loader2, AlertCircle } from "lucide-react"
 import { useQueryClient } from "@tanstack/react-query"
 import { api, getAdtUrl } from "@/api/client"
+import { useBookRun } from "@/hooks/use-book-run"
 
 export function PreviewView({ bookLabel }: { bookLabel: string }) {
   const queryClient = useQueryClient()
-  const [packaging, setPackaging] = useState(true)
+  const { stageState } = useBookRun()
+  const storyboardDone = stageState("storyboard") === "done"
+  const [packaging, setPackaging] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [ready, setReady] = useState(false)
   const [version, setVersion] = useState(0)
@@ -27,18 +30,35 @@ export function PreviewView({ bookLabel }: { bookLabel: string }) {
     }
   }, [bookLabel, queryClient])
 
+  // Only trigger packaging when storyboard is done
   useEffect(() => {
-    if (ranRef.current) return
+    if (!storyboardDone || ranRef.current) return
     ranRef.current = true
     runPackage()
-  }, [bookLabel])
+  }, [bookLabel, storyboardDone])
 
   // Listen for re-package requests from the sidebar refresh button
   useEffect(() => {
+    if (!storyboardDone) return
     const handler = () => { runPackage() }
     window.addEventListener("adt:repackage", handler)
     return () => window.removeEventListener("adt:repackage", handler)
-  }, [runPackage])
+  }, [runPackage, storyboardDone])
+
+  if (!storyboardDone) {
+    return (
+      <div className="p-6 max-w-xl flex flex-col items-center gap-3 text-center">
+        <AlertCircle className="w-8 h-8 text-muted-foreground/50" />
+        <p className="text-sm text-muted-foreground">
+          A storyboard must be built before previewing.
+        </p>
+        <p className="text-sm text-muted-foreground">
+          Run the pipeline through
+          at least the <span className="font-medium text-foreground">Storyboard</span> stage first.
+        </p>
+      </div>
+    )
+  }
 
   if (packaging) {
     return (
