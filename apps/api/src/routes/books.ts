@@ -12,7 +12,7 @@ import {
   getBookConfig,
   updateBookConfig,
 } from "../services/book-service.js"
-import { exportBook, exportWebpub } from "../services/export-service.js"
+import { exportBook, exportWebpub, exportScorm } from "../services/export-service.js"
 
 const MIME_TYPES: Record<string, string> = {
   ".html": "text/html; charset=utf-8",
@@ -177,6 +177,30 @@ export function createBookRoutes(
         `attachment; filename="${result.safeFilename}"; filename*=UTF-8''${encodedName}`
       )
       return c.body(Buffer.from(result.webpubBuffer))
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err)
+      if (message.includes("Web assets directory not found")) {
+        throw new HTTPException(500, { message })
+      }
+      if (message.includes("Book not found")) {
+        throw new HTTPException(404, { message })
+      }
+      throw new HTTPException(400, { message })
+    }
+  })
+
+  // GET /books/:label/export-scorm — Download SCORM 1.2 package
+  app.get("/books/:label/export-scorm", async (c) => {
+    const { label } = c.req.param()
+    try {
+      const result = await exportScorm(label, booksDir, webAssetsDir ?? "", configPath)
+      c.header("Content-Type", "application/zip")
+      const encodedName = encodeURIComponent(result.filename)
+      c.header(
+        "Content-Disposition",
+        `attachment; filename="${result.safeFilename}"; filename*=UTF-8''${encodedName}`
+      )
+      return c.body(Buffer.from(result.scormBuffer))
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err)
       if (message.includes("Web assets directory not found")) {

@@ -145,6 +145,78 @@ export async function exportWebpub(
   }
 }
 
+export interface ScormExportResult {
+  scormBuffer: Uint8Array
+  filename: string
+  safeFilename: string
+}
+
+export async function exportScorm(
+  label: string,
+  booksDir: string,
+  webAssetsDir: string,
+  configPath?: string,
+): Promise<ScormExportResult> {
+  const safeLabel = parseBookLabel(label)
+  const resolvedDir = path.resolve(booksDir)
+  const bookDir = path.join(resolvedDir, safeLabel)
+
+  if (!fs.existsSync(bookDir)) {
+    throw new Error(`Book not found: ${safeLabel}`)
+  }
+
+  let title = safeLabel
+  const storage = createBookStorage(safeLabel, resolvedDir)
+  try {
+    if (!webAssetsDir || !fs.existsSync(webAssetsDir)) {
+      throw new Error("Web assets directory not found")
+    }
+
+    const config = loadBookConfig(safeLabel, resolvedDir, configPath)
+    const metadataRow = storage.getLatestNodeData("metadata", "book")
+    const metadata = metadataRow?.data as {
+      title?: string | null
+      language_code?: string | null
+    } | null
+    const language = normalizeLocale(config.editing_language ?? metadata?.language_code ?? "en")
+    const outputLanguages = Array.from(
+      new Set(
+        (config.output_languages && config.output_languages.length > 0
+          ? config.output_languages
+          : [language]).map((code) => normalizeLocale(code))
+      )
+    )
+    title = metadata?.title ?? safeLabel
+
+    await packageAdtWeb(storage, {
+      bookDir,
+      label: safeLabel,
+      language,
+      outputLanguages,
+      title,
+      webAssetsDir,
+      applyBodyBackground: config.apply_body_background,
+    })
+  } finally {
+    storage.close()
+  }
+
+  // Zip only the adt/ directory — imsmanifest.xml must be at the ZIP root
+  const adtDir = path.join(bookDir, "adt")
+  if (!fs.existsSync(adtDir)) {
+    throw new Error("ADT directory not found — run the pipeline first")
+  }
+  const zipFiles: Record<string, Uint8Array> = {}
+  collectFiles(adtDir, "", zipFiles)
+  const scormBuffer = zipSync(zipFiles)
+
+  return {
+    scormBuffer,
+    filename: `${title}.zip`,
+    safeFilename: `${safeLabel}.zip`,
+  }
+}
+
 function collectFiles(
   dir: string,
   prefix: string,

@@ -137,9 +137,9 @@ console.log("✓ Bundled → dist-pkg/api-server.mjs")
 
 const webAssetsDir = path.resolve(monorepoRoot, "assets", "adt")
 
-// Step A: Pre-build base.bundle.min.js
+// Step A: Pre-build base.bundle.min.js (ESM) + base.bundle.local.js (IIFE)
 // esbuild cannot run inside the @yao-pkg/pkg sidecar binary at runtime.
-// package-web.ts:buildJsBundle() checks for this file first and copies it.
+// package-web.ts:buildJsBundle() checks for these files first and copies them.
 await build({
   entryPoints: [path.join(webAssetsDir, "base.js")],
   bundle: true,
@@ -149,7 +149,15 @@ await build({
   target: "es2020",
   outfile: path.join(webAssetsDir, "base.bundle.min.js"),
 })
-console.log("✓ Pre-built assets/adt/base.bundle.min.js")
+await build({
+  entryPoints: [path.join(webAssetsDir, "base.js")],
+  bundle: true,
+  minify: true,
+  format: "iife",
+  target: "es2020",
+  outfile: path.join(webAssetsDir, "base.bundle.local.js"),
+})
+console.log("✓ Pre-built assets/adt/base.bundle.min.js + base.bundle.local.js")
 
 // Step B: Pre-build tailwind_output.css
 // tailwindcss/postcss cannot run inside pkg. package-web.ts:buildTailwindCss()

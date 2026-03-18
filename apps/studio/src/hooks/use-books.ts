@@ -120,6 +120,42 @@ export function useExportWebpub() {
   })
 }
 
+export function useExportScorm() {
+  return useMutation({
+    mutationFn: (label: string) => api.exportScorm(label),
+    onSuccess: async (blob, label) => {
+      if (BASE_URL.startsWith("http")) {
+        try {
+          const { save } = await import("@tauri-apps/plugin-dialog")
+          const { writeFile } = await import("@tauri-apps/plugin-fs")
+          const savePath = await save({
+            defaultPath: `${label}-scorm.zip`,
+            filters: [{ name: "SCORM Package", extensions: ["zip"] }],
+          })
+          if (savePath) {
+            const buf = await blob.arrayBuffer()
+            await writeFile(savePath, new Uint8Array(buf))
+          }
+        } catch (err) {
+          console.error("SCORM export failed:", err)
+          throw err
+        }
+      } else {
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement("a")
+        a.href = url
+        a.download = `${label}-scorm.zip`
+        document.body.appendChild(a)
+        a.click()
+        setTimeout(() => {
+          document.body.removeChild(a)
+          URL.revokeObjectURL(url)
+        }, 1500)
+      }
+    },
+  })
+}
+
 export function usePackageAdt() {
   const queryClient = useQueryClient()
   return useMutation({

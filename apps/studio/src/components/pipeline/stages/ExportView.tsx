@@ -1,11 +1,12 @@
-import { FileDown, Loader2, BookOpen, AlertCircle } from "lucide-react"
+import { FileDown, Loader2, BookOpen, AlertCircle, GraduationCap } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { useExportBook, useExportWebpub } from "@/hooks/use-books"
+import { useExportBook, useExportWebpub, useExportScorm } from "@/hooks/use-books"
 import { useBookRun } from "@/hooks/use-book-run"
 
 export function ExportView({ bookLabel }: { bookLabel: string }) {
   const exportBook = useExportBook()
   const exportWebpub = useExportWebpub()
+  const exportScorm = useExportScorm()
   const { stageState } = useBookRun()
   const storyboardDone = stageState("storyboard") === "done"
 
@@ -19,6 +20,12 @@ export function ExportView({ bookLabel }: { bookLabel: string }) {
     ? exportWebpub.error.name === "TimeoutError"
       ? "Export timed out — the book may be too large"
       : exportWebpub.error.message
+    : null
+
+  const scormError = exportScorm.isError
+    ? exportScorm.error.name === "TimeoutError"
+      ? "Export timed out — the book may be too large"
+      : exportScorm.error.message
     : null
 
   if (!storyboardDone) {
@@ -76,6 +83,43 @@ export function ExportView({ bookLabel }: { bookLabel: string }) {
         </div>
       </section>
 
+      {/* SCORM Export */}
+      <section className="rounded-lg border p-4 flex flex-col gap-3">
+        <div className="flex items-center gap-2">
+          <GraduationCap className="w-5 h-5 text-amber-600" />
+          <h3 className="text-sm font-semibold">SCORM Export</h3>
+        </div>
+        <p className="text-sm text-muted-foreground">
+          Export as a SCORM 1.2 package for upload to a Learning Management System (LMS).
+          Includes activity completion tracking and offline support.
+        </p>
+        <div className="flex flex-col gap-1">
+          <Button
+            variant="outline"
+            size="sm"
+            className={
+              exportScorm.isError
+                ? "bg-red-50 text-red-600 border-red-200 hover:bg-red-100 w-fit"
+                : "bg-amber-50 text-amber-600 border-amber-200 hover:bg-amber-100 w-fit"
+            }
+            onClick={() => exportScorm.mutate(bookLabel)}
+            disabled={exportScorm.isPending}
+          >
+            {exportScorm.isPending ? (
+              <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <GraduationCap className="mr-1.5 h-3.5 w-3.5" />
+            )}
+            {exportScorm.isError ? "Retry Export" : "Export SCORM"}
+          </Button>
+          {scormError && (
+            <p className="text-[11px] leading-tight text-red-500">
+              {scormError}
+            </p>
+          )}
+        </div>
+      </section>
+
       {/* WebPub Export */}
       <section className="rounded-lg border p-4 flex flex-col gap-3">
         <div className="flex items-center gap-2">
@@ -116,6 +160,7 @@ export function ExportView({ bookLabel }: { bookLabel: string }) {
           )}
         </div>
       </section>
+
     </div>
   )
 }

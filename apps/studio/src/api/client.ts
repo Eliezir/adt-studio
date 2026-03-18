@@ -738,4 +738,20 @@ export const api = {
     const buf = await res.arrayBuffer()
     return new Blob([buf], { type: "application/zip" })
   },
+
+  exportScorm: async (label: string): Promise<Blob> => {
+    const url = `${BASE_URL}/books/${label}/export-scorm`
+    const res = await fetch(url, {
+      method: "GET",
+      headers: { Accept: "application/zip" },
+      mode: "cors",
+      signal: AbortSignal.timeout(300_000),
+    })
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({ error: res.statusText }))
+      throw new Error(body.error ?? `SCORM export failed: ${res.status}`)
+    }
+    const buf = await res.arrayBuffer()
+    return new Blob([buf], { type: "application/zip" })
+  },
 }

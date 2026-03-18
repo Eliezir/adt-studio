@@ -63,6 +63,55 @@ describe("renderPageHtml", () => {
     const stylesheetPos = html.indexOf('href="./assets/fonts.css"')
     expect(preloadPos).toBeLessThan(stylesheetPos)
   })
+
+  it("uses offline/SCORM scripts instead of type=module in normal mode", () => {
+    const html = renderPageHtml({
+      content: "<p>Hello</p>",
+      language: "en",
+      sectionId: "pg001",
+      pageTitle: "Test",
+      pageIndex: 1,
+      hasMath: false,
+      bundleVersion: "1",
+    })
+
+    expect(html).toContain('src="./assets/offline-preloader.js"')
+    expect(html).toContain('src="./assets/scorm.js"')
+    expect(html).toContain('src="./assets/base.bundle.local.js"')
+    expect(html).not.toContain('type="module"')
+  })
+
+  it("keeps type=module script in embed mode", () => {
+    const html = renderPageHtml({
+      content: "<p>Hello</p>",
+      language: "en",
+      sectionId: "pg001",
+      pageTitle: "Test",
+      pageIndex: 1,
+      hasMath: false,
+      bundleVersion: "1",
+      embed: true,
+    })
+
+    expect(html).toContain('type="module"')
+    expect(html).toContain("base.bundle.min.js")
+    expect(html).not.toContain("offline-preloader.js")
+    expect(html).not.toContain("scorm.js")
+  })
+
+  it("includes crossorigin on font preloads", () => {
+    const html = renderPageHtml({
+      content: "<p>Hello</p>",
+      language: "en",
+      sectionId: "pg001",
+      pageTitle: "Test",
+      pageIndex: 1,
+      hasMath: false,
+      bundleVersion: "1",
+    })
+
+    expect(html).toContain('as="font" type="font/woff2" crossorigin>')
+  })
 })
 
 describe("packageAdtWeb", () => {
@@ -182,6 +231,29 @@ describe("packageAdtWeb", () => {
     expect(fs.existsSync(bundlePath)).toBe(true)
     expect(fs.readFileSync(bundlePath, "utf-8")).toContain("__ADT_BUNDLE_TEST__")
     expect(fs.existsSync(`${bundlePath}.map`)).toBe(true)
+
+    // Offline preloader generated
+    const preloaderPath = path.join(bookDir, "adt", "assets", "offline-preloader.js")
+    expect(fs.existsSync(preloaderPath)).toBe(true)
+    const preloader = fs.readFileSync(preloaderPath, "utf-8")
+    expect(preloader).toContain("window.fetch")
+    expect(preloader).toContain("INLINE")
+
+    // Local bundle generated (no export statement)
+    const localBundlePath = path.join(bookDir, "adt", "assets", "base.bundle.local.js")
+    expect(fs.existsSync(localBundlePath)).toBe(true)
+
+    // SCORM adapter generated
+    const scormPath = path.join(bookDir, "adt", "assets", "scorm.js")
+    expect(fs.existsSync(scormPath)).toBe(true)
+    expect(fs.readFileSync(scormPath, "utf-8")).toContain("LMSInitialize")
+
+    // SCORM manifest generated
+    const manifestPath = path.join(bookDir, "adt", "imsmanifest.xml")
+    expect(fs.existsSync(manifestPath)).toBe(true)
+    const manifest = fs.readFileSync(manifestPath, "utf-8")
+    expect(manifest).toContain("ADL SCORM")
+    expect(manifest).toContain("index.html")
   })
 
   it("inserts quiz pages even when the anchor page has no rendered sections", async () => {
@@ -268,6 +340,10 @@ describe("packageAdtWeb", () => {
       { section_id: "pg002_sec001", href: "pg002_sec001.html" },
     ])
     expect(fs.existsSync(path.join(bookDir, "adt", "index.html"))).toBe(true)
+
+    // SCORM adapter should include the quiz activity ID
+    const scorm = fs.readFileSync(path.join(bookDir, "adt", "assets", "scorm.js"), "utf-8")
+    expect(scorm).toContain('"qz001"')
   })
 
   it("sets activities true in config.json when a section has an activity type", async () => {
