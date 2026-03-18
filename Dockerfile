@@ -5,7 +5,7 @@ FROM node:22-slim AS base
 
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
-RUN corepack enable && corepack prepare pnpm@10.18.1 --activate
+RUN corepack enable && corepack prepare pnpm@10.32.1 --activate
 
 WORKDIR /app
 
@@ -50,13 +50,14 @@ RUN pnpm build
 # Bundle the API with esbuild (produces dist/api-server.mjs with correct ESM imports)
 RUN pnpm --filter @adt/api build:server
 
-# esbuild, tailwindcss, and postcss are dynamically imported by the packaging stage and
-# cannot be bundled — they locate native binaries and CSS assets relative to their own
-# package directory, which breaks when inlined into the bundle. Install all three with
-# their full dependency tree into dist/node_modules/ using npm (not pnpm — npm ignores
-# the monorepo workspace config and installs freely into a non-workspace directory).
-# npm also installs @esbuild/linux-x64 automatically as esbuild's optional dependency.
-# Versions are read directly from packages/pipeline/package.json to avoid drift.
+# esbuild, tailwindcss, postcss, and playwright are dynamically imported by the packaging
+# stage and cannot be bundled — they locate native binaries and CSS assets relative to
+# their own package directory, which breaks when inlined into the bundle. Install them
+# with their full dependency tree into dist/node_modules/ using npm (not pnpm — npm
+# ignores the monorepo workspace config and installs freely into a non-workspace
+# directory). npm also installs @esbuild/linux-x64 automatically as esbuild's optional
+# dependency. Versions are read directly from packages/pipeline/package.json to avoid
+# drift.
 RUN --mount=type=cache,target=/root/.npm \
     node -e " \
       const p = JSON.parse(require('fs').readFileSync('packages/pipeline/package.json', 'utf8')); \
@@ -65,12 +66,17 @@ RUN --mount=type=cache,target=/root/.npm \
         dependencies: { \
           esbuild: p.devDependencies.esbuild, \
           tailwindcss: p.dependencies.tailwindcss, \
-          postcss: p.dependencies.postcss \
+          postcss: p.dependencies.postcss, \
+          playwright: p.dependencies.playwright \
         } \
       })); \
     " && \
     npm install --prefix apps/api/dist --omit=dev --cache /root/.npm && \
     rm -f apps/api/dist/package.json apps/api/dist/package-lock.json
+
+# Download Chromium browser binary for Playwright screenshot rendering.
+# --with-deps installs required system libraries (libatk, libcups, etc.) in one step.
+RUN cd apps/api/dist && npx playwright install --with-deps chromium
 
 # Build the studio SPA (Vite)
 RUN pnpm --filter @adt/studio build
@@ -91,9 +97,17 @@ RUN groupadd --system --gid 1001 nodejs && \
 
 WORKDIR /app
 
-# The esbuild bundle is self-contained — no node_modules or packages/ needed at runtime.
+# The esbuild bundle is self-contained except for external packages (esbuild, tailwindcss,
+# postcss, playwright) which are installed into dist/node_modules/ during the build stage.
 # WASM files are copied into dist/ by the build:server script.
 COPY --from=build /app/apps/api/dist ./apps/api/dist
+
+# Playwright Chromium browser binary + system dependencies for screenshot rendering.
+# The browser was downloaded in the build stage; copy it and install OS-level libs.
+COPY --from=build /root/.cache/ms-playwright /home/appuser/.cache/ms-playwright
+RUN chown -R appuser:nodejs /home/appuser/.cache/ms-playwright
+ENV PLAYWRIGHT_BROWSERS_PATH=/home/appuser/.cache/ms-playwright
+RUN npx --prefix apps/api/dist playwright install-deps chromium
 
 # Baked-in defaults (overridable via volume mounts at runtime).
 # If a NEW top-level runtime directory is added to the repo (e.g. voices/, styleguides/),
@@ -153,8 +167,21 @@ RUN apk add --no-cache nginx
 
 WORKDIR /app
 
-# API bundle (self-contained — no node_modules needed)
+# API bundle (self-contained except for external packages in dist/node_modules/)
 COPY --from=build /app/apps/api/dist ./apps/api/dist
+
+# Playwright Chromium browser binary + system dependencies for screenshot rendering.
+COPY --from=build /root/.cache/ms-playwright /home/node/.cache/ms-playwright
+RUN chown -R node:node /home/node/.cache/ms-playwright
+ENV PLAYWRIGHT_BROWSERS_PATH=/home/node/.cache/ms-playwright
+# Alpine system libraries required by Chromium
+RUN apk add --no-cache \
+    chromium-swiftshader \
+    nss \
+    freetype \
+    harfbuzz \
+    ca-certificates \
+    ttf-freefont
 
 # Studio SPA
 COPY --from=build /app/apps/studio/dist /usr/share/nginx/html
