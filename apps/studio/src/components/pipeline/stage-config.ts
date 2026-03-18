@@ -20,6 +20,7 @@ export type PipelineStageLabelKey =
   | "pipeline_stage_glossary_label"
   | "pipeline_stage_text_and_speech_label"
   | "pipeline_stage_preview_label"
+  | "pipeline_stage_export_label"
 
 export type PipelineStageDescriptionKey =
   | "pipeline_stage_extract_description"
@@ -39,6 +40,7 @@ export type PipelineStageRunningLabelKey =
   | "pipeline_stage_glossary_running_label"
   | "pipeline_stage_text_and_speech_running_label"
   | "pipeline_stage_preview_running_label"
+  | "pipeline_stage_export_running_label"
 
 export type PipelineStepLabelKey =
   | "pipeline_step_extract_label"
@@ -199,7 +201,8 @@ export const STAGES = [
     bgLight: "bg-emerald-50",
     borderColor: "border-emerald-200",
     borderDark: "border-emerald-600",
-    labelKey: null,
+    labelKey: "pipeline_stage_export_label",
+    runningLabelKey: "pipeline_stage_export_running_label",
     descriptionKey: null,
   },
 ] as const satisfies ReadonlyArray<{
