@@ -1206,40 +1206,53 @@ async function buildJsBundle(
 ): Promise<void> {
   // In Tauri sidecar mode, esbuild cannot run inside the pkg binary.
   // bundle.mjs pre-builds base.bundle.min.js + base.bundle.local.js into
-  // webAssetsDir before zipping.
+  // webAssetsDir before zipping.  Copy whichever pre-built files exist,
+  // then fall through to esbuild for any that are missing (common in dev mode
+  // where bundle.mjs hasn't been run).
   const preBuiltEsm = path.join(webAssetsDir, "base.bundle.min.js")
   const preBuiltIife = path.join(webAssetsDir, "base.bundle.local.js")
-  if (fs.existsSync(preBuiltEsm)) {
+
+  const hasPreBuiltEsm = fs.existsSync(preBuiltEsm)
+  const hasPreBuiltIife = fs.existsSync(preBuiltIife)
+
+  if (hasPreBuiltEsm) {
     fs.copyFileSync(preBuiltEsm, path.join(outputAssetsDir, "base.bundle.min.js"))
-    if (fs.existsSync(preBuiltIife)) {
-      fs.copyFileSync(preBuiltIife, path.join(outputAssetsDir, "base.bundle.local.js"))
-    }
-    return
+  }
+  if (hasPreBuiltIife) {
+    fs.copyFileSync(preBuiltIife, path.join(outputAssetsDir, "base.bundle.local.js"))
   }
 
+  // Both pre-built — nothing left to do
+  if (hasPreBuiltEsm && hasPreBuiltIife) return
+
+  // Build any missing bundles with esbuild
   const esbuild = await import("esbuild")
   const entryPoint = path.join(webAssetsDir, "base.js")
   if (!fs.existsSync(entryPoint)) return // skip if no source
 
-  await esbuild.build({
-    entryPoints: [entryPoint],
-    bundle: true,
-    minify: true,
-    sourcemap: true,
-    format: "esm",
-    target: "es2020",
-    outfile: path.join(outputAssetsDir, "base.bundle.min.js"),
-  })
+  if (!hasPreBuiltEsm) {
+    await esbuild.build({
+      entryPoints: [entryPoint],
+      bundle: true,
+      minify: true,
+      sourcemap: true,
+      format: "esm",
+      target: "es2020",
+      outfile: path.join(outputAssetsDir, "base.bundle.min.js"),
+    })
+  }
 
-  // Build an IIFE version for file:// offline use (no ES module export)
-  await esbuild.build({
-    entryPoints: [entryPoint],
-    bundle: true,
-    minify: true,
-    format: "iife",
-    target: "es2020",
-    outfile: path.join(outputAssetsDir, "base.bundle.local.js"),
-  })
+  if (!hasPreBuiltIife) {
+    // IIFE version for file:// offline use (no ES module export)
+    await esbuild.build({
+      entryPoints: [entryPoint],
+      bundle: true,
+      minify: true,
+      format: "iife",
+      target: "es2020",
+      outfile: path.join(outputAssetsDir, "base.bundle.local.js"),
+    })
+  }
 }
 
 // ---------------------------------------------------------------------------
