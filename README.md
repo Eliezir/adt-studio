@@ -91,6 +91,19 @@ docker compose down             # stop
 ```
 </details>
 
+<details>
+<summary>Windows one-click launcher</summary>
+
+Download [`windows-setup-and-run.bat`](https://github.com/unicef/adt-studio/releases/latest/download/windows-setup-and-run.bat) from the latest release and double-click it. The script will:
+
+1. Check that Git and Docker Desktop are installed (with download links if missing)
+2. Clone the repository (first run) or pull the latest changes
+3. Build and start the Docker containers
+4. Open `http://localhost:8080` in your default browser
+
+**Prerequisites:** [Git](https://git-scm.com/download/win) and [Docker Desktop](https://www.docker.com/products/docker-desktop/).
+</details>
+
 ### Local development
 
 Prerequisites: [Node.js](https://nodejs.org/) >= 20, [pnpm](https://pnpm.io/) >= 9, and Playwright Chromium (used by visual refinement in storyboard rendering).
