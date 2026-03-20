@@ -1,5 +1,6 @@
 import { Globe } from "lucide-react"
 import { useLingui } from "@lingui/react"
+import { i18n } from "@lingui/core"
 import { cn } from "@/lib/utils"
 import {
   Select,
@@ -23,15 +24,17 @@ const LOCALE_FLAGS: Record<AppLocale, string> = {
 }
 
 export function LocaleSwitcher({ className }: { className?: string }) {
-  const { i18n } = useLingui()
-  const currentLocale = i18n.locale as AppLocale
+  const { i18n: lingui } = useLingui()
+  const currentLocale = lingui.locale as AppLocale
 
   const handleChange = (value: string) => {
     if (!LOCALES.includes(value as AppLocale)) return
     const next = value as AppLocale
     if (next === currentLocale) return
     i18n.activate(next)
-    localStorage.setItem("adt_locale", next)
+    const search = new URLSearchParams(window.location.search)
+    search.set("lang", next)
+    window.history.replaceState(null, "", window.location.pathname + "?" + search.toString() + window.location.hash)
   }
 
   return (

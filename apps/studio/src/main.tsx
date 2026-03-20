@@ -14,12 +14,8 @@ export const LOCALES = ["en", "pt-BR", "es"] as const
 export type AppLocale = (typeof LOCALES)[number]
 
 function detectLocale(): AppLocale {
-  const stored = localStorage.getItem("adt_locale") as AppLocale | null
-  if (stored && LOCALES.includes(stored)) return stored
-  const lang = navigator.language
-  if (LOCALES.includes(lang as AppLocale)) return lang as AppLocale
-  if (lang.startsWith("pt")) return "pt-BR"
-  if (lang.startsWith("es")) return "es"
+  const urlLang = new URLSearchParams(window.location.search).get("lang")
+  if (urlLang && LOCALES.includes(urlLang as AppLocale)) return urlLang as AppLocale
   return "en"
 }
 
@@ -35,7 +31,17 @@ const queryClient = new QueryClient({
   },
 })
 
-const router = createRouter({ routeTree })
+const router = createRouter({
+  routeTree,
+  rewrite: {
+    input: ({ url }) => {
+      const lang = url.searchParams.get("lang")
+      const next = lang && LOCALES.includes(lang as AppLocale) ? (lang as AppLocale) : "en"
+      i18n.activate(next)
+      return undefined
+    },
+  },
+})
 
 declare module "@tanstack/react-router" {
   interface Register {
