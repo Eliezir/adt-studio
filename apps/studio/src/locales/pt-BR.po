@@ -15,27 +15,27 @@ msgstr ""
 #. js-lingui-explicit-id
 #: src/components/pipeline/StageSidebar.tsx:210
 msgid "Settings"
-msgstr ""
+msgstr "Configurações"
 
 #. js-lingui-explicit-id
 #: src/components/pipeline/StageSidebar.tsx:224
 msgid "API Key Settings"
-msgstr ""
+msgstr "Configurações de chave de API"
 
 #. js-lingui-explicit-id
 #: src/components/pipeline/StageSidebar.tsx:238
 msgid "Re-package ADT"
-msgstr ""
+msgstr "Reempacotar ADT"
 
 #. js-lingui-explicit-id
 #: src/components/pipeline/StageSidebar.tsx:348
 msgid "No pages extracted yet"
-msgstr ""
+msgstr "Nenhuma página extraída ainda"
 
 #. js-lingui-explicit-id
 #: src/components/pipeline/StageSidebar.tsx:464
 msgid "Untitled"
-msgstr ""
+msgstr "Sem título"
 
 #: src/components/books/DeleteBookDialog.tsx:33
 msgid "? This will remove all extracted data and cannot be undone."
@@ -315,19 +315,19 @@ msgstr "Imagem com IA"
 msgid "AI Overlay"
 msgstr "Sobreposição por IA"
 
-#: src/components/pipeline/stages/StoryboardSectionDetail.tsx:2021
+#: src/components/pipeline/stages/StoryboardSectionDetail.tsx:2014
 msgid "AI reasoning"
 msgstr "Raciocínio da IA"
 
 #: src/components/pipeline/StageSidebar.tsx:36
 msgid "AI Rendering"
-msgstr ""
+msgstr "Renderização com IA"
 
 #: src/components/pipeline/stages/AiImageDialog.tsx:136
 msgid "AI sees the current image and modifies it"
 msgstr "A IA vê a imagem atual e a modifica"
 
-#: src/components/pipeline/stages/StoryboardSectionDetail.tsx:2041
+#: src/components/pipeline/stages/StoryboardSectionDetail.tsx:2034
 msgid "All sections have been deleted"
 msgstr "Todas as seções foram excluídas"
 
@@ -378,7 +378,7 @@ msgstr "Aplicar cores de fundo da página"
 msgid "Are you sure you want to delete"
 msgstr "Tem certeza de que deseja excluir"
 
-#: src/components/pipeline/stages/StoryboardSectionDetail.tsx:2452
+#: src/components/pipeline/stages/StoryboardSectionDetail.tsx:2445
 msgid "Are you sure you want to delete this section? This action cannot be undone."
 msgstr "Tem certeza de que deseja excluir esta seção? Esta ação não pode ser desfeita."
 
@@ -386,11 +386,11 @@ msgstr "Tem certeza de que deseja excluir esta seção? Esta ação não pode se
 msgid "Arrange extracted content into a structured storyboard with pages, sections, and layouts."
 msgstr "Organiza o conteúdo extraído em um storyboard estruturado com páginas, seções e layouts."
 
-#: src/components/pipeline/stages/StoryboardSectionDetail.tsx:1954
+#: src/components/pipeline/stages/StoryboardSectionDetail.tsx:1947
 msgid "Ask AI to edit..."
 msgstr "Peça para a IA editar..."
 
-#: src/components/pipeline/stages/StoryboardSectionDetail.tsx:42
+#: src/components/pipeline/stages/StoryboardSectionDetail.tsx:35
 msgid "Asking the AI to put on its creative hat..."
 msgstr "Pedindo para a IA colocar o chapéu criativo..."
 
@@ -414,7 +414,7 @@ msgstr "Autores"
 msgid "Auto"
 msgstr "Automático"
 
-#: src/components/debug/StatsTab.tsx:143
+#: src/components/debug/StatsTab.tsx:141
 msgid "Avg Duration"
 msgstr "Duração média"
 
@@ -435,11 +435,11 @@ msgstr "Voz Azure"
 msgid "Back Cover"
 msgstr "Contracapa"
 
-#: src/components/pipeline/stages/StoryboardSectionDetail.tsx:2256
+#: src/components/pipeline/stages/StoryboardSectionDetail.tsx:2249
 msgid "Back to Editor"
 msgstr "Voltar ao editor"
 
-#: src/components/pipeline/stages/StoryboardSectionDetail.tsx:1969
+#: src/components/pipeline/stages/StoryboardSectionDetail.tsx:1962
 msgid "Back to preview"
 msgstr "Voltar para pré-visualização"
 
@@ -504,7 +504,7 @@ msgstr "Título do livro"
 msgid "Boxed Text"
 msgstr "Texto em caixa"
 
-#: src/components/pipeline/stages/StoryboardSectionDetail.tsx:47
+#: src/components/pipeline/stages/StoryboardSectionDetail.tsx:40
 msgid "Brewing a fresh batch of HTML..."
 msgstr "Preparando uma nova leva de HTML..."
 
@@ -536,11 +536,11 @@ msgstr "Por seção"
 msgid "Cache"
 msgstr "Cache"
 
-#: src/components/debug/StatsTab.tsx:68
+#: src/components/debug/StatsTab.tsx:66
 msgid "Cache Hit Rate"
 msgstr "Taxa de acerto do cache"
 
-#: src/components/debug/StatsTab.tsx:131
+#: src/components/debug/StatsTab.tsx:129
 msgid "Cache Hits"
 msgstr "Acertos em cache"
 
@@ -549,7 +549,7 @@ msgstr "Acertos em cache"
 msgid "Cached"
 msgstr "Em cache"
 
-#: src/components/debug/StatsTab.tsx:128
+#: src/components/debug/StatsTab.tsx:126
 msgid "Calls"
 msgstr "Chamadas"
 
@@ -563,8 +563,8 @@ msgstr "Chamadas"
 #: src/components/pipeline/stages/QuizzesSettings.tsx:219
 #: src/components/pipeline/stages/SectionDataPanel.tsx:420
 #: src/components/pipeline/stages/SpeechPromptsEditor.tsx:142
-#: src/components/pipeline/stages/StoryboardSectionDetail.tsx:2113
-#: src/components/pipeline/stages/StoryboardSectionDetail.tsx:2461
+#: src/components/pipeline/stages/StoryboardSectionDetail.tsx:2106
+#: src/components/pipeline/stages/StoryboardSectionDetail.tsx:2454
 #: src/components/pipeline/stages/StoryboardSettings.tsx:1212
 #: src/components/pipeline/stages/StoryboardSettings.tsx:1247
 #: src/components/pipeline/stages/TranslationsSettings.tsx:324
@@ -611,7 +611,7 @@ msgstr "Escolha uma imagem existente deste projeto"
 msgid "Classic Storybook"
 msgstr "Livro infantil clássico"
 
-#: src/components/pipeline/stages/ExtractPageDetail.tsx:391
+#: src/components/pipeline/stages/ExtractPageDetail.tsx:390
 msgid "Classified Text"
 msgstr "Texto classificado"
 
@@ -635,7 +635,7 @@ msgstr "Clique para selecionar uma imagem"
 msgid "Clone this section"
 msgstr "Clonar esta seção"
 
-#: src/components/pipeline/stages/StoryboardSectionDetail.tsx:1979
+#: src/components/pipeline/stages/StoryboardSectionDetail.tsx:1972
 msgid "Close section data"
 msgstr "Fechar dados da seção"
 
@@ -664,7 +664,7 @@ msgstr "Configure as chaves de API para os recursos de IA."
 msgid "Confirm Rerun"
 msgstr "Confirmar reexecução"
 
-#: src/components/pipeline/stages/StoryboardSectionDetail.tsx:44
+#: src/components/pipeline/stages/StoryboardSectionDetail.tsx:37
 msgid "Consulting the style council..."
 msgstr "Consultando o conselho de estilo..."
 
@@ -706,7 +706,7 @@ msgstr "Recortar imagem"
 
 #: src/components/pipeline/StageSidebar.tsx:32
 msgid "Cropping Prompt"
-msgstr ""
+msgstr "Prompt de recorte"
 
 #: src/components/pipeline/stages/AiImageDialog.tsx:165
 msgid "Current"
@@ -752,7 +752,7 @@ msgstr "Voz padrão usada quando não especificada para um idioma."
 
 #: src/components/books/DeleteBookDialog.tsx:47
 #: src/components/pipeline/stages/SectionEditToolbar.tsx:154
-#: src/components/pipeline/stages/StoryboardSectionDetail.tsx:2468
+#: src/components/pipeline/stages/StoryboardSectionDetail.tsx:2461
 msgid "Delete"
 msgstr "Excluir"
 
@@ -764,7 +764,7 @@ msgstr "Excluir livro"
 msgid "Delete group"
 msgstr "Excluir grupo"
 
-#: src/components/pipeline/stages/StoryboardSectionDetail.tsx:2450
+#: src/components/pipeline/stages/StoryboardSectionDetail.tsx:2443
 msgid "Delete section"
 msgstr "Excluir seção"
 
@@ -806,11 +806,11 @@ msgid "Disable type"
 msgstr "Desativar tipo"
 
 #: src/components/pipeline/stages/CaptionsView.tsx:84
-#: src/components/pipeline/stages/ExtractPageDetail.tsx:80
+#: src/components/pipeline/stages/ExtractPageDetail.tsx:79
 #: src/components/pipeline/stages/GlossaryView.tsx:81
 #: src/components/pipeline/stages/QuizzesView.tsx:83
-#: src/components/pipeline/stages/StoryboardSectionDetail.tsx:133
-#: src/components/pipeline/stages/StoryboardSectionDetail.tsx:2296
+#: src/components/pipeline/stages/StoryboardSectionDetail.tsx:126
+#: src/components/pipeline/stages/StoryboardSectionDetail.tsx:2289
 #: src/components/pipeline/stages/TranslationsView.tsx:94
 msgid "Discard"
 msgstr "Descartar"
@@ -901,12 +901,12 @@ msgstr "Ative para livros digitalizados em que duas páginas aparecem em uma ún
 msgid "Error"
 msgstr "Erro"
 
-#: src/components/debug/StatsTab.tsx:107
-#: src/components/debug/StatsTab.tsx:146
+#: src/components/debug/StatsTab.tsx:105
+#: src/components/debug/StatsTab.tsx:144
 msgid "Errors"
 msgstr "Erros"
 
-#: src/components/debug/StatsTab.tsx:99
+#: src/components/debug/StatsTab.tsx:97
 msgid "Est. Cost"
 msgstr "Custo estimado"
 
@@ -930,11 +930,11 @@ msgstr "Exportar ADT"
 
 #: src/components/pipeline/stages/ExportView.tsx:95
 msgid "Export as a SCORM 1.2 package for upload to a Learning Management System (LMS). Includes activity completion tracking and offline support."
-msgstr ""
+msgstr "Exportar como pacote SCORM 1.2 para upload em um Sistema de Gestão de Aprendizagem (LMS). Inclui rastreamento de conclusão de atividade e suporte offline."
 
 #: src/components/pipeline/stages/ExportView.tsx:114
 msgid "Export SCORM"
-msgstr ""
+msgstr "Exportar SCORM"
 
 #: src/components/pipeline/stages/ExportView.tsx:134
 msgid "Export the book as a Readium WebPub package — a standards-based format for distributing digital publications on the web. Suitable for reading systems that support the Readium Web Publication Manifest specification."
@@ -967,11 +967,11 @@ msgid "Extract text and images from each page of the PDF using AI-powered analys
 msgstr "Extrai texto e imagens de cada página do PDF usando análise com IA."
 
 #. placeholder {0}: String(count)
-#: src/components/pipeline/stages/ExtractPageDetail.tsx:303
+#: src/components/pipeline/stages/ExtractPageDetail.tsx:302
 msgid "Extracted Images ({0})"
 msgstr "Imagens extraídas ({0})"
 
-#: src/components/pipeline/stages/ExtractPageDetail.tsx:374
+#: src/components/pipeline/stages/ExtractPageDetail.tsx:373
 msgid "Extracted Text"
 msgstr "Texto extraído"
 
@@ -981,7 +981,7 @@ msgstr "Extraindo..."
 
 #: src/components/pipeline/StageSidebar.tsx:30
 msgid "Extraction Prompt"
-msgstr ""
+msgstr "Prompt de extração"
 
 #: src/components/pipeline/stages/StoryboardSettings.tsx:1046
 msgid "Extracts the correct answer key from the generated activity HTML."
@@ -996,7 +996,7 @@ msgstr "Falha ao carregar livros: {0}"
 msgid "Failed to load config:"
 msgstr "Falha ao carregar config:"
 
-#: src/components/debug/StatsTab.tsx:45
+#: src/components/debug/StatsTab.tsx:43
 msgid "Failed to load stats:"
 msgstr "Falha ao carregar estatísticas:"
 
@@ -1099,7 +1099,7 @@ msgstr "Gera o HTML interativo para este tipo de atividade."
 msgid "Generating Glossary..."
 msgstr "Gerando glossário..."
 
-#: src/components/pipeline/stages/StoryboardSectionDetail.tsx:2207
+#: src/components/pipeline/stages/StoryboardSectionDetail.tsx:2200
 msgid "Generating image..."
 msgstr "Gerando imagem..."
 
@@ -1111,12 +1111,12 @@ msgstr "Gerando questionários..."
 msgid "Generating Text & Speech..."
 msgstr "Gerando texto e fala..."
 
-#: src/components/pipeline/stages/StoryboardSectionDetail.tsx:1954
+#: src/components/pipeline/stages/StoryboardSectionDetail.tsx:1947
 #: src/components/pipeline/stages/StoryboardSettings.tsx:1221
 msgid "Generating..."
 msgstr "Gerando..."
 
-#: src/components/pipeline/stages/StoryboardSectionDetail.tsx:2228
+#: src/components/pipeline/stages/StoryboardSectionDetail.tsx:2221
 msgid "Generation failed"
 msgstr "Falha na geração"
 
@@ -1149,7 +1149,7 @@ msgstr "Geração de glossário"
 msgid "Glossary Prompt"
 msgstr "Prompt de glossário"
 
-#: src/routes/books.$label.$step.settings.tsx:43
+#: src/routes/books.$label.$step.settings.tsx:42
 msgid "Go to book"
 msgstr "Ir para o livro"
 
@@ -1214,13 +1214,13 @@ msgstr "Filtragem de imagens"
 msgid "Image Filters"
 msgstr "Filtros de imagem"
 
-#: src/components/pipeline/stages/StoryboardSectionDetail.tsx:2223
+#: src/components/pipeline/stages/StoryboardSectionDetail.tsx:2216
 msgid "Image generated"
 msgstr "Imagem gerada"
 
 #: src/components/pipeline/StageSidebar.tsx:39
 msgid "Image Generation"
-msgstr ""
+msgstr "Geração de imagens"
 
 #: src/components/pipeline/stages/StoryboardSettings.tsx:1094
 msgid "Image Generation Prompt"
@@ -1351,7 +1351,7 @@ msgstr "Lista"
 msgid "Live"
 msgstr "Ao vivo"
 
-#: src/components/debug/StatsTab.tsx:62
+#: src/components/debug/StatsTab.tsx:60
 msgid "LLM Calls"
 msgstr "Chamadas LLM"
 
@@ -1411,7 +1411,7 @@ msgstr "Carregando imagem..."
 msgid "Loading logs..."
 msgstr "Carregando registros..."
 
-#: src/components/pipeline/stages/ExtractPageDetail.tsx:283
+#: src/components/pipeline/stages/ExtractPageDetail.tsx:282
 #: src/components/pipeline/stages/StoryboardView.tsx:259
 msgid "Loading page..."
 msgstr "Carregando página..."
@@ -1434,7 +1434,7 @@ msgstr "Carregando quizzes..."
 msgid "Loading speech instructions..."
 msgstr "Carregando instruções de fala..."
 
-#: src/components/debug/StatsTab.tsx:37
+#: src/components/debug/StatsTab.tsx:35
 msgid "Loading stats..."
 msgstr "Carregando estatísticas..."
 
@@ -1477,7 +1477,7 @@ msgstr "Lado máximo (px)"
 
 #: src/components/pipeline/StageSidebar.tsx:31
 msgid "Meaningfulness Prompt"
-msgstr ""
+msgstr "Prompt de relevância"
 
 #: src/components/pipeline/stages/ExtractSettings.tsx:300
 msgid "Merge facing pages as spreads"
@@ -1509,7 +1509,7 @@ msgstr "Prompt de extração de metadados"
 
 #: src/components/pipeline/StageSidebar.tsx:29
 msgid "Metadata Prompt"
-msgstr ""
+msgstr "Prompt de metadados"
 
 #: src/components/pipeline/stages/ExtractSettings.tsx:351
 msgid "Min complexity"
@@ -1523,7 +1523,7 @@ msgstr "Dimensão mínima da imagem (px)"
 msgid "Min side (px)"
 msgstr "Lado mínimo (px)"
 
-#: src/components/debug/StatsTab.tsx:134
+#: src/components/debug/StatsTab.tsx:132
 msgid "Misses"
 msgstr "Perdas"
 
@@ -1558,7 +1558,7 @@ msgstr "Sem legendas para esta página"
 msgid "No data"
 msgstr "Sem dados"
 
-#: src/components/pipeline/stages/ExtractPageDetail.tsx:382
+#: src/components/pipeline/stages/ExtractPageDetail.tsx:381
 msgid "No extracted text yet. Run the pipeline first."
 msgstr "Nenhum texto extraído ainda. Execute o pipeline primeiro."
 
@@ -1567,7 +1567,7 @@ msgstr "Nenhum texto extraído ainda. Execute o pipeline primeiro."
 msgid "No image"
 msgstr "Sem imagem"
 
-#: src/components/pipeline/stages/ExtractPageDetail.tsx:344
+#: src/components/pipeline/stages/ExtractPageDetail.tsx:343
 msgid "No image available"
 msgstr "Nenhuma imagem disponível"
 
@@ -1617,7 +1617,7 @@ msgstr "Nenhuma página extraída ainda. Execute o pipeline para extrair o conte
 msgid "No PDF"
 msgstr "Sem PDF"
 
-#: src/components/debug/StatsTab.tsx:190
+#: src/components/debug/StatsTab.tsx:188
 msgid "No pipeline data yet. Run the pipeline to see stats."
 msgstr "Ainda não há dados do pipeline. Execute o pipeline para ver as estatísticas."
 
@@ -1625,7 +1625,7 @@ msgstr "Ainda não há dados do pipeline. Execute o pipeline para ver as estatí
 msgid "No quizzes for this page"
 msgstr "Nenhum quiz para esta página"
 
-#: src/components/pipeline/stages/StoryboardSectionDetail.tsx:2071
+#: src/components/pipeline/stages/StoryboardSectionDetail.tsx:2064
 msgid "No rendered content for this section"
 msgstr "Sem conteúdo renderizado para esta seção"
 
@@ -1633,7 +1633,7 @@ msgstr "Sem conteúdo renderizado para esta seção"
 msgid "No sections for this page"
 msgstr "Sem seções para esta página"
 
-#: src/components/pipeline/stages/StoryboardSectionDetail.tsx:2040
+#: src/components/pipeline/stages/StoryboardSectionDetail.tsx:2033
 msgid "No sections on this page"
 msgstr "Sem seções nesta página"
 
@@ -1646,10 +1646,10 @@ msgid "No translations for this page"
 msgstr "Sem traduções para esta página"
 
 #: src/components/pipeline/stages/CaptionsView.tsx:128
-#: src/components/pipeline/stages/ExtractPageDetail.tsx:124
+#: src/components/pipeline/stages/ExtractPageDetail.tsx:123
 #: src/components/pipeline/stages/GlossaryView.tsx:125
 #: src/components/pipeline/stages/QuizzesView.tsx:127
-#: src/components/pipeline/stages/StoryboardSectionDetail.tsx:183
+#: src/components/pipeline/stages/StoryboardSectionDetail.tsx:176
 #: src/components/pipeline/stages/TranslationsView.tsx:138
 msgid "No versions"
 msgstr "Sem versões"
@@ -1682,7 +1682,7 @@ msgstr "Apenas páginas que contêm esses tipos de seção são contadas ao agru
 msgid "Open page preview for {pageId}"
 msgstr "Abrir pré-visualização da página {0}"
 
-#: src/components/pipeline/stages/StoryboardSectionDetail.tsx:1979
+#: src/components/pipeline/stages/StoryboardSectionDetail.tsx:1972
 msgid "Open section data"
 msgstr "Abrir dados da seção"
 
@@ -1748,7 +1748,7 @@ msgstr "Página"
 #. placeholder {0}: String(selectedPage.pageNumber)
 #: src/components/pipeline/stages/CaptionsView.tsx:293
 #: src/components/pipeline/stages/CaptionsView.tsx:380
-#: src/components/pipeline/stages/ExtractPageDetail.tsx:324
+#: src/components/pipeline/stages/ExtractPageDetail.tsx:323
 #: src/components/pipeline/stages/ExtractView.tsx:41
 #: src/components/pipeline/stages/ExtractView.tsx:54
 #: src/components/pipeline/stages/ExtractView.tsx:190
@@ -1816,7 +1816,7 @@ msgstr "Desenho a lápis"
 msgid "Pending..."
 msgstr "Pendente..."
 
-#: src/components/debug/StatsTab.tsx:118
+#: src/components/debug/StatsTab.tsx:116
 msgid "Per-Step Breakdown"
 msgstr "Detalhamento por etapa"
 
@@ -1844,7 +1844,7 @@ msgstr "Etapas do pipeline"
 msgid "Pixel Art"
 msgstr "Pixel Art"
 
-#: src/components/pipeline/stages/StoryboardSectionDetail.tsx:48
+#: src/components/pipeline/stages/StoryboardSectionDetail.tsx:41
 msgid "Polishing paragraphs to perfection..."
 msgstr "Polindo parágrafos até a perfeição..."
 
@@ -1892,15 +1892,15 @@ msgstr "Remover"
 msgid "Prune element"
 msgstr "Remover elemento"
 
-#: src/components/pipeline/stages/ExtractPageDetail.tsx:149
+#: src/components/pipeline/stages/ExtractPageDetail.tsx:148
 msgid "Prune image"
 msgstr "Remover imagem"
 
-#: src/components/pipeline/stages/StoryboardSectionDetail.tsx:1919
+#: src/components/pipeline/stages/StoryboardSectionDetail.tsx:1912
 msgid "Prune section from flow"
 msgstr "Remover seção do fluxo"
 
-#: src/components/pipeline/stages/ExtractPageDetail.tsx:458
+#: src/components/pipeline/stages/ExtractPageDetail.tsx:457
 msgid "Prune text"
 msgstr "Remover texto"
 
@@ -1913,7 +1913,7 @@ msgstr "Removido"
 msgid "Pruned: {0}"
 msgstr "Removido: {0}"
 
-#: src/components/pipeline/stages/ExtractPageDetail.tsx:139
+#: src/components/pipeline/stages/ExtractPageDetail.tsx:138
 msgid "Pruned: {reason}"
 msgstr "Removido: {0}"
 
@@ -1931,7 +1931,7 @@ msgstr "Prompt de geração de quiz"
 
 #: src/components/pipeline/StageSidebar.tsx:40
 msgid "Quiz Prompt"
-msgstr ""
+msgstr "Prompt de questionário"
 
 #: src/components/pipeline/stages/QuizzesSettings.tsx:150
 msgid "Quiz Section Types"
@@ -1965,7 +1965,7 @@ msgstr "Rerenderizar seção"
 msgid "Re-render this section"
 msgstr "Rerenderizar esta seção"
 
-#: src/components/pipeline/stages/StoryboardSectionDetail.tsx:2129
+#: src/components/pipeline/stages/StoryboardSectionDetail.tsx:2122
 msgid "Re-rendering page..."
 msgstr "Rerenderizando página..."
 
@@ -1977,7 +1977,7 @@ msgstr "Reexecutar {0}"
 msgid "Realistic / Photo"
 msgstr "Realista / Foto"
 
-#: src/components/pipeline/stages/StoryboardSectionDetail.tsx:43
+#: src/components/pipeline/stages/StoryboardSectionDetail.tsx:36
 msgid "Rearranging atoms of HTML..."
 msgstr "Reorganizando os átomos de HTML..."
 
@@ -2006,7 +2006,7 @@ msgstr "Estratégias de renderização"
 msgid "Render Strategy"
 msgstr "Estratégia de renderização"
 
-#: src/components/pipeline/stages/StoryboardSectionDetail.tsx:2271
+#: src/components/pipeline/stages/StoryboardSectionDetail.tsx:2264
 msgid "rendering"
 msgstr "renderização"
 
@@ -2022,7 +2022,7 @@ msgstr "Substituir"
 msgid "Resolving source language..."
 msgstr "Resolvendo idioma de origem..."
 
-#: src/components/pipeline/stages/StoryboardSectionDetail.tsx:2089
+#: src/components/pipeline/stages/StoryboardSectionDetail.tsx:2082
 msgid "Restore"
 msgstr "Restaurar"
 
@@ -2031,7 +2031,7 @@ msgstr "Restaurar"
 msgid "Restore element"
 msgstr "Restaurar elemento"
 
-#: src/components/pipeline/stages/StoryboardSectionDetail.tsx:1919
+#: src/components/pipeline/stages/StoryboardSectionDetail.tsx:1912
 msgid "Restore section to flow"
 msgstr "Restaurar seção ao fluxo"
 
@@ -2046,7 +2046,7 @@ msgstr "Tentar novamente"
 msgid "Retry Export"
 msgstr "Tentar exportar novamente"
 
-#: src/components/pipeline/stages/StoryboardSectionDetail.tsx:40
+#: src/components/pipeline/stages/StoryboardSectionDetail.tsx:33
 msgid "Rewriting the story of this section..."
 msgstr "Reescrevendo a história desta seção..."
 
@@ -2068,12 +2068,12 @@ msgid "Sample Rate"
 msgstr "Taxa de amostragem"
 
 #: src/components/pipeline/stages/CaptionsView.tsx:92
-#: src/components/pipeline/stages/ExtractPageDetail.tsx:88
+#: src/components/pipeline/stages/ExtractPageDetail.tsx:87
 #: src/components/pipeline/stages/GlossaryView.tsx:89
 #: src/components/pipeline/stages/QuizzesView.tsx:91
 #: src/components/pipeline/stages/SpeechPromptsEditor.tsx:85
-#: src/components/pipeline/stages/StoryboardSectionDetail.tsx:142
-#: src/components/pipeline/stages/StoryboardSectionDetail.tsx:2284
+#: src/components/pipeline/stages/StoryboardSectionDetail.tsx:135
+#: src/components/pipeline/stages/StoryboardSectionDetail.tsx:2277
 #: src/components/pipeline/stages/StoryboardSettings.tsx:1122
 #: src/components/pipeline/stages/TranslationsView.tsx:102
 #: src/components/pipeline/stages/VoiceMappingsEditor.tsx:152
@@ -2131,7 +2131,7 @@ msgstr "Salve as alterações antes de mesclar"
 msgid "Save changes before re-rendering"
 msgstr "Salve as alterações antes de rerenderizar"
 
-#: src/components/pipeline/stages/StoryboardSectionDetail.tsx:2247
+#: src/components/pipeline/stages/StoryboardSectionDetail.tsx:2240
 msgid "Save changes first to preview the latest version"
 msgstr "Salve as alterações primeiro para visualizar a versão mais recente"
 
@@ -2149,7 +2149,7 @@ msgstr "Salvando..."
 
 #: src/components/pipeline/stages/ExportView.tsx:92
 msgid "SCORM Export"
-msgstr ""
+msgstr "Exportação SCORM"
 
 #: src/components/LanguagePicker.tsx:243
 msgid "Search languages..."
@@ -2175,7 +2175,7 @@ msgstr "Seção {0} — {1}"
 msgid "Section {0} (pruned)"
 msgstr "Seção {0} (removida)"
 
-#: src/components/pipeline/stages/StoryboardSectionDetail.tsx:1986
+#: src/components/pipeline/stages/StoryboardSectionDetail.tsx:1979
 msgid "Section Data"
 msgstr "Dados da seção"
 
@@ -2183,11 +2183,11 @@ msgstr "Dados da seção"
 msgid "Section Heading"
 msgstr "Cabeçalho da seção"
 
-#: src/components/pipeline/stages/StoryboardSectionDetail.tsx:1996
+#: src/components/pipeline/stages/StoryboardSectionDetail.tsx:1989
 msgid "Section not found."
 msgstr "Seção não encontrada."
 
-#: src/components/pipeline/stages/StoryboardSectionDetail.tsx:2083
+#: src/components/pipeline/stages/StoryboardSectionDetail.tsx:2076
 msgid "Section pruned from flow"
 msgstr "Seção removida do fluxo"
 
@@ -2209,7 +2209,7 @@ msgstr "Tipos de seção"
 msgid "Sectioning Mode"
 msgstr "Modo de seção"
 
-#: src/components/pipeline/stages/StoryboardSectionDetail.tsx:2271
+#: src/components/pipeline/stages/StoryboardSectionDetail.tsx:2264
 msgid "sections"
 msgstr "seções"
 
@@ -2219,7 +2219,7 @@ msgstr "Segmentar"
 
 #: src/components/pipeline/StageSidebar.tsx:33
 msgid "Segmentation Prompt"
-msgstr ""
+msgstr "Prompt de segmentação"
 
 #: src/components/pipeline/stages/SectionEditToolbar.tsx:143
 msgid "Segmenting..."
@@ -2267,11 +2267,11 @@ msgstr "Separador"
 msgid "Set"
 msgstr "Definir"
 
-#: src/routes/books.$label.$step.settings.tsx:69
+#: src/routes/books.$label.$step.settings.tsx:68
 msgid "Settings"
 msgstr "Configurações"
 
-#: src/routes/books.$label.$step.settings.tsx:90
+#: src/routes/books.$label.$step.settings.tsx:89
 msgid "Settings for this step are not yet available."
 msgstr "As configurações para esta etapa ainda não estão disponíveis."
 
@@ -2298,7 +2298,7 @@ msgstr "Pular segmentação para imagens cujo lado menor está abaixo deste limi
 
 #: src/components/pipeline/StageSidebar.tsx:45
 msgid "Speech"
-msgstr ""
+msgstr "Fala"
 
 #: src/components/pipeline/pipeline-i18n.ts:60
 msgid "Speech Generation"
@@ -2306,13 +2306,13 @@ msgstr "Geração de fala"
 
 #: src/components/pipeline/StageSidebar.tsx:46
 msgid "Speech Prompts"
-msgstr ""
+msgstr "Prompts de fala"
 
 #: src/components/pipeline/stages/ExtractSettings.tsx:291
 msgid "Spread Mode"
 msgstr "Modo de páginas duplas"
 
-#: src/components/pipeline/stages/StoryboardSectionDetail.tsx:45
+#: src/components/pipeline/stages/StoryboardSectionDetail.tsx:38
 msgid "Sprinkling some digital fairy dust..."
 msgstr "Salpicando um pouco de pó mágico digital..."
 
@@ -2333,7 +2333,7 @@ msgid "Stats"
 msgstr "Estatísticas"
 
 #: src/components/debug/LlmLogsTab.tsx:332
-#: src/components/debug/StatsTab.tsx:125
+#: src/components/debug/StatsTab.tsx:123
 msgid "Step"
 msgstr "Etapa"
 
@@ -2377,7 +2377,7 @@ msgstr "Sucesso"
 
 #: src/components/pipeline/StageSidebar.tsx:34
 msgid "Summary Prompt"
-msgstr ""
+msgstr "Prompt de resumo"
 
 #: src/components/debug/LlmLogsTab.tsx:118
 msgid "System Prompt"
@@ -2391,7 +2391,7 @@ msgstr "Tabela"
 msgid "Table of Contents"
 msgstr "Sumário"
 
-#: src/components/pipeline/stages/StoryboardSectionDetail.tsx:41
+#: src/components/pipeline/stages/StoryboardSectionDetail.tsx:34
 msgid "Teaching the pixels new tricks..."
 msgstr "Ensinando novos truques aos pixels..."
 
@@ -2447,7 +2447,7 @@ msgstr "Só texto"
 msgid "Text Types"
 msgstr "Tipos de texto"
 
-#: src/components/pipeline/stages/StoryboardSectionDetail.tsx:46
+#: src/components/pipeline/stages/StoryboardSectionDetail.tsx:39
 msgid "The AI is having a think..."
 msgstr "A IA está pensando..."
 
@@ -2535,7 +2535,7 @@ msgstr "Esta página não tem seções de storyboard"
 msgid "This page has no translatable text entries"
 msgstr "Esta página não tem entradas de texto traduzíveis"
 
-#: src/components/pipeline/stages/StoryboardSectionDetail.tsx:2072
+#: src/components/pipeline/stages/StoryboardSectionDetail.tsx:2065
 msgid "This section has no storyboard rendering yet"
 msgstr "Esta seção ainda não tem renderização de storyboard"
 
@@ -2579,15 +2579,15 @@ msgstr "até"
 msgid "Tokens"
 msgstr "Tokens"
 
-#: src/components/debug/StatsTab.tsx:137
+#: src/components/debug/StatsTab.tsx:135
 msgid "Tokens In"
 msgstr "Tokens de entrada"
 
-#: src/components/debug/StatsTab.tsx:140
+#: src/components/debug/StatsTab.tsx:138
 msgid "Tokens Out"
 msgstr "Tokens de saída"
 
-#: src/components/debug/StatsTab.tsx:74
+#: src/components/debug/StatsTab.tsx:72
 msgid "Total Tokens"
 msgstr "Total de tokens"
 
@@ -2608,7 +2608,7 @@ msgstr "Prompt de tradução"
 msgid "Treats each page as a single section"
 msgstr "Trata cada página como uma única seção"
 
-#: src/components/pipeline/stages/StoryboardSectionDetail.tsx:2258
+#: src/components/pipeline/stages/StoryboardSectionDetail.tsx:2251
 msgid "Try Activity"
 msgstr "Testar atividade"
 
@@ -2629,11 +2629,11 @@ msgstr "Tipos usados durante o secionamento de páginas. Tipos removidos são cl
 msgid "Types used during text classification. Pruned types are excluded from rendering."
 msgstr "Tipos usados na classificação de texto. Tipos removidos são excluídos da renderização."
 
-#: src/routes/books.$label.$step.settings.tsx:32
+#: src/routes/books.$label.$step.settings.tsx:31
 msgid "Unknown stage"
 msgstr "Etapa desconhecida"
 
-#: src/routes/books.$label.$step.settings.tsx:36
+#: src/routes/books.$label.$step.settings.tsx:35
 msgid "Unknown step slug: {step}"
 msgstr "Slug de etapa desconhecido: {0}"
 
@@ -2641,23 +2641,23 @@ msgstr "Slug de etapa desconhecido: {0}"
 msgid "Unknown step: {step}"
 msgstr "Etapa desconhecida: {0}"
 
-#: src/components/pipeline/stages/ExtractPageDetail.tsx:149
+#: src/components/pipeline/stages/ExtractPageDetail.tsx:148
 msgid "Unprune image"
 msgstr "Restaurar imagem"
 
-#: src/components/pipeline/stages/ExtractPageDetail.tsx:458
+#: src/components/pipeline/stages/ExtractPageDetail.tsx:457
 msgid "Unprune text"
 msgstr "Restaurar texto"
 
-#: src/components/pipeline/stages/StoryboardSectionDetail.tsx:1987
+#: src/components/pipeline/stages/StoryboardSectionDetail.tsx:1980
 msgid "Unsaved changes"
 msgstr "Alterações não salvas"
 
-#: src/components/pipeline/stages/StoryboardSectionDetail.tsx:2269
+#: src/components/pipeline/stages/StoryboardSectionDetail.tsx:2262
 msgid "Unsaved:"
 msgstr "Não salvo:"
 
-#: src/components/pipeline/stages/StoryboardSectionDetail.tsx:49
+#: src/components/pipeline/stages/StoryboardSectionDetail.tsx:42
 msgid "Untangling nested divs with care..."
 msgstr "Desembaraçando divs aninhadas com cuidado..."
 
@@ -2707,7 +2707,7 @@ msgstr "Versão {0}"
 msgid "Versions"
 msgstr "Versões"
 
-#: src/components/pipeline/stages/StoryboardSectionDetail.tsx:1969
+#: src/components/pipeline/stages/StoryboardSectionDetail.tsx:1962
 msgid "View HTML source"
 msgstr "Ver código HTML"
 
@@ -2717,10 +2717,10 @@ msgstr "Mapeamentos de voz"
 
 #: src/components/pipeline/StageSidebar.tsx:47
 msgid "Voices"
-msgstr ""
+msgstr "Vozes"
 
-#: src/components/debug/StatsTab.tsx:83
-#: src/components/debug/StatsTab.tsx:92
+#: src/components/debug/StatsTab.tsx:81
+#: src/components/debug/StatsTab.tsx:90
 msgid "Wall Clock"
 msgstr "Tempo decorrido"
 
