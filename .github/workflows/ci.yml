@@ -19,3 +19,25 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm typecheck
       - run: pnpm test
+
+  i18n:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Check for unlocalized strings
+        run: |
+          pnpm --filter @adt/studio extract
+          NEW=$(git diff -- apps/studio/src/locales/ | grep '^+msgid "' | grep -v '^+msgid ""' || true)
+          if [ -n "$NEW" ]; then
+            echo "New unextracted strings found. Run 'pnpm --filter @adt/studio extract' and commit the updated .po files."
+            echo "$NEW"
+            exit 1
+          fi
+      - name: Check translations are up to date
+        run: pnpm --filter @adt/studio compile --strict
