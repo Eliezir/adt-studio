@@ -20,8 +20,19 @@ import { api } from "@/api/client"
 import { PromptViewer } from "@/components/pipeline/PromptViewer"
 import { useBookRun } from "@/hooks/use-book-run"
 import { useStepConfig } from "@/hooks/use-step-config"
+import { useLingui } from "@lingui/react/macro"
+import { getSectionTypeLabel, getSectionTypeDescription } from "@/lib/section-constants"
+
+function getSectionTypeDisplayLabel(value: string): string {
+  return getSectionTypeLabel(value) || value.replace(/_/g, " ")
+}
+
+function getSectionTypeDisplayDescription(value: string, configDesc: string): string {
+  return getSectionTypeDescription(value) ?? configDesc
+}
 
 export function QuizzesSettings({ bookLabel, headerTarget, tab = "general" }: { bookLabel: string; headerTarget?: HTMLDivElement | null; tab?: string }) {
+  const { t } = useLingui()
   const { data: bookConfigData } = useBookConfig(bookLabel)
   const { data: activeConfigData } = useActiveConfig(bookLabel)
   const updateConfig = useUpdateBookConfig()
@@ -120,7 +131,7 @@ export function QuizzesSettings({ bookLabel, headerTarget, tab = "general" }: { 
       {tab === "general" && (
         <>
           <div className="space-y-1.5">
-            <Label className="text-xs">Pages per Quiz</Label>
+            <Label className="text-xs">{t`Pages per Quiz`}</Label>
             <Input
               type="number"
               min={1}
@@ -130,15 +141,15 @@ export function QuizzesSettings({ bookLabel, headerTarget, tab = "general" }: { 
               className="w-32 h-8 text-xs"
             />
             <p className="text-xs text-muted-foreground">
-              Number of pages of content to include per quiz question.
+              {t`Number of pages of content to include per quiz question.`}
             </p>
           </div>
 
           {sectionTypeKeys.length > 0 && (
             <div className="space-y-2">
-              <Label className="text-xs">Quiz Section Types</Label>
+              <Label className="text-xs">{t`Quiz Section Types`}</Label>
               <p className="text-xs text-muted-foreground">
-                Only pages containing these section types are counted when grouping pages for quiz generation.
+                {t`Only pages containing these section types are counted when grouping pages for quiz generation.`}
               </p>
               <div className="rounded-md border divide-y">
                 {sectionTypeKeys.map((key) => {
@@ -154,8 +165,10 @@ export function QuizzesSettings({ bookLabel, headerTarget, tab = "general" }: { 
                         onChange={() => toggleQuizSectionType(key)}
                         className="h-3.5 w-3.5 rounded border-border accent-primary"
                       />
-                      <span className="text-xs font-mono">{key}</span>
-                      <span className="text-xs text-muted-foreground truncate">{sectionTypes[key]}</span>
+                      <span className="text-xs font-mono">{getSectionTypeDisplayLabel(key)}</span>
+                      <span className="text-xs text-muted-foreground truncate">
+                        {getSectionTypeDisplayDescription(key, sectionTypes[key])}
+                      </span>
                     </label>
                   )
                 })}
@@ -169,8 +182,8 @@ export function QuizzesSettings({ bookLabel, headerTarget, tab = "general" }: { 
         <PromptViewer
           promptName="quiz_generation"
           bookLabel={bookLabel}
-          title="Quiz Generation Prompt"
-          description="The prompt template used to generate quiz questions from page content."
+          title={t`Quiz Generation Prompt`}
+          description={t`The prompt template used to generate quiz questions from page content.`}
           model={quiz.model}
           onModelChange={quiz.onModelChange}
           maxRetries={quiz.maxRetries}
@@ -188,7 +201,7 @@ export function QuizzesSettings({ bookLabel, headerTarget, tab = "general" }: { 
           disabled={updateConfig.isPending || !hasApiKey}
         >
           <Play className="mr-1.5 h-3.5 w-3.5" />
-          Save &amp; Rerun
+          {t`Save & Rerun`}
         </Button>,
         headerTarget
       )}
@@ -196,17 +209,17 @@ export function QuizzesSettings({ bookLabel, headerTarget, tab = "general" }: { 
       <Dialog open={showRerunDialog} onOpenChange={setShowRerunDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Save &amp; Rerun Quizzes</DialogTitle>
+            <DialogTitle>{t`Save & Rerun Quizzes`}</DialogTitle>
             <DialogDescription>
-              This will save your settings and re-run quiz generation.
+              {t`This will save your settings and re-run quiz generation.`}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowRerunDialog(false)}>
-              Cancel
+              {t`Cancel`}
             </Button>
             <Button onClick={confirmSaveAndRerun} disabled={updateConfig.isPending}>
-              {updateConfig.isPending ? "Saving..." : "Confirm Rerun"}
+              {updateConfig.isPending ? t`Saving...` : t`Confirm Rerun`}
             </Button>
           </DialogFooter>
         </DialogContent>

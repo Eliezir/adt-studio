@@ -1,3 +1,4 @@
+import { lingui } from "@lingui/vite-plugin"
 import { defineConfig } from "vite"
 import react from "@vitejs/plugin-react"
 import tailwindcss from "@tailwindcss/vite"
@@ -5,7 +6,16 @@ import { TanStackRouterVite } from "@tanstack/router-plugin/vite"
 import { fileURLToPath, URL } from "node:url"
 
 export default defineConfig({
-  plugins: [TanStackRouterVite({ quoteStyle: "double" }), react(), tailwindcss()],
+  plugins: [
+    lingui(),
+    TanStackRouterVite({ quoteStyle: "double" }),
+    react({
+      babel: {
+        plugins: ["@lingui/babel-plugin-lingui-macro"],
+      },
+    }),
+    tailwindcss(),
+  ],
   resolve: {
     alias: {
       "@": fileURLToPath(new URL("./src", import.meta.url)),

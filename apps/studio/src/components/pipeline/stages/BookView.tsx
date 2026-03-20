@@ -1,6 +1,6 @@
 import { useCallback } from "react"
 import { Link } from "@tanstack/react-router"
-import { getPipelineStages, STAGE_DESCRIPTIONS } from "../stage-config"
+import { getPipelineStages } from "../stage-config"
 import { useBookRun } from "@/hooks/use-book-run"
 import { useApiKey } from "@/hooks/use-api-key"
 import { StageRunCard } from "../StageRunCard"
@@ -41,7 +41,6 @@ export function BookView({ bookLabel }: ViewProps) {
             >
               <StageRunCard
                 stageSlug={step.slug}
-                description={STAGE_DESCRIPTIONS[step.slug]}
                 isRunning={isRunning}
                 completed={stageCompleted}
                 showRunButton={step.slug !== "preview"}

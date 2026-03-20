@@ -8,7 +8,10 @@ import { GlossarySettings } from "@/components/pipeline/stages/GlossarySettings"
 import { TocSettings } from "@/components/pipeline/stages/TocSettings"
 import { CaptionsSettings } from "@/components/pipeline/stages/CaptionsSettings"
 import { TranslationsSettings } from "@/components/pipeline/stages/TranslationsSettings"
+import { getStageLabelI18n } from "@/components/pipeline/pipeline-i18n"
 import { cn } from "@/lib/utils"
+import { Trans } from "@lingui/react/macro"
+import { useLingui } from "@lingui/react/macro"
 
 export const Route = createFileRoute("/books/$label/$step/settings")({
   component: StepSettingsPage,
@@ -26,18 +29,18 @@ function StepSettingsPage() {
     return (
       <div className="flex flex-col h-full">
         <div className="shrink-0 h-10 px-4 flex items-center gap-2 text-white bg-gray-700">
-          <span className="text-sm font-semibold">Unknown stage</span>
+          <span className="text-sm font-semibold"><Trans>Unknown stage</Trans></span>
         </div>
         <div className="p-4 max-w-2xl">
           <p className="text-sm text-muted-foreground">
-            Unknown step slug: {step}
+            <Trans>Unknown step slug: {step}</Trans>
           </p>
           <Link
             to="/books/$label/$step"
             params={{ label, step: "book" }}
             className="text-sm text-primary hover:underline"
           >
-            Go to book
+            <Trans>Go to book</Trans>
           </Link>
         </div>
       </div>
@@ -60,10 +63,10 @@ function StepSettingsPage() {
           params={{ label, step }}
           className="text-sm font-semibold hover:text-white/70 transition-colors"
         >
-          {stepLabel}
+          {getStageLabelI18n(step)}
         </Link>
         <span className="text-white/40 text-sm">/</span>
-        <span className="text-sm font-medium">Settings</span>
+        <span className="text-sm font-medium"><Trans>Settings</Trans></span>
         <div ref={setHeaderTarget} className="ml-auto" />
       </div>
 
@@ -86,7 +89,7 @@ function StepSettingsPage() {
         ) : (
           <div className="p-4 max-w-2xl">
             <p className="text-sm text-muted-foreground">
-              Settings for this step are not yet available.
+              <Trans>Settings for this step are not yet available.</Trans>
             </p>
           </div>
         )}

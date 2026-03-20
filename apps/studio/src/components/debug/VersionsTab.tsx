@@ -1,5 +1,7 @@
 import { useState } from "react"
 import { ChevronDown, ChevronRight } from "lucide-react"
+import { Trans } from "@lingui/react/macro"
+import { useLingui } from "@lingui/react/macro"
 import { Button } from "@/components/ui/button"
 import {
   Select,
@@ -38,7 +40,9 @@ function VersionRow({ version, data }: { version: number; data?: unknown }) {
         ) : (
           <ChevronRight className="h-3.5 w-3.5 shrink-0" />
         )}
-        <span className="font-medium">Version {version}</span>
+        <span className="font-medium">
+          <Trans>Version {String(version)}</Trans>
+        </span>
       </Button>
       {expanded && data != null && (
         <div className="px-4 py-3 bg-muted/20">
@@ -49,7 +53,7 @@ function VersionRow({ version, data }: { version: number; data?: unknown }) {
       )}
       {expanded && data == null && (
         <div className="px-4 py-3 text-xs text-muted-foreground">
-          No data available for this version.
+          <Trans>No data</Trans>
         </div>
       )}
     </div>
@@ -57,6 +61,7 @@ function VersionRow({ version, data }: { version: number; data?: unknown }) {
 }
 
 export function VersionsTab({ label }: VersionsTabProps) {
+  const { t } = useLingui()
   const [node, setNode] = useState("")
   const [itemId, setItemId] = useState("")
 
@@ -72,7 +77,7 @@ export function VersionsTab({ label }: VersionsTabProps) {
       <div className="flex items-center gap-3 px-4 py-2.5 border-b border-border shrink-0">
         <Select value={node} onValueChange={setNode}>
           <SelectTrigger className="h-7 w-48 text-xs">
-            <SelectValue placeholder="Select node type" />
+            <SelectValue placeholder={t`Select node type...`} />
           </SelectTrigger>
           <SelectContent>
             {NODE_TYPES.map((n) => (
@@ -84,7 +89,7 @@ export function VersionsTab({ label }: VersionsTabProps) {
         </Select>
 
         <Input
-          placeholder="Item ID (e.g. book_p1)"
+          placeholder={t`Item ID...`}
           className="h-7 w-56 text-xs"
           value={itemId}
           onChange={(e) => setItemId(e.target.value)}
@@ -94,17 +99,19 @@ export function VersionsTab({ label }: VersionsTabProps) {
       <div className="flex-1 overflow-auto min-h-0">
         {!node || !itemId ? (
           <div className="p-6 text-xs text-muted-foreground">
-            Select a node type and enter an item ID to view version history.
+            <Trans>Select a node type and enter an item ID to view versions.</Trans>
           </div>
         ) : isLoading ? (
-          <div className="p-6 text-xs text-muted-foreground">Loading versions...</div>
+          <div className="p-6 text-xs text-muted-foreground">
+            <Trans>Loading...</Trans>
+          </div>
         ) : error ? (
           <div className="p-6 text-xs text-destructive">
-            Failed to load versions: {error.message}
+            <Trans>Failed:</Trans> {error.message}
           </div>
         ) : data && data.versions.length === 0 ? (
           <div className="p-6 text-xs text-muted-foreground">
-            No versions found for {node} / {itemId}.
+            <Trans>No versions found for {node} / {itemId}</Trans>
           </div>
         ) : (
           data?.versions.map((v) => (

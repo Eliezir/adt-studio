@@ -2,19 +2,22 @@ import { useState, useCallback, useEffect } from "react"
 import Cropper from "react-easy-crop"
 import type { Area } from "react-easy-crop"
 import { Loader2 } from "lucide-react"
-
-const ASPECT_PRESETS = [
-  { label: "Free", value: null },
-  { label: "Original", value: "original" as const },
-  { label: "1:1", value: 1 },
-  { label: "4:3", value: 4 / 3 },
-  { label: "3:2", value: 3 / 2 },
-  { label: "16:9", value: 16 / 9 },
-  { label: "3:4", value: 3 / 4 },
-  { label: "2:3", value: 2 / 3 },
-] as const
+import { useLingui } from "@lingui/react/macro"
+import { msg } from "@lingui/core/macro"
+import { i18n } from "@lingui/core"
 
 type AspectValue = null | "original" | number
+
+const ASPECT_PRESET_DEFS: Array<{ value: AspectValue; label: ReturnType<typeof msg> | string }> = [
+  { value: null, label: msg`Free` },
+  { value: "original", label: msg`Original` },
+  { value: 1, label: "1:1" },
+  { value: 4 / 3, label: "4:3" },
+  { value: 3 / 2, label: "3:2" },
+  { value: 16 / 9, label: "16:9" },
+  { value: 3 / 4, label: "3:4" },
+  { value: 2 / 3, label: "2:3" },
+]
 
 interface ImageCropDialogProps {
   /** Image URL to crop */
@@ -31,6 +34,7 @@ interface ImageCropDialogProps {
  * Output is scaled to the original image width so display size is preserved.
  */
 export function ImageCropDialog({ imageSrc, onApply, onClose }: ImageCropDialogProps) {
+  const { t } = useLingui()
   const [crop, setCrop] = useState({ x: 0, y: 0 })
   const [zoom, setZoom] = useState(1)
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null)
@@ -92,7 +96,7 @@ export function ImageCropDialog({ imageSrc, onApply, onClose }: ImageCropDialogP
   }
 
   // Check if the current aspectMode matches a preset
-  const isPresetActive = (preset: (typeof ASPECT_PRESETS)[number]) => {
+  const isPresetActive = (preset: (typeof ASPECT_PRESET_DEFS)[number]) => {
     if (preset.value === null) return aspectMode === null
     if (preset.value === "original") return aspectMode === "original"
     return aspectMode === preset.value
@@ -102,7 +106,7 @@ export function ImageCropDialog({ imageSrc, onApply, onClose }: ImageCropDialogP
     <div className="fixed inset-0 z-[100] bg-black/80 flex flex-col">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 bg-background border-b shrink-0">
-        <h2 className="text-sm font-medium">Crop Image</h2>
+        <h2 className="text-sm font-medium">{t`Crop Image`}</h2>
         <div className="flex items-center gap-2">
           <button
             type="button"
@@ -110,7 +114,7 @@ export function ImageCropDialog({ imageSrc, onApply, onClose }: ImageCropDialogP
             disabled={applying}
             className="text-xs font-medium rounded px-3 py-1.5 bg-muted hover:bg-accent transition-colors cursor-pointer disabled:opacity-50"
           >
-            Cancel
+            {t`Cancel`}
           </button>
           <button
             type="button"
@@ -119,7 +123,7 @@ export function ImageCropDialog({ imageSrc, onApply, onClose }: ImageCropDialogP
             className="flex items-center gap-1 text-xs font-medium rounded px-3 py-1.5 bg-green-600 hover:bg-green-500 text-white cursor-pointer transition-colors disabled:opacity-50"
           >
             {applying && <Loader2 className="h-3 w-3 animate-spin" />}
-            Apply
+            {t`Apply`}
           </button>
         </div>
       </div>
@@ -141,10 +145,10 @@ export function ImageCropDialog({ imageSrc, onApply, onClose }: ImageCropDialogP
       <div className="bg-background border-t shrink-0">
         {/* Aspect ratio presets */}
         <div className="flex items-center justify-center gap-1 px-4 pt-3 pb-1.5 flex-wrap">
-          <span className="text-[10px] text-muted-foreground mr-1.5">Aspect:</span>
-          {ASPECT_PRESETS.map((preset) => (
+          <span className="text-[10px] text-muted-foreground mr-1.5">{t`Aspect:`}</span>
+          {ASPECT_PRESET_DEFS.map((preset) => (
             <button
-              key={preset.label}
+              key={preset.value === null ? "free" : String(preset.value)}
               type="button"
               onClick={() => handleAspectChange(preset.value)}
               className={`text-[10px] font-medium rounded px-2 py-1 transition-colors cursor-pointer ${
@@ -153,7 +157,7 @@ export function ImageCropDialog({ imageSrc, onApply, onClose }: ImageCropDialogP
                   : "bg-muted hover:bg-accent"
               }`}
             >
-              {preset.label}
+              {typeof preset.label === "string" ? preset.label : i18n._(preset.label)}
             </button>
           ))}
           <button
@@ -163,7 +167,7 @@ export function ImageCropDialog({ imageSrc, onApply, onClose }: ImageCropDialogP
               showCustom ? "bg-primary text-primary-foreground" : "bg-muted hover:bg-accent"
             }`}
           >
-            Custom
+            {t`Custom`}
           </button>
         </div>
 
@@ -190,14 +194,14 @@ export function ImageCropDialog({ imageSrc, onApply, onClose }: ImageCropDialogP
               onClick={applyCustomAspect}
               className="text-[10px] font-medium rounded px-2 py-1 bg-primary text-primary-foreground cursor-pointer"
             >
-              Set
+              {t`Set`}
             </button>
           </div>
         )}
 
         {/* Zoom slider */}
         <div className="flex items-center justify-center gap-3 px-4 pb-3 pt-1.5">
-          <span className="text-[10px] text-muted-foreground">Zoom</span>
+          <span className="text-[10px] text-muted-foreground">{t`Zoom`}</span>
           <input
             type="range"
             min={1}

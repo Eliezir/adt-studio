@@ -4,8 +4,11 @@ import { useQueryClient } from "@tanstack/react-query"
 import { api, getAdtUrl } from "@/api/client"
 import { useBookRun } from "@/hooks/use-book-run"
 import { useBookTasks } from "@/hooks/use-book-tasks"
+import { Trans } from "@lingui/react/macro"
+import { useLingui } from "@lingui/react/macro"
 
 export function PreviewView({ bookLabel }: { bookLabel: string }) {
+  const { t } = useLingui()
   const queryClient = useQueryClient()
   const { stageState } = useBookRun()
   const { isTaskRunning, tasks } = useBookTasks(bookLabel)
@@ -78,7 +81,7 @@ export function PreviewView({ bookLabel }: { bookLabel: string }) {
     return (
       <div className="flex items-center justify-center py-12 text-muted-foreground">
         <Loader2 className="w-4 h-4 animate-spin mr-2" />
-        <span className="text-sm">Packaging preview...</span>
+        <span className="text-sm"><Trans>Packaging preview...</Trans></span>
       </div>
     )
   }
@@ -98,7 +101,7 @@ export function PreviewView({ bookLabel }: { bookLabel: string }) {
       <iframe
         src={`${getAdtUrl(bookLabel)}/v-${Date.now()}/`}
         className="w-full h-full border-0"
-        title="ADT Preview"
+        title={t`ADT Preview`}
       />
     )
   }

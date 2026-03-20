@@ -1,0 +1,2765 @@
+# English
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: en\n"
+"Project-Id-Version: \n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: \n"
+"PO-Revision-Date: \n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Plural-Forms: \n"
+
+#. js-lingui-explicit-id
+#: src/components/pipeline/StageSidebar.tsx:210
+msgid "Settings"
+msgstr "Settings"
+
+#. js-lingui-explicit-id
+#: src/components/pipeline/StageSidebar.tsx:224
+msgid "API Key Settings"
+msgstr "API Key Settings"
+
+#. js-lingui-explicit-id
+#: src/components/pipeline/StageSidebar.tsx:238
+msgid "Re-package ADT"
+msgstr "Re-package ADT"
+
+#. js-lingui-explicit-id
+#: src/components/pipeline/StageSidebar.tsx:348
+msgid "No pages extracted yet"
+msgstr "No pages extracted yet"
+
+#. js-lingui-explicit-id
+#: src/components/pipeline/StageSidebar.tsx:464
+msgid "Untitled"
+msgstr "Untitled"
+
+#: src/components/books/DeleteBookDialog.tsx:33
+msgid "? This will remove all extracted data and cannot be undone."
+msgstr "? This will remove all extracted data and cannot be undone."
+
+#: src/components/pipeline/stages/StoryboardSettings.tsx:921
+#: src/components/pipeline/stages/StoryboardSettings.tsx:933
+msgid "(active)"
+msgstr "(active)"
+
+#: src/components/pipeline/stages/StoryboardSettings.tsx:573
+#: src/components/pipeline/stages/StoryboardSettings.tsx:587
+msgid "(template)"
+msgstr "(template)"
+
+#. placeholder {0}: lockedLang.name
+#: src/components/LanguagePicker.tsx:241
+msgid "{0} — type country or Enter for base"
+msgstr "{0} — type country or Enter for base"
+
+#. placeholder {0}: String(totalAudioFiles)
+#: src/components/pipeline/stages/TranslationsView.tsx:276
+msgid "{0} audio"
+msgstr "{0} audio"
+
+#. placeholder {0}: String(totalImages)
+#: src/components/pipeline/stages/CaptionsView.tsx:409
+msgid "{0} images"
+msgstr "{0} images"
+
+#. placeholder {0}: String(selected.size)
+#: src/components/pipeline/stages/AddImageDialog.tsx:298
+msgid "{0} images selected"
+msgstr "{0} images selected"
+
+#. placeholder {0}: String(outputLanguages.length)
+#: src/components/pipeline/stages/TranslationsView.tsx:273
+msgid "{0} languages"
+msgstr "{0} languages"
+
+#. placeholder {0}: String(displayPages.length)
+#: src/components/pipeline/stages/CaptionsView.tsx:410
+msgid "{0} pages"
+msgstr "{0} pages"
+
+#. placeholder {0}: String(displayQuizzes.length)
+#: src/components/pipeline/stages/QuizzesView.tsx:325
+msgid "{0} questions"
+msgstr "{0} questions"
+
+#. placeholder {0}: String(items.length)
+#: src/components/pipeline/stages/GlossaryView.tsx:181
+msgid "{0} terms"
+msgstr "{0} terms"
+
+#. placeholder {0}: String(displayEntries.length)
+#: src/components/pipeline/stages/TranslationsView.tsx:271
+msgid "{0} texts"
+msgstr "{0} texts"
+
+#. placeholder {0}: String(selectedPageIds.size)
+#: src/components/pipeline/stages/StoryboardSettings.tsx:1196
+msgid "{0}/5 pages selected"
+msgstr "{0}/5 pages selected"
+
+#. placeholder {0}: String(Math.floor(diff / 60_000))
+#: src/components/debug/LlmLogsTab.tsx:198
+msgid "{0}m ago"
+msgstr "{0}m ago"
+
+#. placeholder {0}: String(Math.floor(diff / 1000))
+#: src/components/debug/LlmLogsTab.tsx:195
+msgid "{0}s ago"
+msgstr "{0}s ago"
+
+#: src/components/pipeline/StageSidebar.tsx:182
+#~ msgid "{stepLabel} Settings"
+#~ msgstr "{stepLabel} Settings"
+
+#. placeholder {0}: String(filterSectionIndex + 1)
+#: src/components/pipeline/stages/CaptionsView.tsx:295
+msgid "/ Section {0}"
+msgstr "/ Section {0}"
+
+#: src/components/pipeline/stages/StoryboardSettings.tsx:854
+msgid "0 = deterministic, 2 = max creativity"
+msgstr "0 = deterministic, 2 = max creativity"
+
+#: src/components/pipeline/stages/AddImageDialog.tsx:298
+msgid "1 image selected"
+msgstr "1 image selected"
+
+#: src/lib/section-constants.ts:92
+msgid "A fill-in-the-blank activity."
+msgstr "A fill-in-the-blank activity."
+
+#: src/lib/section-constants.ts:87
+msgid "A matching activity where students connect related items."
+msgstr "A matching activity where students connect related items."
+
+#: src/lib/section-constants.ts:89
+msgid "A multiple choice activity."
+msgstr "A multiple choice activity."
+
+#: src/lib/section-constants.ts:85
+msgid "A section containing only images."
+msgstr "A section containing only images."
+
+#: src/lib/section-constants.ts:82
+msgid "A section containing only text content."
+msgstr "A section containing only text content."
+
+#: src/lib/section-constants.ts:83
+msgid "A section with text and a single image."
+msgstr "A section with text and a single image."
+
+#: src/lib/section-constants.ts:84
+msgid "A section with text and multiple images."
+msgstr "A section with text and multiple images."
+
+#: src/lib/section-constants.ts:86
+msgid "A section with text in a highlighted box."
+msgstr "A section with text in a highlighted box."
+
+#: src/lib/section-constants.ts:97
+msgid "A separator page between sections."
+msgstr "A separator page between sections."
+
+#: src/lib/section-constants.ts:93
+msgid "A sorting activity."
+msgstr "A sorting activity."
+
+#: src/components/pipeline/stages/ExportView.tsx:39
+msgid "A storyboard must be built before exporting."
+msgstr "A storyboard must be built before exporting."
+
+#: src/lib/section-constants.ts:88
+msgid "A table-filling activity."
+msgstr "A table-filling activity."
+
+#: src/lib/section-constants.ts:90
+msgid "A true or false activity."
+msgstr "A true or false activity."
+
+#: src/components/debug/ConfigTab.tsx:70
+msgid "Active Configuration"
+msgstr "Active Configuration"
+
+#: src/components/pipeline/stages/StoryboardSettings.tsx:986
+msgid "Activities disabled"
+msgstr "Activities disabled"
+
+#: src/components/pipeline/stages/StoryboardSettings.tsx:986
+msgid "Activities enabled"
+msgstr "Activities enabled"
+
+#: src/lib/text-type-labels.ts:16
+msgid "Activity Input Placeholder"
+msgstr "Activity Input Placeholder"
+
+#: src/lib/text-type-labels.ts:13
+msgid "Activity Number"
+msgstr "Activity Number"
+
+#: src/lib/text-type-labels.ts:15
+msgid "Activity Option"
+msgstr "Activity Option"
+
+#: src/components/pipeline/stages/StoryboardSettings.tsx:963
+#: src/components/pipeline/StageSidebar.tsx:38
+msgid "Activity Rendering"
+msgstr "Activity Rendering"
+
+#: src/components/pipeline/stages/StoryboardSettings.tsx:990
+msgid "Activity section types are available for classification and rendering."
+msgstr "Activity section types are available for classification and rendering."
+
+#: src/components/pipeline/stages/StoryboardSettings.tsx:991
+msgid "Activity section types are hidden from the classifier and skipped during rendering."
+msgstr "Activity section types are hidden from the classifier and skipped during rendering."
+
+#: src/lib/text-type-labels.ts:14
+msgid "Activity Title"
+msgstr "Activity Title"
+
+#: src/lib/section-constants.ts:65
+msgid "Activity: Fill in a Table"
+msgstr "Activity: Fill in a Table"
+
+#: src/lib/section-constants.ts:69
+msgid "Activity: Fill in the Blank"
+msgstr "Activity: Fill in the Blank"
+
+#: src/lib/section-constants.ts:64
+msgid "Activity: Matching"
+msgstr "Activity: Matching"
+
+#: src/lib/section-constants.ts:66
+msgid "Activity: Multiple Choice"
+msgstr "Activity: Multiple Choice"
+
+#: src/lib/section-constants.ts:68
+msgid "Activity: Open-Ended Answer"
+msgstr "Activity: Open-Ended Answer"
+
+#: src/lib/section-constants.ts:70
+msgid "Activity: Sorting"
+msgstr "Activity: Sorting"
+
+#: src/lib/section-constants.ts:67
+msgid "Activity: True / False"
+msgstr "Activity: True / False"
+
+#: src/components/pipeline/stages/ExtractSettings.tsx:482
+#: src/components/pipeline/stages/SpeechPromptsEditor.tsx:134
+#: src/components/pipeline/stages/StoryboardSettings.tsx:696
+#: src/components/pipeline/stages/VoiceMappingsEditor.tsx:206
+msgid "Add"
+msgstr "Add"
+
+#. placeholder {0}: String(selected.size)
+#: src/components/pipeline/stages/AddImageDialog.tsx:321
+msgid "Add {0} Images"
+msgstr "Add {0} Images"
+
+#: src/routes/index.tsx:288
+msgid "Add Book"
+msgstr "Add Book"
+
+#: src/components/pipeline/stages/SectionDataPanel.tsx:816
+msgid "Add Group"
+msgstr "Add Group"
+
+#: src/components/pipeline/stages/AddImageDialog.tsx:104
+#: src/components/pipeline/stages/AddImageDialog.tsx:321
+#: src/components/pipeline/stages/AddImageDialog.tsx:332
+#: src/components/pipeline/stages/SectionDataPanel.tsx:885
+msgid "Add Image"
+msgstr "Add Image"
+
+#: src/components/pipeline/stages/SpeechPromptsEditor.tsx:119
+#: src/components/pipeline/stages/VoiceMappingsEditor.tsx:191
+msgid "Add Language"
+msgstr "Add Language"
+
+#: src/routes/index.tsx:307
+msgid "Add your first book"
+msgstr "Add your first book"
+
+#: src/components/pipeline/stages/ExportView.tsx:56
+msgid "ADT Export"
+msgstr "ADT Export"
+
+#: src/components/pipeline/stages/PreviewView.tsx:90
+msgid "ADT Preview"
+msgstr "ADT Preview"
+
+#. placeholder {0}: quiz.afterPageId
+#: src/components/pipeline/stages/QuizzesView.tsx:424
+#: src/components/pipeline/stages/QuizzesView.tsx:435
+msgid "After {0}"
+msgstr "After {0}"
+
+#: src/components/pipeline/stages/SectionEditToolbar.tsx:132
+msgid "AI"
+msgstr "AI"
+
+#: src/components/pipeline/stages/StoryboardSettings.tsx:52
+msgid "AI Generated"
+msgstr "AI Generated"
+
+#: src/components/pipeline/stages/AiImageDialog.tsx:106
+msgid "AI Image"
+msgstr "AI Image"
+
+#: src/components/pipeline/stages/StoryboardSettings.tsx:53
+msgid "AI Overlay"
+msgstr "AI Overlay"
+
+#: src/components/pipeline/stages/StoryboardSectionDetail.tsx:2021
+msgid "AI reasoning"
+msgstr "AI reasoning"
+
+#: src/components/pipeline/StageSidebar.tsx:36
+msgid "AI Rendering"
+msgstr "AI Rendering"
+
+#: src/components/pipeline/stages/AiImageDialog.tsx:136
+msgid "AI sees the current image and modifies it"
+msgstr "AI sees the current image and modifies it"
+
+#: src/components/pipeline/stages/StoryboardSectionDetail.tsx:2041
+msgid "All sections have been deleted"
+msgstr "All sections have been deleted"
+
+#: src/components/debug/LlmLogsTab.tsx:284
+#: src/components/debug/LlmLogsTab.tsx:287
+msgid "All steps"
+msgstr "All steps"
+
+#: src/components/pipeline/stages/StoryboardView.tsx:77
+#: src/components/pipeline/stages/StoryboardView.tsx:88
+#: src/components/pipeline/stages/StoryboardView.tsx:116
+msgid "An AI image is being generated. Cancel it and navigate?"
+msgstr "An AI image is being generated. Cancel it and navigate?"
+
+#: src/lib/section-constants.ts:91
+msgid "An open-ended answer activity."
+msgstr "An open-ended answer activity."
+
+#: src/components/pipeline/stages/StoryboardSettings.tsx:1045
+msgid "Answer Prompt"
+msgstr "Answer Prompt"
+
+#: src/lib/section-constants.ts:101
+msgid "Any other section type."
+msgstr "Any other section type."
+
+#: src/components/pipeline/stages/SectionDataPanel.tsx:389
+msgid "API key required to re-render"
+msgstr "API key required to re-render"
+
+#: src/routes/index.tsx:223
+msgid "API Key Settings"
+msgstr "API Key Settings"
+
+#: src/components/settings/ApiKeyDialog.tsx:91
+msgid "API Keys"
+msgstr "API Keys"
+
+#: src/components/pipeline/stages/ImageCropDialog.tsx:126
+msgid "Apply"
+msgstr "Apply"
+
+#: src/components/pipeline/stages/StoryboardSettings.tsx:873
+msgid "Apply page background colors"
+msgstr "Apply page background colors"
+
+#: src/components/books/DeleteBookDialog.tsx:31
+msgid "Are you sure you want to delete"
+msgstr "Are you sure you want to delete"
+
+#: src/components/pipeline/stages/StoryboardSectionDetail.tsx:2452
+msgid "Are you sure you want to delete this section? This action cannot be undone."
+msgstr "Are you sure you want to delete this section? This action cannot be undone."
+
+#: src/components/pipeline/pipeline-i18n.ts:35
+msgid "Arrange extracted content into a structured storyboard with pages, sections, and layouts."
+msgstr "Arrange extracted content into a structured storyboard with pages, sections, and layouts."
+
+#: src/components/pipeline/stages/StoryboardSectionDetail.tsx:1954
+msgid "Ask AI to edit..."
+msgstr "Ask AI to edit..."
+
+#: src/components/pipeline/stages/StoryboardSectionDetail.tsx:42
+msgid "Asking the AI to put on its creative hat..."
+msgstr "Asking the AI to put on its creative hat..."
+
+#: src/components/pipeline/stages/ImageCropDialog.tsx:148
+msgid "Aspect:"
+msgstr "Aspect:"
+
+#: src/components/pipeline/stages/TranslationsSettings.tsx:259
+msgid "Audio Settings"
+msgstr "Audio Settings"
+
+#: src/routes/index.tsx:131
+msgid "Author"
+msgstr "Author"
+
+#: src/routes/index.tsx:131
+msgid "Authors"
+msgstr "Authors"
+
+#: src/components/pipeline/stages/AiImageDialog.tsx:26
+msgid "Auto"
+msgstr "Auto"
+
+#: src/components/debug/StatsTab.tsx:143
+msgid "Avg Duration"
+msgstr "Avg Duration"
+
+#: src/components/pipeline/stages/TranslationsSettings.tsx:235
+#: src/components/settings/ApiKeyDialog.tsx:54
+msgid "Azure Speech"
+msgstr "Azure Speech"
+
+#: src/components/settings/ApiKeyDialog.tsx:163
+msgid "Azure Speech subscription key"
+msgstr "Azure Speech subscription key"
+
+#: src/components/pipeline/stages/VoiceMappingsEditor.tsx:226
+msgid "Azure Voice"
+msgstr "Azure Voice"
+
+#: src/lib/section-constants.ts:73
+msgid "Back Cover"
+msgstr "Back Cover"
+
+#: src/components/pipeline/stages/StoryboardSectionDetail.tsx:2256
+msgid "Back to Editor"
+msgstr "Back to Editor"
+
+#: src/components/pipeline/stages/StoryboardSectionDetail.tsx:1969
+msgid "Back to preview"
+msgstr "Back to preview"
+
+#. placeholder {0}: section.backgroundColor
+#: src/components/pipeline/stages/SectionDataPanel.tsx:543
+msgid "Background: {0}"
+msgstr "Background: {0}"
+
+#: src/components/pipeline/stages/AddImageDialog.tsx:286
+msgid "Be descriptive — include style, colors, mood, and composition."
+msgstr "Be descriptive — include style, colors, mood, and composition."
+
+#: src/components/pipeline/stages/AiImageDialog.tsx:319
+msgid "Be descriptive — include subject, colors, mood, and composition."
+msgstr "Be descriptive — include subject, colors, mood, and composition."
+
+#: src/components/pipeline/stages/ExportView.tsx:130
+msgid "Beta"
+msgstr "Beta"
+
+#: src/components/pipeline/stages/TranslationsSettings.tsx:271
+msgid "Bit Rate"
+msgstr "Bit Rate"
+
+#: src/components/pipeline/pipeline-i18n.ts:10
+msgid "Book"
+msgstr "Book"
+
+#: src/lib/text-type-labels.ts:8
+msgid "Book Author"
+msgstr "Book Author"
+
+#: src/routes/index.tsx:118
+msgid "Book data is outdated and must be rebuilt."
+msgstr "Book data is outdated and must be rebuilt."
+
+#: src/lib/text-type-labels.ts:9
+msgid "Book Metadata"
+msgstr "Book Metadata"
+
+#: src/components/debug/ConfigTab.tsx:74
+msgid "Book Override"
+msgstr "Book Override"
+
+#: src/lib/text-type-labels.ts:7
+msgid "Book Subtitle"
+msgstr "Book Subtitle"
+
+#: src/components/pipeline/pipeline-i18n.ts:46
+msgid "Book Summary"
+msgstr "Book Summary"
+
+#: src/components/pipeline/stages/ExtractSettings.tsx:586
+msgid "Book Summary Prompt"
+msgstr "Book Summary Prompt"
+
+#: src/lib/text-type-labels.ts:6
+msgid "Book Title"
+msgstr "Book Title"
+
+#: src/lib/section-constants.ts:63
+msgid "Boxed Text"
+msgstr "Boxed Text"
+
+#: src/components/pipeline/stages/StoryboardSectionDetail.tsx:47
+msgid "Brewing a fresh batch of HTML..."
+msgstr "Brewing a fresh batch of HTML..."
+
+#: src/components/pipeline/stages/StoryboardSettings.tsx:906
+msgid "Browse and edit Liquid templates used for template-based rendering strategies."
+msgstr "Browse and edit Liquid templates used for template-based rendering strategies."
+
+#: src/components/pipeline/pipeline-i18n.ts:38
+msgid "Build a glossary of key terms and definitions found in the text."
+msgstr "Build a glossary of key terms and definitions found in the text."
+
+#: src/components/pipeline/pipeline-i18n.ts:29
+msgid "Building Preview..."
+msgstr "Building Preview..."
+
+#: src/components/pipeline/pipeline-i18n.ts:24
+msgid "Building Storyboard..."
+msgstr "Building Storyboard..."
+
+#: src/components/pipeline/stages/StoryboardSettings.tsx:740
+msgid "By Page"
+msgstr "By Page"
+
+#: src/components/pipeline/stages/StoryboardSettings.tsx:732
+msgid "By Section"
+msgstr "By Section"
+
+#: src/components/debug/LlmLogsTab.tsx:89
+msgid "Cache"
+msgstr "Cache"
+
+#: src/components/debug/StatsTab.tsx:68
+msgid "Cache Hit Rate"
+msgstr "Cache Hit Rate"
+
+#: src/components/debug/StatsTab.tsx:131
+msgid "Cache Hits"
+msgstr "Cache Hits"
+
+#: src/components/debug/LlmLogsTab.tsx:187
+#: src/components/debug/LlmLogsTab.tsx:317
+msgid "Cached"
+msgstr "Cached"
+
+#: src/components/debug/StatsTab.tsx:128
+msgid "Calls"
+msgstr "Calls"
+
+#: src/components/books/DeleteBookDialog.tsx:38
+#: src/components/pipeline/stages/AddImageDialog.tsx:311
+#: src/components/pipeline/stages/AiImageDialog.tsx:334
+#: src/components/pipeline/stages/CaptionsSettings.tsx:111
+#: src/components/pipeline/stages/ExtractSettings.tsx:620
+#: src/components/pipeline/stages/GlossarySettings.tsx:111
+#: src/components/pipeline/stages/ImageCropDialog.tsx:117
+#: src/components/pipeline/stages/QuizzesSettings.tsx:219
+#: src/components/pipeline/stages/SectionDataPanel.tsx:420
+#: src/components/pipeline/stages/SpeechPromptsEditor.tsx:142
+#: src/components/pipeline/stages/StoryboardSectionDetail.tsx:2113
+#: src/components/pipeline/stages/StoryboardSectionDetail.tsx:2461
+#: src/components/pipeline/stages/StoryboardSettings.tsx:1212
+#: src/components/pipeline/stages/StoryboardSettings.tsx:1247
+#: src/components/pipeline/stages/TranslationsSettings.tsx:324
+#: src/components/pipeline/stages/VoiceMappingsEditor.tsx:214
+#: src/components/settings/ApiKeyDialog.tsx:198
+msgid "Cancel"
+msgstr "Cancel"
+
+#: src/components/pipeline/stages/CaptionsSettings.tsx:79
+#: src/components/pipeline/StageSidebar.tsx:42
+msgid "Caption Prompt"
+msgstr "Caption Prompt"
+
+#: src/components/pipeline/pipeline-i18n.ts:26
+msgid "Captioning Images..."
+msgstr "Captioning Images..."
+
+#: src/components/pipeline/pipeline-i18n.ts:14
+msgid "Captions"
+msgstr "Captions"
+
+#: src/components/pipeline/stages/AiImageDialog.tsx:15
+#: src/components/pipeline/stages/AiImageDialog.tsx:33
+msgid "Cartoon"
+msgstr "Cartoon"
+
+#: src/components/pipeline/pipeline-i18n.ts:59
+msgid "Catalog Translation"
+msgstr "Catalog Translation"
+
+#: src/components/pipeline/stages/AddImageDialog.tsx:256
+msgid "Change"
+msgstr "Change"
+
+#: src/components/pipeline/stages/AiImageDialog.tsx:30
+msgid "Chart / Graph"
+msgstr "Chart / Graph"
+
+#: src/components/pipeline/stages/AddImageDialog.tsx:127
+msgid "Choose an existing image from this project"
+msgstr "Choose an existing image from this project"
+
+#: src/components/pipeline/stages/AiImageDialog.tsx:20
+msgid "Classic Storybook"
+msgstr "Classic Storybook"
+
+#: src/components/pipeline/stages/ExtractPageDetail.tsx:391
+msgid "Classified Text"
+msgstr "Classified Text"
+
+#: src/components/LanguagePicker.tsx:313
+msgid "Clear language"
+msgstr "Clear language"
+
+#: src/components/pipeline/stages/AddImageDialog.tsx:300
+msgid "Click images to select"
+msgstr "Click images to select"
+
+#: src/components/pipeline/stages/AiImageDialog.tsx:257
+msgid "Click to pick a style reference image"
+msgstr "Click to pick a style reference image"
+
+#: src/components/pipeline/stages/AddImageDialog.tsx:237
+msgid "Click to select an image"
+msgstr "Click to select an image"
+
+#: src/components/pipeline/stages/SectionDataPanel.tsx:500
+msgid "Clone this section"
+msgstr "Clone this section"
+
+#: src/components/pipeline/stages/StoryboardSectionDetail.tsx:1979
+msgid "Close section data"
+msgstr "Close section data"
+
+#: src/components/pipeline/stages/TranslationsSettings.tsx:253
+msgid "Comma-separated language codes routed to Azure."
+msgstr "Comma-separated language codes routed to Azure."
+
+#: src/components/pipeline/stages/TranslationsSettings.tsx:229
+msgid "Comma-separated language codes routed to OpenAI."
+msgstr "Comma-separated language codes routed to OpenAI."
+
+#: src/components/debug/DebugPanel.tsx:87
+msgid "Config"
+msgstr "Config"
+
+#: src/components/settings/ApiKeyDialog.tsx:93
+msgid "Configure API keys for AI pipeline features."
+msgstr "Configure API keys for AI pipeline features."
+
+#: src/components/pipeline/stages/CaptionsSettings.tsx:114
+#: src/components/pipeline/stages/ExtractSettings.tsx:623
+#: src/components/pipeline/stages/GlossarySettings.tsx:114
+#: src/components/pipeline/stages/QuizzesSettings.tsx:222
+#: src/components/pipeline/stages/StoryboardSettings.tsx:1250
+#: src/components/pipeline/stages/TranslationsSettings.tsx:327
+msgid "Confirm Rerun"
+msgstr "Confirm Rerun"
+
+#: src/components/pipeline/stages/StoryboardSectionDetail.tsx:44
+msgid "Consulting the style council..."
+msgstr "Consulting the style council..."
+
+#: src/components/pipeline/stages/SectionDataPanel.tsx:355
+msgid "Content"
+msgstr "Content"
+
+#: src/components/pipeline/stages/StoryboardSettings.tsx:749
+msgid "Controls how page content is grouped during the sectioning step."
+msgstr "Controls how page content is grouped during the sectioning step."
+
+#: src/components/pipeline/stages/ExtractView.tsx:100
+msgid "Cover of {title}"
+msgstr "Cover of {title}"
+
+#: src/components/pipeline/stages/AddImageDialog.tsx:139
+msgid "Create a new image from a text description"
+msgstr "Create a new image from a text description"
+
+#: src/components/pipeline/pipeline-i18n.ts:37
+msgid "Create descriptive captions for images to improve accessibility."
+msgstr "Create descriptive captions for images to improve accessibility."
+
+#: src/components/pipeline/stages/AiImageDialog.tsx:155
+msgid "Create from scratch using your description"
+msgstr "Create from scratch using your description"
+
+#: src/lib/section-constants.ts:75
+msgid "Credits"
+msgstr "Credits"
+
+#: src/components/pipeline/stages/SectionEditToolbar.tsx:112
+msgid "Crop"
+msgstr "Crop"
+
+#: src/components/pipeline/stages/ImageCropDialog.tsx:109
+msgid "Crop Image"
+msgstr "Crop Image"
+
+#: src/components/pipeline/StageSidebar.tsx:32
+msgid "Cropping Prompt"
+msgstr "Cropping Prompt"
+
+#: src/components/pipeline/stages/AiImageDialog.tsx:165
+msgid "Current"
+msgstr "Current"
+
+#: src/components/pipeline/stages/ImageCropDialog.tsx:170
+msgid "Custom"
+msgstr "Custom"
+
+#: src/components/debug/DebugPanel.tsx:96
+msgid "Debug Panel"
+msgstr "Debug Panel"
+
+#: src/components/pipeline/stages/StoryboardSettings.tsx:647
+#: src/components/pipeline/stages/StoryboardSettings.tsx:652
+msgid "Default"
+msgstr "Default"
+
+#: src/components/pipeline/stages/AiImageDialog.tsx:12
+msgid "Default (from prompt)"
+msgstr "Default (from prompt)"
+
+#: src/components/pipeline/stages/SpeechPromptsEditor.tsx:93
+msgid "Default Prompt"
+msgstr "Default Prompt"
+
+#: src/components/pipeline/stages/TranslationsSettings.tsx:196
+msgid "Default Provider"
+msgstr "Default Provider"
+
+#: src/components/debug/ConfigTab.tsx:58
+#: src/components/pipeline/stages/StoryboardSettings.tsx:536
+msgid "Default Render Strategy"
+msgstr "Default Render Strategy"
+
+#: src/components/pipeline/stages/VoiceMappingsEditor.tsx:159
+msgid "Default Voice"
+msgstr "Default Voice"
+
+#: src/components/pipeline/stages/VoiceMappingsEditor.tsx:171
+msgid "Default voice used when not specified for a language."
+msgstr "Default voice used when not specified for a language."
+
+#: src/components/books/DeleteBookDialog.tsx:47
+#: src/components/pipeline/stages/SectionEditToolbar.tsx:154
+#: src/components/pipeline/stages/StoryboardSectionDetail.tsx:2468
+msgid "Delete"
+msgstr "Delete"
+
+#: src/components/books/DeleteBookDialog.tsx:29
+msgid "Delete book"
+msgstr "Delete book"
+
+#: src/components/pipeline/stages/SectionDataPanel.tsx:636
+msgid "Delete group"
+msgstr "Delete group"
+
+#: src/components/pipeline/stages/StoryboardSectionDetail.tsx:2450
+msgid "Delete section"
+msgstr "Delete section"
+
+#: src/components/pipeline/stages/SectionDataPanel.tsx:757
+msgid "Delete text entry"
+msgstr "Delete text entry"
+
+#: src/components/pipeline/stages/SectionDataPanel.tsx:517
+msgid "Delete this section"
+msgstr "Delete this section"
+
+#: src/components/books/DeleteBookDialog.tsx:46
+msgid "Deleting..."
+msgstr "Deleting..."
+
+#: src/components/pipeline/stages/AddImageDialog.tsx:269
+#: src/components/pipeline/stages/AiImageDialog.tsx:170
+msgid "Describe the image"
+msgstr "Describe the image"
+
+#: src/components/pipeline/stages/ExtractSettings.tsx:427
+#: src/components/pipeline/stages/StoryboardSettings.tsx:618
+msgid "Description"
+msgstr "Description"
+
+#: src/components/pipeline/stages/ExtractSettings.tsx:445
+#: src/components/pipeline/stages/ExtractSettings.tsx:473
+#: src/components/pipeline/stages/StoryboardSettings.tsx:639
+#: src/components/pipeline/stages/StoryboardSettings.tsx:687
+msgid "Description..."
+msgstr "Description..."
+
+#: src/components/pipeline/stages/AiImageDialog.tsx:29
+msgid "Diagram"
+msgstr "Diagram"
+
+#: src/components/pipeline/stages/StoryboardSettings.tsx:665
+msgid "Disable type"
+msgstr "Disable type"
+
+#: src/components/pipeline/stages/CaptionsView.tsx:84
+#: src/components/pipeline/stages/ExtractPageDetail.tsx:80
+#: src/components/pipeline/stages/GlossaryView.tsx:81
+#: src/components/pipeline/stages/QuizzesView.tsx:83
+#: src/components/pipeline/stages/StoryboardSectionDetail.tsx:133
+#: src/components/pipeline/stages/StoryboardSectionDetail.tsx:2296
+#: src/components/pipeline/stages/TranslationsView.tsx:94
+msgid "Discard"
+msgstr "Discard"
+
+#: src/components/pipeline/stages/StoryboardSettings.tsx:864
+msgid "Display"
+msgstr "Display"
+
+#: src/components/pipeline/stages/SectionDataPanel.tsx:596
+msgid "Drag to reorder"
+msgstr "Drag to reorder"
+
+#: src/components/pipeline/stages/SectionDataPanel.tsx:704
+msgid "Drag to reorder or move to another group"
+msgstr "Drag to reorder or move to another group"
+
+#: src/components/pipeline/stages/SectionDataPanel.tsx:627
+msgid "Duplicate group"
+msgstr "Duplicate group"
+
+#: src/components/pipeline/stages/SectionDataPanel.tsx:748
+msgid "Duplicate text entry"
+msgstr "Duplicate text entry"
+
+#: src/components/debug/LlmLogsTab.tsx:83
+#: src/components/debug/LlmLogsTab.tsx:336
+msgid "Duration"
+msgstr "Duration"
+
+#: src/components/pipeline/stages/StoryboardSettings.tsx:724
+msgid "Dynamic"
+msgstr "Dynamic"
+
+#: src/components/settings/ApiKeyDialog.tsx:187
+msgid "e.g. eastus, westeurope"
+msgstr "e.g. eastus, westeurope"
+
+#: src/components/pipeline/stages/AddImageDialog.tsx:280
+msgid "e.g., A cheerful leopard family in a green forest, children's book style..."
+msgstr "e.g., A cheerful leopard family in a green forest, children's book style..."
+
+#: src/components/pipeline/stages/AiImageDialog.tsx:184
+msgid "e.g., A cheerful leopard family in a green forest..."
+msgstr "e.g., A cheerful leopard family in a green forest..."
+
+#: src/components/pipeline/stages/AiImageDialog.tsx:183
+msgid "e.g., Make the background brighter, add more trees..."
+msgstr "e.g., Make the background brighter, add more trees..."
+
+#: src/components/pipeline/stages/AiImageDialog.tsx:343
+msgid "Edit"
+msgstr "Edit"
+
+#: src/components/pipeline/stages/StoryboardSettings.tsx:1085
+msgid "Edit Prompt"
+msgstr "Edit Prompt"
+
+#: src/components/pipeline/stages/StoryboardSettings.tsx:996
+msgid "Edit Prompts"
+msgstr "Edit Prompts"
+
+#: src/components/pipeline/stages/StoryboardSettings.tsx:946
+msgid "Edit the Liquid/HTML template below. Changes are saved when you click Save & Rerun."
+msgstr "Edit the Liquid/HTML template below. Changes are saved when you click Save & Rerun."
+
+#: src/components/pipeline/stages/AiImageDialog.tsx:133
+msgid "Edit this image"
+msgstr "Edit this image"
+
+#: src/components/pipeline/stages/SectionEditToolbar.tsx:228
+msgid "Editing"
+msgstr "Editing"
+
+#: src/components/pipeline/stages/ExtractSettings.tsx:313
+msgid "Editing Language"
+msgstr "Editing Language"
+
+#: src/components/pipeline/stages/SectionDataPanel.tsx:670
+msgid "Empty group — drag text entries here"
+msgstr "Empty group — drag text entries here"
+
+#: src/components/pipeline/stages/ExtractSettings.tsx:304
+msgid "Enable for scanned books where two pages appear on a single PDF page."
+msgstr "Enable for scanned books where two pages appear on a single PDF page."
+
+#: src/components/debug/LlmLogsTab.tsx:188
+#: src/components/debug/LlmLogsTab.tsx:321
+msgid "Error"
+msgstr "Error"
+
+#: src/components/debug/StatsTab.tsx:107
+#: src/components/debug/StatsTab.tsx:146
+msgid "Errors"
+msgstr "Errors"
+
+#: src/components/debug/StatsTab.tsx:99
+msgid "Est. Cost"
+msgstr "Est. Cost"
+
+#: src/components/pipeline/stages/SectionDataPanel.tsx:648
+#: src/components/pipeline/stages/SectionDataPanel.tsx:769
+#: src/components/pipeline/stages/SectionDataPanel.tsx:865
+msgid "Exclude from render"
+msgstr "Exclude from render"
+
+#: src/components/pipeline/stages/SectionDataPanel.tsx:445
+msgid "Exclude section from render"
+msgstr "Exclude section from render"
+
+#: src/components/pipeline/pipeline-i18n.ts:18
+msgid "Export"
+msgstr "Export"
+
+#: src/components/pipeline/stages/ExportView.tsx:78
+msgid "Export ADT"
+msgstr "Export ADT"
+
+#: src/components/pipeline/stages/ExportView.tsx:95
+msgid "Export as a SCORM 1.2 package for upload to a Learning Management System (LMS). Includes activity completion tracking and offline support."
+msgstr "Export as a SCORM 1.2 package for upload to a Learning Management System (LMS). Includes activity completion tracking and offline support."
+
+#: src/components/pipeline/stages/ExportView.tsx:114
+msgid "Export SCORM"
+msgstr "Export SCORM"
+
+#: src/components/pipeline/stages/ExportView.tsx:134
+msgid "Export the book as a Readium WebPub package — a standards-based format for distributing digital publications on the web. Suitable for reading systems that support the Readium Web Publication Manifest specification."
+msgstr "Export the book as a Readium WebPub package — a standards-based format for distributing digital publications on the web. Suitable for reading systems that support the Readium Web Publication Manifest specification."
+
+#: src/components/pipeline/stages/ExportView.tsx:59
+msgid "Export the complete Accessible Digital Textbook as a ZIP archive. Includes all HTML pages, images, audio files, quizzes, and the compiled web application — ready to upload to a distribution platform or open locally."
+msgstr "Export the complete Accessible Digital Textbook as a ZIP archive. Includes all HTML pages, images, audio files, quizzes, and the compiled web application — ready to upload to a distribution platform or open locally."
+
+#: src/components/pipeline/stages/ExportView.tsx:18
+#: src/components/pipeline/stages/ExportView.tsx:24
+#: src/components/pipeline/stages/ExportView.tsx:30
+msgid "Export timed out — the book may be too large"
+msgstr "Export timed out — the book may be too large"
+
+#: src/components/pipeline/stages/ExportView.tsx:153
+msgid "Export WebPub"
+msgstr "Export WebPub"
+
+#: src/components/pipeline/pipeline-i18n.ts:30
+msgid "Exporting..."
+msgstr "Exporting..."
+
+#: src/components/pipeline/pipeline-i18n.ts:11
+msgid "Extract"
+msgstr "Extract"
+
+#: src/components/pipeline/pipeline-i18n.ts:34
+msgid "Extract text and images from each page of the PDF using AI-powered analysis."
+msgstr "Extract text and images from each page of the PDF using AI-powered analysis."
+
+#. placeholder {0}: String(count)
+#: src/components/pipeline/stages/ExtractPageDetail.tsx:303
+msgid "Extracted Images ({0})"
+msgstr "Extracted Images ({0})"
+
+#: src/components/pipeline/stages/ExtractPageDetail.tsx:374
+msgid "Extracted Text"
+msgstr "Extracted Text"
+
+#: src/components/pipeline/pipeline-i18n.ts:23
+msgid "Extracting..."
+msgstr "Extracting..."
+
+#: src/components/pipeline/StageSidebar.tsx:30
+msgid "Extraction Prompt"
+msgstr "Extraction Prompt"
+
+#: src/components/pipeline/stages/StoryboardSettings.tsx:1046
+msgid "Extracts the correct answer key from the generated activity HTML."
+msgstr "Extracts the correct answer key from the generated activity HTML."
+
+#. placeholder {0}: error.message
+#: src/routes/index.tsx:201
+msgid "Failed to load books: {0}"
+msgstr "Failed to load books: {0}"
+
+#: src/components/debug/ConfigTab.tsx:40
+msgid "Failed to load config:"
+msgstr "Failed to load config:"
+
+#: src/components/debug/StatsTab.tsx:45
+msgid "Failed to load stats:"
+msgstr "Failed to load stats:"
+
+#: src/components/debug/VersionsTab.tsx:110
+msgid "Failed:"
+msgstr "Failed:"
+
+#: src/lib/text-type-labels.ts:17
+msgid "Fill in the Blank"
+msgstr "Fill in the Blank"
+
+#: src/components/pipeline/stages/AddImageDialog.tsx:154
+msgid "Filter by image ID..."
+msgstr "Filter by image ID..."
+
+#: src/components/debug/LlmLogsTab.tsx:295
+msgid "Filter by item ID..."
+msgstr "Filter by item ID..."
+
+#: src/components/pipeline/stages/ExtractSettings.tsx:270
+msgid "First"
+msgstr "First"
+
+#: src/components/pipeline/stages/StoryboardSettings.tsx:70
+msgid "Fixed two-column template layout"
+msgstr "Fixed two-column template layout"
+
+#: src/components/pipeline/stages/AiImageDialog.tsx:14
+msgid "Flat Vector"
+msgstr "Flat Vector"
+
+#: src/lib/text-type-labels.ts:23
+msgid "Footer Text"
+msgstr "Footer Text"
+
+#: src/lib/section-constants.ts:76
+msgid "Foreword"
+msgstr "Foreword"
+
+#: src/components/pipeline/stages/TranslationsSettings.tsx:262
+msgid "Format"
+msgstr "Format"
+
+#: src/components/pipeline/stages/ImageCropDialog.tsx:12
+msgid "Free"
+msgstr "Free"
+
+#: src/components/pipeline/stages/AiImageDialog.tsx:215
+msgid "From reference image..."
+msgstr "From reference image..."
+
+#: src/lib/section-constants.ts:71
+msgid "Front Cover"
+msgstr "Front Cover"
+
+#: src/components/pipeline/stages/QuizzesView.tsx:239
+msgid "Full-size source page preview for the selected quiz."
+msgstr "Full-size source page preview for the selected quiz."
+
+#: src/components/pipeline/StageSidebar.tsx:27
+msgid "General"
+msgstr "General"
+
+#: src/components/pipeline/stages/AddImageDialog.tsx:343
+#: src/components/pipeline/stages/AiImageDialog.tsx:343
+#: src/components/pipeline/stages/StoryboardSettings.tsx:1226
+msgid "Generate"
+msgstr "Generate"
+
+#: src/components/pipeline/pipeline-i18n.ts:36
+msgid "Generate comprehension quizzes and activities based on the book content."
+msgstr "Generate comprehension quizzes and activities based on the book content."
+
+#: src/components/pipeline/stages/StoryboardSettings.tsx:826
+msgid "Generate from pages"
+msgstr "Generate from pages"
+
+#: src/components/pipeline/stages/AiImageDialog.tsx:152
+msgid "Generate new"
+msgstr "Generate new"
+
+#: src/components/pipeline/stages/StoryboardSettings.tsx:1074
+msgid "Generate Prompt"
+msgstr "Generate Prompt"
+
+#: src/components/pipeline/stages/StoryboardSettings.tsx:1170
+msgid "Generate Styleguide from Pages"
+msgstr "Generate Styleguide from Pages"
+
+#: src/components/pipeline/stages/AddImageDialog.tsx:107
+#: src/components/pipeline/stages/AddImageDialog.tsx:138
+msgid "Generate with AI"
+msgstr "Generate with AI"
+
+#: src/components/pipeline/stages/StoryboardSettings.tsx:1031
+msgid "Generates the interactive HTML for this activity type."
+msgstr "Generates the interactive HTML for this activity type."
+
+#: src/components/pipeline/pipeline-i18n.ts:27
+msgid "Generating Glossary..."
+msgstr "Generating Glossary..."
+
+#: src/components/pipeline/stages/StoryboardSectionDetail.tsx:2207
+msgid "Generating image..."
+msgstr "Generating image..."
+
+#: src/components/pipeline/pipeline-i18n.ts:25
+msgid "Generating Quizzes..."
+msgstr "Generating Quizzes..."
+
+#: src/components/pipeline/pipeline-i18n.ts:28
+msgid "Generating Text & Speech..."
+msgstr "Generating Text & Speech..."
+
+#: src/components/pipeline/stages/StoryboardSectionDetail.tsx:1954
+#: src/components/pipeline/stages/StoryboardSettings.tsx:1221
+msgid "Generating..."
+msgstr "Generating..."
+
+#: src/components/pipeline/stages/StoryboardSectionDetail.tsx:2228
+msgid "Generation failed"
+msgstr "Generation failed"
+
+#: src/components/pipeline/stages/StoryboardSettings.tsx:1202
+msgid "Generation failed. Please try again."
+msgstr "Generation failed. Please try again."
+
+#: src/components/pipeline/stages/StoryboardSettings.tsx:1030
+msgid "Generation Prompt"
+msgstr "Generation Prompt"
+
+#: src/routes/index.tsx:273
+msgid "Get started"
+msgstr "Get started"
+
+#: src/components/debug/ConfigTab.tsx:78
+msgid "Global Only"
+msgstr "Global Only"
+
+#: src/components/pipeline/pipeline-i18n.ts:15
+msgid "Glossary"
+msgstr "Glossary"
+
+#: src/components/pipeline/pipeline-i18n.ts:57
+msgid "Glossary Generation"
+msgstr "Glossary Generation"
+
+#: src/components/pipeline/stages/GlossarySettings.tsx:79
+#: src/components/pipeline/StageSidebar.tsx:41
+msgid "Glossary Prompt"
+msgstr "Glossary Prompt"
+
+#: src/routes/books.$label.$step.settings.tsx:43
+msgid "Go to book"
+msgstr "Go to book"
+
+#: src/components/debug/ConfigTab.tsx:52
+msgid "Group Types"
+msgstr "Group Types"
+
+#: src/components/pipeline/stages/StoryboardSettings.tsx:734
+msgid "Groups content into logical sections"
+msgstr "Groups content into logical sections"
+
+#: src/lib/text-type-labels.ts:22
+msgid "Header Text"
+msgstr "Header Text"
+
+#: src/lib/text-type-labels.ts:29
+msgid "Heading"
+msgstr "Heading"
+
+#: src/components/pipeline/stages/SectionDataPanel.tsx:841
+msgid "Hide Pruned"
+msgstr "Hide Pruned"
+
+#: src/components/pipeline/stages/SectionDataPanel.tsx:832
+msgid "Hide pruned images"
+msgstr "Hide pruned images"
+
+#: src/components/pipeline/stages/ExtractSettings.tsx:363
+msgid "Higher values filter out simple or blank images."
+msgstr "Higher values filter out simple or blank images."
+
+#: src/components/pipeline/stages/AiImageDialog.tsx:27
+msgid "Illustration"
+msgstr "Illustration"
+
+#: src/lib/text-type-labels.ts:18
+msgid "Image Associated Text"
+msgstr "Image Associated Text"
+
+#: src/components/pipeline/pipeline-i18n.ts:56
+msgid "Image Captioning"
+msgstr "Image Captioning"
+
+#: src/components/pipeline/pipeline-i18n.ts:49
+msgid "Image Cropping"
+msgstr "Image Cropping"
+
+#: src/components/pipeline/stages/ExtractSettings.tsx:538
+msgid "Image Cropping Prompt"
+msgstr "Image Cropping Prompt"
+
+#: src/components/pipeline/stages/StoryboardSettings.tsx:1104
+msgid "Image Edit Prompt"
+msgstr "Image Edit Prompt"
+
+#: src/components/debug/ConfigTab.tsx:56
+#: src/components/pipeline/pipeline-i18n.ts:47
+msgid "Image Filtering"
+msgstr "Image Filtering"
+
+#: src/components/pipeline/stages/ExtractSettings.tsx:321
+msgid "Image Filters"
+msgstr "Image Filters"
+
+#: src/components/pipeline/stages/StoryboardSectionDetail.tsx:2223
+msgid "Image generated"
+msgstr "Image generated"
+
+#: src/components/pipeline/StageSidebar.tsx:39
+msgid "Image Generation"
+msgstr "Image Generation"
+
+#: src/components/pipeline/stages/StoryboardSettings.tsx:1094
+msgid "Image Generation Prompt"
+msgstr "Image Generation Prompt"
+
+#: src/components/pipeline/pipeline-i18n.ts:50
+msgid "Image Meaningfulness"
+msgstr "Image Meaningfulness"
+
+#: src/components/pipeline/stages/ExtractSettings.tsx:523
+msgid "Image Meaningfulness Prompt"
+msgstr "Image Meaningfulness Prompt"
+
+#: src/lib/text-type-labels.ts:19
+msgid "Image Overlay"
+msgstr "Image Overlay"
+
+#: src/components/pipeline/pipeline-i18n.ts:48
+msgid "Image Segmentation"
+msgstr "Image Segmentation"
+
+#: src/components/pipeline/stages/ExtractSettings.tsx:569
+msgid "Image Segmentation Prompt"
+msgstr "Image Segmentation Prompt"
+
+#: src/components/pipeline/stages/AiImageDialog.tsx:225
+msgid "Image Type"
+msgstr "Image Type"
+
+#: src/components/pipeline/stages/QuizzesView.tsx:251
+msgid "Image unavailable"
+msgstr "Image unavailable"
+
+#: src/components/pipeline/stages/SectionDataPanel.tsx:823
+msgid "Images"
+msgstr "Images"
+
+#: src/lib/section-constants.ts:62
+msgid "Images Only"
+msgstr "Images Only"
+
+#: src/components/pipeline/stages/ExtractSettings.tsx:348
+msgid "Images with shortest side below min or longest side above max are pruned."
+msgstr "Images with shortest side below min or longest side above max are pruned."
+
+#: src/components/pipeline/stages/SectionDataPanel.tsx:647
+#: src/components/pipeline/stages/SectionDataPanel.tsx:768
+#: src/components/pipeline/stages/SectionDataPanel.tsx:864
+msgid "Include in render"
+msgstr "Include in render"
+
+#: src/components/pipeline/stages/SectionDataPanel.tsx:444
+msgid "Include section in render"
+msgstr "Include section in render"
+
+#: src/components/pipeline/stages/AiImageDialog.tsx:31
+msgid "Infographic"
+msgstr "Infographic"
+
+#: src/components/debug/LlmLogsTab.tsx:97
+msgid "Input Tokens"
+msgstr "Input Tokens"
+
+#: src/lib/section-constants.ts:72
+msgid "Inside Cover"
+msgstr "Inside Cover"
+
+#: src/lib/text-type-labels.ts:12
+msgid "Instruction Text"
+msgstr "Instruction Text"
+
+#: src/components/debug/LlmLogsTab.tsx:333
+msgid "Item"
+msgstr "Item"
+
+#: src/components/debug/VersionsTab.tsx:92
+msgid "Item ID..."
+msgstr "Item ID..."
+
+#: src/components/pipeline/stages/StoryboardSettings.tsx:726
+msgid "Keeps pages whole unless mixed activity types require splitting"
+msgstr "Keeps pages whole unless mixed activity types require splitting"
+
+#: src/components/settings/ApiKeyDialog.tsx:147
+msgid "Key must start with \"sk-\""
+msgstr "Key must start with \"sk-\""
+
+#: src/routes/index.tsx:126
+msgid "Label"
+msgstr "Label"
+
+#: src/components/pipeline/stages/VoiceMappingsEditor.tsx:224
+#: src/routes/index.tsx:145
+msgid "Language"
+msgstr "Language"
+
+#: src/components/pipeline/stages/SpeechPromptsEditor.tsx:110
+msgid "Language-Specific Prompts"
+msgstr "Language-Specific Prompts"
+
+#: src/components/pipeline/stages/TranslationsSettings.tsx:222
+#: src/components/pipeline/stages/TranslationsSettings.tsx:246
+#: src/components/pipeline/StageSidebar.tsx:43
+msgid "Languages"
+msgstr "Languages"
+
+#: src/components/pipeline/stages/ExtractSettings.tsx:279
+msgid "Last"
+msgstr "Last"
+
+#: src/components/pipeline/stages/TranslationsSettings.tsx:171
+msgid "Leave empty to output only in the book language."
+msgstr "Leave empty to output only in the book language."
+
+#: src/components/pipeline/stages/ExtractSettings.tsx:284
+msgid "Leave empty to process all pages."
+msgstr "Leave empty to process all pages."
+
+#: src/components/pipeline/stages/ExtractSettings.tsx:314
+msgid "Leave empty to use the book language."
+msgstr "Leave empty to use the book language."
+
+#: src/lib/text-type-labels.ts:32
+msgid "List"
+msgstr "List"
+
+#: src/components/debug/LlmLogsTab.tsx:272
+msgid "Live"
+msgstr "Live"
+
+#: src/components/debug/StatsTab.tsx:62
+msgid "LLM Calls"
+msgstr "LLM Calls"
+
+#: src/components/pipeline/stages/StoryboardSettings.tsx:68
+msgid "LLM generates HTML from section content"
+msgstr "LLM generates HTML from section content"
+
+#: src/components/pipeline/stages/ExtractSettings.tsx:391
+msgid "LLM image cropping"
+msgstr "LLM image cropping"
+
+#: src/components/pipeline/stages/ExtractSettings.tsx:407
+msgid "LLM image segmentation"
+msgstr "LLM image segmentation"
+
+#: src/components/pipeline/stages/ExtractSettings.tsx:375
+msgid "LLM meaningfulness filter"
+msgstr "LLM meaningfulness filter"
+
+#: src/components/pipeline/stages/StoryboardSettings.tsx:69
+msgid "LLM positions text over background images"
+msgstr "LLM positions text over background images"
+
+#: src/components/pipeline/stages/ExtractSettings.tsx:539
+msgid "LLM-based cropping to remove stray text, artifacts, and excessive whitespace from extracted images."
+msgstr "LLM-based cropping to remove stray text, artifacts, and excessive whitespace from extracted images."
+
+#: src/components/pipeline/stages/ExtractSettings.tsx:524
+msgid "LLM-based filter to determine if extracted images are meaningful."
+msgstr "LLM-based filter to determine if extracted images are meaningful."
+
+#: src/components/pipeline/stages/ExtractSettings.tsx:570
+msgid "LLM-based segmentation to detect and split composited images into individual segments. Requires GPT-5.2+ for accurate bounding box coordinates."
+msgstr "LLM-based segmentation to detect and split composited images into individual segments. Requires GPT-5.2+ for accurate bounding box coordinates."
+
+#: src/components/pipeline/pipeline-i18n.ts:22
+msgid "Loading Book..."
+msgstr "Loading Book..."
+
+#: src/routes/index.tsx:193
+msgid "Loading books..."
+msgstr "Loading books..."
+
+#: src/components/debug/ConfigTab.tsx:32
+msgid "Loading config..."
+msgstr "Loading config..."
+
+#: src/components/pipeline/stages/GlossaryView.tsx:211
+msgid "Loading glossary..."
+msgstr "Loading glossary..."
+
+#: src/components/pipeline/stages/QuizzesView.tsx:263
+msgid "Loading image..."
+msgstr "Loading image..."
+
+#: src/components/debug/LlmLogsTab.tsx:344
+msgid "Loading logs..."
+msgstr "Loading logs..."
+
+#: src/components/pipeline/stages/ExtractPageDetail.tsx:283
+#: src/components/pipeline/stages/StoryboardView.tsx:259
+msgid "Loading page..."
+msgstr "Loading page..."
+
+#: src/components/pipeline/stages/CaptionsView.tsx:421
+#: src/components/pipeline/stages/ExtractView.tsx:246
+#: src/components/pipeline/stages/StoryboardView.tsx:240
+msgid "Loading pages..."
+msgstr "Loading pages..."
+
+#: src/components/pipeline/stages/StoryboardSettings.tsx:1149
+msgid "Loading preview..."
+msgstr "Loading preview..."
+
+#: src/components/pipeline/stages/QuizzesView.tsx:381
+msgid "Loading quizzes..."
+msgstr "Loading quizzes..."
+
+#: src/components/pipeline/stages/SpeechPromptsEditor.tsx:69
+msgid "Loading speech instructions..."
+msgstr "Loading speech instructions..."
+
+#: src/components/debug/StatsTab.tsx:37
+msgid "Loading stats..."
+msgstr "Loading stats..."
+
+#: src/components/pipeline/stages/TranslationsView.tsx:302
+msgid "Loading text catalog..."
+msgstr "Loading text catalog..."
+
+#: src/components/pipeline/stages/VoiceMappingsEditor.tsx:139
+msgid "Loading voice mappings..."
+msgstr "Loading voice mappings..."
+
+#: src/components/debug/VersionsTab.tsx:106
+#: src/components/pipeline/stages/AiImageDialog.tsx:263
+msgid "Loading..."
+msgstr "Loading..."
+
+#: src/components/debug/DebugPanel.tsx:81
+msgid "Logs"
+msgstr "Logs"
+
+#: src/components/pipeline/stages/StoryboardSettings.tsx:858
+msgid "Lower values produce more consistent styling across pages."
+msgstr "Lower values produce more consistent styling across pages."
+
+#: src/components/pipeline/stages/AiImageDialog.tsx:32
+msgid "Map"
+msgstr "Map"
+
+#: src/components/pipeline/stages/VoiceMappingsEditor.tsx:181
+msgid "Map language codes to voice names for each TTS provider."
+msgstr "Map language codes to voice names for each TTS provider."
+
+#: src/lib/text-type-labels.ts:20
+msgid "Math"
+msgstr "Math"
+
+#: src/components/pipeline/stages/ExtractSettings.tsx:336
+msgid "Max side (px)"
+msgstr "Max side (px)"
+
+#: src/components/pipeline/StageSidebar.tsx:31
+msgid "Meaningfulness Prompt"
+msgstr "Meaningfulness Prompt"
+
+#: src/components/pipeline/stages/ExtractSettings.tsx:300
+msgid "Merge facing pages as spreads"
+msgstr "Merge facing pages as spreads"
+
+#: src/components/pipeline/stages/SectionDataPanel.tsx:482
+msgid "Merge with next section"
+msgstr "Merge with next section"
+
+#: src/components/pipeline/stages/SectionDataPanel.tsx:463
+msgid "Merge with previous section"
+msgstr "Merge with previous section"
+
+#: src/components/debug/LlmLogsTab.tsx:129
+msgid "Messages"
+msgstr "Messages"
+
+#: src/components/pipeline/pipeline-i18n.ts:45
+msgid "Metadata"
+msgstr "Metadata"
+
+#: src/components/debug/ConfigTab.tsx:54
+msgid "Metadata Extraction"
+msgstr "Metadata Extraction"
+
+#: src/components/pipeline/stages/ExtractSettings.tsx:493
+msgid "Metadata Extraction Prompt"
+msgstr "Metadata Extraction Prompt"
+
+#: src/components/pipeline/StageSidebar.tsx:29
+msgid "Metadata Prompt"
+msgstr "Metadata Prompt"
+
+#: src/components/pipeline/stages/ExtractSettings.tsx:351
+msgid "Min complexity"
+msgstr "Min complexity"
+
+#: src/components/pipeline/stages/ExtractSettings.tsx:552
+msgid "Min image dimension (px)"
+msgstr "Min image dimension (px)"
+
+#: src/components/pipeline/stages/ExtractSettings.tsx:325
+msgid "Min side (px)"
+msgstr "Min side (px)"
+
+#: src/components/debug/StatsTab.tsx:134
+msgid "Misses"
+msgstr "Misses"
+
+#: src/components/debug/LlmLogsTab.tsx:77
+#: src/components/debug/LlmLogsTab.tsx:335
+#: src/components/pipeline/stages/TranslationsSettings.tsx:213
+#: src/components/pipeline/stages/TranslationsSettings.tsx:237
+msgid "Model"
+msgstr "Model"
+
+#: src/routes/index.tsx:85
+msgid "Needs rebuild"
+msgstr "Needs rebuild"
+
+#: src/routes/index.tsx:104
+msgid "New"
+msgstr "New"
+
+#: src/components/pipeline/stages/StoryboardSettings.tsx:680
+msgid "new_type_key"
+msgstr "new_type_key"
+
+#: src/components/debug/LlmLogsTab.tsx:385
+msgid "Next"
+msgstr "Next"
+
+#: src/components/pipeline/stages/CaptionsView.tsx:463
+msgid "No captions for this page"
+msgstr "No captions for this page"
+
+#: src/components/debug/VersionsTab.tsx:56
+msgid "No data"
+msgstr "No data"
+
+#: src/components/pipeline/stages/ExtractPageDetail.tsx:382
+msgid "No extracted text yet. Run the pipeline first."
+msgstr "No extracted text yet. Run the pipeline first."
+
+#: src/components/pipeline/stages/ExtractView.tsx:46
+#: src/components/pipeline/stages/QuizzesView.tsx:200
+msgid "No image"
+msgstr "No image"
+
+#: src/components/pipeline/stages/ExtractPageDetail.tsx:344
+msgid "No image available"
+msgstr "No image available"
+
+#: src/components/pipeline/stages/AddImageDialog.tsx:168
+#: src/components/pipeline/stages/AiImageDialog.tsx:292
+msgid "No images in this book"
+msgstr "No images in this book"
+
+#: src/components/pipeline/stages/CaptionsView.tsx:263
+msgid "No images in this section"
+msgstr "No images in this section"
+
+#: src/components/pipeline/stages/AddImageDialog.tsx:168
+msgid "No images match your filter"
+msgstr "No images match your filter"
+
+#: src/components/pipeline/stages/CaptionsView.tsx:446
+msgid "No images on this page"
+msgstr "No images on this page"
+
+#: src/components/pipeline/stages/SpeechPromptsEditor.tsx:149
+msgid "No language-specific prompts configured."
+msgstr "No language-specific prompts configured."
+
+#: src/components/debug/LlmLogsTab.tsx:352
+msgid "No log entries found yet."
+msgstr "No log entries found yet."
+
+#: src/components/LanguagePicker.tsx:352
+msgid "No matches for \"{search}\""
+msgstr "No matches for \"{search}\""
+
+#: src/routes/index.tsx:152
+msgid "No metadata yet — run the pipeline to extract book details"
+msgstr "No metadata yet — run the pipeline to extract book details"
+
+#: src/components/pipeline/StageSidebar.tsx:320
+#~ msgid "No pages extracted yet"
+#~ msgstr "No pages extracted yet"
+
+#: src/components/pipeline/stages/ExtractView.tsx:276
+#: src/components/pipeline/stages/StoryboardView.tsx:249
+msgid "No pages extracted yet. Run the pipeline to extract content."
+msgstr "No pages extracted yet. Run the pipeline to extract content."
+
+#: src/routes/index.tsx:109
+msgid "No PDF"
+msgstr "No PDF"
+
+#: src/components/debug/StatsTab.tsx:190
+msgid "No pipeline data yet. Run the pipeline to see stats."
+msgstr "No pipeline data yet. Run the pipeline to see stats."
+
+#: src/components/pipeline/stages/QuizzesView.tsx:406
+msgid "No quizzes for this page"
+msgstr "No quizzes for this page"
+
+#: src/components/pipeline/stages/StoryboardSectionDetail.tsx:2071
+msgid "No rendered content for this section"
+msgstr "No rendered content for this section"
+
+#: src/components/pipeline/stages/StoryboardView.tsx:284
+msgid "No sections for this page"
+msgstr "No sections for this page"
+
+#: src/components/pipeline/stages/StoryboardSectionDetail.tsx:2040
+msgid "No sections on this page"
+msgstr "No sections on this page"
+
+#: src/components/pipeline/stages/ExtractView.tsx:71
+msgid "No text extracted"
+msgstr "No text extracted"
+
+#: src/components/pipeline/stages/TranslationsView.tsx:374
+msgid "No translations for this page"
+msgstr "No translations for this page"
+
+#: src/components/pipeline/stages/CaptionsView.tsx:128
+#: src/components/pipeline/stages/ExtractPageDetail.tsx:124
+#: src/components/pipeline/stages/GlossaryView.tsx:125
+#: src/components/pipeline/stages/QuizzesView.tsx:127
+#: src/components/pipeline/stages/StoryboardSectionDetail.tsx:183
+#: src/components/pipeline/stages/TranslationsView.tsx:138
+msgid "No versions"
+msgstr "No versions"
+
+#: src/components/debug/VersionsTab.tsx:114
+msgid "No versions found for {node} / {itemId}"
+msgstr "No versions found for {node} / {itemId}"
+
+#: src/components/pipeline/stages/VoiceMappingsEditor.tsx:269
+msgid "No voice mappings configured."
+msgstr "No voice mappings configured."
+
+#: src/components/pipeline/stages/ExtractSettings.tsx:331
+#: src/components/pipeline/stages/ExtractSettings.tsx:342
+#: src/components/pipeline/stages/ExtractSettings.tsx:558
+#: src/components/pipeline/stages/StoryboardSettings.tsx:787
+#: src/components/pipeline/stages/StoryboardSettings.tsx:792
+msgid "None"
+msgstr "None"
+
+#: src/components/pipeline/stages/QuizzesSettings.tsx:144
+msgid "Number of pages of content to include per quiz question."
+msgstr "Number of pages of content to include per quiz question."
+
+#: src/components/pipeline/stages/QuizzesSettings.tsx:152
+msgid "Only pages containing these section types are counted when grouping pages for quiz generation."
+msgstr "Only pages containing these section types are counted when grouping pages for quiz generation."
+
+#: src/components/pipeline/stages/QuizzesView.tsx:187
+msgid "Open page preview for {pageId}"
+msgstr "Open page preview for {pageId}"
+
+#: src/components/pipeline/stages/StoryboardSectionDetail.tsx:1979
+msgid "Open section data"
+msgstr "Open section data"
+
+#: src/components/pipeline/stages/TranslationsSettings.tsx:211
+#: src/components/settings/ApiKeyDialog.tsx:53
+msgid "OpenAI"
+msgstr "OpenAI"
+
+#: src/components/settings/ApiKeyDialog.tsx:122
+msgid "OpenAI API Key"
+msgstr "OpenAI API Key"
+
+#: src/components/pipeline/stages/VoiceMappingsEditor.tsx:225
+msgid "OpenAI Voice"
+msgstr "OpenAI Voice"
+
+#: src/components/pipeline/stages/SectionDataPanel.tsx:407
+msgid "Optional instructions for the LLM..."
+msgstr "Optional instructions for the LLM..."
+
+#: src/components/pipeline/stages/ImageCropDialog.tsx:13
+msgid "Original"
+msgstr "Original"
+
+#: src/lib/section-constants.ts:78
+#: src/lib/text-type-labels.ts:25
+#: src/lib/text-type-labels.ts:34
+msgid "Other"
+msgstr "Other"
+
+#: src/components/pipeline/stages/CaptionsView.tsx:324
+msgid "Other images"
+msgstr "Other images"
+
+#: src/components/pipeline/stages/TranslationsSettings.tsx:170
+msgid "Output Languages"
+msgstr "Output Languages"
+
+#: src/components/debug/LlmLogsTab.tsx:105
+msgid "Output Tokens"
+msgstr "Output Tokens"
+
+#: src/components/pipeline/pipeline-i18n.ts:40
+msgid "Package and preview the final ADT web application."
+msgstr "Package and preview the final ADT web application."
+
+#: src/components/pipeline/stages/PreviewView.tsx:70
+msgid "Packaging preview..."
+msgstr "Packaging preview..."
+
+#: src/components/pipeline/stages/ExtractView.tsx:135
+#: src/components/pipeline/stages/ExtractView.tsx:215
+#: src/routes/index.tsx:101
+msgid "page"
+msgstr "page"
+
+#: src/components/pipeline/stages/SectionDataPanel.tsx:539
+msgid "Page"
+msgstr "Page"
+
+#. placeholder {0}: String(page.pageNumber)
+#. placeholder {0}: String(pageNumber)
+#. placeholder {0}: String(selectedPage.pageNumber)
+#: src/components/pipeline/stages/CaptionsView.tsx:293
+#: src/components/pipeline/stages/CaptionsView.tsx:380
+#: src/components/pipeline/stages/ExtractPageDetail.tsx:324
+#: src/components/pipeline/stages/ExtractView.tsx:41
+#: src/components/pipeline/stages/ExtractView.tsx:54
+#: src/components/pipeline/stages/ExtractView.tsx:190
+#: src/components/pipeline/stages/StoryboardSettings.tsx:118
+#: src/components/pipeline/stages/StoryboardSettings.tsx:128
+#: src/components/pipeline/stages/StoryboardView.tsx:104
+#: src/components/pipeline/stages/StoryboardView.tsx:174
+msgid "Page {0}"
+msgstr "Page {0}"
+
+#: src/components/pipeline/stages/QuizzesView.tsx:193
+#: src/components/pipeline/stages/QuizzesView.tsx:204
+#: src/components/pipeline/stages/QuizzesView.tsx:245
+msgid "Page {pageId}"
+msgstr "Page {pageId}"
+
+#: src/lib/text-type-labels.ts:24
+msgid "Page Number"
+msgstr "Page Number"
+
+#: src/components/pipeline/stages/QuizzesView.tsx:237
+msgid "Page preview {pageId}"
+msgstr "Page preview {pageId}"
+
+#: src/components/pipeline/stages/ExtractSettings.tsx:262
+msgid "Page Range"
+msgstr "Page Range"
+
+#: src/components/debug/ConfigTab.tsx:57
+#: src/components/pipeline/pipeline-i18n.ts:53
+msgid "Page Sectioning"
+msgstr "Page Sectioning"
+
+#: src/components/pipeline/stages/StoryboardSettings.tsx:757
+msgid "Page Sectioning Prompt"
+msgstr "Page Sectioning Prompt"
+
+#: src/components/pipeline/stages/ExtractView.tsx:135
+#: src/components/pipeline/stages/ExtractView.tsx:215
+#: src/routes/index.tsx:102
+msgid "pages"
+msgstr "pages"
+
+#: src/components/pipeline/stages/QuizzesSettings.tsx:134
+msgid "Pages per Quiz"
+msgstr "Pages per Quiz"
+
+#: src/components/pipeline/stages/AiImageDialog.tsx:18
+msgid "Paper Collage"
+msgstr "Paper Collage"
+
+#: src/lib/text-type-labels.ts:30
+msgid "Paragraph"
+msgstr "Paragraph"
+
+#: src/components/pipeline/pipeline-i18n.ts:44
+msgid "PDF Extraction"
+msgstr "PDF Extraction"
+
+#: src/components/pipeline/stages/AiImageDialog.tsx:17
+msgid "Pencil Sketch"
+msgstr "Pencil Sketch"
+
+#: src/components/pipeline/stages/TranslationsView.tsx:434
+msgid "Pending..."
+msgstr "Pending..."
+
+#: src/components/debug/StatsTab.tsx:118
+msgid "Per-Step Breakdown"
+msgstr "Per-Step Breakdown"
+
+#: src/components/pipeline/StageSidebar.tsx:439
+#~ msgid "pg {0}"
+#~ msgstr "pg {0}"
+
+#: src/components/pipeline/stages/AiImageDialog.tsx:28
+msgid "Photograph"
+msgstr "Photograph"
+
+#: src/components/pipeline/stages/AddImageDialog.tsx:126
+msgid "Pick from book"
+msgstr "Pick from book"
+
+#: src/components/pipeline/stages/AddImageDialog.tsx:105
+msgid "Pick from Book"
+msgstr "Pick from Book"
+
+#: src/routes/index.tsx:235
+msgid "Pipeline Stages"
+msgstr "Pipeline Stages"
+
+#: src/components/pipeline/stages/AiImageDialog.tsx:19
+msgid "Pixel Art"
+msgstr "Pixel Art"
+
+#: src/components/pipeline/stages/StoryboardSectionDetail.tsx:48
+msgid "Polishing paragraphs to perfection..."
+msgstr "Polishing paragraphs to perfection..."
+
+#: src/components/debug/DebugPanel.tsx:103
+msgid "Pop out to new window"
+msgstr "Pop out to new window"
+
+#: src/components/debug/LlmLogsTab.tsx:376
+msgid "Prev"
+msgstr "Prev"
+
+#: src/components/pipeline/pipeline-i18n.ts:17
+#: src/components/pipeline/stages/AddImageDialog.tsx:244
+#: src/components/pipeline/stages/StoryboardSettings.tsx:810
+msgid "Preview"
+msgstr "Preview"
+
+#: src/components/pipeline/stages/StoryboardSettings.tsx:1143
+msgid "Preview of the HTML/CSS patterns used for LLM-generated pages."
+msgstr "Preview of the HTML/CSS patterns used for LLM-generated pages."
+
+#: src/components/debug/LlmLogsTab.tsx:71
+#: src/components/debug/LlmLogsTab.tsx:334
+msgid "Prompt"
+msgstr "Prompt"
+
+#: src/components/pipeline/stages/TranslationsSettings.tsx:194
+msgid "Provider Routing"
+msgstr "Provider Routing"
+
+#: src/components/pipeline/stages/TranslationsSettings.tsx:205
+msgid "Provider used for languages not assigned to a specific provider."
+msgstr "Provider used for languages not assigned to a specific provider."
+
+#: src/components/pipeline/stages/StoryboardSettings.tsx:831
+msgid "Provides consistent HTML/CSS patterns for LLM-generated pages."
+msgstr "Provides consistent HTML/CSS patterns for LLM-generated pages."
+
+#: src/components/pipeline/stages/SectionEditToolbar.tsx:172
+msgid "Prune"
+msgstr "Prune"
+
+#: src/components/pipeline/stages/SectionEditToolbar.tsx:162
+#: src/components/pipeline/stages/SectionEditToolbar.tsx:247
+msgid "Prune element"
+msgstr "Prune element"
+
+#: src/components/pipeline/stages/ExtractPageDetail.tsx:149
+msgid "Prune image"
+msgstr "Prune image"
+
+#: src/components/pipeline/stages/StoryboardSectionDetail.tsx:1919
+msgid "Prune section from flow"
+msgstr "Prune section from flow"
+
+#: src/components/pipeline/stages/ExtractPageDetail.tsx:458
+msgid "Prune text"
+msgstr "Prune text"
+
+#: src/components/pipeline/stages/SectionEditToolbar.tsx:167
+msgid "Pruned"
+msgstr "Pruned"
+
+#. placeholder {0}: reason ?? ""
+#: src/components/pipeline/stages/SectionDataPanel.tsx:107
+msgid "Pruned: {0}"
+msgstr "Pruned: {0}"
+
+#: src/components/pipeline/stages/ExtractPageDetail.tsx:139
+msgid "Pruned: {reason}"
+msgstr "Pruned: {reason}"
+
+#: src/routes/index.tsx:138
+msgid "Publisher"
+msgstr "Publisher"
+
+#: src/components/pipeline/pipeline-i18n.ts:55
+msgid "Quiz Generation"
+msgstr "Quiz Generation"
+
+#: src/components/pipeline/stages/QuizzesSettings.tsx:185
+msgid "Quiz Generation Prompt"
+msgstr "Quiz Generation Prompt"
+
+#: src/components/pipeline/StageSidebar.tsx:40
+msgid "Quiz Prompt"
+msgstr "Quiz Prompt"
+
+#: src/components/pipeline/stages/QuizzesSettings.tsx:150
+msgid "Quiz Section Types"
+msgstr "Quiz Section Types"
+
+#: src/components/pipeline/pipeline-i18n.ts:13
+msgid "Quizzes"
+msgstr "Quizzes"
+
+#: src/components/pipeline/stages/QuizzesView.tsx:407
+msgid "Quizzes are linked to other pages in this book"
+msgstr "Quizzes are linked to other pages in this book"
+
+#: src/components/pipeline/stages/StoryboardSettings.tsx:665
+msgid "Re-enable type"
+msgstr "Re-enable type"
+
+#: src/components/pipeline/StageSidebar.tsx:210
+#~ msgid "Re-package ADT"
+#~ msgstr "Re-package ADT"
+
+#: src/components/pipeline/stages/SectionDataPanel.tsx:431
+msgid "Re-render"
+msgstr "Re-render"
+
+#: src/components/pipeline/stages/SectionDataPanel.tsx:403
+msgid "Re-render section"
+msgstr "Re-render section"
+
+#: src/components/pipeline/stages/SectionDataPanel.tsx:392
+msgid "Re-render this section"
+msgstr "Re-render this section"
+
+#: src/components/pipeline/stages/StoryboardSectionDetail.tsx:2129
+msgid "Re-rendering page..."
+msgstr "Re-rendering page..."
+
+#: src/components/pipeline/StageRunCard.tsx:181
+msgid "Re-run {stageLabel}"
+msgstr "Re-run {stageLabel}"
+
+#: src/components/pipeline/stages/AiImageDialog.tsx:16
+msgid "Realistic / Photo"
+msgstr "Realistic / Photo"
+
+#: src/components/pipeline/stages/StoryboardSectionDetail.tsx:43
+msgid "Rearranging atoms of HTML..."
+msgstr "Rearranging atoms of HTML..."
+
+#: src/components/settings/ApiKeyDialog.tsx:183
+msgid "Region"
+msgstr "Region"
+
+#: src/components/pipeline/stages/AiImageDialog.tsx:309
+msgid "Remove"
+msgstr "Remove"
+
+#: src/components/pipeline/stages/SectionEditToolbar.tsx:151
+#: src/components/pipeline/stages/SectionEditToolbar.tsx:236
+msgid "Remove this block"
+msgstr "Remove this block"
+
+#: src/components/pipeline/stages/ExtractSettings.tsx:451
+msgid "Remove type"
+msgstr "Remove type"
+
+#: src/components/debug/ConfigTab.tsx:59
+msgid "Render Strategies"
+msgstr "Render Strategies"
+
+#: src/components/pipeline/stages/StoryboardSettings.tsx:619
+msgid "Render Strategy"
+msgstr "Render Strategy"
+
+#: src/components/pipeline/stages/StoryboardSectionDetail.tsx:2271
+msgid "rendering"
+msgstr "rendering"
+
+#: src/components/pipeline/stages/StoryboardSettings.tsx:887
+msgid "Rendering Prompt"
+msgstr "Rendering Prompt"
+
+#: src/components/pipeline/stages/SectionEditToolbar.tsx:122
+msgid "Replace"
+msgstr "Replace"
+
+#: src/components/pipeline/stages/TranslationsView.tsx:367
+msgid "Resolving source language..."
+msgstr "Resolving source language..."
+
+#: src/components/pipeline/stages/StoryboardSectionDetail.tsx:2089
+msgid "Restore"
+msgstr "Restore"
+
+#: src/components/pipeline/stages/SectionEditToolbar.tsx:162
+#: src/components/pipeline/stages/SectionEditToolbar.tsx:247
+msgid "Restore element"
+msgstr "Restore element"
+
+#: src/components/pipeline/stages/StoryboardSectionDetail.tsx:1919
+msgid "Restore section to flow"
+msgstr "Restore section to flow"
+
+#: src/components/pipeline/StageRunCard.tsx:179
+#: src/components/pipeline/stages/QuizzesView.tsx:257
+msgid "Retry"
+msgstr "Retry"
+
+#: src/components/pipeline/stages/ExportView.tsx:78
+#: src/components/pipeline/stages/ExportView.tsx:114
+#: src/components/pipeline/stages/ExportView.tsx:153
+msgid "Retry Export"
+msgstr "Retry Export"
+
+#: src/components/pipeline/stages/StoryboardSectionDetail.tsx:40
+msgid "Rewriting the story of this section..."
+msgstr "Rewriting the story of this section..."
+
+#: src/components/pipeline/StageRunCard.tsx:182
+msgid "Run {stageLabel}"
+msgstr "Run {stageLabel}"
+
+#: src/components/pipeline/stages/ExportView.tsx:42
+msgid "Run the pipeline through at least the"
+msgstr "Run the pipeline through at least the"
+
+#: src/components/pipeline/stages/AddImageDialog.tsx:302
+#: src/components/pipeline/stages/AiImageDialog.tsx:326
+msgid "Runs in background — you can keep editing"
+msgstr "Runs in background — you can keep editing"
+
+#: src/components/pipeline/stages/TranslationsSettings.tsx:280
+msgid "Sample Rate"
+msgstr "Sample Rate"
+
+#: src/components/pipeline/stages/CaptionsView.tsx:92
+#: src/components/pipeline/stages/ExtractPageDetail.tsx:88
+#: src/components/pipeline/stages/GlossaryView.tsx:89
+#: src/components/pipeline/stages/QuizzesView.tsx:91
+#: src/components/pipeline/stages/SpeechPromptsEditor.tsx:85
+#: src/components/pipeline/stages/StoryboardSectionDetail.tsx:142
+#: src/components/pipeline/stages/StoryboardSectionDetail.tsx:2284
+#: src/components/pipeline/stages/StoryboardSettings.tsx:1122
+#: src/components/pipeline/stages/TranslationsView.tsx:102
+#: src/components/pipeline/stages/VoiceMappingsEditor.tsx:152
+#: src/components/settings/ApiKeyDialog.tsx:201
+msgid "Save"
+msgstr "Save"
+
+#: src/components/pipeline/stages/CaptionsSettings.tsx:96
+#: src/components/pipeline/stages/ExtractSettings.tsx:605
+#: src/components/pipeline/stages/GlossarySettings.tsx:96
+#: src/components/pipeline/stages/QuizzesSettings.tsx:204
+#: src/components/pipeline/stages/StoryboardSettings.tsx:1132
+#: src/components/pipeline/stages/TranslationsSettings.tsx:309
+msgid "Save & Rerun"
+msgstr "Save & Rerun"
+
+#: src/components/pipeline/stages/CaptionsSettings.tsx:104
+msgid "Save & Rerun Captions"
+msgstr "Save & Rerun Captions"
+
+#: src/components/pipeline/stages/ExtractSettings.tsx:613
+msgid "Save & Rerun Extraction"
+msgstr "Save & Rerun Extraction"
+
+#: src/components/pipeline/stages/GlossarySettings.tsx:104
+msgid "Save & Rerun Glossary"
+msgstr "Save & Rerun Glossary"
+
+#: src/components/pipeline/stages/QuizzesSettings.tsx:212
+msgid "Save & Rerun Quizzes"
+msgstr "Save & Rerun Quizzes"
+
+#: src/components/pipeline/stages/StoryboardSettings.tsx:1238
+msgid "Save & Rerun Storyboard"
+msgstr "Save & Rerun Storyboard"
+
+#: src/components/pipeline/stages/TranslationsSettings.tsx:317
+msgid "Save & Rerun Translations + Audio"
+msgstr "Save & Rerun Translations + Audio"
+
+#: src/components/pipeline/stages/SectionDataPanel.tsx:499
+msgid "Save changes before cloning"
+msgstr "Save changes before cloning"
+
+#: src/components/pipeline/stages/SectionDataPanel.tsx:516
+msgid "Save changes before deleting"
+msgstr "Save changes before deleting"
+
+#: src/components/pipeline/stages/SectionDataPanel.tsx:462
+#: src/components/pipeline/stages/SectionDataPanel.tsx:481
+msgid "Save changes before merging"
+msgstr "Save changes before merging"
+
+#: src/components/pipeline/stages/SectionDataPanel.tsx:391
+msgid "Save changes before re-rendering"
+msgstr "Save changes before re-rendering"
+
+#: src/components/pipeline/stages/StoryboardSectionDetail.tsx:2247
+msgid "Save changes first to preview the latest version"
+msgstr "Save changes first to preview the latest version"
+
+#: src/components/pipeline/stages/CaptionsSettings.tsx:114
+#: src/components/pipeline/stages/ExtractSettings.tsx:623
+#: src/components/pipeline/stages/GlossarySettings.tsx:114
+#: src/components/pipeline/stages/QuizzesSettings.tsx:222
+#: src/components/pipeline/stages/SpeechPromptsEditor.tsx:85
+#: src/components/pipeline/stages/StoryboardSettings.tsx:1122
+#: src/components/pipeline/stages/StoryboardSettings.tsx:1250
+#: src/components/pipeline/stages/TranslationsSettings.tsx:327
+#: src/components/pipeline/stages/VoiceMappingsEditor.tsx:152
+msgid "Saving..."
+msgstr "Saving..."
+
+#: src/components/pipeline/stages/ExportView.tsx:92
+msgid "SCORM Export"
+msgstr "SCORM Export"
+
+#: src/components/LanguagePicker.tsx:243
+msgid "Search languages..."
+msgstr "Search languages..."
+
+#. placeholder {0}: String(group.sectionIndex + 1)
+#. placeholder {0}: String(i + 1)
+#: src/components/pipeline/stages/CaptionsView.tsx:323
+#: src/components/pipeline/stages/CaptionsView.tsx:397
+#: src/components/pipeline/stages/StoryboardView.tsx:124
+msgid "Section {0}"
+msgstr "Section {0}"
+
+#. placeholder {0}: String(group.sectionIndex + 1)
+#. placeholder {1}: group.sectionType
+#: src/components/pipeline/stages/CaptionsView.tsx:322
+msgid "Section {0} — {1}"
+msgstr "Section {0} — {1}"
+
+#. placeholder {0}: String(i + 1)
+#: src/components/pipeline/stages/CaptionsView.tsx:397
+#: src/components/pipeline/stages/StoryboardView.tsx:124
+msgid "Section {0} (pruned)"
+msgstr "Section {0} (pruned)"
+
+#: src/components/pipeline/stages/StoryboardSectionDetail.tsx:1986
+msgid "Section Data"
+msgstr "Section Data"
+
+#: src/lib/text-type-labels.ts:10
+msgid "Section Heading"
+msgstr "Section Heading"
+
+#: src/components/pipeline/stages/StoryboardSectionDetail.tsx:1996
+msgid "Section not found."
+msgstr "Section not found."
+
+#: src/components/pipeline/stages/StoryboardSectionDetail.tsx:2083
+msgid "Section pruned from flow"
+msgstr "Section pruned from flow"
+
+#: src/components/debug/ConfigTab.tsx:60
+msgid "Section Render Strategies"
+msgstr "Section Render Strategies"
+
+#: src/lib/text-type-labels.ts:11
+msgid "Section Text"
+msgstr "Section Text"
+
+#: src/components/debug/ConfigTab.tsx:53
+#: src/components/pipeline/stages/StoryboardSettings.tsx:608
+msgid "Section Types"
+msgstr "Section Types"
+
+#: src/components/pipeline/stages/StoryboardSettings.tsx:709
+#: src/components/pipeline/StageSidebar.tsx:35
+msgid "Sectioning Mode"
+msgstr "Sectioning Mode"
+
+#: src/components/pipeline/stages/StoryboardSectionDetail.tsx:2271
+msgid "sections"
+msgstr "sections"
+
+#: src/components/pipeline/stages/SectionEditToolbar.tsx:143
+msgid "Segment"
+msgstr "Segment"
+
+#: src/components/pipeline/StageSidebar.tsx:33
+msgid "Segmentation Prompt"
+msgstr "Segmentation Prompt"
+
+#: src/components/pipeline/stages/SectionEditToolbar.tsx:143
+msgid "Segmenting..."
+msgstr "Segmenting..."
+
+#: src/components/debug/VersionsTab.tsx:102
+msgid "Select a node type and enter an item ID to view versions."
+msgstr "Select a node type and enter an item ID to view versions."
+
+#: src/components/pipeline/stages/StoryboardSettings.tsx:1010
+#: src/components/pipeline/stages/StoryboardSettings.tsx:1011
+msgid "Select activity type..."
+msgstr "Select activity type..."
+
+#: src/components/debug/VersionsTab.tsx:80
+msgid "Select node type..."
+msgstr "Select node type..."
+
+#: src/components/pipeline/stages/StoryboardSettings.tsx:568
+msgid "Select strategy..."
+msgstr "Select strategy..."
+
+#: src/components/pipeline/stages/StoryboardSettings.tsx:786
+msgid "Select styleguide..."
+msgstr "Select styleguide..."
+
+#: src/components/pipeline/stages/StoryboardSettings.tsx:916
+#: src/components/pipeline/stages/StoryboardSettings.tsx:924
+msgid "Select template..."
+msgstr "Select template..."
+
+#: src/components/pipeline/stages/StoryboardSettings.tsx:1172
+msgid "Select up to 5 pages to use as visual references. The LLM will analyze them and generate a styleguide."
+msgstr "Select up to 5 pages to use as visual references. The LLM will analyze them and generate a styleguide."
+
+#: src/components/pipeline/stages/AiImageDialog.tsx:257
+msgid "Selected: {styleImageId}"
+msgstr "Selected: {styleImageId}"
+
+#: src/lib/section-constants.ts:74
+msgid "Separator"
+msgstr "Separator"
+
+#: src/components/pipeline/stages/ImageCropDialog.tsx:197
+msgid "Set"
+msgstr "Set"
+
+#: src/routes/books.$label.$step.settings.tsx:69
+msgid "Settings"
+msgstr "Settings"
+
+#: src/routes/books.$label.$step.settings.tsx:90
+msgid "Settings for this step are not yet available."
+msgstr "Settings for this step are not yet available."
+
+#: src/components/pipeline/stages/CaptionsView.tsx:452
+#: src/components/pipeline/stages/CaptionsView.tsx:477
+msgid "Show all"
+msgstr "Show all"
+
+#: src/components/pipeline/stages/TranslationsView.tsx:328
+msgid "Show all text & speech"
+msgstr "Show all text & speech"
+
+#: src/components/pipeline/stages/SectionDataPanel.tsx:841
+msgid "Show Pruned"
+msgstr "Show Pruned"
+
+#: src/components/pipeline/stages/SectionDataPanel.tsx:833
+msgid "Show pruned images"
+msgstr "Show pruned images"
+
+#: src/components/pipeline/stages/ExtractSettings.tsx:562
+msgid "Skip segmentation for images whose shortest side is below this threshold."
+msgstr "Skip segmentation for images whose shortest side is below this threshold."
+
+#: src/components/pipeline/StageSidebar.tsx:45
+msgid "Speech"
+msgstr "Speech"
+
+#: src/components/pipeline/pipeline-i18n.ts:60
+msgid "Speech Generation"
+msgstr "Speech Generation"
+
+#: src/components/pipeline/StageSidebar.tsx:46
+msgid "Speech Prompts"
+msgstr "Speech Prompts"
+
+#: src/components/pipeline/stages/ExtractSettings.tsx:291
+msgid "Spread Mode"
+msgstr "Spread Mode"
+
+#: src/components/pipeline/stages/StoryboardSectionDetail.tsx:45
+msgid "Sprinkling some digital fairy dust..."
+msgstr "Sprinkling some digital fairy dust..."
+
+#: src/components/pipeline/stages/ExportView.tsx:44
+msgid "stage first."
+msgstr "stage first."
+
+#: src/lib/text-type-labels.ts:21
+msgid "Standalone Text"
+msgstr "Standalone Text"
+
+#: src/lib/text-type-labels.ts:31
+msgid "Stanza"
+msgstr "Stanza"
+
+#: src/components/debug/DebugPanel.tsx:78
+msgid "Stats"
+msgstr "Stats"
+
+#: src/components/debug/LlmLogsTab.tsx:332
+#: src/components/debug/StatsTab.tsx:125
+msgid "Step"
+msgstr "Step"
+
+#: src/components/pipeline/pipeline-i18n.ts:12
+#: src/components/pipeline/stages/ExportView.tsx:43
+msgid "Storyboard"
+msgstr "Storyboard"
+
+#: src/components/pipeline/stages/AiImageDialog.tsx:198
+msgid "Style"
+msgstr "Style"
+
+#: src/components/pipeline/stages/AiImageDialog.tsx:300
+msgid "Style reference"
+msgstr "Style reference"
+
+#: src/components/pipeline/stages/AiImageDialog.tsx:247
+msgid "Style reference image"
+msgstr "Style reference image"
+
+#: src/components/pipeline/stages/StoryboardSettings.tsx:775
+msgid "Styleguide"
+msgstr "Styleguide"
+
+#: src/components/pipeline/stages/StoryboardSettings.tsx:1156
+msgid "Styleguide Preview"
+msgstr "Styleguide Preview"
+
+#: src/components/pipeline/stages/StoryboardSettings.tsx:1141
+msgid "Styleguide Preview — {styleguide}"
+msgstr "Styleguide Preview — {styleguide}"
+
+#: src/components/settings/ApiKeyDialog.tsx:157
+msgid "Subscription Key"
+msgstr "Subscription Key"
+
+#: src/components/debug/LlmLogsTab.tsx:186
+#: src/components/debug/LlmLogsTab.tsx:313
+msgid "Success"
+msgstr "Success"
+
+#: src/components/pipeline/StageSidebar.tsx:34
+msgid "Summary Prompt"
+msgstr "Summary Prompt"
+
+#: src/components/debug/LlmLogsTab.tsx:118
+msgid "System Prompt"
+msgstr "System Prompt"
+
+#: src/lib/text-type-labels.ts:33
+msgid "Table"
+msgstr "Table"
+
+#: src/lib/section-constants.ts:77
+msgid "Table of Contents"
+msgstr "Table of Contents"
+
+#: src/components/pipeline/stages/StoryboardSectionDetail.tsx:41
+msgid "Teaching the pixels new tricks..."
+msgstr "Teaching the pixels new tricks..."
+
+#: src/components/pipeline/stages/StoryboardSettings.tsx:837
+msgid "Temperature"
+msgstr "Temperature"
+
+#: src/components/pipeline/stages/StoryboardSettings.tsx:903
+#: src/components/pipeline/StageSidebar.tsx:37
+msgid "Template Rendering"
+msgstr "Template Rendering"
+
+#: src/lib/section-constants.ts:61
+msgid "Text & Images"
+msgstr "Text & Images"
+
+#: src/lib/section-constants.ts:60
+msgid "Text & Single Image"
+msgstr "Text & Single Image"
+
+#: src/components/pipeline/pipeline-i18n.ts:16
+msgid "Text & Speech"
+msgstr "Text & Speech"
+
+#: src/components/pipeline/pipeline-i18n.ts:58
+msgid "Text Catalog"
+msgstr "Text Catalog"
+
+#: src/components/debug/ConfigTab.tsx:55
+#: src/components/pipeline/pipeline-i18n.ts:51
+msgid "Text Classification"
+msgstr "Text Classification"
+
+#: src/components/pipeline/stages/ExtractSettings.tsx:508
+msgid "Text Classification Prompt"
+msgstr "Text Classification Prompt"
+
+#. placeholder {0}: section.textColor
+#: src/components/pipeline/stages/SectionDataPanel.tsx:549
+msgid "Text color: {0}"
+msgstr "Text color: {0}"
+
+#: src/components/pipeline/stages/SectionDataPanel.tsx:562
+msgid "Text Groups"
+msgstr "Text Groups"
+
+#: src/lib/section-constants.ts:59
+msgid "Text Only"
+msgstr "Text Only"
+
+#: src/components/debug/ConfigTab.tsx:51
+#: src/components/pipeline/StageSidebar.tsx:28
+msgid "Text Types"
+msgstr "Text Types"
+
+#: src/components/pipeline/stages/StoryboardSectionDetail.tsx:46
+msgid "The AI is having a think..."
+msgstr "The AI is having a think..."
+
+#: src/components/pipeline/stages/AiImageDialog.tsx:318
+msgid "The AI will preserve the original style while applying your changes."
+msgstr "The AI will preserve the original style while applying your changes."
+
+#: src/lib/section-constants.ts:96
+msgid "The back cover of the book."
+msgstr "The back cover of the book."
+
+#: src/lib/section-constants.ts:98
+msgid "The credits page."
+msgstr "The credits page."
+
+#: src/components/pipeline/stages/SpeechPromptsEditor.tsx:96
+msgid "The default TTS instruction sent to OpenAI for all languages unless overridden below."
+msgstr "The default TTS instruction sent to OpenAI for all languages unless overridden below."
+
+#: src/lib/section-constants.ts:99
+msgid "The foreword or introduction."
+msgstr "The foreword or introduction."
+
+#: src/lib/section-constants.ts:94
+msgid "The front cover of the book."
+msgstr "The front cover of the book."
+
+#: src/lib/section-constants.ts:95
+msgid "The inside cover of the book."
+msgstr "The inside cover of the book."
+
+#: src/components/pipeline/stages/ExtractSettings.tsx:509
+msgid "The prompt template used for text classification. This is a Liquid template processed with page context."
+msgstr "The prompt template used for text classification. This is a Liquid template processed with page context."
+
+#: src/components/pipeline/stages/ExtractSettings.tsx:494
+msgid "The prompt template used to extract book metadata (title, author, etc.) from the first few pages. This is a Liquid template processed with page context."
+msgstr "The prompt template used to extract book metadata (title, author, etc.) from the first few pages. This is a Liquid template processed with page context."
+
+#: src/components/pipeline/stages/ExtractSettings.tsx:587
+msgid "The prompt template used to generate a short book summary at the end of extract. The summary is generated in the configured editing language."
+msgstr "The prompt template used to generate a short book summary at the end of extract. The summary is generated in the configured editing language."
+
+#: src/components/pipeline/stages/CaptionsSettings.tsx:80
+msgid "The prompt template used to generate captions for images in the book."
+msgstr "The prompt template used to generate captions for images in the book."
+
+#: src/components/pipeline/stages/GlossarySettings.tsx:80
+msgid "The prompt template used to generate glossary terms from book content."
+msgstr "The prompt template used to generate glossary terms from book content."
+
+#: src/components/pipeline/stages/StoryboardSettings.tsx:888
+msgid "The prompt template used to generate HTML for each section. This is a Liquid template processed with section context."
+msgstr "The prompt template used to generate HTML for each section. This is a Liquid template processed with section context."
+
+#: src/components/pipeline/stages/QuizzesSettings.tsx:186
+msgid "The prompt template used to generate quiz questions from page content."
+msgstr "The prompt template used to generate quiz questions from page content."
+
+#: src/components/pipeline/stages/StoryboardSettings.tsx:758
+msgid "The prompt template used to split each page into logical sections. This is a Liquid template processed with page context."
+msgstr "The prompt template used to split each page into logical sections. This is a Liquid template processed with page context."
+
+#: src/components/pipeline/stages/TranslationsSettings.tsx:180
+msgid "The prompt template used to translate text catalog entries."
+msgstr "The prompt template used to translate text catalog entries."
+
+#: src/components/pipeline/stages/StoryboardSettings.tsx:601
+msgid "The rendering strategy used for sections without an explicit mapping."
+msgstr "The rendering strategy used for sections without an explicit mapping."
+
+#: src/lib/section-constants.ts:100
+msgid "The table of contents."
+msgstr "The table of contents."
+
+#: src/components/pipeline/stages/CaptionsView.tsx:464
+msgid "This page has no captioned images"
+msgstr "This page has no captioned images"
+
+#: src/components/pipeline/stages/StoryboardView.tsx:285
+msgid "This page has no storyboard sections"
+msgstr "This page has no storyboard sections"
+
+#: src/components/pipeline/stages/TranslationsView.tsx:375
+msgid "This page has no translatable text entries"
+msgstr "This page has no translatable text entries"
+
+#: src/components/pipeline/stages/StoryboardSectionDetail.tsx:2072
+msgid "This section has no storyboard rendering yet"
+msgstr "This section has no storyboard rendering yet"
+
+#: src/components/pipeline/stages/GlossarySettings.tsx:106
+msgid "This will save your settings and re-run glossary generation."
+msgstr "This will save your settings and re-run glossary generation."
+
+#: src/components/pipeline/stages/CaptionsSettings.tsx:106
+msgid "This will save your settings and re-run image captioning."
+msgstr "This will save your settings and re-run image captioning."
+
+#: src/components/pipeline/stages/QuizzesSettings.tsx:214
+msgid "This will save your settings and re-run quiz generation."
+msgstr "This will save your settings and re-run quiz generation."
+
+#: src/components/pipeline/stages/ExtractSettings.tsx:615
+msgid "This will save your settings and re-run the extraction pipeline. Any manual edits to extracted text will be overwritten for affected pages."
+msgstr "This will save your settings and re-run the extraction pipeline. Any manual edits to extracted text will be overwritten for affected pages."
+
+#: src/components/pipeline/stages/StoryboardSettings.tsx:1241
+msgid "This will save your settings and re-run the storyboard pipeline. Only rendering will be regenerated — your existing sections will be preserved."
+msgstr "This will save your settings and re-run the storyboard pipeline. Only rendering will be regenerated — your existing sections will be preserved."
+
+#: src/components/pipeline/stages/StoryboardSettings.tsx:1242
+msgid "This will save your settings and re-run the storyboard pipeline. Sectioning and rendering will be regenerated for all pages."
+msgstr "This will save your settings and re-run the storyboard pipeline. Sectioning and rendering will be regenerated for all pages."
+
+#: src/components/pipeline/stages/TranslationsSettings.tsx:319
+msgid "This will save your settings and re-run translations and audio generation, rebuilding the text catalog, translating to output languages, and generating speech."
+msgstr "This will save your settings and re-run translations and audio generation, rebuilding the text catalog, translating to output languages, and generating speech."
+
+#: src/components/debug/LlmLogsTab.tsx:331
+msgid "Time"
+msgstr "Time"
+
+#: src/components/pipeline/stages/ExtractSettings.tsx:273
+msgid "to"
+msgstr "to"
+
+#: src/components/debug/LlmLogsTab.tsx:337
+msgid "Tokens"
+msgstr "Tokens"
+
+#: src/components/debug/StatsTab.tsx:137
+msgid "Tokens In"
+msgstr "Tokens In"
+
+#: src/components/debug/StatsTab.tsx:140
+msgid "Tokens Out"
+msgstr "Tokens Out"
+
+#: src/components/debug/StatsTab.tsx:74
+msgid "Total Tokens"
+msgstr "Total Tokens"
+
+#: src/components/pipeline/pipeline-i18n.ts:39
+msgid "Translate the book content and generate audio narration."
+msgstr "Translate the book content and generate audio narration."
+
+#: src/components/pipeline/pipeline-i18n.ts:52
+msgid "Translation"
+msgstr "Translation"
+
+#: src/components/pipeline/stages/TranslationsSettings.tsx:179
+#: src/components/pipeline/StageSidebar.tsx:44
+msgid "Translation Prompt"
+msgstr "Translation Prompt"
+
+#: src/components/pipeline/stages/StoryboardSettings.tsx:742
+msgid "Treats each page as a single section"
+msgstr "Treats each page as a single section"
+
+#: src/components/pipeline/stages/StoryboardSectionDetail.tsx:2258
+msgid "Try Activity"
+msgstr "Try Activity"
+
+#: src/components/pipeline/stages/StoryboardSettings.tsx:71
+msgid "Two-column template for story content"
+msgstr "Two-column template for story content"
+
+#: src/components/pipeline/stages/ExtractSettings.tsx:426
+#: src/components/pipeline/stages/StoryboardSettings.tsx:617
+msgid "Type"
+msgstr "Type"
+
+#: src/components/pipeline/stages/StoryboardSettings.tsx:611
+msgid "Types used during page sectioning. Pruned types are classified but excluded from rendering. Disabled types are hidden from the LLM entirely."
+msgstr "Types used during page sectioning. Pruned types are classified but excluded from rendering. Disabled types are hidden from the LLM entirely."
+
+#: src/components/pipeline/stages/ExtractSettings.tsx:420
+msgid "Types used during text classification. Pruned types are excluded from rendering."
+msgstr "Types used during text classification. Pruned types are excluded from rendering."
+
+#: src/routes/books.$label.$step.settings.tsx:32
+msgid "Unknown stage"
+msgstr "Unknown stage"
+
+#: src/routes/books.$label.$step.settings.tsx:36
+msgid "Unknown step slug: {step}"
+msgstr "Unknown step slug: {step}"
+
+#: src/components/pipeline/StepViewRouter.tsx:75
+msgid "Unknown step: {step}"
+msgstr "Unknown step: {step}"
+
+#: src/components/pipeline/stages/ExtractPageDetail.tsx:149
+msgid "Unprune image"
+msgstr "Unprune image"
+
+#: src/components/pipeline/stages/ExtractPageDetail.tsx:458
+msgid "Unprune text"
+msgstr "Unprune text"
+
+#: src/components/pipeline/stages/StoryboardSectionDetail.tsx:1987
+msgid "Unsaved changes"
+msgstr "Unsaved changes"
+
+#: src/components/pipeline/stages/StoryboardSectionDetail.tsx:2269
+msgid "Unsaved:"
+msgstr "Unsaved:"
+
+#: src/components/pipeline/stages/StoryboardSectionDetail.tsx:49
+msgid "Untangling nested divs with care..."
+msgstr "Untangling nested divs with care..."
+
+#: src/components/pipeline/StageSidebar.tsx:436
+#~ msgid "Untitled"
+#~ msgstr "Untitled"
+
+#: src/components/pipeline/stages/AddImageDialog.tsx:133
+msgid "Upload a new image file from your computer"
+msgstr "Upload a new image file from your computer"
+
+#: src/routes/index.tsx:310
+msgid "Upload a PDF to get started"
+msgstr "Upload a PDF to get started"
+
+#: src/components/pipeline/stages/AddImageDialog.tsx:132
+msgid "Upload image"
+msgstr "Upload image"
+
+#: src/components/pipeline/stages/AddImageDialog.tsx:106
+msgid "Upload Image"
+msgstr "Upload Image"
+
+#: src/components/pipeline/stages/ExtractSettings.tsx:395
+msgid "Use an LLM to crop away stray text, artifacts, and excessive whitespace from image edges."
+msgstr "Use an LLM to crop away stray text, artifacts, and excessive whitespace from image edges."
+
+#: src/components/pipeline/stages/ExtractSettings.tsx:411
+msgid "Use an LLM to detect and split composited images (e.g., multiple photos in a single image layer) into individual segments. Requires GPT-5.2+."
+msgstr "Use an LLM to detect and split composited images (e.g., multiple photos in a single image layer) into individual segments. Requires GPT-5.2+."
+
+#: src/components/pipeline/stages/ExtractSettings.tsx:379
+msgid "Use an LLM to filter out decorative or non-educational images."
+msgstr "Use an LLM to filter out decorative or non-educational images."
+
+#. placeholder {0}: data.validationErrors.length
+#: src/components/debug/LlmLogsTab.tsx:168
+msgid "Validation Errors ({0})"
+msgstr "Validation Errors ({0})"
+
+#. placeholder {0}: String(version)
+#: src/components/debug/VersionsTab.tsx:44
+msgid "Version {0}"
+msgstr "Version {0}"
+
+#: src/components/debug/DebugPanel.tsx:90
+msgid "Versions"
+msgstr "Versions"
+
+#: src/components/pipeline/stages/StoryboardSectionDetail.tsx:1969
+msgid "View HTML source"
+msgstr "View HTML source"
+
+#: src/components/pipeline/stages/VoiceMappingsEditor.tsx:178
+msgid "Voice Mappings"
+msgstr "Voice Mappings"
+
+#: src/components/pipeline/StageSidebar.tsx:47
+msgid "Voices"
+msgstr "Voices"
+
+#: src/components/debug/StatsTab.tsx:83
+#: src/components/debug/StatsTab.tsx:92
+msgid "Wall Clock"
+msgstr "Wall Clock"
+
+#: src/components/pipeline/stages/AiImageDialog.tsx:13
+msgid "Watercolor"
+msgstr "Watercolor"
+
+#: src/components/pipeline/pipeline-i18n.ts:61
+msgid "Web Package"
+msgstr "Web Package"
+
+#: src/components/pipeline/pipeline-i18n.ts:54
+msgid "Web Rendering"
+msgstr "Web Rendering"
+
+#: src/components/pipeline/stages/ExportView.tsx:128
+msgid "WebPub Export"
+msgstr "WebPub Export"
+
+#: src/components/pipeline/stages/AiImageDialog.tsx:170
+msgid "What should the AI change?"
+msgstr "What should the AI change?"
+
+#: src/components/pipeline/stages/StoryboardSettings.tsx:877
+msgid "When enabled, background colors from the styleguide are applied to the full page body."
+msgstr "When enabled, background colors from the styleguide are applied to the full page body."
+
+#: src/components/pipeline/stages/StoryboardSettings.tsx:1105
+msgid "Wraps 'Edit this image' requests. The AI receives the original image alongside this prompt. Supports user_prompt and style variables."
+msgstr "Wraps 'Edit this image' requests. The AI receives the original image alongside this prompt. Supports user_prompt and style variables."
+
+#: src/components/pipeline/stages/StoryboardSettings.tsx:1095
+msgid "Wraps 'Generate new' requests. Supports user_prompt, style, and image_type variables. Uses Liquid syntax for conditionals."
+msgstr "Wraps 'Generate new' requests. Supports user_prompt, style, and image_type variables. Uses Liquid syntax for conditionals."
+
+#: src/routes/index.tsx:282
+msgid "Your Books"
+msgstr "Your Books"
+
+#: src/components/pipeline/stages/ImageCropDialog.tsx:204
+msgid "Zoom"
+msgstr "Zoom"

@@ -6,7 +6,6 @@ import { useStepHeader } from "../StepViewRouter"
 import { useBookRun } from "@/hooks/use-book-run"
 import { useApiKey } from "@/hooks/use-api-key"
 import { StageRunCard } from "../StageRunCard"
-import { STAGE_DESCRIPTIONS } from "../stage-config"
 import { cn } from "@/lib/utils"
 
 
@@ -93,7 +92,6 @@ export function TextToSpeechView({ bookLabel }: { bookLabel: string }) {
       <div className="p-4">
         <StageRunCard
           stageSlug="text-and-speech"
-          description={STAGE_DESCRIPTIONS["text-and-speech"]}
           isRunning={ttsRunning}
           completed={textAndSpeechDone}
           onRun={handleRunTTS}

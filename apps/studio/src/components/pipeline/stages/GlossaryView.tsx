@@ -9,7 +9,7 @@ import { useStepHeader } from "../StepViewRouter"
 import { useBookRun } from "@/hooks/use-book-run"
 import { useApiKey } from "@/hooks/use-api-key"
 import { StageRunCard } from "../StageRunCard"
-import { STAGE_DESCRIPTIONS } from "../stage-config"
+import { useLingui } from "@lingui/react/macro"
 
 
 type GlossaryData = Omit<GlossaryOutput, "version">
@@ -31,6 +31,7 @@ function VersionPicker({
   onSave: () => void
   onDiscard: () => void
 }) {
+  const { t } = useLingui()
   const [open, setOpen] = useState(false)
   const [versions, setVersions] = useState<VersionEntry[] | null>(null)
   const [loading, setLoading] = useState(false)
@@ -77,7 +78,7 @@ function VersionPicker({
           onClick={onDiscard}
           className="text-[10px] font-medium rounded px-2 py-0.5 bg-black/15 text-black hover:bg-black/25 cursor-pointer transition-colors"
         >
-          Discard
+          {t`Discard`}
         </button>
         <button
           type="button"
@@ -85,7 +86,7 @@ function VersionPicker({
           className="flex items-center gap-1 text-[10px] font-medium rounded px-2 py-0.5 bg-white text-green-800 hover:bg-white/80 cursor-pointer transition-colors"
         >
           <Check className="h-3 w-3" />
-          Save
+          {t`Save`}
         </button>
       </div>
     )
@@ -121,7 +122,7 @@ function VersionPicker({
               </button>
             ))
           ) : (
-            <div className="px-3 py-1 text-xs text-muted-foreground">No versions</div>
+            <div className="px-3 py-1 text-xs text-muted-foreground">{t`No versions`}</div>
           )}
         </div>
       )}
@@ -130,6 +131,7 @@ function VersionPicker({
 }
 
 export function GlossaryView({ bookLabel }: { bookLabel: string }) {
+  const { t } = useLingui()
   const queryClient = useQueryClient()
   const { data, isLoading } = useGlossary(bookLabel)
   const { setExtra } = useStepHeader()
@@ -176,7 +178,7 @@ export function GlossaryView({ bookLabel }: { bookLabel: string }) {
     if (!data) return
     setExtra(
       <div className="flex items-center gap-1.5 ml-auto">
-        <span className="text-[10px] bg-white/20 rounded-full px-2 py-0.5">{items.length} terms</span>
+        <span className="text-[10px] bg-white/20 rounded-full px-2 py-0.5">{t`${String(items.length)} terms`}</span>
         <VersionPicker
           currentVersion={data.version}
           saving={saving}
@@ -206,7 +208,7 @@ export function GlossaryView({ bookLabel }: { bookLabel: string }) {
     return (
       <div className="flex items-center justify-center py-12 text-muted-foreground">
         <Loader2 className="w-4 h-4 animate-spin mr-2" />
-        <span className="text-sm">Loading glossary...</span>
+        <span className="text-sm">{t`Loading glossary...`}</span>
       </div>
     )
   }
@@ -216,7 +218,6 @@ export function GlossaryView({ bookLabel }: { bookLabel: string }) {
       <div className="p-4">
         <StageRunCard
           stageSlug="glossary"
-          description={STAGE_DESCRIPTIONS.glossary}
           isRunning={glossaryRunning}
           completed={glossaryDone}
           onRun={handleRunGlossary}

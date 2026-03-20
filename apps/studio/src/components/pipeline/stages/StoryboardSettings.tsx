@@ -32,10 +32,15 @@ import { PromptViewer } from "@/components/pipeline/PromptViewer"
 import { TemplateViewer } from "@/components/pipeline/TemplateViewer"
 import { useBookRun } from "@/hooks/use-book-run"
 import { useStepConfig } from "@/hooks/use-step-config"
+import { Trans } from "@lingui/react/macro"
+import { msg } from "@lingui/core/macro"
+import { useLingui } from "@lingui/react/macro"
+import { i18n } from "@lingui/core"
 import {
   listSelectableRenderStrategies,
   normalizeDefaultRenderStrategy,
 } from "@/lib/render-strategy"
+import { getSectionTypeLabel } from "@/lib/section-constants"
 import { hasSectioningChanges, hasSectioningData } from "./storyboard-rerun-policy"
 
 /** "two_column_story" → "Two Column Story" */
@@ -43,21 +48,38 @@ function titleCase(slug: string): string {
   return slug.split("_").map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ")
 }
 
-/** Human-friendly display names for strategy keys */
-const STRATEGY_DISPLAY_NAMES: Record<string, string> = {
-  llm: "AI Generated",
-  "llm-overlay": "AI Overlay",
+const STRATEGY_LABEL_MSGS: Record<string, ReturnType<typeof msg>> = {
+  llm: msg`AI Generated`,
+  "llm-overlay": msg`AI Overlay`,
 }
 
 function strategyDisplayName(slug: string): string {
-  return STRATEGY_DISPLAY_NAMES[slug] ?? titleCase(slug)
+  const descriptor = STRATEGY_LABEL_MSGS[slug]
+  if (descriptor) return i18n._(descriptor)
+  return titleCase(slug.replace(/_/g, " "))
 }
 
-const RENDER_STRATEGY_DESCRIPTIONS: Record<string, string> = {
-  llm: "LLM generates HTML from section content",
-  "llm-overlay": "LLM positions text over background images",
-  two_column: "Fixed two-column template layout",
-  two_column_story: "Two-column template for story content",
+function getSectionTypeDisplayLabel(value: string): string {
+  const label = getSectionTypeLabel(value)
+  return label || value.replace(/_/g, " ")
+}
+
+const STRATEGY_DESCRIPTION_MSGS: Record<string, ReturnType<typeof msg>> = {
+  llm: msg`LLM generates HTML from section content`,
+  "llm-overlay": msg`LLM positions text over background images`,
+  two_column: msg`Fixed two-column template layout`,
+  two_column_story: msg`Two-column template for story content`,
+}
+
+function strategyDescription(name: string): string {
+  const descriptor = STRATEGY_DESCRIPTION_MSGS[name]
+  if (!descriptor) return ""
+  return i18n._(descriptor)
+}
+
+function getActivityLabel(name: string): string {
+  const label = getSectionTypeLabel(name)
+  return label || titleCase(name.replace(/^activity_/, ""))
 }
 
 function PageThumb({
@@ -73,6 +95,7 @@ function PageThumb({
   disabled: boolean
   onClick: () => void
 }) {
+  const { t } = useLingui()
   const { data: imageData } = usePageImage(bookLabel, page.pageId)
 
   return (
@@ -92,7 +115,7 @@ function PageThumb({
         {imageData ? (
           <img
             src={`data:image/png;base64,${imageData.imageBase64}`}
-            alt={`Page ${page.pageNumber}`}
+            alt={t`Page ${String(page.pageNumber)}`}
             className="w-full h-auto block"
           />
         ) : (
@@ -102,7 +125,7 @@ function PageThumb({
         )}
       </div>
       <div className="px-1.5 py-1 border-t text-center">
-        <span className="text-[10px] font-medium">Page {page.pageNumber}</span>
+        <span className="text-[10px] font-medium">{t`Page ${String(page.pageNumber)}`}</span>
       </div>
       {selected && (
         <div className="absolute top-1 right-1 w-5 h-5 rounded-full bg-blue-500 flex items-center justify-center">
@@ -114,6 +137,7 @@ function PageThumb({
 }
 
 export function StoryboardSettings({ bookLabel, headerTarget, tab = "general" }: { bookLabel: string; headerTarget?: HTMLDivElement | null; tab?: string }) {
+  const { t } = useLingui()
   const { data: bookConfigData } = useBookConfig(bookLabel)
   const { data: activeConfigData } = useActiveConfig(bookLabel)
   const updateConfig = useUpdateBookConfig()
@@ -509,7 +533,7 @@ export function StoryboardSettings({ bookLabel, headerTarget, tab = "general" }:
           {/* Default Render Strategy */}
           <div>
             <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">
-              Default Render Strategy
+              {<Trans>Default Render Strategy</Trans>}
             </h3>
             <Select
               value={defaultRenderStrategy}
@@ -541,12 +565,12 @@ export function StoryboardSettings({ bookLabel, headerTarget, tab = "general" }:
               }}
             >
               <SelectTrigger className="w-72">
-                <SelectValue placeholder="Select strategy...">
+                <SelectValue placeholder={t`Select strategy...`}>
                   {defaultRenderStrategy && (
                     <>
                       {strategyDisplayName(defaultRenderStrategy)}
                       {strategyRenderTypes[defaultRenderStrategy] === "template" && (
-                        <span className="text-muted-foreground ml-1">(template)</span>
+                        <span className="text-muted-foreground ml-1">{<Trans>(template)</Trans>}</span>
                       )}
                     </>
                   )}
@@ -560,11 +584,11 @@ export function StoryboardSettings({ bookLabel, headerTarget, tab = "general" }:
                       <div className="flex flex-col items-start">
                         <span>
                           {strategyDisplayName(name)}
-                          {isTemplate && <span className="text-muted-foreground ml-1">(template)</span>}
+                          {isTemplate && <span className="text-muted-foreground ml-1">{<Trans>(template)</Trans>}</span>}
                         </span>
-                        {RENDER_STRATEGY_DESCRIPTIONS[name] && (
+                        {strategyDescription(name) && (
                           <span className="text-xs text-muted-foreground">
-                            {RENDER_STRATEGY_DESCRIPTIONS[name]}
+                            {strategyDescription(name)}
                           </span>
                         )}
                       </div>
@@ -574,25 +598,25 @@ export function StoryboardSettings({ bookLabel, headerTarget, tab = "general" }:
               </SelectContent>
             </Select>
             <p className="text-xs text-muted-foreground mt-1.5">
-              The rendering strategy used for sections without an explicit mapping.
+              {<Trans>The rendering strategy used for sections without an explicit mapping.</Trans>}
             </p>
           </div>
 
           {/* Section Types */}
           <div>
             <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">
-              Section Types
+              {<Trans>Section Types</Trans>}
             </h3>
             <p className="text-xs text-muted-foreground mb-3">
-              Types used during page sectioning. Pruned types are classified but excluded from rendering. Disabled types are hidden from the LLM entirely.
+              {<Trans>Types used during page sectioning. Pruned types are classified but excluded from rendering. Disabled types are hidden from the LLM entirely.</Trans>}
             </p>
             <div className="rounded-md border divide-y">
               {/* Header */}
               <div className="flex items-center gap-2 px-3 py-1.5 bg-muted/50">
                 <span className="h-3.5 w-3.5 shrink-0" />
-                <span className="text-xs font-medium text-muted-foreground shrink-0 w-40">Type</span>
-                <span className="text-xs font-medium text-muted-foreground flex-1 min-w-0">Description</span>
-                <span className="text-xs font-medium text-muted-foreground shrink-0 w-48 text-left">Render Strategy</span>
+                <span className="text-xs font-medium text-muted-foreground shrink-0 w-40">{<Trans>Type</Trans>}</span>
+                <span className="text-xs font-medium text-muted-foreground flex-1 min-w-0">{<Trans>Description</Trans>}</span>
+                <span className="text-xs font-medium text-muted-foreground shrink-0 w-48 text-left">{<Trans>Render Strategy</Trans>}</span>
                 <span className="shrink-0 w-5" />
               </div>
               {Object.entries(sectionTypes).map(([key, description]) => {
@@ -606,13 +630,13 @@ export function StoryboardSettings({ bookLabel, headerTarget, tab = "general" }:
                   >
                     <PruneToggle pruned={pruned} onToggle={() => togglePruned(key)} />
                     <span className={`text-xs shrink-0 w-40 truncate font-mono ${disabled ? "text-muted-foreground line-through" : pruned ? "text-muted-foreground line-through" : "font-medium"}`}>
-                      {key}
+                      {getSectionTypeDisplayLabel(key)}
                     </span>
                     <Input
                       value={description}
                       onChange={(e) => updateDescription(key, e.target.value)}
                       className="h-7 text-xs flex-1 min-w-0"
-                      placeholder="Description..."
+                      placeholder={t`Description...`}
                     />
                     <Select
                       value={renderOverride || "__default__"}
@@ -620,12 +644,12 @@ export function StoryboardSettings({ bookLabel, headerTarget, tab = "general" }:
                     >
                       <SelectTrigger className="h-7 w-48 shrink-0 text-xs text-left">
                         <SelectValue>
-                          {renderOverride ? strategyDisplayName(renderOverride) : "Default"}
+                          {renderOverride ? strategyDisplayName(renderOverride) : <Trans>Default</Trans>}
                         </SelectValue>
                       </SelectTrigger>
                       <SelectContent align="start">
                         <SelectItem value="__default__">
-                          <span className="text-muted-foreground">Default</span>
+                          <span className="text-muted-foreground">{<Trans>Default</Trans>}</span>
                         </SelectItem>
                         {allStrategyNames.map((name) => (
                           <SelectItem key={name} value={name}>
@@ -638,7 +662,7 @@ export function StoryboardSettings({ bookLabel, headerTarget, tab = "general" }:
                       type="button"
                       onClick={() => toggleDisabled(key)}
                       className={`shrink-0 p-0.5 rounded transition-colors ${disabled ? "text-amber-500 hover:text-amber-600" : "text-muted-foreground/0 group-hover:text-muted-foreground hover:!text-destructive"}`}
-                      title={disabled ? "Re-enable type" : "Disable type"}
+                      title={disabled ? t`Re-enable type` : t`Disable type`}
                     >
                       <X className="h-3.5 w-3.5" />
                     </button>
@@ -653,14 +677,14 @@ export function StoryboardSettings({ bookLabel, headerTarget, tab = "general" }:
                   onChange={(e) => setNewTypeKey(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && addSectionType()}
                   className="h-7 text-xs w-40 shrink-0"
-                  placeholder="new_type_key"
+                  placeholder={t`new_type_key`}
                 />
                 <Input
                   value={newTypeDesc}
                   onChange={(e) => setNewTypeDesc(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && addSectionType()}
                   className="h-7 text-xs flex-1 min-w-0"
-                  placeholder="Description..."
+                  placeholder={t`Description...`}
                 />
                 <Button
                   variant="ghost"
@@ -669,7 +693,7 @@ export function StoryboardSettings({ bookLabel, headerTarget, tab = "general" }:
                   onClick={addSectionType}
                   disabled={!newTypeKey.trim() || newTypeKey.trim().toLowerCase().replace(/\s+/g, "_") in sectionTypes}
                 >
-                  Add
+                  {<Trans>Add</Trans>}
                 </Button>
               </div>
             </div>
@@ -682,7 +706,7 @@ export function StoryboardSettings({ bookLabel, headerTarget, tab = "general" }:
           <div className="shrink-0 p-4 pb-0 space-y-4">
             <div>
               <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">
-                Sectioning Mode
+                {<Trans>Sectioning Mode</Trans>}
               </h3>
               <Select
                 value={sectioningMode}
@@ -691,38 +715,38 @@ export function StoryboardSettings({ bookLabel, headerTarget, tab = "general" }:
                   markDirty("page_sectioning")
                 }}
               >
-                <SelectTrigger className="w-72">
+                <SelectTrigger className="w-72 h-fit">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent align="start">
                   <SelectItem value="dynamic">
                     <div className="flex flex-col items-start">
-                      <span>Dynamic</span>
+                      <span>{<Trans>Dynamic</Trans>}</span>
                       <span className="text-xs text-muted-foreground">
-                        Keeps pages whole unless mixed activity types require splitting
+                        {<Trans>Keeps pages whole unless mixed activity types require splitting</Trans>}
                       </span>
                     </div>
                   </SelectItem>
                   <SelectItem value="section">
                     <div className="flex flex-col items-start">
-                      <span>By Section</span>
+                      <span>{<Trans>By Section</Trans>}</span>
                       <span className="text-xs text-muted-foreground">
-                        Groups content into logical sections
+                        {<Trans>Groups content into logical sections</Trans>}
                       </span>
                     </div>
                   </SelectItem>
                   <SelectItem value="page">
                     <div className="flex flex-col items-start">
-                      <span>By Page</span>
+                      <span>{<Trans>By Page</Trans>}</span>
                       <span className="text-xs text-muted-foreground">
-                        Treats each page as a single section
+                        {<Trans>Treats each page as a single section</Trans>}
                       </span>
                     </div>
                   </SelectItem>
                 </SelectContent>
               </Select>
               <p className="text-xs text-muted-foreground mt-1.5">
-                Controls how page content is grouped during the sectioning step.
+                {<Trans>Controls how page content is grouped during the sectioning step.</Trans>}
               </p>
             </div>
           </div>
@@ -730,8 +754,8 @@ export function StoryboardSettings({ bookLabel, headerTarget, tab = "general" }:
             <PromptViewer
               promptName="page_sectioning"
               bookLabel={bookLabel}
-              title="Page Sectioning Prompt"
-              description="The prompt template used to split each page into logical sections. This is a Liquid template processed with page context."
+              title={t`Page Sectioning Prompt`}
+              description={t`The prompt template used to split each page into logical sections. This is a Liquid template processed with page context.`}
               model={sectioning.model}
               onModelChange={sectioning.onModelChange}
               maxRetries={sectioning.maxRetries}
@@ -748,7 +772,7 @@ export function StoryboardSettings({ bookLabel, headerTarget, tab = "general" }:
           <div className="shrink-0 p-4 pb-0 space-y-4">
             <div>
               <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">
-                Styleguide
+                {<Trans>Styleguide</Trans>}
               </h3>
               <div className="flex items-center gap-2">
                 <Select
@@ -759,13 +783,13 @@ export function StoryboardSettings({ bookLabel, headerTarget, tab = "general" }:
                   }}
                 >
                   <SelectTrigger className="w-72">
-                    <SelectValue placeholder="Select styleguide...">
-                      {styleguide ? titleCase(styleguide) : "None"}
+                    <SelectValue placeholder={t`Select styleguide...`}>
+                      {styleguide ? titleCase(styleguide) : <Trans>None</Trans>}
                     </SelectValue>
                   </SelectTrigger>
                   <SelectContent align="start">
                     <SelectItem value="__none__">
-                      <span className="text-muted-foreground">None</span>
+                      <span className="text-muted-foreground">{<Trans>None</Trans>}</span>
                     </SelectItem>
                     {availableStyleguides.map((sg) => (
                       <SelectItem key={sg} value={sg}>
@@ -783,7 +807,7 @@ export function StoryboardSettings({ bookLabel, headerTarget, tab = "general" }:
                     onClick={openStyleguidePreview}
                   >
                     <Eye className="h-3.5 w-3.5 mr-1" />
-                    Preview
+                    {<Trans>Preview</Trans>}
                   </Button>
                 )}
                 {pagesData && pagesData.length > 0 && (
@@ -799,18 +823,18 @@ export function StoryboardSettings({ bookLabel, headerTarget, tab = "general" }:
                     disabled={generateStyleguideMutation.isPending}
                   >
                     <Wand2 className="h-3.5 w-3.5 mr-1" />
-                    Generate from pages
+                    {<Trans>Generate from pages</Trans>}
                   </Button>
                 )}
               </div>
               <p className="text-xs text-muted-foreground mt-1.5">
-                Provides consistent HTML/CSS patterns for LLM-generated pages.
+                {<Trans>Provides consistent HTML/CSS patterns for LLM-generated pages.</Trans>}
               </p>
             </div>
 
             <div>
               <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">
-                Temperature
+                {<Trans>Temperature</Trans>}
               </h3>
               <div className="flex items-center gap-2">
                 <Input
@@ -827,17 +851,17 @@ export function StoryboardSettings({ bookLabel, headerTarget, tab = "general" }:
                   className="h-9 w-24 text-sm"
                 />
                 <Label className="text-xs text-muted-foreground">
-                  0 = deterministic, 2 = max creativity
+                  {<Trans>0 = deterministic, 2 = max creativity</Trans>}
                 </Label>
               </div>
               <p className="text-xs text-muted-foreground mt-1.5">
-                Lower values produce more consistent styling across pages.
+                {<Trans>Lower values produce more consistent styling across pages.</Trans>}
               </p>
             </div>
 
             <div>
               <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">
-                Display
+                {<Trans>Display</Trans>}
               </h3>
               <div className="flex items-center gap-3">
                 <Switch
@@ -846,11 +870,11 @@ export function StoryboardSettings({ bookLabel, headerTarget, tab = "general" }:
                   onCheckedChange={(v) => { setApplyBodyBackground(v); markDirty("apply_body_background") }}
                 />
                 <Label htmlFor="apply-body-background" className="text-sm font-normal">
-                  Apply page background colors
+                  {<Trans>Apply page background colors</Trans>}
                 </Label>
               </div>
               <p className="text-xs text-muted-foreground mt-1.5">
-                When enabled, background colors from the styleguide are applied to the full page body.
+                {<Trans>When enabled, background colors from the styleguide are applied to the full page body.</Trans>}
               </p>
             </div>
           </div>
@@ -860,8 +884,8 @@ export function StoryboardSettings({ bookLabel, headerTarget, tab = "general" }:
             <PromptViewer
               promptName={renderingPromptName}
               bookLabel={bookLabel}
-              title="Rendering Prompt"
-              description="The prompt template used to generate HTML for each section. This is a Liquid template processed with section context."
+              title={t`Rendering Prompt`}
+              description={t`The prompt template used to generate HTML for each section. This is a Liquid template processed with section context.`}
               model={renderingModel}
               onModelChange={(v) => { setRenderingModel(v); markDirty("rendering_model") }}
               maxRetries={renderingRetries}
@@ -876,10 +900,10 @@ export function StoryboardSettings({ bookLabel, headerTarget, tab = "general" }:
         <div className="flex flex-col h-full p-4 gap-4">
           <div className="shrink-0">
             <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">
-              Template Rendering
+              {<Trans>Template Rendering</Trans>}
             </h3>
             <p className="text-xs text-muted-foreground mb-3">
-              Browse and edit Liquid templates used for template-based rendering strategies.
+              {<Trans>Browse and edit Liquid templates used for template-based rendering strategies.</Trans>}
             </p>
             <Select
               value={templateTabName || "__none__"}
@@ -889,15 +913,15 @@ export function StoryboardSettings({ bookLabel, headerTarget, tab = "general" }:
               }}
             >
               <SelectTrigger className="w-72">
-                <SelectValue placeholder="Select template...">
+                <SelectValue placeholder={t`Select template...`}>
                   {templateTabName ? (
                     <>
                       {titleCase(templateTabName)}
                       {renderingRenderType === "template" && templateTabName === renderingTemplateName && (
-                        <span className="text-emerald-600 ml-1">(active)</span>
+                        <span className="text-emerald-600 ml-1">{<Trans>(active)</Trans>}</span>
                       )}
                     </>
-                  ) : "Select template..."}
+                  ) : t`Select template...`}
                 </SelectValue>
               </SelectTrigger>
               <SelectContent align="start">
@@ -906,7 +930,7 @@ export function StoryboardSettings({ bookLabel, headerTarget, tab = "general" }:
                   return (
                     <SelectItem key={name} value={name}>
                       {titleCase(name)}
-                      {isActive && <span className="text-emerald-600 ml-1">(active)</span>}
+                      {isActive && <span className="text-emerald-600 ml-1">{<Trans>(active)</Trans>}</span>}
                     </SelectItem>
                   )
                 })}
@@ -919,7 +943,7 @@ export function StoryboardSettings({ bookLabel, headerTarget, tab = "general" }:
                 templateName={templateTabName}
                 bookLabel={bookLabel}
                 title={titleCase(templateTabName)}
-                description="Edit the Liquid/HTML template below. Changes are saved when you click Save & Rerun."
+                description={t`Edit the Liquid/HTML template below. Changes are saved when you click Save & Rerun.`}
                 onContentChange={setTemplateTabDraft}
               />
             </div>
@@ -936,7 +960,7 @@ export function StoryboardSettings({ bookLabel, headerTarget, tab = "general" }:
         <div className="flex flex-col h-full">
           <div className="shrink-0 p-4 pb-2">
             <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">
-              Activity Rendering
+              {<Trans>Activity Rendering</Trans>}
             </h3>
 
             {/* Universal enable/disable toggle */}
@@ -959,17 +983,17 @@ export function StoryboardSettings({ bookLabel, headerTarget, tab = "general" }:
                 }}
               />
               <Label className="text-xs">
-                {anyEnabled ? "Activities enabled" : "Activities disabled"}
+                {anyEnabled ? <Trans>Activities enabled</Trans> : <Trans>Activities disabled</Trans>}
               </Label>
               <p className="text-xs text-muted-foreground">
                 {anyEnabled
-                  ? "Activity section types are available for classification and rendering."
-                  : "Activity section types are hidden from the classifier and skipped during rendering."}
+                  ? <Trans>Activity section types are available for classification and rendering.</Trans>
+                  : <Trans>Activity section types are hidden from the classifier and skipped during rendering.</Trans>}
               </p>
             </div>
 
             <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">
-              Edit Prompts
+              {<Trans>Edit Prompts</Trans>}
             </h3>
             <Select
               value={activityStrategyName || "__none__"}
@@ -983,14 +1007,14 @@ export function StoryboardSettings({ bookLabel, headerTarget, tab = "general" }:
               }}
             >
               <SelectTrigger className="w-72">
-                <SelectValue placeholder="Select activity type...">
-                  {activityStrategyName ? titleCase(activityStrategyName.replace(/^activity_/, "")) : "Select activity type..."}
+                <SelectValue placeholder={t`Select activity type...`}>
+                  {activityStrategyName ? getActivityLabel(activityStrategyName) : t`Select activity type...`}
                 </SelectValue>
               </SelectTrigger>
               <SelectContent align="start">
                 {activityNames.map((name) => (
                   <SelectItem key={name} value={name}>
-                    {titleCase(name.replace(/^activity_/, ""))}
+                    {getActivityLabel(name)}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -1003,8 +1027,8 @@ export function StoryboardSettings({ bookLabel, headerTarget, tab = "general" }:
                   key={`${activityStrategyName}-gen`}
                   promptName={selectedActivity.prompt}
                   bookLabel={bookLabel}
-                  title="Generation Prompt"
-                  description="Generates the interactive HTML for this activity type."
+                  title={t`Generation Prompt`}
+                  description={t`Generates the interactive HTML for this activity type.`}
                   model={activityModel}
                   onModelChange={(v) => { setActivityModel(v); markDirty("activity_model") }}
                   maxRetries={activityRetries}
@@ -1018,8 +1042,8 @@ export function StoryboardSettings({ bookLabel, headerTarget, tab = "general" }:
                     key={`${activityStrategyName}-ans`}
                     promptName={selectedActivity.answer_prompt}
                     bookLabel={bookLabel}
-                    title="Answer Prompt"
-                    description="Extracts the correct answer key from the generated activity HTML."
+                  title={t`Answer Prompt`}
+                  description={t`Extracts the correct answer key from the generated activity HTML.`}
                     model={activityModel}
                     onModelChange={(v) => { setActivityModel(v); markDirty("activity_model") }}
                     maxRetries={activityRetries}
@@ -1047,7 +1071,7 @@ export function StoryboardSettings({ bookLabel, headerTarget, tab = "general" }:
                   : "bg-muted/50 border-transparent text-muted-foreground hover:text-foreground"
               }`}
             >
-              Generate Prompt
+              {<Trans>Generate Prompt</Trans>}
             </button>
             <button
               type="button"
@@ -1058,7 +1082,7 @@ export function StoryboardSettings({ bookLabel, headerTarget, tab = "general" }:
                   : "bg-muted/50 border-transparent text-muted-foreground hover:text-foreground"
               }`}
             >
-              Edit Prompt
+              {<Trans>Edit Prompt</Trans>}
             </button>
           </div>
           <div className="flex-1 min-h-0">
@@ -1067,8 +1091,8 @@ export function StoryboardSettings({ bookLabel, headerTarget, tab = "general" }:
                 key="ai_image_generation"
                 promptName="ai_image_generation"
                 bookLabel={bookLabel}
-                title="Image Generation Prompt"
-                description="Wraps 'Generate new' requests. Supports {{ user_prompt }}, {{ style }}, and {{ image_type }} variables. Uses Liquid syntax for conditionals."
+                title={t`Image Generation Prompt`}
+                description={t`Wraps 'Generate new' requests. Supports user_prompt, style, and image_type variables. Uses Liquid syntax for conditionals.`}
                 hideModel
                 onContentChange={setImageGenPromptDraft}
               />
@@ -1077,8 +1101,8 @@ export function StoryboardSettings({ bookLabel, headerTarget, tab = "general" }:
                 key="ai_image_edit"
                 promptName="ai_image_edit"
                 bookLabel={bookLabel}
-                title="Image Edit Prompt"
-                description="Wraps 'Edit this image' requests. The AI receives the original image alongside this prompt. Supports {{ user_prompt }} and {{ style }} variables."
+                title={t`Image Edit Prompt`}
+                description={t`Wraps 'Edit this image' requests. The AI receives the original image alongside this prompt. Supports user_prompt and style variables.`}
                 hideModel
                 onContentChange={setImageEditPromptDraft}
               />
@@ -1095,7 +1119,7 @@ export function StoryboardSettings({ bookLabel, headerTarget, tab = "general" }:
             onClick={saveImagePrompts}
             disabled={savingImageGenPrompt || (imageGenPromptDraft == null && imageEditPromptDraft == null)}
           >
-            {savingImageGenPrompt ? "Saving..." : "Save"}
+            {savingImageGenPrompt ? t`Saving...` : t`Save`}
           </Button>
         ) : (
           <Button
@@ -1105,7 +1129,7 @@ export function StoryboardSettings({ bookLabel, headerTarget, tab = "general" }:
             disabled={updateConfig.isPending || !hasApiKey}
           >
             <Play className="mr-1.5 h-3.5 w-3.5" />
-            Save &amp; Rerun
+            {<Trans>Save & Rerun</Trans>}
           </Button>
         ),
         headerTarget
@@ -1114,22 +1138,22 @@ export function StoryboardSettings({ bookLabel, headerTarget, tab = "general" }:
       <Dialog open={styleguidePreviewOpen} onOpenChange={setStyleguidePreviewOpen}>
         <DialogContent className="max-w-4xl h-[80vh] flex flex-col p-0">
           <DialogHeader className="px-6 pt-6 pb-0">
-            <DialogTitle>Styleguide Preview — {styleguide}</DialogTitle>
+            <DialogTitle>{t`Styleguide Preview — ${styleguide}`}</DialogTitle>
             <DialogDescription>
-              Preview of the HTML/CSS patterns used for LLM-generated pages.
+              {<Trans>Preview of the HTML/CSS patterns used for LLM-generated pages.</Trans>}
             </DialogDescription>
           </DialogHeader>
           <div className="flex-1 min-h-0 px-6 pb-6">
             {styleguidePreviewLoading ? (
               <div className="flex items-center justify-center h-full text-sm text-muted-foreground">
-                Loading preview...
+                {<Trans>Loading preview...</Trans>}
               </div>
             ) : (
               <iframe
                 srcDoc={previewData?.html ?? ""}
                 className="w-full h-full rounded-md border"
                 sandbox="allow-scripts"
-                title="Styleguide Preview"
+                title={t`Styleguide Preview`}
               />
             )}
           </div>
@@ -1143,9 +1167,9 @@ export function StoryboardSettings({ bookLabel, headerTarget, tab = "general" }:
       }}>
         <DialogContent className="max-w-3xl max-h-[80vh] flex flex-col">
           <DialogHeader>
-            <DialogTitle>Generate Styleguide from Pages</DialogTitle>
+            <DialogTitle>{<Trans>Generate Styleguide from Pages</Trans>}</DialogTitle>
             <DialogDescription>
-              Select up to 5 pages to use as visual references. The LLM will analyze them and generate a styleguide.
+              {<Trans>Select up to 5 pages to use as visual references. The LLM will analyze them and generate a styleguide.</Trans>}
             </DialogDescription>
           </DialogHeader>
           <div className="flex-1 min-h-0 overflow-y-auto">
@@ -1169,13 +1193,13 @@ export function StoryboardSettings({ bookLabel, headerTarget, tab = "general" }:
           <DialogFooter className="flex items-center justify-between sm:justify-between">
             <div className="flex flex-col gap-1">
               <span className="text-xs text-muted-foreground">
-                {selectedPageIds.size}/5 pages selected
+                {t`${String(selectedPageIds.size)}/5 pages selected`}
               </span>
               {generateStyleguideMutation.isError && (
                 <span className="text-xs text-red-500">
                   {generateStyleguideMutation.error instanceof Error
                     ? generateStyleguideMutation.error.message
-                    : "Generation failed. Please try again."}
+                    : <Trans>Generation failed. Please try again.</Trans>}
                 </span>
               )}
             </div>
@@ -1185,7 +1209,7 @@ export function StoryboardSettings({ bookLabel, headerTarget, tab = "general" }:
                 onClick={() => setGenerateDialogOpen(false)}
                 disabled={generateStyleguideMutation.isPending}
               >
-                Cancel
+                {<Trans>Cancel</Trans>}
               </Button>
               <Button
                 onClick={handleGenerate}
@@ -1194,12 +1218,12 @@ export function StoryboardSettings({ bookLabel, headerTarget, tab = "general" }:
                 {generateStyleguideMutation.isPending ? (
                   <>
                     <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />
-                    Generating...
+                    {<Trans>Generating...</Trans>}
                   </>
                 ) : (
                   <>
                     <Wand2 className="h-4 w-4 mr-1.5" />
-                    Generate
+                    {<Trans>Generate</Trans>}
                   </>
                 )}
               </Button>
@@ -1211,20 +1235,19 @@ export function StoryboardSettings({ bookLabel, headerTarget, tab = "general" }:
       <Dialog open={showRerunDialog} onOpenChange={setShowRerunDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Save &amp; Rerun Storyboard</DialogTitle>
+            <DialogTitle>{<Trans>Save & Rerun Storyboard</Trans>}</DialogTitle>
             <DialogDescription>
-              This will save your settings and re-run the storyboard pipeline.
               {hasExistingSectioningData && !needsResectioning
-                ? " Only rendering will be regenerated — your existing sections will be preserved."
-                : " Sectioning and rendering will be regenerated for all pages."}
+                ? <Trans>This will save your settings and re-run the storyboard pipeline. Only rendering will be regenerated — your existing sections will be preserved.</Trans>
+                : <Trans>This will save your settings and re-run the storyboard pipeline. Sectioning and rendering will be regenerated for all pages.</Trans>}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowRerunDialog(false)}>
-              Cancel
+              {<Trans>Cancel</Trans>}
             </Button>
             <Button onClick={confirmSaveAndRerun} disabled={updateConfig.isPending}>
-              {updateConfig.isPending ? "Saving..." : "Confirm Rerun"}
+              {updateConfig.isPending ? t`Saving...` : t`Confirm Rerun`}
             </Button>
           </DialogFooter>
         </DialogContent>

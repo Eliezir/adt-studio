@@ -22,6 +22,16 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import type { PageSection } from "@adt/types"
+import { useLingui } from "@lingui/react/macro"
+import { getSectionTypeLabel, getSectionTypeDescription } from "@/lib/section-constants"
+
+function getSectionTypeDisplayLabel(value: string): string {
+  return getSectionTypeLabel(value) || value.replace(/_/g, " ")
+}
+
+function getSectionTypeDisplayDescription(value: string, configDesc: string): string {
+  return getSectionTypeDescription(value) ?? configDesc
+}
 
 // -- Types --
 
@@ -56,7 +66,7 @@ interface SectionDataPanelProps {
   onMergeSection: (dir: "prev" | "next") => void
   onCloneSection: () => void
   onDeleteSection: () => void
-  onRerender: () => void
+  onRerender: (prompt?: string) => void
   onAddImage: () => void
   // Version picker
   versionPickerNode: ReactNode
@@ -86,6 +96,7 @@ function ImageCard({
   isPruned?: boolean
   reason?: string
 }) {
+  const { t } = useLingui()
   const [dimensions, setDimensions] = useState<{ w: number; h: number } | null>(
     null
   )
@@ -93,7 +104,7 @@ function ImageCard({
   return (
     <div
       className={`relative rounded border overflow-hidden bg-card flex flex-col items-center min-h-[80px] transition-opacity duration-300 ${isPruned ? "opacity-40" : ""}`}
-      title={isPruned ? `Pruned: ${reason}` : undefined}
+      title={isPruned ? t`Pruned: ${reason ?? ""}` : undefined}
     >
       <img
         src={`${BASE_URL}/books/${bookLabel}/images/${imageId}`}
@@ -169,6 +180,9 @@ export function SectionDataPanel({
   showPrunedImages,
   onToggleShowPrunedImages,
 }: SectionDataPanelProps) {
+  const { t } = useLingui()
+  const [rerenderOpen, setRerenderOpen] = useState(false)
+  const [rerenderPrompt, setRerenderPrompt] = useState("")
   const parts = section.parts
 
   const hasTextParts = parts.some((p) => p.type === "text_group")
@@ -336,49 +350,88 @@ export function SectionDataPanel({
       {/* Panel header */}
       <div className="border-b">
         <div className="flex items-center gap-2 px-4 py-2 text-xs text-muted-foreground">
-          <span className="font-medium uppercase tracking-wider">Content</span>
+          <span className="font-medium uppercase tracking-wider">{t`Content`}</span>
           {sectionTypes ? (
             <Select
               value={section.sectionType}
               onValueChange={onChangeSectionType}
             >
               <SelectTrigger className="h-6 text-[10px] font-medium px-1.5 py-0 w-auto min-w-[80px] border-0 bg-muted/50">
-                <SelectValue>{section.sectionType}</SelectValue>
+                <SelectValue>
+                  {getSectionTypeDisplayLabel(section.sectionType)}
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 {Object.entries(sectionTypes).map(([key, desc]) => (
                   <SelectItem key={key} value={key} className="text-xs">
-                    {key}
+                    {getSectionTypeDisplayLabel(key)}
                     <span className="ml-1 text-muted-foreground text-[10px]">
-                      {desc}
+                      {getSectionTypeDisplayDescription(key, desc)}
                     </span>
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           ) : (
-            <span className="font-medium">{section.sectionType}</span>
+            <span className="font-medium">{getSectionTypeDisplayLabel(section.sectionType)}</span>
           )}
           {/* Re-render button — right next to section type */}
-          <button
-            type="button"
-            onClick={() => onRerender()}
-            disabled={rerendering || dirty || renderingDirty || saving || !hasApiKey}
-            className="p-0.5 rounded hover:bg-accent transition-colors cursor-pointer disabled:opacity-30 disabled:cursor-default"
-            title={
-              !hasApiKey
-                ? "API key required to re-render"
-                : dirty || renderingDirty
-                  ? "Save changes before re-rendering"
-                  : "Re-render this section"
-            }
-          >
-            {rerendering ? (
-              <Loader2 className="h-3.5 w-3.5 animate-spin" />
-            ) : (
-              <RefreshCw className="h-3.5 w-3.5 text-blue-600" />
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setRerenderOpen(!rerenderOpen)}
+              disabled={rerendering || dirty || renderingDirty || saving || !hasApiKey}
+              className="p-0.5 rounded hover:bg-accent transition-colors cursor-pointer disabled:opacity-30 disabled:cursor-default"
+              title={
+                !hasApiKey
+                  ? t`API key required to re-render`
+                  : dirty || renderingDirty
+                    ? t`Save changes before re-rendering`
+                    : t`Re-render this section`
+              }
+            >
+              {rerendering ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <RefreshCw className="h-3.5 w-3.5 text-blue-600" />
+              )}
+            </button>
+            {rerenderOpen && (
+              <div className="absolute left-0 top-full mt-1 z-50 w-72 rounded-lg border bg-popover p-3 shadow-lg">
+                <p className="text-xs font-medium mb-2">{t`Re-render section`}</p>
+                <textarea
+                  value={rerenderPrompt}
+                  onChange={(e) => setRerenderPrompt(e.target.value)}
+                  placeholder={t`Optional instructions for the LLM...`}
+                  className="w-full text-xs rounded border bg-background px-2 py-1.5 resize-none focus:outline-none focus:ring-1 focus:ring-ring"
+                  rows={3}
+                />
+                <div className="flex items-center justify-end gap-2 mt-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setRerenderOpen(false)
+                      setRerenderPrompt("")
+                    }}
+                    className="text-xs px-2 py-1 rounded hover:bg-accent transition-colors cursor-pointer"
+                  >
+                    {t`Cancel`}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onRerender(rerenderPrompt.trim() || undefined)
+                      setRerenderOpen(false)
+                      setRerenderPrompt("")
+                    }}
+                    className="text-xs px-2.5 py-1 rounded bg-primary text-primary-foreground hover:bg-primary/90 transition-colors cursor-pointer"
+                  >
+                    {t`Re-render`}
+                  </button>
+                </div>
+              </div>
             )}
-          </button>
+          </div>
           <div className="ml-auto flex items-center gap-1.5">
             <button
               type="button"
@@ -386,8 +439,8 @@ export function SectionDataPanel({
               className="p-0.5 rounded hover:bg-accent transition-colors cursor-pointer"
               title={
                 section.isPruned
-                  ? "Include section in render"
-                  : "Exclude section from render"
+                  ? t`Include section in render`
+                  : t`Exclude section from render`
               }
             >
               {section.isPruned ? (
@@ -404,8 +457,8 @@ export function SectionDataPanel({
                 className="p-0.5 rounded hover:bg-accent transition-colors cursor-pointer disabled:opacity-30 disabled:cursor-default"
                 title={
                   dirty || renderingDirty
-                    ? "Save changes before merging"
-                    : "Merge with previous section"
+                    ? t`Save changes before merging`
+                    : t`Merge with previous section`
                 }
               >
                 {merging ? (
@@ -423,8 +476,8 @@ export function SectionDataPanel({
                 className="p-0.5 rounded hover:bg-accent transition-colors cursor-pointer disabled:opacity-30 disabled:cursor-default"
                 title={
                   dirty || renderingDirty
-                    ? "Save changes before merging"
-                    : "Merge with next section"
+                    ? t`Save changes before merging`
+                    : t`Merge with next section`
                 }
               >
                 {merging ? (
@@ -441,8 +494,8 @@ export function SectionDataPanel({
               className="p-0.5 rounded hover:bg-accent transition-colors cursor-pointer disabled:opacity-30 disabled:cursor-default"
               title={
                 dirty || renderingDirty
-                  ? "Save changes before cloning"
-                  : "Clone this section"
+                  ? t`Save changes before cloning`
+                  : t`Clone this section`
               }
             >
               {cloning ? (
@@ -458,8 +511,8 @@ export function SectionDataPanel({
               className="p-0.5 rounded hover:bg-red-100 transition-colors cursor-pointer disabled:opacity-30 disabled:cursor-default"
               title={
                 dirty || renderingDirty
-                  ? "Save changes before deleting"
-                  : "Delete this section"
+                  ? t`Save changes before deleting`
+                  : t`Delete this section`
               }
             >
               {deleting ? (
@@ -481,17 +534,17 @@ export function SectionDataPanel({
         {/* Page row — background & text color */}
         {!section.isPruned && (
           <div className="flex items-center gap-2 px-4 py-1.5 text-xs text-muted-foreground border-t">
-            <span className="font-medium uppercase tracking-wider">Page</span>
+            <span className="font-medium uppercase tracking-wider">{t`Page`}</span>
             <span
               className="w-3.5 h-3.5 rounded border"
               style={{ backgroundColor: section.backgroundColor }}
-              title={`Background: ${section.backgroundColor}`}
+              title={t`Background: ${section.backgroundColor}`}
             />
             <span className="text-[10px]">{section.backgroundColor}</span>
             <span
               className="w-3.5 h-3.5 rounded border ml-2"
               style={{ backgroundColor: section.textColor }}
-              title={`Text color: ${section.textColor}`}
+              title={t`Text color: ${section.textColor}`}
             />
             <span className="text-[10px]">{section.textColor}</span>
           </div>
@@ -504,7 +557,7 @@ export function SectionDataPanel({
         <div>
           <h3 className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">
             <Layers className="h-3 w-3" />
-            Text Groups
+            {t`Text Groups`}
           </h3>
           {hasTextParts && (
             <div>
@@ -538,7 +591,7 @@ export function SectionDataPanel({
                         onDragStart={(e) => handleGroupDragStart(e, partIndex)}
                         onDragEnd={handleGroupDragEnd}
                         className="cursor-grab active:cursor-grabbing p-0.5 -ml-1 rounded hover:bg-accent transition-colors opacity-0 group-hover/card:opacity-100"
-                        title="Drag to reorder"
+                        title={t`Drag to reorder`}
                       >
                         <GripVertical className="h-3 w-3 text-muted-foreground" />
                       </div>
@@ -569,7 +622,7 @@ export function SectionDataPanel({
                           type="button"
                           onClick={() => onDuplicateGroup(partIndex)}
                           className="p-0.5 rounded hover:bg-accent transition-colors cursor-pointer"
-                          title="Duplicate group"
+                          title={t`Duplicate group`}
                         >
                           <Copy className="h-3 w-3 text-muted-foreground" />
                         </button>
@@ -578,7 +631,7 @@ export function SectionDataPanel({
                             type="button"
                             onClick={() => onDeleteGroup(partIndex)}
                             className="p-0.5 rounded hover:bg-red-100 transition-colors cursor-pointer"
-                            title="Delete group"
+                            title={t`Delete group`}
                           >
                             <Trash2 className="h-3 w-3 text-red-600" />
                           </button>
@@ -589,8 +642,8 @@ export function SectionDataPanel({
                           className="p-0.5 rounded hover:bg-accent transition-colors cursor-pointer"
                           title={
                             p.isPruned
-                              ? "Include in render"
-                              : "Exclude from render"
+                              ? t`Include in render`
+                              : t`Exclude from render`
                           }
                         >
                           {p.isPruned ? (
@@ -612,10 +665,10 @@ export function SectionDataPanel({
                     >
                       {p.texts.length === 0 && (
                         <div className="px-3 py-3 text-xs text-muted-foreground/50 italic text-center">
-                          Empty group — drag text entries here
+                          {t`Empty group — drag text entries here`}
                         </div>
                       )}
-                      {p.texts.map((t, ti) => {
+                      {p.texts.map((textEntry, ti) => {
                         const isTextDragging =
                           dragText?.partIndex === partIndex &&
                           dragText?.textIndex === ti
@@ -625,9 +678,9 @@ export function SectionDataPanel({
                           dragText !== null
                         return (
                           <div
-                            key={t.textId}
+                            key={textEntry.textId}
                             className={`group/text px-3 py-1.5 flex items-start gap-2 text-sm transition-all duration-150 ${
-                              t.isPruned ? "opacity-40" : ""
+                              textEntry.isPruned ? "opacity-40" : ""
                             } ${isTextDragging ? "opacity-30 bg-muted/30" : ""} ${
                               isTextDropTarget
                                 ? "border-t-2 !border-t-primary"
@@ -646,19 +699,19 @@ export function SectionDataPanel({
                               }
                               onDragEnd={handleTextDragEnd}
                               className="shrink-0 cursor-grab active:cursor-grabbing p-0.5 mt-0.5 rounded hover:bg-accent transition-colors opacity-0 group-hover/text:opacity-100"
-                              title="Drag to reorder or move to another group"
+                              title={t`Drag to reorder or move to another group`}
                             >
                               <GripVertical className="h-3 w-3 text-muted-foreground/50" />
                             </div>
                             {textTypes ? (
                               <Select
-                                value={t.textType}
+                                value={textEntry.textType}
                                 onValueChange={(val) =>
                                   onChangeTextType(partIndex, ti, val)
                                 }
                               >
                                 <SelectTrigger className="shrink-0 h-5 text-[10px] font-medium px-1.5 py-0 w-auto min-w-[60px] border-0 bg-muted/50">
-                                  <SelectValue>{t.textType}</SelectValue>
+                                  <SelectValue>{textEntry.textType}</SelectValue>
                                 </SelectTrigger>
                                 <SelectContent>
                                   {Object.entries(textTypes).map(
@@ -679,27 +732,27 @@ export function SectionDataPanel({
                               </Select>
                             ) : (
                               <span className="shrink-0 text-xs font-medium text-muted-foreground bg-muted/50 rounded px-1.5 py-0.5 text-center">
-                                {t.textType}
+                                {textEntry.textType}
                               </span>
                             )}
                             <span className="leading-relaxed flex-1 min-w-0 text-xs">
-                              {t.text}
+                              {textEntry.text}
                             </span>
                             <div className="shrink-0 flex items-center gap-0.5 self-center opacity-0 group-hover/text:opacity-100 transition-opacity">
                               <button
                                 type="button"
                                 onClick={() => onDuplicateTextEntry(partIndex, ti)}
                                 className="p-0.5 rounded hover:bg-accent transition-colors cursor-pointer"
-                                title="Duplicate text entry"
+                                title={t`Duplicate text entry`}
                               >
                                 <Copy className="h-3 w-3 text-muted-foreground" />
                               </button>
-                              {t.isPruned && (
+                              {textEntry.isPruned && (
                                 <button
                                   type="button"
                                   onClick={() => onDeleteTextEntry(partIndex, ti)}
                                   className="p-0.5 rounded hover:bg-red-100 transition-colors cursor-pointer"
-                                  title="Delete text entry"
+                                  title={t`Delete text entry`}
                                 >
                                   <Trash2 className="h-3 w-3 text-red-600" />
                                 </button>
@@ -709,12 +762,12 @@ export function SectionDataPanel({
                                 onClick={() => onToggleTextPruned(partIndex, ti)}
                                 className="p-0.5 rounded hover:bg-accent transition-colors cursor-pointer"
                                 title={
-                                  t.isPruned
-                                    ? "Include in render"
-                                    : "Exclude from render"
+                                  textEntry.isPruned
+                                    ? t`Include in render`
+                                    : t`Exclude from render`
                                 }
                               >
-                                {t.isPruned ? (
+                                {textEntry.isPruned ? (
                                   <EyeOff className="h-3 w-3 text-muted-foreground" />
                                 ) : (
                                   <Eye className="h-3 w-3 text-muted-foreground" />
@@ -758,14 +811,14 @@ export function SectionDataPanel({
             className="flex items-center justify-center gap-1.5 w-full rounded border border-dashed border-muted-foreground/30 hover:border-muted-foreground/60 py-3 text-xs text-muted-foreground hover:text-foreground transition-colors cursor-pointer mt-3"
           >
             <Plus className="h-3.5 w-3.5" />
-            Add Group
+            {t`Add Group`}
           </button>
         </div>
 
         {/* Images */}
         <div>
           <h3 className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">
-            Images
+            {t`Images`}
             {hasImageParts &&
               parts.some((p) => p.type === "image" && p.isPruned) && (
                 <button
@@ -774,8 +827,8 @@ export function SectionDataPanel({
                   className="ml-auto flex items-center gap-1 text-[10px] font-normal normal-case tracking-normal text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
                   title={
                     showPrunedImages
-                      ? "Hide pruned images"
-                      : "Show pruned images"
+                      ? t`Hide pruned images`
+                      : t`Show pruned images`
                   }
                 >
                   {showPrunedImages ? (
@@ -783,7 +836,7 @@ export function SectionDataPanel({
                   ) : (
                     <EyeOff className="h-3 w-3" />
                   )}
-                  {showPrunedImages ? "Hide Pruned" : "Show Pruned"}
+                  {showPrunedImages ? t`Hide Pruned` : t`Show Pruned`}
                 </button>
               )}
           </h3>
@@ -806,8 +859,8 @@ export function SectionDataPanel({
                       className="absolute top-1 right-1 p-1 rounded bg-background/80 hover:bg-accent transition-colors cursor-pointer opacity-0 group-hover:opacity-100"
                       title={
                         p.isPruned
-                          ? "Include in render"
-                          : "Exclude from render"
+                          ? t`Include in render`
+                          : t`Exclude from render`
                       }
                     >
                       {p.isPruned ? (
@@ -827,7 +880,7 @@ export function SectionDataPanel({
             className="flex items-center justify-center gap-1.5 w-full rounded border border-dashed border-muted-foreground/30 hover:border-muted-foreground/60 py-3 text-xs text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
           >
             <ImagePlus className="h-3.5 w-3.5" />
-            Add Image
+            {t`Add Image`}
           </button>
         </div>
       </div>

@@ -1,9 +1,12 @@
 import { FileDown, Loader2, BookOpen, AlertCircle, GraduationCap } from "lucide-react"
+import { Trans } from "@lingui/react/macro"
+import { useLingui } from "@lingui/react/macro"
 import { Button } from "@/components/ui/button"
 import { useExportBook, useExportWebpub, useExportScorm } from "@/hooks/use-books"
 import { useBookRun } from "@/hooks/use-book-run"
 
 export function ExportView({ bookLabel }: { bookLabel: string }) {
+  const { t } = useLingui()
   const exportBook = useExportBook()
   const exportWebpub = useExportWebpub()
   const exportScorm = useExportScorm()
@@ -12,19 +15,19 @@ export function ExportView({ bookLabel }: { bookLabel: string }) {
 
   const adtError = exportBook.isError
     ? exportBook.error.name === "TimeoutError"
-      ? "Export timed out — the book may be too large"
+      ? t`Export timed out — the book may be too large`
       : exportBook.error.message
     : null
 
   const webpubError = exportWebpub.isError
     ? exportWebpub.error.name === "TimeoutError"
-      ? "Export timed out — the book may be too large"
+      ? t`Export timed out — the book may be too large`
       : exportWebpub.error.message
     : null
 
   const scormError = exportScorm.isError
     ? exportScorm.error.name === "TimeoutError"
-      ? "Export timed out — the book may be too large"
+      ? t`Export timed out — the book may be too large`
       : exportScorm.error.message
     : null
 
@@ -33,11 +36,12 @@ export function ExportView({ bookLabel }: { bookLabel: string }) {
       <div className="p-6 max-w-xl flex flex-col items-center gap-3 text-center">
         <AlertCircle className="w-8 h-8 text-muted-foreground/50" />
         <p className="text-sm text-muted-foreground">
-          A storyboard must be built before exporting.
+          <Trans>A storyboard must be built before exporting.</Trans>
         </p>
         <p className="text-sm text-muted-foreground">
-          Run the pipeline through
-          at least the <span className="font-medium text-foreground">Storyboard</span> stage first.
+          <Trans>Run the pipeline through at least the</Trans>{" "}
+          <span className="font-medium text-foreground"><Trans>Storyboard</Trans></span>{" "}
+          <Trans>stage first.</Trans>
         </p>
       </div>
     )
@@ -49,12 +53,10 @@ export function ExportView({ bookLabel }: { bookLabel: string }) {
       <section className="rounded-lg border p-4 flex flex-col gap-3">
         <div className="flex items-center gap-2">
           <FileDown className="w-5 h-5 text-emerald-600" />
-          <h3 className="text-sm font-semibold">ADT Export</h3>
+          <h3 className="text-sm font-semibold"><Trans>ADT Export</Trans></h3>
         </div>
         <p className="text-sm text-muted-foreground">
-          Export the complete Accessible Digital Textbook as a ZIP archive. Includes
-          all HTML pages, images, audio files, quizzes, and the compiled web
-          application — ready to upload to a distribution platform or open locally.
+          <Trans>Export the complete Accessible Digital Textbook as a ZIP archive. Includes all HTML pages, images, audio files, quizzes, and the compiled web application — ready to upload to a distribution platform or open locally.</Trans>
         </p>
         <div className="flex flex-col gap-1">
           <Button
@@ -73,7 +75,7 @@ export function ExportView({ bookLabel }: { bookLabel: string }) {
             ) : (
               <FileDown className="mr-1.5 h-3.5 w-3.5" />
             )}
-            {exportBook.isError ? "Retry Export" : "Export ADT"}
+            {exportBook.isError ? <Trans>Retry Export</Trans> : <Trans>Export ADT</Trans>}
           </Button>
           {adtError && (
             <p className="text-[11px] leading-tight text-red-500">
@@ -87,11 +89,10 @@ export function ExportView({ bookLabel }: { bookLabel: string }) {
       <section className="rounded-lg border p-4 flex flex-col gap-3">
         <div className="flex items-center gap-2">
           <GraduationCap className="w-5 h-5 text-amber-600" />
-          <h3 className="text-sm font-semibold">SCORM Export</h3>
+          <h3 className="text-sm font-semibold"><Trans>SCORM Export</Trans></h3>
         </div>
         <p className="text-sm text-muted-foreground">
-          Export as a SCORM 1.2 package for upload to a Learning Management System (LMS).
-          Includes activity completion tracking and offline support.
+          <Trans>Export as a SCORM 1.2 package for upload to a Learning Management System (LMS). Includes activity completion tracking and offline support.</Trans>
         </p>
         <div className="flex flex-col gap-1">
           <Button
@@ -110,7 +111,7 @@ export function ExportView({ bookLabel }: { bookLabel: string }) {
             ) : (
               <GraduationCap className="mr-1.5 h-3.5 w-3.5" />
             )}
-            {exportScorm.isError ? "Retry Export" : "Export SCORM"}
+            {exportScorm.isError ? <Trans>Retry Export</Trans> : <Trans>Export SCORM</Trans>}
           </Button>
           {scormError && (
             <p className="text-[11px] leading-tight text-red-500">
@@ -124,15 +125,13 @@ export function ExportView({ bookLabel }: { bookLabel: string }) {
       <section className="rounded-lg border p-4 flex flex-col gap-3">
         <div className="flex items-center gap-2">
           <BookOpen className="w-5 h-5 text-blue-600" />
-          <h3 className="text-sm font-semibold">WebPub Export</h3>
+          <h3 className="text-sm font-semibold"><Trans>WebPub Export</Trans></h3>
           <span className="ml-auto text-[10px] font-semibold uppercase tracking-wider text-blue-600 bg-blue-50 border border-blue-200 rounded px-1.5 py-0.5 leading-none">
-            Beta
+            <Trans>Beta</Trans>
           </span>
         </div>
         <p className="text-sm text-muted-foreground">
-          Export the book as a Readium WebPub package — a standards-based format for
-          distributing digital publications on the web. Suitable for reading systems
-          that support the Readium Web Publication Manifest specification.
+          <Trans>Export the book as a Readium WebPub package — a standards-based format for distributing digital publications on the web. Suitable for reading systems that support the Readium Web Publication Manifest specification.</Trans>
         </p>
         <div className="flex flex-col gap-1">
           <Button
@@ -151,7 +150,7 @@ export function ExportView({ bookLabel }: { bookLabel: string }) {
             ) : (
               <BookOpen className="mr-1.5 h-3.5 w-3.5" />
             )}
-            {exportWebpub.isError ? "Retry Export" : "Export WebPub"}
+            {exportWebpub.isError ? <Trans>Retry Export</Trans> : <Trans>Export WebPub</Trans>}
           </Button>
           {webpubError && (
             <p className="text-[11px] leading-tight text-red-500">

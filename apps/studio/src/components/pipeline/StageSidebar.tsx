@@ -7,6 +7,9 @@ import {
   Settings,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { Trans, useLingui } from "@lingui/react"
+import { msg } from "@lingui/core/macro"
+import type { MessageDescriptor } from "@lingui/core"
 import { Button } from "@/components/ui/button"
 import { useBookRun } from "@/hooks/use-book-run"
 import { useBookTasks } from "@/hooks/use-book-tasks"
@@ -19,60 +22,78 @@ import {
 } from "./stage-config"
 import { useSettingsDialog } from "@/routes/__root"
 import type { TaskInfoResponse } from "@/api/client"
+import { getStageLabelI18n } from "./pipeline-i18n"
 
-const EXTRACT_SETTINGS_TABS = [
-  { key: "general", label: "General" },
-  { key: "text-types", label: "Text Types" },
-  { key: "metadata-prompt", label: "Metadata Prompt" },
-  { key: "prompt", label: "Extraction Prompt" },
-  { key: "meaningfulness-prompt", label: "Meaningfulness Prompt" },
-  { key: "cropping-prompt", label: "Cropping Prompt" },
-  { key: "segmentation-prompt", label: "Segmentation Prompt" },
-  { key: "book-summary-prompt", label: "Summary Prompt" },
-]
+const SETTINGS_TAB_MESSAGE: Record<string, MessageDescriptor> = {
+  general: msg`General`,
+  "text-types": msg`Text Types`,
+  "metadata-prompt": msg`Metadata Prompt`,
+  prompt: msg`Extraction Prompt`,
+  "meaningfulness-prompt": msg`Meaningfulness Prompt`,
+  "cropping-prompt": msg`Cropping Prompt`,
+  "segmentation-prompt": msg`Segmentation Prompt`,
+  "book-summary-prompt": msg`Summary Prompt`,
+  "sectioning-prompt": msg`Sectioning Mode`,
+  "rendering-prompt": msg`AI Rendering`,
+  "rendering-template": msg`Template Rendering`,
+  "activity-prompts": msg`Activity Rendering`,
+  "image-generation": msg`Image Generation`,
+  "quiz-prompt": msg`Quiz Prompt`,
+  "glossary-prompt": msg`Glossary Prompt`,
+  "caption-prompt": msg`Caption Prompt`,
+  languages: msg`Languages`,
+  "translation-prompt": msg`Translation Prompt`,
+  speech: msg`Speech`,
+  "speech-prompts": msg`Speech Prompts`,
+  voices: msg`Voices`,
+  "toc-prompt": msg`Generation Prompt`,
+}
 
-const STORYBOARD_SETTINGS_TABS = [
-  { key: "general", label: "General" },
-  { key: "sectioning-prompt", label: "Sectioning Mode" },
-  { key: "rendering-prompt", label: "AI Rendering" },
-  { key: "rendering-template", label: "Template Rendering" },
-  { key: "activity-prompts", label: "Activity Rendering" },
-  { key: "image-generation", label: "Image Generation" },
-]
-
-const QUIZ_SETTINGS_TABS = [
-  { key: "general", label: "General" },
-  { key: "prompt", label: "Quiz Prompt" },
-]
-
-const GLOSSARY_SETTINGS_TABS = [
-  { key: "general", label: "Glossary Prompt" },
-]
-
-const TOC_SETTINGS_TABS = [
-  { key: "general", label: "Generation Prompt" },
-]
-
-const CAPTIONS_SETTINGS_TABS = [
-  { key: "general", label: "Caption Prompt" },
-]
-
-const TRANSLATIONS_SETTINGS_TABS = [
-  { key: "general", label: "Languages" },
-  { key: "prompt", label: "Translation Prompt" },
-  { key: "speech", label: "Speech" },
-  { key: "speech-prompts", label: "Speech Prompts" },
-  { key: "voices", label: "Voices" },
-]
-
-const SETTINGS_TABS: Record<string, { key: string; label: string }[]> = {
-  extract: EXTRACT_SETTINGS_TABS,
-  storyboard: STORYBOARD_SETTINGS_TABS,
-  quizzes: QUIZ_SETTINGS_TABS,
-  glossary: GLOSSARY_SETTINGS_TABS,
-  toc: TOC_SETTINGS_TABS,
-  captions: CAPTIONS_SETTINGS_TABS,
-  "text-and-speech": TRANSLATIONS_SETTINGS_TABS,
+function getSettingsTabs(
+  slug: string,
+  i18n: ReturnType<typeof useLingui>["i18n"],
+): { key: string; label: string }[] | undefined {
+  const tabs: Record<string, { key: string; label: string }[]> = {
+    extract: [
+      { key: "general", label: i18n._(SETTINGS_TAB_MESSAGE.general) },
+      { key: "text-types", label: i18n._(SETTINGS_TAB_MESSAGE["text-types"]) },
+      { key: "metadata-prompt", label: i18n._(SETTINGS_TAB_MESSAGE["metadata-prompt"]) },
+      { key: "prompt", label: i18n._(SETTINGS_TAB_MESSAGE.prompt) },
+      { key: "meaningfulness-prompt", label: i18n._(SETTINGS_TAB_MESSAGE["meaningfulness-prompt"]) },
+      { key: "cropping-prompt", label: i18n._(SETTINGS_TAB_MESSAGE["cropping-prompt"]) },
+      { key: "segmentation-prompt", label: i18n._(SETTINGS_TAB_MESSAGE["segmentation-prompt"]) },
+      { key: "book-summary-prompt", label: i18n._(SETTINGS_TAB_MESSAGE["book-summary-prompt"]) },
+    ],
+    storyboard: [
+      { key: "general", label: i18n._(SETTINGS_TAB_MESSAGE.general) },
+      { key: "sectioning-prompt", label: i18n._(SETTINGS_TAB_MESSAGE["sectioning-prompt"]) },
+      { key: "rendering-prompt", label: i18n._(SETTINGS_TAB_MESSAGE["rendering-prompt"]) },
+      { key: "rendering-template", label: i18n._(SETTINGS_TAB_MESSAGE["rendering-template"]) },
+      { key: "activity-prompts", label: i18n._(SETTINGS_TAB_MESSAGE["activity-prompts"]) },
+      { key: "image-generation", label: i18n._(SETTINGS_TAB_MESSAGE["image-generation"]) },
+    ],
+    quizzes: [
+      { key: "general", label: i18n._(SETTINGS_TAB_MESSAGE.general) },
+      { key: "prompt", label: i18n._(SETTINGS_TAB_MESSAGE["quiz-prompt"]) },
+    ],
+    glossary: [
+      { key: "general", label: i18n._(SETTINGS_TAB_MESSAGE["glossary-prompt"]) },
+    ],
+    toc: [
+      { key: "general", label: i18n._(SETTINGS_TAB_MESSAGE["toc-prompt"]) },
+    ],
+    captions: [
+      { key: "general", label: i18n._(SETTINGS_TAB_MESSAGE["caption-prompt"]) },
+    ],
+    "text-and-speech": [
+      { key: "general", label: i18n._(SETTINGS_TAB_MESSAGE.languages) },
+      { key: "prompt", label: i18n._(SETTINGS_TAB_MESSAGE["translation-prompt"]) },
+      { key: "speech", label: i18n._(SETTINGS_TAB_MESSAGE.speech) },
+      { key: "speech-prompts", label: i18n._(SETTINGS_TAB_MESSAGE["speech-prompts"]) },
+      { key: "voices", label: i18n._(SETTINGS_TAB_MESSAGE.voices) },
+    ],
+  }
+  return tabs[slug]
 }
 
 export function StageSidebar({
@@ -90,6 +111,7 @@ export function StageSidebar({
   sectionIndex?: number
   onSelectSection?: (index: number) => void
 }) {
+  const { i18n } = useLingui()
   const matchRoute = useMatchRoute()
   const search = useSearch({ strict: false }) as { tab?: string }
   const { stageState } = useBookRun()
@@ -123,7 +145,7 @@ export function StageSidebar({
   const stageItems = STAGES.map((step, index) => {
     const isActive = step.slug === activeStep
     const Icon = step.icon
-    const settingsTabs = SETTINGS_TABS[step.slug]
+    const settingsTabs = getSettingsTabs(step.slug, i18n)
     const showSubTabs = isActive && isSettings && !!settingsTabs
     const state = stageState(step.slug)
     const stageCompleted = state === "done"
@@ -137,6 +159,8 @@ export function StageSidebar({
         : step.slug === "preview" || step.slug === "export"
           ? storyboardDone
           : stageCompleted
+
+    const stepLabel = step.slug === "book" ? toCamelLabel(bookLabel) : getStageLabelI18n(step.slug)
 
     return (
       <div key={step.slug} className="relative">
@@ -161,7 +185,7 @@ export function StageSidebar({
               ? { label: bookLabel, step: step.slug, pageId: selectedPageId }
               : { label: bookLabel, step: step.slug }}
             className={cn("flex items-center gap-2.5 min-w-7", x.flex1)}
-            title={step.label}
+            title={stepLabel}
           >
             <div className="relative shrink-0">
               <div
@@ -179,7 +203,7 @@ export function StageSidebar({
               <StepProgressRing size={28} state={ringState} colorClass={isActive ? "bg-white" : step.color} />
             </div>
             <span className={cn("truncate hidden", x.showLabel)}>
-              {step.slug === "book" ? toCamelLabel(bookLabel) : step.label}
+              {stepLabel}
             </span>
           </Link>
 
@@ -188,9 +212,9 @@ export function StageSidebar({
               to="/books/$label/$step/settings"
               params={{ label: bookLabel, step: step.slug }}
               search={{ tab: "general" }}
-              title={`${step.label} Settings`}
+              title={`${stepLabel} ${i18n._("Settings")}`}
               className={cn(
-                "shrink-0 inline-flex items-center justify-center w-6 h-6 rounded-full transition-colors",
+                "shrink-0 inline-flex items-center justify-center w-6 h-6 rounded-full transition-colors ",
                 isActive
                   ? "text-white/60 hover:text-white hover:bg-white/20"
                   : "opacity-0 group-hover/row:opacity-100 text-muted-foreground/50 group-hover/row:bg-muted hover:text-foreground hover:bg-muted-foreground/20"
@@ -202,7 +226,7 @@ export function StageSidebar({
             <button
               type="button"
               onClick={openSettings}
-              title="API Key Settings"
+              title={i18n._("API Key Settings")}
               className={cn(
                 "shrink-0 inline-flex items-center justify-center w-6 h-6 rounded-full transition-colors cursor-pointer",
                 isActive
@@ -216,7 +240,7 @@ export function StageSidebar({
             <button
               type="button"
               onClick={() => window.dispatchEvent(new CustomEvent("adt:repackage"))}
-              title="Re-package ADT"
+              title={i18n._("Re-package ADT")}
               className={cn(
                 "shrink-0 inline-flex items-center justify-center w-6 h-6 rounded-full transition-colors cursor-pointer",
                 isActive
@@ -403,7 +427,7 @@ function PageIndex({
   if (!pages?.length) {
     return (
       <div className="px-3 py-4 text-xs text-muted-foreground text-center">
-        No pages extracted yet
+        <Trans id="No pages extracted yet" />
       </div>
     )
   }
@@ -448,6 +472,7 @@ function PageRow({
   sectionIndex?: number
   onSelectSection?: (index: number) => void
 }) {
+  const { i18n } = useLingui()
   const { data, isLoading } = usePageImage(bookLabel, page.pageId)
   const [showPreview, setShowPreview] = useState(false)
   const [previewPos, setPreviewPos] = useState({ top: 0, left: 0 })
@@ -518,10 +543,10 @@ function PageRow({
         )}
         <div className="flex flex-col gap-0.5 min-w-0 flex-1 pt-0.5">
           <span className="text-[11px] leading-snug line-clamp-2">
-            {page.textPreview || "Untitled"}
+            {page.textPreview || i18n._("Untitled")}
           </span>
           <span className="text-[9px] font-mono opacity-50 leading-none">
-            pg {page.pageNumber}
+            {`pg ${String(page.pageNumber)}`}
             {page.sectionCount > 1 && (
               <span className="ml-1 inline-flex items-center justify-center min-w-[14px] h-[12px] px-0.5 rounded bg-black/10 text-[8px] font-semibold not-italic leading-none">
                 {page.sectionCount}
@@ -561,7 +586,7 @@ function PageRow({
                     ? cn(activeStepDef?.color ?? "bg-violet-600", pruned ? "text-white/50 line-through" : "text-white")
                     : pruned ? "bg-black/5 text-black/20 line-through hover:bg-black/10 hover:text-black/40" : "bg-black/5 text-black/40 hover:bg-black/10 hover:text-black/60"
                 )}
-                title={`Section ${i + 1}${pruned ? " (pruned)" : ""}`}
+                title={pruned ? `Section ${String(i + 1)} (pruned)` : `Section ${String(i + 1)}`}
               >
                 {i + 1}
               </button>
@@ -572,4 +597,3 @@ function PageRow({
     </div>
   )
 }
-

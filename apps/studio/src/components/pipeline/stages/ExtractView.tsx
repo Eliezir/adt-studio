@@ -1,5 +1,7 @@
 import { useCallback, useEffect } from "react"
 import { AlignLeft, ArrowLeft, ArrowRight, BookOpen, Building2, FileText, Globe, Image, Loader2, User } from "lucide-react"
+import { Trans } from "@lingui/react/macro"
+import { useLingui } from "@lingui/react/macro"
 import { useBook } from "@/hooks/use-books"
 import { usePages, usePageImage } from "@/hooks/use-pages"
 import { useBookRun } from "@/hooks/use-book-run"
@@ -18,6 +20,7 @@ function PageCard({
   page: PageSummaryItem
   onClick: () => void
 }) {
+  const { t } = useLingui()
   const { data: imageData, isLoading: imageLoading } = usePageImage(bookLabel, page.pageId)
 
   return (
@@ -35,12 +38,12 @@ function PageCard({
         ) : imageData ? (
           <img
             src={`data:image/png;base64,${imageData.imageBase64}`}
-            alt={`Page ${page.pageNumber}`}
+            alt={t`Page ${String(page.pageNumber)}`}
             className="w-full h-auto block"
           />
         ) : (
           <div className="flex aspect-[3/4] items-center justify-center text-[10px] text-muted-foreground">
-            No image
+            <Trans>No image</Trans>
           </div>
         )}
       </div>
@@ -48,7 +51,7 @@ function PageCard({
       {/* Info */}
       <div className="px-2.5 py-2 border-t">
         <div className="flex items-center justify-between mb-0.5">
-          <span className="text-xs font-medium">Page {page.pageNumber}</span>
+          <span className="text-xs font-medium"><Trans>Page {String(page.pageNumber)}</Trans></span>
           <div className="flex items-center gap-2">
             {page.wordCount > 0 && (
               <span className="flex items-center gap-0.5 text-[10px] text-muted-foreground">
@@ -65,7 +68,7 @@ function PageCard({
           </div>
         </div>
         <p className="line-clamp-2 text-[11px] text-muted-foreground leading-relaxed">
-          {page.textPreview?.replace(/\n/g, " ") || "No text extracted"}
+          {page.textPreview?.replace(/\n/g, " ") || t`No text extracted`}
         </p>
       </div>
     </button>
@@ -74,6 +77,7 @@ function PageCard({
 
 
 function BookBanner({ bookLabel, pages }: { bookLabel: string; pages: PageSummaryItem[] | undefined }) {
+  const { t } = useLingui()
   const { data: book } = useBook(bookLabel)
   const coverPageNumber = book?.metadata?.cover_page_number ?? 1
   const coverPage = pages?.find((p) => p.pageNumber === coverPageNumber)
@@ -93,7 +97,7 @@ function BookBanner({ bookLabel, pages }: { bookLabel: string; pages: PageSummar
         {coverImage ? (
           <img
             src={`data:image/png;base64,${coverImage.imageBase64}`}
-            alt={`Cover of ${title}`}
+            alt={t`Cover of ${title}`}
             className="w-full h-auto block"
           />
         ) : (
@@ -128,7 +132,7 @@ function BookBanner({ bookLabel, pages }: { bookLabel: string; pages: PageSummar
           {book.pageCount > 0 && (
             <span className="flex items-center gap-1">
               <FileText className="w-3 h-3" />
-              {book.pageCount} pages
+              {book.pageCount} {book.pageCount === 1 ? t`page` : t`pages`}
             </span>
           )}
         </div>
@@ -143,6 +147,7 @@ function BookBanner({ bookLabel, pages }: { bookLabel: string; pages: PageSummar
 }
 
 export function ExtractView({ bookLabel, selectedPageId: selectedPageIdProp, onSelectPage }: { bookLabel: string; selectedPageId?: string; onSelectPage?: (pageId: string | null) => void }) {
+  const { t } = useLingui()
   const { data: pages, isLoading } = usePages(bookLabel)
   const { stageState, queueRun } = useBookRun()
   const { apiKey, hasApiKey } = useApiKey()
@@ -182,7 +187,7 @@ export function ExtractView({ bookLabel, selectedPageId: selectedPageIdProp, onS
       setExtra(
         <>
           <span className="text-white/40 text-sm">/</span>
-          <span className="text-sm font-medium">Page {selectedPage.pageNumber}</span>
+          <span className="text-sm font-medium">{t`Page ${String(selectedPage.pageNumber)}`}</span>
           <div className="ml-auto flex gap-1">
             <button
               type="button"
@@ -207,7 +212,7 @@ export function ExtractView({ bookLabel, selectedPageId: selectedPageIdProp, onS
       setOnLabelClick(null)
       setExtra(
         <span className="ml-auto text-[11px] font-medium bg-white/20 rounded-full px-2.5 py-0.5">
-          {pageList.length} pages
+          {pageList.length} {pageList.length === 1 ? t`page` : t`pages`}
         </span>
       )
     } else {
@@ -238,7 +243,7 @@ export function ExtractView({ bookLabel, selectedPageId: selectedPageIdProp, onS
     return (
       <div className="flex items-center gap-2 p-4 text-sm text-muted-foreground">
         <Loader2 className="h-4 w-4 animate-spin" />
-        Loading pages...
+        <Trans>Loading pages...</Trans>
       </div>
     )
   }
@@ -268,7 +273,7 @@ export function ExtractView({ bookLabel, selectedPageId: selectedPageIdProp, onS
         />
       ) : pageList.length === 0 ? (
         <p className="text-sm text-muted-foreground">
-          No pages extracted yet. Run the pipeline to extract content.
+          <Trans>No pages extracted yet. Run the pipeline to extract content.</Trans>
         </p>
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">

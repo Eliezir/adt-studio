@@ -18,8 +18,10 @@ import { api } from "@/api/client"
 import { PromptViewer } from "@/components/pipeline/PromptViewer"
 import { useBookRun } from "@/hooks/use-book-run"
 import { useStepConfig } from "@/hooks/use-step-config"
+import { useLingui } from "@lingui/react/macro"
 
 export function CaptionsSettings({ bookLabel, headerTarget }: { bookLabel: string; headerTarget?: HTMLDivElement | null; tab?: string }) {
+  const { t } = useLingui()
   const { data: bookConfigData } = useBookConfig(bookLabel)
   const { data: activeConfigData } = useActiveConfig(bookLabel)
   const updateConfig = useUpdateBookConfig()
@@ -74,8 +76,8 @@ export function CaptionsSettings({ bookLabel, headerTarget }: { bookLabel: strin
       <PromptViewer
         promptName="image_captioning"
         bookLabel={bookLabel}
-        title="Caption Prompt"
-        description="The prompt template used to generate captions for images in the book."
+        title={t`Caption Prompt`}
+        description={t`The prompt template used to generate captions for images in the book.`}
         model={caption.model}
         onModelChange={caption.onModelChange}
         maxRetries={caption.maxRetries}
@@ -91,7 +93,7 @@ export function CaptionsSettings({ bookLabel, headerTarget }: { bookLabel: strin
           disabled={updateConfig.isPending || !hasApiKey}
         >
           <Play className="mr-1.5 h-3.5 w-3.5" />
-          Save &amp; Rerun
+          {t`Save & Rerun`}
         </Button>,
         headerTarget
       )}
@@ -99,17 +101,17 @@ export function CaptionsSettings({ bookLabel, headerTarget }: { bookLabel: strin
       <Dialog open={showRerunDialog} onOpenChange={setShowRerunDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Save &amp; Rerun Captions</DialogTitle>
+            <DialogTitle>{t`Save & Rerun Captions`}</DialogTitle>
             <DialogDescription>
-              This will save your settings and re-run image captioning.
+              {t`This will save your settings and re-run image captioning.`}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowRerunDialog(false)}>
-              Cancel
+              {t`Cancel`}
             </Button>
             <Button onClick={confirmSaveAndRerun} disabled={updateConfig.isPending}>
-              {updateConfig.isPending ? "Saving..." : "Confirm Rerun"}
+              {updateConfig.isPending ? t`Saving...` : t`Confirm Rerun`}
             </Button>
           </DialogFooter>
         </DialogContent>

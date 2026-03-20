@@ -1,5 +1,7 @@
 import { useState, useCallback, useRef, useEffect } from "react"
 import { X, GripHorizontal, ExternalLink } from "lucide-react"
+import { Trans } from "@lingui/react/macro"
+import { useLingui } from "@lingui/react/macro"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
 import { StatsTab } from "./StatsTab"
@@ -18,6 +20,7 @@ interface DebugPanelProps {
 }
 
 export function DebugPanel({ label, isRunning, onClose }: DebugPanelProps) {
+  const { t } = useLingui()
   const [height, setHeight] = useState(
     () => Math.floor(window.innerHeight * DEFAULT_HEIGHT_VH)
   )
@@ -72,30 +75,32 @@ export function DebugPanel({ label, isRunning, onClose }: DebugPanelProps) {
         <div className="flex items-center gap-2 px-3 py-1 border-b border-border shrink-0">
           <TabsList className="h-8">
             <TabsTrigger value="stats" className="text-xs px-2 py-1">
-              Stats
+              <Trans>Stats</Trans>
             </TabsTrigger>
             <TabsTrigger value="logs" className="text-xs px-2 py-1">
-              Logs
+              <Trans>Logs</Trans>
               {isRunning && (
                 <span className="ml-1 inline-flex h-2 w-2 rounded-full bg-green-500 animate-pulse" />
               )}
             </TabsTrigger>
             <TabsTrigger value="config" className="text-xs px-2 py-1">
-              Config
+              <Trans>Config</Trans>
             </TabsTrigger>
             <TabsTrigger value="versions" className="text-xs px-2 py-1">
-              Versions
+              <Trans>Versions</Trans>
             </TabsTrigger>
           </TabsList>
 
           <div className="flex-1" />
-          <span className="text-xs text-muted-foreground">Debug Panel</span>
+          <span className="text-xs text-muted-foreground">
+            <Trans>Debug Panel</Trans>
+          </span>
 
           <Button
             variant="ghost"
             size="icon"
             className="h-6 w-6"
-            title="Pop out to new window"
+            title={t`Pop out to new window`}
             onClick={() => {
               window.open(
                 `/books/${label}/debug`,

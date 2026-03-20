@@ -18,8 +18,10 @@ import { api } from "@/api/client"
 import { PromptViewer } from "@/components/pipeline/PromptViewer"
 import { useBookRun } from "@/hooks/use-book-run"
 import { useStepConfig } from "@/hooks/use-step-config"
+import { useLingui } from "@lingui/react/macro"
 
 export function GlossarySettings({ bookLabel, headerTarget }: { bookLabel: string; headerTarget?: HTMLDivElement | null; tab?: string }) {
+  const { t } = useLingui()
   const { data: bookConfigData } = useBookConfig(bookLabel)
   const { data: activeConfigData } = useActiveConfig(bookLabel)
   const updateConfig = useUpdateBookConfig()
@@ -74,8 +76,8 @@ export function GlossarySettings({ bookLabel, headerTarget }: { bookLabel: strin
       <PromptViewer
         promptName="glossary"
         bookLabel={bookLabel}
-        title="Glossary Prompt"
-        description="The prompt template used to generate glossary terms from book content."
+        title={t`Glossary Prompt`}
+        description={t`The prompt template used to generate glossary terms from book content.`}
         model={glossary.model}
         onModelChange={glossary.onModelChange}
         maxRetries={glossary.maxRetries}
@@ -91,7 +93,7 @@ export function GlossarySettings({ bookLabel, headerTarget }: { bookLabel: strin
           disabled={updateConfig.isPending || !hasApiKey}
         >
           <Play className="mr-1.5 h-3.5 w-3.5" />
-          Save &amp; Rerun
+          {t`Save & Rerun`}
         </Button>,
         headerTarget
       )}
@@ -99,17 +101,17 @@ export function GlossarySettings({ bookLabel, headerTarget }: { bookLabel: strin
       <Dialog open={showRerunDialog} onOpenChange={setShowRerunDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Save &amp; Rerun Glossary</DialogTitle>
+            <DialogTitle>{t`Save & Rerun Glossary`}</DialogTitle>
             <DialogDescription>
-              This will save your settings and re-run glossary generation.
+              {t`This will save your settings and re-run glossary generation.`}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowRerunDialog(false)}>
-              Cancel
+              {t`Cancel`}
             </Button>
             <Button onClick={confirmSaveAndRerun} disabled={updateConfig.isPending}>
-              {updateConfig.isPending ? "Saving..." : "Confirm Rerun"}
+              {updateConfig.isPending ? t`Saving...` : t`Confirm Rerun`}
             </Button>
           </DialogFooter>
         </DialogContent>

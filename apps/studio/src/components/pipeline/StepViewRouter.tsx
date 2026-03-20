@@ -1,5 +1,6 @@
 import { createContext, useContext, useCallback, useState, type ReactNode } from "react"
 import { STAGES, toCamelLabel } from "./stage-config"
+import { getStageLabelI18n } from "./pipeline-i18n"
 import {
   BookView,
   ExtractView,
@@ -13,6 +14,8 @@ import {
   ExportView,
 } from "./stages"
 import { cn } from "@/lib/utils"
+import { Trans } from "@lingui/react/macro"
+import { useLingui } from "@lingui/react/macro"
 
 // Context for views to inject content into the step header
 interface StepHeaderControls {
@@ -55,6 +58,7 @@ const VIEW_MAP: Record<string, ViewEntry> = {
 }
 
 export function StepViewRouter({ step, bookLabel, selectedPageId, onSelectPage }: { step: string; bookLabel: string; selectedPageId?: string; onSelectPage?: (pageId: string | null) => void }) {
+  const { t } = useLingui()
   const entry = VIEW_MAP[step]
   const stepConfig = STAGES.find((s) => s.slug === step)
   const [headerExtra, setHeaderExtra] = useState<ReactNode>(null)
@@ -70,13 +74,14 @@ export function StepViewRouter({ step, bookLabel, selectedPageId, onSelectPage }
   if (!entry || !stepConfig) {
     return (
       <div className="p-4 text-sm text-muted-foreground">
-        Unknown step: {step}
+        <Trans>Unknown step: {step}</Trans>
       </div>
     )
   }
 
   const View = entry.component
   const Icon = stepConfig.icon
+  const stepLabel = step === "book" ? toCamelLabel(bookLabel) : getStageLabelI18n(step)
 
   return (
     <StepHeaderContext.Provider value={controls}>
@@ -92,10 +97,10 @@ export function StepViewRouter({ step, bookLabel, selectedPageId, onSelectPage }
               onClick={labelClickHandler.fn}
               className="text-sm font-semibold hover:text-white/70 transition-colors"
             >
-              {step === "book" ? toCamelLabel(bookLabel) : stepConfig.label}
+             {stepLabel}
             </button>
           ) : (
-            <h2 className="text-sm font-semibold">{step === "book" ? toCamelLabel(bookLabel) : stepConfig.label}</h2>
+            <h2 className="text-sm font-semibold">{stepLabel}</h2>
           )}
           <div ref={setHeaderSlotEl} className="contents" />
           {headerExtra}

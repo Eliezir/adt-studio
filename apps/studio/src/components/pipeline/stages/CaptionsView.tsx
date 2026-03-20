@@ -8,8 +8,9 @@ import { useStepHeader } from "../StepViewRouter"
 import { useBookRun } from "@/hooks/use-book-run"
 import { useApiKey } from "@/hooks/use-api-key"
 import { StageRunCard } from "../StageRunCard"
-import { STAGE_DESCRIPTIONS } from "../stage-config"
 import { useSectionNav } from "@/routes/books.$label"
+import { Trans } from "@lingui/react/macro"
+import { useLingui } from "@lingui/react/macro"
 
 
 type CaptioningData = NonNullable<PageDetail["imageCaptioning"]>
@@ -33,6 +34,7 @@ function VersionPicker({
   onSave: () => void
   onDiscard: () => void
 }) {
+  const { t } = useLingui()
   const [open, setOpen] = useState(false)
   const [versions, setVersions] = useState<VersionEntry[] | null>(null)
   const [loading, setLoading] = useState(false)
@@ -79,7 +81,7 @@ function VersionPicker({
           onClick={onDiscard}
           className="text-[10px] font-medium rounded px-2 py-0.5 bg-muted hover:bg-accent hover:text-accent-foreground cursor-pointer transition-colors"
         >
-          Discard
+          {t`Discard`}
         </button>
         <button
           type="button"
@@ -87,7 +89,7 @@ function VersionPicker({
           className="flex items-center gap-1 text-[10px] font-medium rounded px-2 py-0.5 bg-green-600 hover:bg-green-500 text-white cursor-pointer transition-colors"
         >
           <Check className="h-3 w-3" />
-          Save
+          {t`Save`}
         </button>
       </div>
     )
@@ -123,7 +125,7 @@ function VersionPicker({
               </button>
             ))
           ) : (
-            <div className="px-3 py-1 text-xs text-muted-foreground">No versions</div>
+            <div className="px-3 py-1 text-xs text-muted-foreground">{t`No versions`}</div>
           )}
         </div>
       )}
@@ -166,6 +168,7 @@ function PageCaptions({
   largeImages?: boolean
   filterSectionIndex?: number
 }) {
+  const { t } = useLingui()
   const queryClient = useQueryClient()
   const { data: page } = usePage(bookLabel, pageId)
 
@@ -257,7 +260,7 @@ function PageCaptions({
         <div className="w-12 h-12 rounded-full bg-teal-50 flex items-center justify-center mb-3">
           <ImageIcon className="w-6 h-6 text-teal-300" />
         </div>
-        <p className="text-sm font-medium">No images in this section</p>
+        <p className="text-sm font-medium">{t`No images in this section`}</p>
       </div>
     )
   }
@@ -287,9 +290,9 @@ function PageCaptions({
     <div className="space-y-1.5">
       <div className="flex items-center gap-2 px-1">
         <span className="text-sm font-medium text-foreground">
-          Page {pageNumber}
+          {t`Page ${String(pageNumber)}`}
           {filterSectionIndex != null && (
-            <span className="text-muted-foreground"> / Section {filterSectionIndex + 1}</span>
+            <span className="text-muted-foreground"> {t`/ Section ${String(filterSectionIndex + 1)}`}</span>
           )}
         </span>
         <div className="ml-auto">
@@ -315,8 +318,10 @@ function PageCaptions({
             <div className="px-1 pt-1.5 pb-0.5">
               <span className="text-[9px] font-medium text-muted-foreground/70 uppercase tracking-wider">
                 {group.sectionIndex >= 0
-                  ? `Section ${group.sectionIndex + 1}${group.sectionType ? ` — ${group.sectionType}` : ""}`
-                  : "Other images"
+                  ? group.sectionType
+                    ? t`Section ${String(group.sectionIndex + 1)} — ${group.sectionType}`
+                    : t`Section ${String(group.sectionIndex + 1)}`
+                  : t`Other images`
                 }
               </span>
             </div>
@@ -332,6 +337,7 @@ function PageCaptions({
 }
 
 export function CaptionsView({ bookLabel, selectedPageId, onSelectPage }: { bookLabel: string; selectedPageId?: string; onSelectPage?: (pageId: string | null) => void }) {
+  const { t } = useLingui()
   const { data: pages, isLoading } = usePages(bookLabel)
   const { setExtra } = useStepHeader()
   const { stageState, queueRun } = useBookRun()
@@ -371,7 +377,7 @@ export function CaptionsView({ bookLabel, selectedPageId, onSelectPage }: { book
         {selectedPageSummary && (
           <>
             <span className="text-white/40 text-sm">/</span>
-            <span className="text-sm font-medium">Page {selectedPageSummary.pageNumber}</span>
+            <span className="text-sm font-medium">{t`Page ${String(selectedPageSummary.pageNumber)}`}</span>
             {hasSections && (
               <>
                 <span className="text-white/40 text-sm">/</span>
@@ -388,7 +394,7 @@ export function CaptionsView({ bookLabel, selectedPageId, onSelectPage }: { book
                             ? pruned ? "bg-white/20 text-white/50 line-through decoration-white/40" : "bg-white/30 text-white"
                             : pruned ? "bg-white/5 text-white/30 line-through decoration-white/20 hover:bg-white/10 hover:text-white/50" : "bg-white/10 text-white/60 hover:bg-white/20 hover:text-white"
                         }`}
-                        title={`Section ${i + 1}${pruned ? " (pruned)" : ""}`}
+                        title={pruned ? t`Section ${String(i + 1)} (pruned)` : t`Section ${String(i + 1)}`}
                       >
                         {i + 1}
                       </button>
@@ -400,8 +406,8 @@ export function CaptionsView({ bookLabel, selectedPageId, onSelectPage }: { book
           </>
         )}
         <div className="flex items-center gap-1.5 ml-auto">
-          <span className="text-[10px] bg-white/20 rounded-full px-2 py-0.5">{totalImages} images</span>
-          <span className="text-[10px] bg-white/20 rounded-full px-2 py-0.5">{displayPages.length} pages</span>
+          <span className="text-[10px] bg-white/20 rounded-full px-2 py-0.5">{t`${String(totalImages)} images`}</span>
+          <span className="text-[10px] bg-white/20 rounded-full px-2 py-0.5">{t`${String(displayPages.length)} pages`}</span>
         </div>
       </>
     )
@@ -412,7 +418,7 @@ export function CaptionsView({ bookLabel, selectedPageId, onSelectPage }: { book
     return (
       <div className="flex items-center justify-center py-12 text-muted-foreground">
         <Loader2 className="w-4 h-4 animate-spin mr-2" />
-        <span className="text-sm">Loading pages...</span>
+        <span className="text-sm">{t`Loading pages...`}</span>
       </div>
     )
   }
@@ -422,7 +428,6 @@ export function CaptionsView({ bookLabel, selectedPageId, onSelectPage }: { book
       <div className="p-4">
         <StageRunCard
           stageSlug="captions"
-          description={STAGE_DESCRIPTIONS.captions}
           isRunning={captionsRunning}
           completed={captionsDone}
           onRun={handleRunCaptions}
@@ -438,13 +443,13 @@ export function CaptionsView({ bookLabel, selectedPageId, onSelectPage }: { book
         <div className="w-12 h-12 rounded-full bg-teal-50 flex items-center justify-center mb-3">
           <ImageIcon className="w-6 h-6 text-teal-300" />
         </div>
-        <p className="text-sm font-medium">No images on this page</p>
+        <p className="text-sm font-medium">{t`No images on this page`}</p>
         <button
           type="button"
           onClick={() => onSelectPage?.(null)}
           className="mt-3 text-xs font-medium text-teal-600 hover:text-teal-700 hover:underline transition-colors"
         >
-          Show all
+          {t`Show all`}
         </button>
       </div>
     )
@@ -455,8 +460,8 @@ export function CaptionsView({ bookLabel, selectedPageId, onSelectPage }: { book
       <div className="w-12 h-12 rounded-full bg-teal-50 flex items-center justify-center mb-3">
         <ImageIcon className="w-6 h-6 text-teal-300" />
       </div>
-      <p className="text-sm font-medium">No captions for this page</p>
-      <p className="text-xs mt-1">This page has no captioned images</p>
+      <p className="text-sm font-medium">{t`No captions for this page`}</p>
+      <p className="text-xs mt-1">{t`This page has no captioned images`}</p>
     </div>
   ) : undefined
 
@@ -469,7 +474,7 @@ export function CaptionsView({ bookLabel, selectedPageId, onSelectPage }: { book
             onClick={() => onSelectPage?.(null)}
             className="text-xs font-medium text-teal-600 hover:text-teal-700 hover:underline transition-colors"
           >
-            Show all
+            {t`Show all`}
           </button>
         </div>
       )}

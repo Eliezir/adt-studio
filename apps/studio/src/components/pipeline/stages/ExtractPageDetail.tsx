@@ -5,6 +5,9 @@ import { usePage, usePageImage } from "@/hooks/use-pages"
 import { api, BASE_URL } from "@/api/client"
 import type { VersionEntry } from "@/api/client"
 import { useActiveConfig } from "@/hooks/use-debug"
+import { Trans } from "@lingui/react/macro"
+import { useLingui } from "@lingui/react/macro"
+import { getTextGroupLabel, getTextTypeLabel } from "@/lib/text-type-labels"
 
 function VersionPicker({
   currentVersion,
@@ -73,7 +76,7 @@ function VersionPicker({
           onClick={onDiscard}
           className="text-[10px] font-medium rounded px-2 py-0.5 bg-muted hover:bg-accent hover:text-accent-foreground cursor-pointer transition-colors"
         >
-          Discard
+          <Trans>Discard</Trans>
         </button>
         <button
           type="button"
@@ -81,7 +84,7 @@ function VersionPicker({
           className="flex items-center gap-1 text-[10px] font-medium rounded px-2 py-0.5 bg-green-600 hover:bg-green-500 text-white cursor-pointer transition-colors"
         >
           <Check className="h-3 w-3" />
-          Save
+          <Trans>Save</Trans>
         </button>
       </div>
     )
@@ -117,7 +120,7 @@ function VersionPicker({
               </button>
             ))
           ) : (
-            <div className="px-3 py-1 text-xs text-muted-foreground">No versions</div>
+            <div className="px-3 py-1 text-xs text-muted-foreground"><Trans>No versions</Trans></div>
           )}
         </div>
       )}
@@ -126,12 +129,13 @@ function VersionPicker({
 }
 
 function ImageCard({ imageId, bookLabel, isPruned, reason, onTogglePrune }: { imageId: string; bookLabel: string; isPruned?: boolean; reason?: string; onTogglePrune?: () => void }) {
+  const { t } = useLingui()
   const [dimensions, setDimensions] = useState<{ w: number; h: number } | null>(null)
 
   return (
     <div
       className={`relative rounded border overflow-hidden bg-card flex flex-col items-center min-h-[80px] ${isPruned ? "opacity-40" : ""}`}
-      title={isPruned ? `Pruned: ${reason}` : undefined}
+      title={isPruned && reason ? t`Pruned: ${reason}` : undefined}
     >
       <button
         type="button"
@@ -141,7 +145,7 @@ function ImageCard({ imageId, bookLabel, isPruned, reason, onTogglePrune }: { im
             ? "bg-destructive hover:bg-destructive/80"
             : "bg-black/30 opacity-0 group-hover:opacity-100 hover:bg-black/50"
         }`}
-        title={isPruned ? "Unprune image" : "Prune image"}
+        title={isPruned ? t`Unprune image` : t`Prune image`}
       >
         {isPruned
           ? <EyeOff className="h-3 w-3 text-white" />
@@ -188,6 +192,7 @@ export function ExtractPageDetail({
   bookLabel: string
   pageId: string
 }) {
+  const { t } = useLingui()
   const { data: page, isLoading } = usePage(bookLabel, pageId)
   const { data: imageData } = usePageImage(bookLabel, pageId)
   const { data: activeConfigData } = useActiveConfig(bookLabel)
@@ -220,7 +225,7 @@ export function ExtractPageDetail({
       ...base,
       groups: base.groups.map((g) =>
         g.groupId === groupId
-          ? { ...g, texts: g.texts.map((t, i) => (i === textIndex ? { ...t, [field]: value } : t)) }
+          ? { ...g, texts: g.texts.map((tx, i) => (i === textIndex ? { ...tx, [field]: value } : tx)) }
           : g
       ),
     })
@@ -233,7 +238,7 @@ export function ExtractPageDetail({
       ...base,
       groups: base.groups.map((g) =>
         g.groupId === groupId
-          ? { ...g, texts: g.texts.map((t, i) => (i === textIndex ? { ...t, isPruned: !t.isPruned } : t)) }
+          ? { ...g, texts: g.texts.map((tx, i) => (i === textIndex ? { ...tx, isPruned: !tx.isPruned } : tx)) }
           : g
       ),
     })
@@ -274,7 +279,7 @@ export function ExtractPageDetail({
   }
 
   if (isLoading) {
-    return <div className="p-4 text-sm text-muted-foreground">Loading page...</div>
+    return <div className="p-4 text-sm text-muted-foreground"><Trans>Loading page...</Trans></div>
   }
 
   if (!page) return null
@@ -294,7 +299,7 @@ export function ExtractPageDetail({
           return (
             <h3 className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground uppercase tracking-wider">
               <Image className="h-3 w-3" />
-              Extracted Images ({count})
+              <Trans>Extracted Images ({String(count)})</Trans>
               <VersionPicker
                 currentVersion={page.versions.imageClassification}
                 saving={savingImages}
@@ -315,7 +320,7 @@ export function ExtractPageDetail({
           <div className="rounded border overflow-hidden shadow-sm">
             <img
               src={`data:image/png;base64,${imageData.imageBase64}`}
-              alt={`Page ${page.pageNumber}`}
+              alt={t`Page ${String(page.pageNumber)}`}
               className="w-full h-auto block"
               onLoad={(e) => {
                 const img = e.target as HTMLImageElement
@@ -335,7 +340,7 @@ export function ExtractPageDetail({
           <div className="flex aspect-[3/4] w-full items-center justify-center rounded border bg-muted/50 text-sm text-muted-foreground">
             <div className="flex flex-col items-center gap-2">
               <ImageOff className="h-6 w-6" />
-              No image available
+              <Trans>No image available</Trans>
             </div>
           </div>
         )}
@@ -365,7 +370,7 @@ export function ExtractPageDetail({
           <div>
             <h3 className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">
               <FileText className="h-3 w-3" />
-              Extracted Text
+              <Trans>Extracted Text</Trans>
             </h3>
             <div className="rounded border bg-muted/30 p-3 text-xs leading-relaxed whitespace-pre-wrap font-mono">
               {page.text}
@@ -373,7 +378,7 @@ export function ExtractPageDetail({
           </div>
         ) : (
           <div className="text-sm text-muted-foreground py-8 text-center">
-            No extracted text yet. Run the pipeline first.
+            <Trans>No extracted text yet. Run the pipeline first.</Trans>
           </div>
         )}
 
@@ -382,7 +387,7 @@ export function ExtractPageDetail({
           <div className="mt-4">
             <h3 className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">
               <Layers className="h-3 w-3" />
-              Classified Text
+              <Trans>Classified Text</Trans>
               <VersionPicker
                 currentVersion={page.versions.textClassification}
                 saving={savingText}
@@ -397,31 +402,35 @@ export function ExtractPageDetail({
             </h3>
             <div className="space-y-3">
               {textClassData.groups.map((group) => {
-                const maxTypeLen = Math.max(...group.texts.map((t) => t.textType.length), 0)
+                const maxTypeLen = Math.max(...group.texts.map((tx) => tx.textType.length), 0)
                 const colWidth = `${Math.max(maxTypeLen * 0.65 + 1.5, 4)}em`
                 return (
                   <div key={group.groupId} className="rounded border overflow-hidden">
                     <div className="px-3 py-1.5 bg-muted/50 border-b flex items-center gap-1.5">
-                      <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{group.groupType}</span>
+                      <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                        {getTextGroupLabel(group.groupType)}
+                      </span>
                     </div>
                     <div className="divide-y">
-                      {group.texts.map((t, i) => (
-                        <div key={i} className={`group/text px-3 py-1.5 flex items-start gap-2 text-sm ${t.isPruned ? "opacity-40" : ""}`}>
+                      {group.texts.map((tx, i) => (
+                        <div key={i} className={`group/text px-3 py-1.5 flex items-start gap-2 text-sm ${tx.isPruned ? "opacity-40" : ""}`}>
                           <select
-                            value={t.textType}
+                            value={tx.textType}
                             onChange={(e) => updateTextField(group.groupId, i, "textType", e.target.value)}
                             className="shrink-0 text-xs font-medium text-muted-foreground bg-muted/50 rounded px-1.5 py-0.5 text-center border-0 outline-none focus:ring-1 focus:ring-ring cursor-pointer appearance-none"
                             style={{ width: colWidth }}
                           >
-                            {configuredTextTypes.includes(t.textType) ? null : (
-                              <option value={t.textType}>{t.textType}</option>
+                            {configuredTextTypes.includes(tx.textType) ? null : (
+                              <option value={tx.textType}>{getTextTypeLabel(tx.textType)}</option>
                             )}
                             {configuredTextTypes.map((tt) => (
-                              <option key={tt} value={tt}>{tt}</option>
+                              <option key={tt} value={tt}>
+                                {getTextTypeLabel(tt)}
+                              </option>
                             ))}
                           </select>
                           <textarea
-                            value={t.text}
+                            value={tx.text}
                             onChange={(e) => updateTextField(group.groupId, i, "text", e.target.value)}
                             rows={1}
                             className="leading-relaxed flex-1 min-w-0 bg-transparent border-0 outline-none resize-none p-0 focus:ring-1 focus:ring-ring focus:rounded"
@@ -441,13 +450,13 @@ export function ExtractPageDetail({
                             type="button"
                             onClick={() => toggleTextPrune(group.groupId, i)}
                             className={`shrink-0 self-center flex items-center justify-center w-5 h-5 rounded-full cursor-pointer transition-colors ${
-                              t.isPruned
+                              tx.isPruned
                                 ? "bg-destructive hover:bg-destructive/80"
                                 : "opacity-0 group-hover/text:opacity-100 bg-black/30 hover:bg-black/50"
                             }`}
-                            title={t.isPruned ? "Unprune text" : "Prune text"}
+                            title={tx.isPruned ? t`Unprune text` : t`Prune text`}
                           >
-                            {t.isPruned
+                            {tx.isPruned
                               ? <EyeOff className="h-3 w-3 text-white" />
                               : <Eye className="h-3 w-3 text-white" />
                             }

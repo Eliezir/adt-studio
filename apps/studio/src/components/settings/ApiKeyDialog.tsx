@@ -12,13 +12,10 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { cn } from "@/lib/utils"
+import { Trans } from "@lingui/react/macro"
+import { useLingui } from "@lingui/react/macro"
 
-const TABS = [
-  { key: "openai", label: "OpenAI" },
-  { key: "azure", label: "Azure Speech" },
-] as const
-
-type TabKey = (typeof TABS)[number]["key"]
+type TabKey = "openai" | "azure"
 
 interface ApiKeyDialogProps {
   open: boolean
@@ -45,11 +42,17 @@ export function ApiKeyDialog({
   azureRegion,
   onSaveAzureRegion,
 }: ApiKeyDialogProps) {
+  const { t } = useLingui()
   const [tab, setTab] = useState<TabKey>("openai")
   const [openaiDraft, setOpenaiDraft] = useState(apiKey)
   const [azureKeyDraft, setAzureKeyDraft] = useState(azureKey)
   const [azureRegionDraft, setAzureRegionDraft] = useState(azureRegion)
   const [showKey, setShowKey] = useState(false)
+
+  const TABS = [
+    { key: "openai" as const, label: t`OpenAI` },
+    { key: "azure" as const, label: t`Azure Speech` },
+  ]
 
   useEffect(() => {
     if (open) {
@@ -85,9 +88,9 @@ export function ApiKeyDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>API Keys</DialogTitle>
+          <DialogTitle><Trans>API Keys</Trans></DialogTitle>
           <DialogDescription>
-            Configure API keys for AI pipeline features.
+            <Trans>Configure API keys for AI pipeline features.</Trans>
           </DialogDescription>
         </DialogHeader>
 
@@ -115,7 +118,9 @@ export function ApiKeyDialog({
 
         {tab === "openai" && (
           <div className="space-y-2">
-            <Label htmlFor="openai-key-input">OpenAI API Key</Label>
+            <Label htmlFor="openai-key-input">
+              <Trans>OpenAI API Key</Trans>
+            </Label>
             <div className="relative">
               <Input
                 id="openai-key-input"
@@ -138,7 +143,9 @@ export function ApiKeyDialog({
               </Button>
             </div>
             {openaiDraft.length > 0 && !isValidOpenAIKey(openaiDraft) && (
-              <p className="text-sm text-destructive">Key must start with &quot;sk-&quot;</p>
+              <p className="text-sm text-destructive">
+                <Trans>Key must start with "sk-"</Trans>
+              </p>
             )}
           </div>
         )}
@@ -146,12 +153,14 @@ export function ApiKeyDialog({
         {tab === "azure" && (
           <div className="space-y-3">
             <div className="space-y-2">
-              <Label htmlFor="azure-key-input">Subscription Key</Label>
+              <Label htmlFor="azure-key-input">
+                <Trans>Subscription Key</Trans>
+              </Label>
               <div className="relative">
                 <Input
                   id="azure-key-input"
                   type={showKey ? "text" : "password"}
-                  placeholder="Azure Speech subscription key"
+                  placeholder={t`Azure Speech subscription key`}
                   value={azureKeyDraft}
                   onChange={(e) => setAzureKeyDraft(e.target.value)}
                   onKeyDown={(e) => { if (e.key === "Enter") handleSave() }}
@@ -170,10 +179,12 @@ export function ApiKeyDialog({
               </div>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="azure-region-input">Region</Label>
+              <Label htmlFor="azure-region-input">
+                <Trans>Region</Trans>
+              </Label>
               <Input
                 id="azure-region-input"
-                placeholder="e.g. eastus, westeurope"
+                placeholder={t`e.g. eastus, westeurope`}
                 value={azureRegionDraft}
                 onChange={(e) => setAzureRegionDraft(e.target.value)}
                 onKeyDown={(e) => { if (e.key === "Enter") handleSave() }}
@@ -184,10 +195,10 @@ export function ApiKeyDialog({
 
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
+            <Trans>Cancel</Trans>
           </Button>
           <Button onClick={handleSave} disabled={!canSave}>
-            Save
+            <Trans>Save</Trans>
           </Button>
         </DialogFooter>
       </DialogContent>

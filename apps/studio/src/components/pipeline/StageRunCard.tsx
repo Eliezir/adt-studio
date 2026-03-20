@@ -6,7 +6,14 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { PIPELINE } from "@adt/types"
 import type { StageName } from "@adt/types"
 import { STAGES } from "./stage-config"
+import {
+  getStageLabelI18n,
+  getStageRunningLabelI18n,
+  getStageDescriptionI18n,
+  getStepLabelI18n,
+} from "./pipeline-i18n"
 import { useBookRun } from "@/hooks/use-book-run"
+import { useLingui } from "@lingui/react/macro"
 
 export interface StageSubStep {
   key: string
@@ -15,12 +22,14 @@ export interface StageSubStep {
 
 /** Sub-steps for each stage, derived from the shared PIPELINE definition */
 export const STAGE_SUB_STEPS: Record<StageName, StageSubStep[]> = Object.fromEntries(
-  PIPELINE.map((stage) => [stage.name, stage.steps.map((s) => ({ key: s.name, label: s.label }))])
+  PIPELINE.map((stage) => [stage.name, stage.steps.map((s) => ({
+    key: s.name,
+    label: s.label,
+  }))])
 ) as Record<StageName, StageSubStep[]>
 
 interface StageRunCardProps {
   stageSlug: string
-  description?: string
   isRunning: boolean
   completed?: boolean
   showRunButton?: boolean
@@ -41,13 +50,13 @@ const HOVER_BG_BY_COLOR: Record<string, string> = {
 
 export function StageRunCard({
   stageSlug,
-  description,
   isRunning,
   completed,
   showRunButton = true,
   onRun,
   disabled,
 }: StageRunCardProps) {
+  const { t } = useLingui()
   const stage = STAGES.find((s) => s.slug === stageSlug) ?? STAGES[0]
   const { stageState, stepState, stepProgress, stepError, error } = useBookRun()
   const stageStatus = stageState(stageSlug)
@@ -65,6 +74,8 @@ export function StageRunCard({
       ? cn(color, "text-white", hoverColorClass, "hover:text-white")
       : cn("bg-gray-200 text-gray-700", hoverColorClass, "hover:text-white")
 
+  const stageLabel = getStageLabelI18n(stageSlug)
+
   return (
     <Card className={cn("overflow-hidden max-w-xl shadow-none", borderColor)}>
       {/* Colored header */}
@@ -74,8 +85,8 @@ export function StageRunCard({
         </div>
         <CardTitle className="text-sm leading-normal tracking-normal">
           {isRunning
-            ? `${stage.runningLabel}...`
-            : stage.label}
+            ? getStageRunningLabelI18n(stageSlug)
+            : stageLabel}
         </CardTitle>
       </CardHeader>
 
@@ -89,7 +100,7 @@ export function StageRunCard({
         {/* Sub-steps */}
         {hasSubSteps && (
           <div className="space-y-1.5 w-48 shrink-0">
-            {subSteps.map(({ key, label }) => {
+            {subSteps.map(({ key }) => {
               const state = stepState(key)
               const progress = stepProgress(key)
               const errorMsg = stepError(key)
@@ -126,7 +137,7 @@ export function StageRunCard({
                     ) : (
                       <div className="w-4 h-4 rounded-full border border-current opacity-30 shrink-0" />
                     )}
-                    <span>{label}</span>
+                    <span>{getStepLabelI18n(key)}</span>
                     {isSubRunning && hasPages && (
                       <span className="text-muted-foreground tabular-nums">{progress?.page}/{progress?.totalPages}</span>
                     )}
@@ -165,10 +176,10 @@ export function StageRunCard({
                 onClick={(e) => { e.stopPropagation(); e.preventDefault(); onRun() }}
                 title={
                   hasError
-                    ? "Retry"
+                    ? t`Retry`
                     : isCompleted
-                      ? `Re-run ${stage.label.toLowerCase()}`
-                      : `Run ${stage.label.toLowerCase()}`
+                      ? t`Re-run ${stageLabel}`
+                      : t`Run ${stageLabel}`
                 }
               >
                 {hasError || isCompleted ? <RotateCcw className="w-5 h-5" /> : <Play className="w-5 h-5 ml-0.5" />}
@@ -178,14 +189,14 @@ export function StageRunCard({
         )}
 
         {/* Description */}
-        {description && (
+        {getStageDescriptionI18n(stageSlug) && (
           <p
             className={cn(
               "min-w-0 text-xs text-muted-foreground leading-relaxed",
               showRunButton || hasSubSteps ? "flex-1" : "max-w-md text-center"
             )}
           >
-            {description}
+            {getStageDescriptionI18n(stageSlug)}
           </p>
         )}
       </CardContent>

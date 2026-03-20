@@ -24,8 +24,11 @@ import { PruneToggle } from "@/components/pipeline/PruneToggle"
 import { useBookRun } from "@/hooks/use-book-run"
 import { useStepConfig } from "@/hooks/use-step-config"
 import { normalizeLocale } from "@/lib/languages"
+import { useLingui } from "@lingui/react/macro"
+import { getTextTypeLabel } from "@/lib/text-type-labels"
 
 export function ExtractSettings({ bookLabel, headerTarget, tab = "general" }: { bookLabel: string; headerTarget?: HTMLDivElement | null; tab?: string }) {
+  const { t } = useLingui()
   const { data: bookConfigData } = useBookConfig(bookLabel)
   const { data: activeConfigData } = useActiveConfig(bookLabel)
   const updateConfig = useUpdateBookConfig()
@@ -256,7 +259,7 @@ export function ExtractSettings({ bookLabel, headerTarget, tab = "general" }: { 
           {/* Page Range */}
           <div>
             <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">
-              Page Range
+              {t`Page Range`}
             </h3>
             <div className="flex items-center gap-2">
               <Input
@@ -264,28 +267,28 @@ export function ExtractSettings({ bookLabel, headerTarget, tab = "general" }: { 
                 min={1}
                 value={startPage}
                 onChange={(e) => { setStartPage(e.target.value); markDirty("start_page") }}
-                placeholder="First"
+                placeholder={t`First`}
                 className="w-24"
               />
-              <span className="text-xs text-muted-foreground">to</span>
+              <span className="text-xs text-muted-foreground">{t`to`}</span>
               <Input
                 type="number"
                 min={1}
                 value={endPage}
                 onChange={(e) => { setEndPage(e.target.value); markDirty("end_page") }}
-                placeholder="Last"
+                placeholder={t`Last`}
                 className="w-24"
               />
             </div>
             <p className="text-xs text-muted-foreground mt-1.5">
-              Leave empty to process all pages.
+              {t`Leave empty to process all pages.`}
             </p>
           </div>
 
           {/* Spread Mode */}
           <div>
             <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">
-              Spread Mode
+              {t`Spread Mode`}
             </h3>
             <div className="flex items-center gap-2">
               <Switch
@@ -294,11 +297,11 @@ export function ExtractSettings({ bookLabel, headerTarget, tab = "general" }: { 
                 onCheckedChange={(v) => { setSpreadMode(v); markDirty("spread_mode") }}
               />
               <Label htmlFor="spread-mode" className="text-sm font-normal">
-                Merge facing pages as spreads
+                {t`Merge facing pages as spreads`}
               </Label>
             </div>
             <p className="text-xs text-muted-foreground mt-1.5">
-              Enable for scanned books where two pages appear on a single PDF page.
+              {t`Enable for scanned books where two pages appear on a single PDF page.`}
             </p>
           </div>
 
@@ -307,45 +310,45 @@ export function ExtractSettings({ bookLabel, headerTarget, tab = "general" }: { 
             <LanguagePicker
               selected={editingLanguage}
               onSelect={(v) => { setEditingLanguage(v); markDirty("editing_language") }}
-              label="Editing Language"
-              hint="Leave empty to use the book language."
+              label={t`Editing Language`}
+              hint={t`Leave empty to use the book language.`}
             />
           </div>
 
           {/* Image Filters */}
           <div>
             <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">
-              Image Filters
+              {t`Image Filters`}
             </h3>
             <div className="flex items-center gap-2">
               <div className="space-y-1">
-                <Label className="text-xs">Min side (px)</Label>
+                <Label className="text-xs">{t`Min side (px)`}</Label>
                 <Input
                   type="number"
                   min={0}
                   value={minSide}
                   onChange={(e) => { setMinSide(e.target.value); markDirty("image_filters") }}
-                  placeholder="None"
+                  placeholder={t`None`}
                   className="w-28"
                 />
               </div>
               <div className="space-y-1">
-                <Label className="text-xs">Max side (px)</Label>
+                <Label className="text-xs">{t`Max side (px)`}</Label>
                 <Input
                   type="number"
                   min={0}
                   value={maxSide}
                   onChange={(e) => { setMaxSide(e.target.value); markDirty("image_filters") }}
-                  placeholder="None"
+                  placeholder={t`None`}
                   className="w-28"
                 />
               </div>
             </div>
             <p className="text-xs text-muted-foreground mt-1.5">
-              Images with shortest side below min or longest side above max are pruned.
+              {t`Images with shortest side below min or longest side above max are pruned.`}
             </p>
             <div className="space-y-1 mt-3">
-              <Label className="text-xs">Min complexity</Label>
+              <Label className="text-xs">{t`Min complexity`}</Label>
               <Input
                 type="number"
                 min={0}
@@ -357,7 +360,7 @@ export function ExtractSettings({ bookLabel, headerTarget, tab = "general" }: { 
               />
             </div>
             <p className="text-xs text-muted-foreground mt-1.5">
-              Higher values filter out simple or blank images.
+              {t`Higher values filter out simple or blank images.`}
             </p>
             <div className="flex items-center gap-2 mt-4">
               <Switch
@@ -369,11 +372,11 @@ export function ExtractSettings({ bookLabel, headerTarget, tab = "general" }: { 
                 }}
               />
               <Label htmlFor="meaningfulness-filter" className="text-sm font-normal">
-                LLM meaningfulness filter
+                {t`LLM meaningfulness filter`}
               </Label>
             </div>
             <p className="text-xs text-muted-foreground mt-1.5">
-              Use an LLM to filter out decorative or non-educational images.
+              {t`Use an LLM to filter out decorative or non-educational images.`}
             </p>
             <div className="flex items-center gap-2 mt-4">
               <Switch
@@ -385,11 +388,11 @@ export function ExtractSettings({ bookLabel, headerTarget, tab = "general" }: { 
                 }}
               />
               <Label htmlFor="cropping-filter" className="text-sm font-normal">
-                LLM image cropping
+                {t`LLM image cropping`}
               </Label>
             </div>
             <p className="text-xs text-muted-foreground mt-1.5">
-              Use an LLM to crop away stray text, artifacts, and excessive whitespace from image edges.
+              {t`Use an LLM to crop away stray text, artifacts, and excessive whitespace from image edges.`}
             </p>
             <div className="flex items-center gap-2 mt-4">
               <Switch
@@ -401,11 +404,11 @@ export function ExtractSettings({ bookLabel, headerTarget, tab = "general" }: { 
                 }}
               />
               <Label htmlFor="segmentation-filter" className="text-sm font-normal">
-                LLM image segmentation
+                {t`LLM image segmentation`}
               </Label>
             </div>
             <p className="text-xs text-muted-foreground mt-1.5">
-              Use an LLM to detect and split composited images (e.g., multiple photos in a single image layer) into individual segments. Requires GPT-5.2+.
+              {t`Use an LLM to detect and split composited images (e.g., multiple photos in a single image layer) into individual segments. Requires GPT-5.2+.`}
             </p>
           </div>
         </>
@@ -414,14 +417,14 @@ export function ExtractSettings({ bookLabel, headerTarget, tab = "general" }: { 
       {tab === "text-types" && (
         <div>
           <p className="text-xs text-muted-foreground mb-3">
-            Types used during text classification. Pruned types are excluded from rendering.
+            {t`Types used during text classification. Pruned types are excluded from rendering.`}
           </p>
           <div className="rounded-md border divide-y">
             {/* Header */}
             <div className="flex items-center gap-2 px-3 py-1.5 bg-muted/50">
               <span className="shrink-0 w-5" />
-              <span className="text-xs font-medium text-muted-foreground shrink-0 w-40">Type</span>
-              <span className="text-xs font-medium text-muted-foreground flex-1 min-w-0">Description</span>
+              <span className="text-xs font-medium text-muted-foreground shrink-0 w-40">{t`Type`}</span>
+              <span className="text-xs font-medium text-muted-foreground flex-1 min-w-0">{t`Description`}</span>
               <span className="shrink-0 w-5" />
             </div>
             {Object.entries(textTypes).map(([key, description]) => {
@@ -433,19 +436,19 @@ export function ExtractSettings({ bookLabel, headerTarget, tab = "general" }: { 
                 >
                   <PruneToggle pruned={pruned} onToggle={() => togglePruned(key)} />
                   <span className={`text-xs shrink-0 w-40 truncate font-mono ${pruned ? "text-muted-foreground line-through" : "font-medium"}`}>
-                    {key}
+                    {getTextTypeLabel(key)}
                   </span>
                   <Input
                     value={description}
                     onChange={(e) => updateDescription(key, e.target.value)}
                     className="h-7 text-xs flex-1 min-w-0"
-                    placeholder="Description..."
+                    placeholder={t`Description...`}
                   />
                   <button
                     type="button"
                     onClick={() => removeTextType(key)}
                     className="shrink-0 p-0.5 rounded text-muted-foreground/0 group-hover:text-muted-foreground hover:!text-destructive transition-colors"
-                    title="Remove type"
+                    title={t`Remove type`}
                   >
                     <X className="h-3.5 w-3.5" />
                   </button>
@@ -467,7 +470,7 @@ export function ExtractSettings({ bookLabel, headerTarget, tab = "general" }: { 
                 onChange={(e) => setNewTypeDesc(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && addTextType()}
                 className="h-7 text-xs flex-1 min-w-0"
-                placeholder="Description..."
+                placeholder={t`Description...`}
               />
               <Button
                 variant="ghost"
@@ -476,7 +479,7 @@ export function ExtractSettings({ bookLabel, headerTarget, tab = "general" }: { 
                 onClick={addTextType}
                 disabled={!newTypeKey.trim() || newTypeKey.trim().toLowerCase().replace(/\s+/g, "_") in textTypes}
               >
-                Add
+                {t`Add`}
               </Button>
             </div>
           </div>
@@ -487,8 +490,8 @@ export function ExtractSettings({ bookLabel, headerTarget, tab = "general" }: { 
         <PromptViewer
           promptName="metadata_extraction"
           bookLabel={bookLabel}
-          title="Metadata Extraction Prompt"
-          description="The prompt template used to extract book metadata (title, author, etc.) from the first few pages. This is a Liquid template processed with page context."
+          title={t`Metadata Extraction Prompt`}
+          description={t`The prompt template used to extract book metadata (title, author, etc.) from the first few pages. This is a Liquid template processed with page context.`}
           model={metadata.model}
           onModelChange={metadata.onModelChange}
           maxRetries={metadata.maxRetries}
@@ -502,8 +505,8 @@ export function ExtractSettings({ bookLabel, headerTarget, tab = "general" }: { 
         <PromptViewer
           promptName="text_classification"
           bookLabel={bookLabel}
-          title="Text Classification Prompt"
-          description="The prompt template used for text classification. This is a Liquid template processed with page context."
+          title={t`Text Classification Prompt`}
+          description={t`The prompt template used for text classification. This is a Liquid template processed with page context.`}
           model={textClassification.model}
           onModelChange={textClassification.onModelChange}
           maxRetries={textClassification.maxRetries}
@@ -517,8 +520,8 @@ export function ExtractSettings({ bookLabel, headerTarget, tab = "general" }: { 
         <PromptViewer
           promptName="image_meaningfulness"
           bookLabel={bookLabel}
-          title="Image Meaningfulness Prompt"
-          description="LLM-based filter to determine if extracted images are meaningful."
+          title={t`Image Meaningfulness Prompt`}
+          description={t`LLM-based filter to determine if extracted images are meaningful.`}
           model={imageMeaningfulness.model}
           onModelChange={imageMeaningfulness.onModelChange}
           maxRetries={imageMeaningfulness.maxRetries}
@@ -532,8 +535,8 @@ export function ExtractSettings({ bookLabel, headerTarget, tab = "general" }: { 
         <PromptViewer
           promptName="image_cropping"
           bookLabel={bookLabel}
-          title="Image Cropping Prompt"
-          description="LLM-based cropping to remove stray text, artifacts, and excessive whitespace from extracted images."
+          title={t`Image Cropping Prompt`}
+          description={t`LLM-based cropping to remove stray text, artifacts, and excessive whitespace from extracted images.`}
           model={imageCropping.model}
           onModelChange={imageCropping.onModelChange}
           maxRetries={imageCropping.maxRetries}
@@ -546,25 +549,25 @@ export function ExtractSettings({ bookLabel, headerTarget, tab = "general" }: { 
       {tab === "segmentation-prompt" && (
         <div className="flex flex-col h-full">
           <div className="shrink-0 px-4 pt-4 pb-3 space-y-1.5 border-b">
-            <Label className="text-xs">Min image dimension (px)</Label>
+            <Label className="text-xs">{t`Min image dimension (px)`}</Label>
             <Input
               type="number"
               min={0}
               value={segmentationMinSide}
               onChange={(e) => { setSegmentationMinSide(e.target.value); markDirty("image_segmentation") }}
-              placeholder="None"
+              placeholder={t`None`}
               className="w-32"
             />
             <p className="text-xs text-muted-foreground">
-              Skip segmentation for images whose shortest side is below this threshold.
+              {t`Skip segmentation for images whose shortest side is below this threshold.`}
             </p>
           </div>
           <div className="flex-1 min-h-0">
             <PromptViewer
               promptName="image_segmentation"
               bookLabel={bookLabel}
-              title="Image Segmentation Prompt"
-              description="LLM-based segmentation to detect and split composited images into individual segments. Requires GPT-5.2+ for accurate bounding box coordinates."
+              title={t`Image Segmentation Prompt`}
+              description={t`LLM-based segmentation to detect and split composited images into individual segments. Requires GPT-5.2+ for accurate bounding box coordinates.`}
               model={imageSegmentation.model}
               onModelChange={imageSegmentation.onModelChange}
               maxRetries={imageSegmentation.maxRetries}
@@ -580,8 +583,8 @@ export function ExtractSettings({ bookLabel, headerTarget, tab = "general" }: { 
         <PromptViewer
           promptName="book_summary"
           bookLabel={bookLabel}
-          title="Book Summary Prompt"
-          description="The prompt template used to generate a short book summary at the end of extract. The summary is generated in the configured editing language."
+          title={t`Book Summary Prompt`}
+          description={t`The prompt template used to generate a short book summary at the end of extract. The summary is generated in the configured editing language.`}
           model={bookSummary.model}
           onModelChange={bookSummary.onModelChange}
           maxRetries={bookSummary.maxRetries}
@@ -599,7 +602,7 @@ export function ExtractSettings({ bookLabel, headerTarget, tab = "general" }: { 
           disabled={updateConfig.isPending || !hasApiKey}
         >
           <Play className="mr-1.5 h-3.5 w-3.5" />
-          Save &amp; Rerun
+          {t`Save & Rerun`}
         </Button>,
         headerTarget
       )}
@@ -607,18 +610,17 @@ export function ExtractSettings({ bookLabel, headerTarget, tab = "general" }: { 
       <Dialog open={showRerunDialog} onOpenChange={setShowRerunDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Save &amp; Rerun Extraction</DialogTitle>
+            <DialogTitle>{t`Save & Rerun Extraction`}</DialogTitle>
             <DialogDescription>
-              This will save your settings and re-run the extraction pipeline.
-              Any manual edits to extracted text will be overwritten for affected pages.
+              {t`This will save your settings and re-run the extraction pipeline. Any manual edits to extracted text will be overwritten for affected pages.`}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowRerunDialog(false)}>
-              Cancel
+              {t`Cancel`}
             </Button>
             <Button onClick={confirmSaveAndRerun} disabled={updateConfig.isPending}>
-              {updateConfig.isPending ? "Saving..." : "Confirm Rerun"}
+              {updateConfig.isPending ? t`Saving...` : t`Confirm Rerun`}
             </Button>
           </DialogFooter>
         </DialogContent>

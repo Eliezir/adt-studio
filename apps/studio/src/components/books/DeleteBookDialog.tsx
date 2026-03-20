@@ -7,6 +7,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
+import { Trans } from "@lingui/react/macro"
 
 interface DeleteBookDialogProps {
   label: string | null
@@ -25,22 +26,25 @@ export function DeleteBookDialog({
     <Dialog open={!!label} onOpenChange={(open) => !open && onCancel()}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Delete book</DialogTitle>
+          <DialogTitle><Trans>Delete book</Trans></DialogTitle>
           <DialogDescription>
-            Are you sure you want to delete <strong>{label}</strong>? This will
-            remove all extracted data and cannot be undone.
+            <Trans>Are you sure you want to delete</Trans>{" "}
+            <strong>{label}</strong>
+            <Trans>? This will remove all extracted data and cannot be undone.</Trans>
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>
           <Button variant="outline" onClick={onCancel} disabled={isPending}>
-            Cancel
+            <Trans>Cancel</Trans>
           </Button>
           <Button
             variant="destructive"
             onClick={onConfirm}
             disabled={isPending}
           >
-            {isPending ? "Deleting..." : "Delete"}
+            {isPending
+              ? <Trans>Deleting...</Trans>
+              : <Trans>Delete</Trans>}
           </Button>
         </DialogFooter>
       </DialogContent>
