@@ -112,6 +112,43 @@ git tag v0.2.0 && git push --tags   # Creates next release
 
 Or create a new tag in the GitHub UI pointing at `main`.
 
+## Internationalization (i18n)
+
+The Studio app uses **Lingui v5** for i18n. All user-visible text in `apps/studio/` must be translated to all supported locales: **`en`, `pt-BR`, `es`**.
+
+### Rules
+- **Every user-visible string must be wrapped** in a Lingui macro — no raw string literals in JSX or component output
+  - In React components: `const { t } = useLingui()` → `t\`Your string\``
+  - In JSX content: `<Trans>Your string</Trans>`
+  - In non-React code (utils, constants): `msg\`Your string\`` + `i18n._()` at runtime
+- **After adding or changing any string**, run `pnpm --filter @adt/studio extract` to update all `.po` catalog files and commit them alongside the code change
+- **All locales must be fully translated** — no empty `msgstr` entries in `es.po` or `pt-BR.po`
+- CI enforces both rules automatically via the `i18n` job in `.github/workflows/ci.yml`
+
+### Available locales
+Defined in `apps/studio/lingui.config.ts` and `apps/studio/src/main.tsx`:
+- `en` — English (source locale)
+- `pt-BR` — Portuguese (Brazil)
+- `es` — Spanish
+
+### ESLint — hardcoded string detection
+The `lingui/no-unlocalized-strings` rule in `apps/studio/eslint.config.js` flags raw strings that should be wrapped in a macro. It has an `ignoreNames` list for prop names whose values are never user-visible (e.g. `variant`, `className`, `href`).
+
+**When adding a new prop or variable name that holds a non-translatable value** (e.g. a new component prop like `iconName` or `queryKey`):
+1. Check if it's already in `ignoreNames` in `eslint.config.js`
+2. If not, decide: is this value ever shown to the user as text?
+   - **No** (it's a key, identifier, or config value) → add it to `ignoreNames`
+   - **Yes** (it's displayed as UI text) → wrap the value in the appropriate macro instead
+3. After updating `ignoreNames`, regenerate the suppressions baseline:
+   ```bash
+   cd apps/studio
+   npx eslint src --suppressions-location ./eslint-suppressions.json --prune-suppressions
+   npx eslint src --suppress-all --suppressions-location ./eslint-suppressions.json
+   ```
+
+### Adding a new language
+See [`docs/I18N_ADD_LANGUAGE.md`](docs/I18N_ADD_LANGUAGE.md).
+
 ## Key Rules
 
 - All types defined as Zod schemas in `packages/types/`, infer TS types with `z.infer<>`

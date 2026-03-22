@@ -1,0 +1,452 @@
+{
+  "src/api/client.test.ts": {
+    "lingui/no-unlocalized-strings": {
+      "count": 17
+    }
+  },
+  "src/api/client.ts": {
+    "lingui/no-unlocalized-strings": {
+      "count": 87
+    }
+  },
+  "src/components/LanguagePicker.tsx": {
+    "lingui/no-unlocalized-strings": {
+      "count": 3
+    }
+  },
+  "src/components/LocaleSwitcher.tsx": {
+    "lingui/no-unlocalized-strings": {
+      "count": 4
+    }
+  },
+  "src/components/config/AdvancedLayoutPanel.tsx": {
+    "lingui/no-unlocalized-strings": {
+      "count": 43
+    }
+  },
+  "src/components/config/ConfigEditor.tsx": {
+    "lingui/no-unlocalized-strings": {
+      "count": 62
+    }
+  },
+  "src/components/debug/DebugPanel.tsx": {
+    "lingui/no-unlocalized-strings": {
+      "count": 7
+    }
+  },
+  "src/components/debug/LlmLogsTab.tsx": {
+    "lingui/no-unlocalized-strings": {
+      "count": 31
+    }
+  },
+  "src/components/debug/StatsTab.tsx": {
+    "lingui/no-unlocalized-strings": {
+      "count": 5
+    }
+  },
+  "src/components/debug/VersionsTab.tsx": {
+    "lingui/no-unlocalized-strings": {
+      "count": 5
+    }
+  },
+  "src/components/pipeline/PromptViewer.tsx": {
+    "lingui/no-unlocalized-strings": {
+      "count": 12
+    }
+  },
+  "src/components/pipeline/StageRunCard.tsx": {
+    "lingui/no-unlocalized-strings": {
+      "count": 14
+    }
+  },
+  "src/components/pipeline/StageSidebar.tsx": {
+    "lingui/no-unlocalized-strings": {
+      "count": 9
+    }
+  },
+  "src/components/pipeline/StepProgressRing.tsx": {
+    "lingui/no-unlocalized-strings": {
+      "count": 7
+    }
+  },
+  "src/components/pipeline/TemplateViewer.tsx": {
+    "lingui/no-unlocalized-strings": {
+      "count": 9
+    }
+  },
+  "src/components/pipeline/stage-config.test.ts": {
+    "lingui/no-unlocalized-strings": {
+      "count": 16
+    }
+  },
+  "src/components/pipeline/stage-config.ts": {
+    "lingui/no-unlocalized-strings": {
+      "count": 84
+    }
+  },
+  "src/components/pipeline/stages/AddImageDialog.tsx": {
+    "lingui/no-unlocalized-strings": {
+      "count": 6
+    }
+  },
+  "src/components/pipeline/stages/AiImageDialog.tsx": {
+    "lingui/no-unlocalized-strings": {
+      "count": 18
+    }
+  },
+  "src/components/pipeline/stages/BookPreviewFrame.tsx": {
+    "lingui/no-unlocalized-strings": {
+      "count": 40
+    }
+  },
+  "src/components/pipeline/stages/CaptionsSettings.tsx": {
+    "lingui/no-unlocalized-strings": {
+      "count": 6
+    }
+  },
+  "src/components/pipeline/stages/CaptionsView.tsx": {
+    "lingui/no-unlocalized-strings": {
+      "count": 10
+    }
+  },
+  "src/components/pipeline/stages/ExportView.tsx": {
+    "lingui/no-unlocalized-strings": {
+      "count": 1
+    }
+  },
+  "src/components/pipeline/stages/ExtractPageDetail.tsx": {
+    "lingui/no-unlocalized-strings": {
+      "count": 14
+    }
+  },
+  "src/components/pipeline/stages/ExtractSettings.tsx": {
+    "lingui/no-unlocalized-strings": {
+      "count": 46
+    }
+  },
+  "src/components/pipeline/stages/ExtractView.tsx": {
+    "lingui/no-unlocalized-strings": {
+      "count": 5
+    }
+  },
+  "src/components/pipeline/stages/GlossarySettings.tsx": {
+    "lingui/no-unlocalized-strings": {
+      "count": 6
+    }
+  },
+  "src/components/pipeline/stages/GlossaryView.tsx": {
+    "lingui/no-unlocalized-strings": {
+      "count": 11
+    }
+  },
+  "src/components/pipeline/stages/ImageCropDialog.tsx": {
+    "lingui/no-unlocalized-strings": {
+      "count": 4
+    }
+  },
+  "src/components/pipeline/stages/PreviewView.tsx": {
+    "lingui/no-unlocalized-strings": {
+      "count": 10
+    }
+  },
+  "src/components/pipeline/stages/QuizzesSettings.tsx": {
+    "lingui/no-unlocalized-strings": {
+      "count": 11
+    }
+  },
+  "src/components/pipeline/stages/QuizzesView.tsx": {
+    "lingui/no-unlocalized-strings": {
+      "count": 12
+    }
+  },
+  "src/components/pipeline/stages/SectionDataPanel.tsx": {
+    "lingui/no-unlocalized-strings": {
+      "count": 9
+    }
+  },
+  "src/components/pipeline/stages/SegmentPreviewDialog.tsx": {
+    "lingui/no-unlocalized-strings": {
+      "count": 33
+    }
+  },
+  "src/components/pipeline/stages/SpeechPromptsEditor.tsx": {
+    "lingui/no-unlocalized-strings": {
+      "count": 3
+    }
+  },
+  "src/components/pipeline/stages/StoryboardSectionDetail.tsx": {
+    "lingui/no-unlocalized-strings": {
+      "count": 124
+    }
+  },
+  "src/components/pipeline/stages/StoryboardSettings.tsx": {
+    "lingui/no-unlocalized-strings": {
+      "count": 47
+    }
+  },
+  "src/components/pipeline/stages/StoryboardView.tsx": {
+    "lingui/no-unlocalized-strings": {
+      "count": 5
+    }
+  },
+  "src/components/pipeline/stages/TextToSpeechSettings.tsx": {
+    "lingui/no-unlocalized-strings": {
+      "count": 22
+    }
+  },
+  "src/components/pipeline/stages/TextToSpeechView.tsx": {
+    "lingui/no-unlocalized-strings": {
+      "count": 12
+    }
+  },
+  "src/components/pipeline/stages/TranslationsSettings.tsx": {
+    "lingui/no-unlocalized-strings": {
+      "count": 26
+    }
+  },
+  "src/components/pipeline/stages/TranslationsView.tsx": {
+    "lingui/no-unlocalized-strings": {
+      "count": 15
+    }
+  },
+  "src/components/pipeline/stages/VoiceMappingsEditor.tsx": {
+    "lingui/no-unlocalized-strings": {
+      "count": 6
+    }
+  },
+  "src/components/pipeline/stages/quizzes-image-state.test.ts": {
+    "lingui/no-unlocalized-strings": {
+      "count": 15
+    }
+  },
+  "src/components/pipeline/stages/quizzes-image-state.ts": {
+    "lingui/no-unlocalized-strings": {
+      "count": 5
+    }
+  },
+  "src/components/pipeline/stages/storyboard-rerun-policy.test.ts": {
+    "lingui/no-unlocalized-strings": {
+      "count": 12
+    }
+  },
+  "src/components/pipeline/stages/storyboard-rerun-policy.ts": {
+    "lingui/no-unlocalized-strings": {
+      "count": 4
+    }
+  },
+  "src/components/pipeline/stages/translations-view-state.test.ts": {
+    "lingui/no-unlocalized-strings": {
+      "count": 5
+    }
+  },
+  "src/components/settings/ApiKeyDialog.tsx": {
+    "lingui/no-unlocalized-strings": {
+      "count": 3
+    }
+  },
+  "src/components/ui/alert.tsx": {
+    "lingui/no-unlocalized-strings": {
+      "count": 4
+    }
+  },
+  "src/components/ui/badge.tsx": {
+    "lingui/no-unlocalized-strings": {
+      "count": 1
+    }
+  },
+  "src/components/ui/button.tsx": {
+    "lingui/no-unlocalized-strings": {
+      "count": 3
+    }
+  },
+  "src/components/ui/card.tsx": {
+    "lingui/no-unlocalized-strings": {
+      "count": 6
+    }
+  },
+  "src/components/ui/dialog.tsx": {
+    "lingui/no-unlocalized-strings": {
+      "count": 3
+    }
+  },
+  "src/components/ui/input.tsx": {
+    "lingui/no-unlocalized-strings": {
+      "count": 1
+    }
+  },
+  "src/components/ui/label.tsx": {
+    "lingui/no-unlocalized-strings": {
+      "count": 1
+    }
+  },
+  "src/components/ui/select.tsx": {
+    "lingui/no-unlocalized-strings": {
+      "count": 1
+    }
+  },
+  "src/components/ui/sheet.tsx": {
+    "lingui/no-unlocalized-strings": {
+      "count": 7
+    }
+  },
+  "src/components/ui/switch.tsx": {
+    "lingui/no-unlocalized-strings": {
+      "count": 1
+    }
+  },
+  "src/components/ui/textarea.tsx": {
+    "lingui/no-unlocalized-strings": {
+      "count": 1
+    }
+  },
+  "src/hooks/run-state.test.ts": {
+    "lingui/no-unlocalized-strings": {
+      "count": 35
+    }
+  },
+  "src/hooks/use-api-key.ts": {
+    "lingui/no-unlocalized-strings": {
+      "count": 3
+    }
+  },
+  "src/hooks/use-book-config.ts": {
+    "lingui/no-unlocalized-strings": {
+      "count": 3
+    }
+  },
+  "src/hooks/use-book-run.ts": {
+    "lingui/no-unlocalized-strings": {
+      "count": 49
+    }
+  },
+  "src/hooks/use-books.ts": {
+    "lingui/no-unlocalized-strings": {
+      "count": 21
+    }
+  },
+  "src/hooks/use-debug.ts": {
+    "lingui/no-unlocalized-strings": {
+      "count": 8
+    }
+  },
+  "src/hooks/use-glossary.ts": {
+    "lingui/no-unlocalized-strings": {
+      "count": 2
+    }
+  },
+  "src/hooks/use-inline-page-edit.ts": {
+    "lingui/no-unlocalized-strings": {
+      "count": 3
+    }
+  },
+  "src/hooks/use-page-mutations.ts": {
+    "lingui/no-unlocalized-strings": {
+      "count": 10
+    }
+  },
+  "src/hooks/use-pages.ts": {
+    "lingui/no-unlocalized-strings": {
+      "count": 7
+    }
+  },
+  "src/hooks/use-presets.ts": {
+    "lingui/no-unlocalized-strings": {
+      "count": 6
+    }
+  },
+  "src/hooks/use-quizzes.ts": {
+    "lingui/no-unlocalized-strings": {
+      "count": 2
+    }
+  },
+  "src/hooks/use-tts.ts": {
+    "lingui/no-unlocalized-strings": {
+      "count": 2
+    }
+  },
+  "src/lib/activity-utils.ts": {
+    "lingui/no-unlocalized-strings": {
+      "count": 5
+    }
+  },
+  "src/lib/config-constants.ts": {
+    "lingui/no-unlocalized-strings": {
+      "count": 43
+    }
+  },
+  "src/lib/label-validation.test.ts": {
+    "lingui/no-unlocalized-strings": {
+      "count": 29
+    }
+  },
+  "src/lib/render-strategy.test.ts": {
+    "lingui/no-unlocalized-strings": {
+      "count": 36
+    }
+  },
+  "src/lib/render-strategy.ts": {
+    "lingui/no-unlocalized-strings": {
+      "count": 2
+    }
+  },
+  "src/lib/section-constants.ts": {
+    "lingui/no-unlocalized-strings": {
+      "count": 37
+    }
+  },
+  "src/main.tsx": {
+    "lingui/no-unlocalized-strings": {
+      "count": 5
+    }
+  },
+  "src/routes/books.$label.$step.$pageId.tsx": {
+    "lingui/no-unlocalized-strings": {
+      "count": 1
+    }
+  },
+  "src/routes/books.$label.$step.index.tsx": {
+    "lingui/no-unlocalized-strings": {
+      "count": 1
+    }
+  },
+  "src/routes/books.$label.$step.settings.tsx": {
+    "lingui/no-unlocalized-strings": {
+      "count": 3
+    }
+  },
+  "src/routes/books.$label.$step.tsx": {
+    "lingui/no-unlocalized-strings": {
+      "count": 1
+    }
+  },
+  "src/routes/books.$label.debug.tsx": {
+    "lingui/no-unlocalized-strings": {
+      "count": 8
+    }
+  },
+  "src/routes/books.$label.index.tsx": {
+    "lingui/no-unlocalized-strings": {
+      "count": 2
+    }
+  },
+  "src/routes/books.$label.tsx": {
+    "lingui/no-unlocalized-strings": {
+      "count": 7
+    }
+  },
+  "src/routes/books.new.tsx": {
+    "lingui/no-unlocalized-strings": {
+      "count": 73
+    }
+  },
+  "src/routes/index.tsx": {
+    "lingui/no-unlocalized-strings": {
+      "count": 3
+    }
+  },
+  "src/vite-env.d.ts": {
+    "lingui/no-unlocalized-strings": {
+      "count": 1
+    }
+  }
+}

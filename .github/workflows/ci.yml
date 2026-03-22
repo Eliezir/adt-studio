@@ -41,3 +41,5 @@ jobs:
           fi
       - name: Check translations are up to date
         run: pnpm --filter @adt/studio compile --strict
+      - name: Check for hardcoded strings
+        run: pnpm --filter @adt/studio lint

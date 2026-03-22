@@ -8,7 +8,8 @@
     "build": "vite build",
     "preview": "vite preview",
     "extract": "lingui extract",
-    "compile": "lingui compile"
+    "compile": "lingui compile",
+    "lint": "eslint src"
   },
   "dependencies": {
     "@adt/types": "workspace:*",
@@ -46,6 +47,9 @@
     "@types/react-dom": "^19.0.0",
     "@vitejs/plugin-react": "^4.3.0",
     "babel-plugin-macros": "^3.1.0",
+    "eslint": "^9",
+    "eslint-plugin-lingui": "^0.11.0",
+    "typescript-eslint": "^8",
     "tailwindcss": "^4.0.0",
     "vite": "^6.0.0"
   }

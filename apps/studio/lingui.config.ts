@@ -11,4 +11,7 @@ export default defineConfig({
     },
   ],
   format: "po",
+  formatOptions: {
+    origins: false,
+  },
 })
