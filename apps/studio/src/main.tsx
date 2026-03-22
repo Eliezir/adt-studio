@@ -36,9 +36,15 @@ const router = createRouter({
   rewrite: {
     input: ({ url }) => {
       const lang = url.searchParams.get("lang")
-      const next = lang && LOCALES.includes(lang as AppLocale) ? (lang as AppLocale) : "en"
-      i18n.activate(next)
-      return undefined
+      if (lang && LOCALES.includes(lang as AppLocale)) {
+        i18n.activate(lang as AppLocale)
+      }
+      url.searchParams.delete("lang")
+      return url
+    },
+    output: ({ url }) => {
+      url.searchParams.set("lang", i18n.locale as AppLocale)
+      return url
     },
   },
 })

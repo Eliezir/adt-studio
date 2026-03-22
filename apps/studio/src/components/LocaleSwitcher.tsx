@@ -34,7 +34,7 @@ export function LocaleSwitcher({ className }: { className?: string }) {
     i18n.activate(next)
     const search = new URLSearchParams(window.location.search)
     search.set("lang", next)
-    window.history.replaceState(null, "", window.location.pathname + "?" + search.toString() + window.location.hash)
+    window.history.replaceState(null, "", `${window.location.pathname}?${search.toString()}`)
   }
 
   return (
