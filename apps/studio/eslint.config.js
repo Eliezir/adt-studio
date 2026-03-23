@@ -2,7 +2,7 @@ import tseslint from "typescript-eslint"
 import linguiPlugin from "eslint-plugin-lingui"
 
 export default [
-  { ignores: ["src/routeTree.gen.ts", "src/locales/**/*", "dist/**", "src/**/*.test.*"] },
+  { ignores: ["src/routeTree.gen.ts", "src/locales/**/*", "dist/**", "src/**/*.test.*", "src/**/*.d.ts"] },
   {
     files: ["src/**/*.{ts,tsx}"],
     languageOptions: {
@@ -53,6 +53,11 @@ export default [
             "size",
             "align",
             "side",
+            // CSS position keys used as object keys mapping to class strings (e.g. sheetVariants)
+            "top",
+            "bottom",
+            "left",
+            "right",
 
             // --- Router / navigation props ---
             "to",
@@ -83,8 +88,20 @@ export default [
             "fromStage",
             "toStage",
 
+            // --- CSS utility class variable names (StageSidebar layout constants) ---
+            "gap",
+            "showLabel",
+            "showFlex",
+            "flex1",
+
             // --- TanStack Query cache keys ---
             "queryKey",
+
+            // --- File dialog / download props (Tauri + browser) ---
+            "defaultPath",
+            "download",
+            "filters",
+            "extensions",
 
             // --- React internals ---
             "displayName",
@@ -140,12 +157,33 @@ export default [
 
             // --- TanStack Router route definitions ---
             "createFileRoute",
+
+            // --- CSS class composition utilities ---
+            "cn",
+            "cva",
+            "clsx",
+
+            // --- Math / formatting (unit suffixes in template literals) ---
+            "*.toFixed",
           ],
           ignore: [
             // npm package names and module paths (e.g. "@tanstack/react-router")
             "^@?[a-zA-Z0-9_-]+(/[a-zA-Z0-9_.-]+)+",
             // locale codes (e.g. "en", "pt-BR", "es")
             "^[a-z]{2}(-[A-Z]{2})?$",
+            // absolute URLs
+            "^https?://",
+            // relative URL paths (e.g. "/api", "/books/${label}")
+            "^/[a-zA-Z0-9_-]",
+            // Tailwind CSS classes, internal identifiers, and status values
+            // (all-lowercase-no-spaces: bg-gray-600, hover:bg-white, gap-2.5, "success", "error", "done")
+            "^[a-z][a-z0-9._:-]*$",
+            // Hex color values (e.g. "#ffffff", "#2563eb")
+            "^#[0-9a-fA-F]+$",
+            // React Server Components directives (shadcn boilerplate)
+            "^use (client|server)$",
+            // Data URIs (e.g. "data:image/png;base64,...")
+            "^data:",
           ],
         },
       ],
