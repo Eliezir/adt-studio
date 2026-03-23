@@ -1771,6 +1771,9 @@ msgstr "Temperatura"
 msgid "Template Rendering"
 msgstr "Renderização por template"
 
+#~ msgid "Testes213"
+#~ msgstr ""
+
 msgid "Text & Images"
 msgstr "Texto e imagens"
 
