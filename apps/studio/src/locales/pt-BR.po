@@ -664,9 +664,6 @@ msgstr "Erro"
 msgid "Errors"
 msgstr "Erros"
 
-msgid "Español"
-msgstr "Spanish"
-
 msgid "Est. Cost"
 msgstr "Custo estimado"
 
@@ -1689,6 +1686,9 @@ msgstr "Mostrar imagens removidas"
 
 msgid "Skip segmentation for images whose shortest side is below this threshold."
 msgstr "Pular segmentação para imagens cujo lado menor está abaixo deste limite."
+
+msgid "Spanish"
+msgstr "Espanhol"
 
 msgid "Speech"
 msgstr "Fala"

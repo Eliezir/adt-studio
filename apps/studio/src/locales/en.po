@@ -664,9 +664,6 @@ msgstr "Error"
 msgid "Errors"
 msgstr "Errors"
 
-msgid "Spanish"
-msgstr "Spanish"
-
 msgid "Est. Cost"
 msgstr "Est. Cost"
 
@@ -1689,6 +1686,9 @@ msgstr "Show pruned images"
 
 msgid "Skip segmentation for images whose shortest side is below this threshold."
 msgstr "Skip segmentation for images whose shortest side is below this threshold."
+
+msgid "Spanish"
+msgstr "Spanish"
 
 msgid "Speech"
 msgstr "Speech"
