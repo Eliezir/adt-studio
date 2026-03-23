@@ -442,6 +442,9 @@ msgstr "Catalog Translation"
 msgid "Change"
 msgstr "Change"
 
+msgid "Change language"
+msgstr "Change language"
+
 msgid "Chart / Graph"
 msgstr "Chart / Graph"
 
@@ -652,11 +655,17 @@ msgstr "Empty group — drag text entries here"
 msgid "Enable for scanned books where two pages appear on a single PDF page."
 msgstr "Enable for scanned books where two pages appear on a single PDF page."
 
+msgid "English"
+msgstr "English"
+
 msgid "Error"
 msgstr "Error"
 
 msgid "Errors"
 msgstr "Errors"
+
+msgid "Spanish"
+msgstr "Spanish"
 
 msgid "Est. Cost"
 msgstr "Est. Cost"
@@ -1359,6 +1368,9 @@ msgstr "Polishing paragraphs to perfection..."
 
 msgid "Pop out to new window"
 msgstr "Pop out to new window"
+
+msgid "Portuguese (BR)"
+msgstr "Portuguese (BR)"
 
 msgid "Prev"
 msgstr "Prev"

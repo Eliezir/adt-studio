@@ -4,11 +4,6 @@
       "count": 17
     }
   },
-  "src/components/LocaleSwitcher.tsx": {
-    "lingui/no-unlocalized-strings": {
-      "count": 3
-    }
-  },
   "src/components/config/AdvancedLayoutPanel.tsx": {
     "lingui/no-unlocalized-strings": {
       "count": 34

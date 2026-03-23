@@ -1,6 +1,8 @@
 import { Globe } from "lucide-react"
 import { useLingui } from "@lingui/react"
+import { msg } from "@lingui/core/macro"
 import { i18n } from "@lingui/core"
+import type { MessageDescriptor } from "@lingui/core"
 import { cn } from "@/lib/utils"
 import {
   Select,
@@ -11,13 +13,15 @@ import {
 } from "@/components/ui/select"
 import { LOCALES, type AppLocale } from "@/main"
 
-const LOCALE_LABELS: Record<AppLocale, string> = {
-  en: "English",
-  "pt-BR": "Português (BR)",
-  es: "Español",
+type AppLocaleInSwitcher = Exclude<AppLocale, "fr">
+
+const LOCALE_LABEL_MESSAGES: Record<AppLocaleInSwitcher, MessageDescriptor> = {
+  en: msg`English`,
+  "pt-BR": msg`Portuguese (BR)`,
+  es: msg`Spanish`,
 }
 
-const LOCALE_FLAGS: Record<AppLocale, string> = {
+const LOCALE_FLAGS: Record<AppLocaleInSwitcher, string> = {
   en: "🇺🇸",
   "pt-BR": "🇧🇷",
   es: "🇪🇸",
@@ -40,7 +44,7 @@ export function LocaleSwitcher({ className }: { className?: string }) {
   return (
     <Select value={currentLocale} onValueChange={handleChange}>
       <SelectTrigger
-        aria-label="Change language"
+        aria-label={lingui._(msg`Change language`)}
         className={cn(
           "border-none! bg-transparent! cursor-pointer text-white/70 hover:text-white hover:bg-gray-600! outline-none focus-visible:ring-2! focus-visible:ring-ring! focus-visible:ring-offset-2!",
           className,
@@ -66,7 +70,7 @@ export function LocaleSwitcher({ className }: { className?: string }) {
               <span className="text-base leading-none">
                 {LOCALE_FLAGS[loc]}
               </span>
-              <span className="text-xs">{LOCALE_LABELS[loc]}</span>
+              <span className="text-xs">{lingui._(LOCALE_LABEL_MESSAGES[loc])}</span>
             </span>
           </SelectItem>
         ))}

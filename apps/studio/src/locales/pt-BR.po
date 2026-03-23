@@ -442,6 +442,9 @@ msgstr "Tradução do catálogo"
 msgid "Change"
 msgstr "Alterar"
 
+msgid "Change language"
+msgstr "Mudar idioma"
+
 msgid "Chart / Graph"
 msgstr "Gráfico / Tabela"
 
@@ -652,11 +655,17 @@ msgstr "Grupo vazio — arraste entradas de texto aqui"
 msgid "Enable for scanned books where two pages appear on a single PDF page."
 msgstr "Ative para livros digitalizados em que duas páginas aparecem em uma única página do PDF."
 
+msgid "English"
+msgstr "Inglês"
+
 msgid "Error"
 msgstr "Erro"
 
 msgid "Errors"
 msgstr "Erros"
+
+msgid "Español"
+msgstr "Spanish"
 
 msgid "Est. Cost"
 msgstr "Custo estimado"
@@ -1359,6 +1368,9 @@ msgstr "Polindo parágrafos até a perfeição..."
 
 msgid "Pop out to new window"
 msgstr "Abrir em nova janela"
+
+msgid "Portuguese (BR)"
+msgstr "Português (BR)"
 
 msgid "Prev"
 msgstr "Anterior"
