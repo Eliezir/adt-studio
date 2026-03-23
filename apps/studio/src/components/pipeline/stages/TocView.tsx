@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react"
 import { Check, ChevronDown, ChevronRight, ChevronLeft, ExternalLink, Loader2, Plus, Trash2 } from "lucide-react"
 import { useQueryClient, useQuery } from "@tanstack/react-query"
+import { useLingui } from "@lingui/react/macro"
 import { api } from "@/api/client"
 import type { TocGenerationOutput, TocEntry, TocSection, VersionEntry } from "@/api/client"
 import { useToc } from "@/hooks/use-toc"
@@ -28,6 +29,7 @@ function VersionPicker({
   onSave: () => void
   onDiscard: () => void
 }) {
+  const { t } = useLingui()
   const [open, setOpen] = useState(false)
   const [versions, setVersions] = useState<VersionEntry[] | null>(null)
   const [loading, setLoading] = useState(false)
@@ -74,7 +76,7 @@ function VersionPicker({
           onClick={onDiscard}
           className="text-[10px] font-medium rounded px-2 py-0.5 bg-black/15 text-black hover:bg-black/25 cursor-pointer transition-colors"
         >
-          Discard
+          {t`Discard`}
         </button>
         <button
           type="button"
@@ -82,7 +84,7 @@ function VersionPicker({
           className="flex items-center gap-1 text-[10px] font-medium rounded px-2 py-0.5 bg-white text-green-800 hover:bg-white/80 cursor-pointer transition-colors"
         >
           <Check className="h-3 w-3" />
-          Save
+          {t`Save`}
         </button>
       </div>
     )
@@ -118,7 +120,7 @@ function VersionPicker({
               </button>
             ))
           ) : (
-            <div className="px-3 py-1 text-xs text-muted-foreground">No versions</div>
+            <div className="px-3 py-1 text-xs text-muted-foreground">{t`No versions`}</div>
           )}
         </div>
       )}
@@ -137,6 +139,7 @@ function SectionPicker({
   onChange: (sectionId: string, href: string) => void
   bookLabel: string
 }) {
+  const { t } = useLingui()
   const [open, setOpen] = useState(false)
   const [filter, setFilter] = useState("")
   const ref = useRef<HTMLDivElement>(null)
@@ -167,9 +170,9 @@ function SectionPicker({
           type="button"
           onClick={() => { setOpen(!open); setFilter("") }}
           className="flex items-center gap-1 text-[10px] text-muted-foreground bg-muted hover:bg-muted/80 rounded px-1.5 py-0.5 transition-colors max-w-[180px] truncate"
-          title={value ? `Linked to: ${value}` : "No page linked"}
+          title={value ? t`Linked to: ${value}` : t`No page linked`}
         >
-          {current ? `p${current.pageNumber}` : value ? value.slice(0, 12) : "no link"}
+          {current ? `p${current.pageNumber}` : value ? value.slice(0, 12) : t`No link`}
           <ChevronDown className="h-2.5 w-2.5 shrink-0" />
         </button>
         {value && (
@@ -178,7 +181,7 @@ function SectionPicker({
             target="_blank"
             rel="noopener noreferrer"
             className="p-0.5 rounded hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
-            title="Preview linked page"
+            title={t`Preview linked page`}
           >
             <ExternalLink className="h-3 w-3" />
           </a>
@@ -191,7 +194,7 @@ function SectionPicker({
               type="text"
               value={filter}
               onChange={(e) => setFilter(e.target.value)}
-              placeholder="Search sections..."
+              placeholder={t`Search sections...`}
               className="w-full text-xs border rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-ring"
               autoFocus
             />
@@ -215,7 +218,7 @@ function SectionPicker({
                 </button>
               ))
             ) : (
-              <div className="px-3 py-2 text-xs text-muted-foreground">No matching sections</div>
+              <div className="px-3 py-2 text-xs text-muted-foreground">{t`No matching sections`}</div>
             )}
           </div>
         </div>
@@ -231,6 +234,7 @@ const LEVEL_INDENT: Record<number, string> = {
 }
 
 export function TocView({ bookLabel }: { bookLabel: string }) {
+  const { t } = useLingui()
   const queryClient = useQueryClient()
   const { data, isLoading } = useToc(bookLabel)
   const { setExtra } = useStepHeader()
@@ -285,7 +289,9 @@ export function TocView({ bookLabel }: { bookLabel: string }) {
     if (!data) return
     setExtra(
       <div className="flex items-center gap-1.5 ml-auto">
-        <span className="text-[10px] bg-white/20 rounded-full px-2 py-0.5">{entries.length} entries</span>
+        <span className="text-[10px] bg-white/20 rounded-full px-2 py-0.5">
+          {t`${entries.length} entries`}
+        </span>
         <VersionPicker
           currentVersion={data.version}
           saving={saving}
@@ -328,7 +334,7 @@ export function TocView({ bookLabel }: { bookLabel: string }) {
     const nextNum = Date.now() // unique id
     const newEntry: TocEntry = {
       id: `toc_new_${nextNum}`,
-      title: "New Entry",
+      title: t`New Entry`,
       sectionId: "",
       href: "",
       chapterId: "",
@@ -353,7 +359,7 @@ export function TocView({ bookLabel }: { bookLabel: string }) {
     return (
       <div className="flex items-center justify-center py-12 text-muted-foreground">
         <Loader2 className="w-4 h-4 animate-spin mr-2" />
-        <span className="text-sm">Loading table of contents...</span>
+        <span className="text-sm">{t`Loading table of contents...`}</span>
       </div>
     )
   }
@@ -385,7 +391,7 @@ export function TocView({ bookLabel }: { bookLabel: string }) {
               type="button"
               onClick={() => changeLevel(entry.id, 1)}
               className="p-0.5 rounded hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
-              title="Increase indent"
+              title={t`Increase indent`}
             >
               <ChevronRight className="h-3 w-3" />
             </button>
@@ -393,7 +399,7 @@ export function TocView({ bookLabel }: { bookLabel: string }) {
               type="button"
               onClick={() => changeLevel(entry.id, -1)}
               className="p-0.5 rounded hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
-              title="Decrease indent"
+              title={t`Decrease indent`}
             >
               <ChevronLeft className="h-3 w-3" />
             </button>
@@ -401,7 +407,7 @@ export function TocView({ bookLabel }: { bookLabel: string }) {
 
           {/* Level badge */}
           <span className="text-[10px] font-medium text-muted-foreground bg-muted rounded px-1.5 py-0.5 shrink-0">
-            L{entry.level}
+            {t`L${entry.level}`}
           </span>
 
           {/* Editable title */}
@@ -427,7 +433,7 @@ export function TocView({ bookLabel }: { bookLabel: string }) {
             type="button"
             onClick={() => addEntryAfter(entry.id, entry.level)}
             className="p-1 rounded hover:bg-muted transition-colors text-muted-foreground hover:text-foreground shrink-0"
-            title="Add entry below"
+            title={t`Add entry below`}
           >
             <Plus className="h-3.5 w-3.5" />
           </button>
@@ -435,7 +441,7 @@ export function TocView({ bookLabel }: { bookLabel: string }) {
             type="button"
             onClick={() => removeEntry(entry.id)}
             className="p-1 rounded hover:bg-destructive/10 transition-colors text-muted-foreground hover:text-destructive shrink-0"
-            title="Remove entry"
+            title={t`Remove entry`}
           >
             <Trash2 className="h-3.5 w-3.5" />
           </button>

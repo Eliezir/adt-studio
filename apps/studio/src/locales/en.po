@@ -49,6 +49,10 @@ msgstr "{0} — type country or Enter for base"
 msgid "{0} audio"
 msgstr "{0} audio"
 
+#. placeholder {0}: entries.length
+msgid "{0} entries"
+msgstr "{0} entries"
+
 #. placeholder {0}: String(totalImages)
 msgid "{0} images"
 msgstr "{0} images"
@@ -202,6 +206,9 @@ msgstr "Add {0} Images"
 msgid "Add Book"
 msgstr "Add Book"
 
+msgid "Add entry below"
+msgstr "Add entry below"
+
 msgid "Add Group"
 msgstr "Add Group"
 
@@ -227,6 +234,9 @@ msgstr "After {0}"
 msgid "AI"
 msgstr "AI"
 
+msgid "AI editing..."
+msgstr "AI editing..."
+
 msgid "AI Generated"
 msgstr "AI Generated"
 
@@ -236,8 +246,8 @@ msgstr "AI Image"
 msgid "AI Overlay"
 msgstr "AI Overlay"
 
-msgid "AI reasoning"
-msgstr "AI reasoning"
+#~ msgid "AI reasoning"
+#~ msgstr "AI reasoning"
 
 msgid "AI Rendering"
 msgstr "AI Rendering"
@@ -519,6 +529,9 @@ msgstr "Custom"
 msgid "Debug Panel"
 msgstr "Debug Panel"
 
+msgid "Decrease indent"
+msgstr "Decrease indent"
+
 msgid "Default"
 msgstr "Default"
 
@@ -761,6 +774,9 @@ msgstr "General"
 msgid "Generate"
 msgstr "Generate"
 
+msgid "Generate and customize the table of contents for the book navigation."
+msgstr "Generate and customize the table of contents for the book navigation."
+
 msgid "Generate comprehension quizzes and activities based on the book content."
 msgstr "Generate comprehension quizzes and activities based on the book content."
 
@@ -793,6 +809,9 @@ msgstr "Generating Quizzes..."
 
 msgid "Generating Text & Speech..."
 msgstr "Generating Text & Speech..."
+
+msgid "Generating TOC..."
+msgstr "Generating TOC..."
 
 msgid "Generating..."
 msgstr "Generating..."
@@ -914,6 +933,9 @@ msgstr "Include in render"
 msgid "Include section in render"
 msgstr "Include section in render"
 
+msgid "Increase indent"
+msgstr "Increase indent"
+
 msgid "Infographic"
 msgstr "Infographic"
 
@@ -938,6 +960,10 @@ msgstr "Keeps pages whole unless mixed activity types require splitting"
 msgid "Key must start with \"sk-\""
 msgstr "Key must start with \"sk-\""
 
+#. placeholder {0}: entry.level
+msgid "L{0}"
+msgstr "L{0}"
+
 msgid "Label"
 msgstr "Label"
 
@@ -961,6 +987,9 @@ msgstr "Leave empty to process all pages."
 
 msgid "Leave empty to use the book language."
 msgstr "Leave empty to use the book language."
+
+msgid "Linked to: {value}"
+msgstr "Linked to: {value}"
 
 msgid "List"
 msgstr "List"
@@ -1030,6 +1059,9 @@ msgstr "Loading speech instructions..."
 
 msgid "Loading stats..."
 msgstr "Loading stats..."
+
+msgid "Loading table of contents..."
+msgstr "Loading table of contents..."
 
 msgid "Loading text catalog..."
 msgstr "Loading text catalog..."
@@ -1106,6 +1138,9 @@ msgstr "Needs rebuild"
 msgid "New"
 msgstr "New"
 
+msgid "New Entry"
+msgstr "New Entry"
+
 msgid "new_type_key"
 msgstr "new_type_key"
 
@@ -1142,14 +1177,23 @@ msgstr "No images on this page"
 msgid "No language-specific prompts configured."
 msgstr "No language-specific prompts configured."
 
+msgid "No link"
+msgstr "No link"
+
 msgid "No log entries found yet."
 msgstr "No log entries found yet."
 
 msgid "No matches for \"{search}\""
 msgstr "No matches for \"{search}\""
 
+msgid "No matching sections"
+msgstr "No matching sections"
+
 msgid "No metadata yet — run the pipeline to extract book details"
 msgstr "No metadata yet — run the pipeline to extract book details"
+
+msgid "No page linked"
+msgstr "No page linked"
 
 #~ msgid "No pages extracted yet"
 #~ msgstr "No pages extracted yet"
@@ -1322,6 +1366,9 @@ msgstr "Prev"
 msgid "Preview"
 msgstr "Preview"
 
+msgid "Preview linked page"
+msgstr "Preview linked page"
+
 msgid "Preview of the HTML/CSS patterns used for LLM-generated pages."
 msgstr "Preview of the HTML/CSS patterns used for LLM-generated pages."
 
@@ -1398,8 +1445,11 @@ msgstr "Re-render section"
 msgid "Re-render this section"
 msgstr "Re-render this section"
 
-msgid "Re-rendering page..."
-msgstr "Re-rendering page..."
+#~ msgid "Re-rendering page..."
+#~ msgstr "Re-rendering page..."
+
+msgid "Re-rendering..."
+msgstr "Re-rendering..."
 
 msgid "Re-run {stageLabel}"
 msgstr "Re-run {stageLabel}"
@@ -1415,6 +1465,9 @@ msgstr "Region"
 
 msgid "Remove"
 msgstr "Remove"
+
+msgid "Remove entry"
+msgstr "Remove entry"
 
 msgid "Remove this block"
 msgstr "Remove this block"
@@ -1491,6 +1544,9 @@ msgstr "Save & Rerun Quizzes"
 msgid "Save & Rerun Storyboard"
 msgstr "Save & Rerun Storyboard"
 
+msgid "Save & Rerun TOC Generation"
+msgstr "Save & Rerun TOC Generation"
+
 msgid "Save & Rerun Translations + Audio"
 msgstr "Save & Rerun Translations + Audio"
 
@@ -1517,6 +1573,9 @@ msgstr "SCORM Export"
 
 msgid "Search languages..."
 msgstr "Search languages..."
+
+msgid "Search sections..."
+msgstr "Search sections..."
 
 #. placeholder {0}: String(group.sectionIndex + 1)
 #. placeholder {0}: String(i + 1)
@@ -1688,6 +1747,9 @@ msgstr "Table"
 msgid "Table of Contents"
 msgstr "Table of Contents"
 
+msgid "Task running..."
+msgstr "Task running..."
+
 msgid "Teaching the pixels new tricks..."
 msgstr "Teaching the pixels new tricks..."
 
@@ -1773,6 +1835,9 @@ msgstr "The prompt template used to generate HTML for each section. This is a Li
 msgid "The prompt template used to generate quiz questions from page content."
 msgstr "The prompt template used to generate quiz questions from page content."
 
+msgid "The prompt template used to generate the table of contents from book headings."
+msgstr "The prompt template used to generate the table of contents from book headings."
+
 msgid "The prompt template used to split each page into logical sections. This is a Liquid template processed with page context."
 msgstr "The prompt template used to split each page into logical sections. This is a Liquid template processed with page context."
 
@@ -1796,6 +1861,9 @@ msgstr "This page has no translatable text entries"
 
 msgid "This section has no storyboard rendering yet"
 msgstr "This section has no storyboard rendering yet"
+
+msgid "This will save your settings and re-generate the table of contents."
+msgstr "This will save your settings and re-generate the table of contents."
 
 msgid "This will save your settings and re-run glossary generation."
 msgstr "This will save your settings and re-run glossary generation."
@@ -1823,6 +1891,9 @@ msgstr "Time"
 
 msgid "to"
 msgstr "to"
+
+msgid "TOC Generation Prompt"
+msgstr "TOC Generation Prompt"
 
 msgid "Tokens"
 msgstr "Tokens"

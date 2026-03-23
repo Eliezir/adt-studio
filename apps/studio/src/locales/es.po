@@ -49,6 +49,10 @@ msgstr "{0} — escribe el país o pulsa Enter para el básico"
 msgid "{0} audio"
 msgstr "{0} audios"
 
+#. placeholder {0}: entries.length
+msgid "{0} entries"
+msgstr "{0} entradas"
+
 #. placeholder {0}: String(totalImages)
 msgid "{0} images"
 msgstr "{0} imágenes"
@@ -202,6 +206,9 @@ msgstr "Agregar {0} imágenes"
 msgid "Add Book"
 msgstr "Agregar libro"
 
+msgid "Add entry below"
+msgstr "Agregar entrada debajo"
+
 msgid "Add Group"
 msgstr "Agregar grupo"
 
@@ -227,6 +234,9 @@ msgstr "Después de {0}"
 msgid "AI"
 msgstr "IA"
 
+msgid "AI editing..."
+msgstr "Edición con IA..."
+
 msgid "AI Generated"
 msgstr "Generado por IA"
 
@@ -236,8 +246,8 @@ msgstr "Imagen con IA"
 msgid "AI Overlay"
 msgstr "Superposición por IA"
 
-msgid "AI reasoning"
-msgstr "Razonamiento de la IA"
+#~ msgid "AI reasoning"
+#~ msgstr "Razonamiento de la IA"
 
 msgid "AI Rendering"
 msgstr "Renderizado con IA"
@@ -519,6 +529,9 @@ msgstr "Personalizado"
 msgid "Debug Panel"
 msgstr "Panel de depuración"
 
+msgid "Decrease indent"
+msgstr "Disminuir sangría"
+
 msgid "Default"
 msgstr "Predeterminado"
 
@@ -761,6 +774,9 @@ msgstr "General"
 msgid "Generate"
 msgstr "Generar"
 
+msgid "Generate and customize the table of contents for the book navigation."
+msgstr "Genera y personaliza la tabla de contenidos para la navegación del libro."
+
 msgid "Generate comprehension quizzes and activities based on the book content."
 msgstr "Genera cuestionarios y actividades de comprensión basados en el contenido del libro."
 
@@ -793,6 +809,9 @@ msgstr "Generando cuestionarios..."
 
 msgid "Generating Text & Speech..."
 msgstr "Generando texto y voz..."
+
+msgid "Generating TOC..."
+msgstr "Generando tabla de contenidos..."
 
 msgid "Generating..."
 msgstr "Generando..."
@@ -914,6 +933,9 @@ msgstr "Incluir en la renderización"
 msgid "Include section in render"
 msgstr "Incluir sección en la renderización"
 
+msgid "Increase indent"
+msgstr "Aumentar sangría"
+
 msgid "Infographic"
 msgstr "Infografía"
 
@@ -938,6 +960,10 @@ msgstr "Mantiene las páginas completas a menos que tipos mixtos de actividad re
 msgid "Key must start with \"sk-\""
 msgstr "La clave debe comenzar con \"sk-\""
 
+#. placeholder {0}: entry.level
+msgid "L{0}"
+msgstr "N{0}"
+
 msgid "Label"
 msgstr "Etiqueta"
 
@@ -961,6 +987,9 @@ msgstr "Deja vacío para procesar todas las páginas."
 
 msgid "Leave empty to use the book language."
 msgstr "Deja vacío para usar el idioma del libro."
+
+msgid "Linked to: {value}"
+msgstr "Vinculado a: {value}"
 
 msgid "List"
 msgstr "Lista"
@@ -1030,6 +1059,9 @@ msgstr "Cargando instrucciones de voz..."
 
 msgid "Loading stats..."
 msgstr "Cargando estadísticas..."
+
+msgid "Loading table of contents..."
+msgstr "Cargando tabla de contenidos..."
 
 msgid "Loading text catalog..."
 msgstr "Cargando catálogo de textos..."
@@ -1106,6 +1138,9 @@ msgstr "Requiere reconstrucción"
 msgid "New"
 msgstr "Nuevo"
 
+msgid "New Entry"
+msgstr "Nueva entrada"
+
 msgid "new_type_key"
 msgstr "nuevo_tipo"
 
@@ -1142,14 +1177,23 @@ msgstr "No hay imágenes en esta página"
 msgid "No language-specific prompts configured."
 msgstr "No hay prompts por idioma configurados."
 
+msgid "No link"
+msgstr "Sin enlace"
+
 msgid "No log entries found yet."
 msgstr "Aún no hay entradas de registro."
 
 msgid "No matches for \"{search}\""
 msgstr "Sin resultados para \"{0}\""
 
+msgid "No matching sections"
+msgstr "No hay secciones coincidentes"
+
 msgid "No metadata yet — run the pipeline to extract book details"
 msgstr "Aún no hay metadatos — ejecuta el pipeline para extraer los detalles del libro"
+
+msgid "No page linked"
+msgstr "No hay página vinculada"
 
 #~ msgid "No pages extracted yet"
 #~ msgstr "Ninguna página extraída aún"
@@ -1322,6 +1366,9 @@ msgstr "Anterior"
 msgid "Preview"
 msgstr "Previsualización"
 
+msgid "Preview linked page"
+msgstr "Vista previa de la página vinculada"
+
 msgid "Preview of the HTML/CSS patterns used for LLM-generated pages."
 msgstr "Vista previa de los patrones HTML/CSS usados para páginas generadas por LLM."
 
@@ -1398,8 +1445,11 @@ msgstr "Re-renderizar sección"
 msgid "Re-render this section"
 msgstr "Re-renderizar esta sección"
 
-msgid "Re-rendering page..."
-msgstr "Rerenderizando página..."
+#~ msgid "Re-rendering page..."
+#~ msgstr "Rerenderizando página..."
+
+msgid "Re-rendering..."
+msgstr "Volviendo a renderizar..."
 
 msgid "Re-run {stageLabel}"
 msgstr "Reejecutar {0}"
@@ -1415,6 +1465,9 @@ msgstr "Región"
 
 msgid "Remove"
 msgstr "Quitar"
+
+msgid "Remove entry"
+msgstr "Eliminar entrada"
 
 msgid "Remove this block"
 msgstr "Quitar este bloque"
@@ -1491,6 +1544,9 @@ msgstr "Guardar y reejecutar quizzes"
 msgid "Save & Rerun Storyboard"
 msgstr "Guardar y reejecutar storyboard"
 
+msgid "Save & Rerun TOC Generation"
+msgstr "Guardar y volver a ejecutar la generación de la tabla de contenidos"
+
 msgid "Save & Rerun Translations + Audio"
 msgstr "Guardar y reejecutar traducciones + audio"
 
@@ -1517,6 +1573,9 @@ msgstr "Exportación SCORM"
 
 msgid "Search languages..."
 msgstr "Buscar idiomas..."
+
+msgid "Search sections..."
+msgstr "Buscar secciones..."
 
 #. placeholder {0}: String(group.sectionIndex + 1)
 #. placeholder {0}: String(i + 1)
@@ -1688,6 +1747,9 @@ msgstr "Tabla"
 msgid "Table of Contents"
 msgstr "Índice"
 
+msgid "Task running..."
+msgstr "Tarea en ejecución..."
+
 msgid "Teaching the pixels new tricks..."
 msgstr "Enseñando nuevos trucos a los píxeles..."
 
@@ -1773,6 +1835,9 @@ msgstr "La plantilla de prompt usada para generar HTML para cada sección. Es un
 msgid "The prompt template used to generate quiz questions from page content."
 msgstr "La plantilla de prompt usada para generar preguntas de quiz a partir del contenido de la página."
 
+msgid "The prompt template used to generate the table of contents from book headings."
+msgstr "La plantilla de prompt utilizada para generar la tabla de contenidos a partir de los encabezados del libro."
+
 msgid "The prompt template used to split each page into logical sections. This is a Liquid template processed with page context."
 msgstr "La plantilla de prompt usada para dividir cada página en secciones lógicas. Es una plantilla Liquid procesada con contexto de página."
 
@@ -1796,6 +1861,9 @@ msgstr "Esta página no tiene entradas de texto traducibles"
 
 msgid "This section has no storyboard rendering yet"
 msgstr "Esta sección aún no tiene renderización de storyboard"
+
+msgid "This will save your settings and re-generate the table of contents."
+msgstr "Esto guardará tu configuración y volverá a generar la tabla de contenidos."
 
 msgid "This will save your settings and re-run glossary generation."
 msgstr "Esto guardará tus ajustes y reejecutará la generación del glosario."
@@ -1823,6 +1891,9 @@ msgstr "Hora"
 
 msgid "to"
 msgstr "hasta"
+
+msgid "TOC Generation Prompt"
+msgstr "Prompt de generación de la tabla de contenidos"
 
 msgid "Tokens"
 msgstr "Tokens"

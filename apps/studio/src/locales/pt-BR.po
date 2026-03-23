@@ -49,6 +49,10 @@ msgstr "{0} — digite o país ou pressione Enter para o padrão"
 msgid "{0} audio"
 msgstr "{0} áudios"
 
+#. placeholder {0}: entries.length
+msgid "{0} entries"
+msgstr "{0} entradas"
+
 #. placeholder {0}: String(totalImages)
 msgid "{0} images"
 msgstr "{0} imagens"
@@ -202,6 +206,9 @@ msgstr "Adicionar {0} imagens"
 msgid "Add Book"
 msgstr "Adicionar livro"
 
+msgid "Add entry below"
+msgstr "Adicionar entrada abaixo"
+
 msgid "Add Group"
 msgstr "Adicionar grupo"
 
@@ -227,6 +234,9 @@ msgstr "Após {0}"
 msgid "AI"
 msgstr "IA"
 
+msgid "AI editing..."
+msgstr "Edição por IA..."
+
 msgid "AI Generated"
 msgstr "Gerado por IA"
 
@@ -236,8 +246,8 @@ msgstr "Imagem com IA"
 msgid "AI Overlay"
 msgstr "Sobreposição por IA"
 
-msgid "AI reasoning"
-msgstr "Raciocínio da IA"
+#~ msgid "AI reasoning"
+#~ msgstr "Raciocínio da IA"
 
 msgid "AI Rendering"
 msgstr "Renderização com IA"
@@ -519,6 +529,9 @@ msgstr "Personalizado"
 msgid "Debug Panel"
 msgstr "Painel de depuração"
 
+msgid "Decrease indent"
+msgstr "Diminuir recuo"
+
 msgid "Default"
 msgstr "Padrão"
 
@@ -761,6 +774,9 @@ msgstr "Geral"
 msgid "Generate"
 msgstr "Gerar"
 
+msgid "Generate and customize the table of contents for the book navigation."
+msgstr "Gere e personalize o sumário para a navegação do livro."
+
 msgid "Generate comprehension quizzes and activities based on the book content."
 msgstr "Gera questionários e atividades de compreensão com base no conteúdo do livro."
 
@@ -793,6 +809,9 @@ msgstr "Gerando questionários..."
 
 msgid "Generating Text & Speech..."
 msgstr "Gerando texto e fala..."
+
+msgid "Generating TOC..."
+msgstr "Gerando sumário..."
 
 msgid "Generating..."
 msgstr "Gerando..."
@@ -914,6 +933,9 @@ msgstr "Incluir na renderização"
 msgid "Include section in render"
 msgstr "Incluir seção na renderização"
 
+msgid "Increase indent"
+msgstr "Aumentar recuo"
+
 msgid "Infographic"
 msgstr "Infográfico"
 
@@ -938,6 +960,10 @@ msgstr "Mantém páginas inteiras, a menos que tipos mistos de atividade exijam 
 msgid "Key must start with \"sk-\""
 msgstr "A chave deve começar com \"sk-\""
 
+#. placeholder {0}: entry.level
+msgid "L{0}"
+msgstr "N{0}"
+
 msgid "Label"
 msgstr "Rótulo"
 
@@ -961,6 +987,9 @@ msgstr "Deixe vazio para processar todas as páginas."
 
 msgid "Leave empty to use the book language."
 msgstr "Deixe vazio para usar o idioma do livro."
+
+msgid "Linked to: {value}"
+msgstr "Vinculado a: {value}"
 
 msgid "List"
 msgstr "Lista"
@@ -1030,6 +1059,9 @@ msgstr "Carregando instruções de fala..."
 
 msgid "Loading stats..."
 msgstr "Carregando estatísticas..."
+
+msgid "Loading table of contents..."
+msgstr "Carregando sumário..."
 
 msgid "Loading text catalog..."
 msgstr "Carregando catálogo de textos..."
@@ -1106,6 +1138,9 @@ msgstr "Precisa ser reconstruído"
 msgid "New"
 msgstr "Novo"
 
+msgid "New Entry"
+msgstr "Nova entrada"
+
 msgid "new_type_key"
 msgstr "novo_tipo"
 
@@ -1142,14 +1177,23 @@ msgstr "Nenhuma imagem nesta página"
 msgid "No language-specific prompts configured."
 msgstr "Nenhum prompt por idioma configurado."
 
+msgid "No link"
+msgstr "Sem link"
+
 msgid "No log entries found yet."
 msgstr "Nenhuma entrada de registro encontrada ainda."
 
 msgid "No matches for \"{search}\""
 msgstr "Nenhum resultado para \"{0}\""
 
+msgid "No matching sections"
+msgstr "Nenhuma seção correspondente"
+
 msgid "No metadata yet — run the pipeline to extract book details"
 msgstr "Ainda não há metadados — execute o pipeline para extrair os detalhes do livro"
+
+msgid "No page linked"
+msgstr "Nenhuma página vinculada"
 
 #~ msgid "No pages extracted yet"
 #~ msgstr "Nenhuma página extraída ainda"
@@ -1322,6 +1366,9 @@ msgstr "Anterior"
 msgid "Preview"
 msgstr "Pré-visualização"
 
+msgid "Preview linked page"
+msgstr "Visualizar página vinculada"
+
 msgid "Preview of the HTML/CSS patterns used for LLM-generated pages."
 msgstr "Pré-visualização dos padrões HTML/CSS usados para páginas geradas por LLM."
 
@@ -1398,8 +1445,11 @@ msgstr "Rerenderizar seção"
 msgid "Re-render this section"
 msgstr "Rerenderizar esta seção"
 
-msgid "Re-rendering page..."
-msgstr "Rerenderizando página..."
+#~ msgid "Re-rendering page..."
+#~ msgstr "Rerenderizando página..."
+
+msgid "Re-rendering..."
+msgstr "Renderizando novamente..."
 
 msgid "Re-run {stageLabel}"
 msgstr "Reexecutar {0}"
@@ -1415,6 +1465,9 @@ msgstr "Região"
 
 msgid "Remove"
 msgstr "Remover"
+
+msgid "Remove entry"
+msgstr "Remover entrada"
 
 msgid "Remove this block"
 msgstr "Remover este bloco"
@@ -1491,6 +1544,9 @@ msgstr "Salvar e reexecutar quizzes"
 msgid "Save & Rerun Storyboard"
 msgstr "Salvar e reexecutar storyboard"
 
+msgid "Save & Rerun TOC Generation"
+msgstr "Salvar e reexecutar geração do sumário"
+
 msgid "Save & Rerun Translations + Audio"
 msgstr "Salvar e reexecutar traduções + áudio"
 
@@ -1517,6 +1573,9 @@ msgstr "Exportação SCORM"
 
 msgid "Search languages..."
 msgstr "Buscar idiomas..."
+
+msgid "Search sections..."
+msgstr "Buscar seções..."
 
 #. placeholder {0}: String(group.sectionIndex + 1)
 #. placeholder {0}: String(i + 1)
@@ -1688,6 +1747,9 @@ msgstr "Tabela"
 msgid "Table of Contents"
 msgstr "Sumário"
 
+msgid "Task running..."
+msgstr "Tarefa em execução..."
+
 msgid "Teaching the pixels new tricks..."
 msgstr "Ensinando novos truques aos pixels..."
 
@@ -1773,6 +1835,9 @@ msgstr "O template de prompt usado para gerar HTML para cada seção. Este é um
 msgid "The prompt template used to generate quiz questions from page content."
 msgstr "O template de prompt usado para gerar questões de quiz a partir do conteúdo da página."
 
+msgid "The prompt template used to generate the table of contents from book headings."
+msgstr "O modelo de prompt usado para gerar o sumário a partir dos cabeçalhos do livro."
+
 msgid "The prompt template used to split each page into logical sections. This is a Liquid template processed with page context."
 msgstr "O template de prompt usado para dividir cada página em seções lógicas. Este é um template Liquid processado com contexto de página."
 
@@ -1796,6 +1861,9 @@ msgstr "Esta página não tem entradas de texto traduzíveis"
 
 msgid "This section has no storyboard rendering yet"
 msgstr "Esta seção ainda não tem renderização de storyboard"
+
+msgid "This will save your settings and re-generate the table of contents."
+msgstr "Isso salvará suas configurações e gerará novamente o sumário."
 
 msgid "This will save your settings and re-run glossary generation."
 msgstr "Isso salvará suas configurações e reexecutará a geração do glossário."
@@ -1823,6 +1891,9 @@ msgstr "Hora"
 
 msgid "to"
 msgstr "até"
+
+msgid "TOC Generation Prompt"
+msgstr "Prompt de geração de sumário"
 
 msgid "Tokens"
 msgstr "Tokens"

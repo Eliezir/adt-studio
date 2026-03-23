@@ -18,8 +18,10 @@ import { api } from "@/api/client"
 import { PromptViewer } from "@/components/pipeline/PromptViewer"
 import { useBookRun } from "@/hooks/use-book-run"
 import { useStepConfig } from "@/hooks/use-step-config"
+import { useLingui } from "@lingui/react/macro"
 
 export function TocSettings({ bookLabel, headerTarget }: { bookLabel: string; headerTarget?: HTMLDivElement | null }) {
+  const { t } = useLingui()
   const { data: bookConfigData } = useBookConfig(bookLabel)
   const { data: activeConfigData } = useActiveConfig(bookLabel)
   const updateConfig = useUpdateBookConfig()
@@ -74,8 +76,8 @@ export function TocSettings({ bookLabel, headerTarget }: { bookLabel: string; he
       <PromptViewer
         promptName="toc_generation"
         bookLabel={bookLabel}
-        title="TOC Generation Prompt"
-        description="The prompt template used to generate the table of contents from book headings."
+        title={t`TOC Generation Prompt`}
+        description={t`The prompt template used to generate the table of contents from book headings.`}
         model={tocGen.model}
         onModelChange={tocGen.onModelChange}
         maxRetries={tocGen.maxRetries}
@@ -91,7 +93,7 @@ export function TocSettings({ bookLabel, headerTarget }: { bookLabel: string; he
           disabled={updateConfig.isPending || !hasApiKey}
         >
           <Play className="mr-1.5 h-3.5 w-3.5" />
-          Save &amp; Rerun
+          {t`Save & Rerun`}
         </Button>,
         headerTarget,
       )}
@@ -99,17 +101,17 @@ export function TocSettings({ bookLabel, headerTarget }: { bookLabel: string; he
       <Dialog open={showRerunDialog} onOpenChange={setShowRerunDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Save &amp; Rerun TOC Generation</DialogTitle>
+            <DialogTitle>{t`Save & Rerun TOC Generation`}</DialogTitle>
             <DialogDescription>
-              This will save your settings and re-generate the table of contents.
+              {t`This will save your settings and re-generate the table of contents.`}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowRerunDialog(false)}>
-              Cancel
+              {t`Cancel`}
             </Button>
             <Button onClick={confirmSaveAndRerun} disabled={updateConfig.isPending}>
-              {updateConfig.isPending ? "Saving..." : "Confirm Rerun"}
+              {updateConfig.isPending ? t`Saving...` : t`Confirm Rerun`}
             </Button>
           </DialogFooter>
         </DialogContent>
