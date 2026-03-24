@@ -56,6 +56,17 @@ jobs:
         id: compile
         run: pnpm --filter @adt/studio compile --strict
         continue-on-error: true
+      - name: Warn about missing translations
+        if: steps.compile.outcome == 'failure'
+        run: |
+          for po in apps/studio/src/locales/*.po; do
+            locale=$(basename "$po" .po)
+            if [ "$locale" = "en" ]; then continue; fi
+            count=$(grep -c '^msgstr ""' "$po" || true)
+            if [ "$count" -gt 0 ]; then
+              echo "::warning file=$po::$locale is missing $count translation(s) — triggering auto-translate"
+            fi
+          done
       - name: Auto-translate missing strings
         if: steps.compile.outcome == 'failure'
         env:
