@@ -126,7 +126,7 @@ The Studio app uses **Lingui v5** for i18n. All user-visible text in `apps/studi
 - CI enforces both rules automatically via the `i18n` job in `.github/workflows/ci.yml`
 
 ### Available locales
-Defined in `apps/studio/lingui.config.ts` and `apps/studio/src/main.tsx`:
+Defined in `apps/studio/src/i18n/locales.ts` (single source of truth for locale metadata) and mirrored in `apps/studio/lingui.config.ts` (required separately by the Lingui CLI):
 - `en` — English (source locale)
 - `pt-BR` — Portuguese (Brazil)
 - `es` — Spanish

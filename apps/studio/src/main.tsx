@@ -9,9 +9,9 @@ import { messages as ptBRMessages } from "./locales/pt-BR.po"
 import { messages as esMessages } from "./locales/es.po"
 import { routeTree } from "./routeTree.gen"
 import "./styles/globals.css"
-
-export const LOCALES = ["en", "pt-BR", "es"] as const
-export type AppLocale = (typeof LOCALES)[number]
+import { LOCALES } from "./i18n/locales"
+import type { AppLocale } from "./i18n/locales"
+export { LOCALES, type AppLocale } from "./i18n/locales"
 
 function detectLocale(): AppLocale {
   const urlLang = new URLSearchParams(window.location.search).get("lang")

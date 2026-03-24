@@ -5,6 +5,9 @@ on:
     branches: [main]
   pull_request:
 
+permissions:
+  contents: write
+
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -38,7 +41,47 @@ jobs:
             echo "$NEW"
             exit 1
           fi
+      - name: Check for stale keys in non-source locales
+        run: |
+          STALE=""
+          for po in apps/studio/src/locales/*.po; do
+            locale=$(basename "$po" .po)
+            if [ "$locale" = "en" ]; then continue; fi
+            count=$(grep -c "^#~ msgid" "$po" || true)
+            if [ "$count" -gt 0 ]; then
+              STALE="$STALE\n$locale: $count stale key(s) no longer in source (en)"
+              grep "^#~ msgid" "$po" | sed "s/^/#~[$locale] /" >> /dev/stderr
+            fi
+          done
+          if [ -n "$STALE" ]; then
+            echo "Stale keys found in non-source locales. Run 'pnpm --filter @adt/studio extract' to remove them."
+            printf "$STALE\n"
+            exit 1
+          fi
       - name: Check translations are up to date
+        id: compile
+        run: pnpm --filter @adt/studio compile --strict
+        continue-on-error: true
+      - name: Auto-translate missing strings
+        if: steps.compile.outcome == 'failure'
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          TRANSLATE_MODEL: ${{ secrets.TRANSLATE_MODEL }}
+        run: |
+          if [ -z "$OPENAI_API_KEY" ]; then
+            echo "OPENAI_API_KEY not set — cannot auto-translate"
+            exit 1
+          fi
+          pnpm --filter @adt/studio translate:missing
+          if ! git diff --quiet apps/studio/src/locales/; then
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add apps/studio/src/locales/
+            git commit -m "chore(i18n): auto-translate missing strings via OpenAI API"
+            git push origin HEAD:${{ github.head_ref }}
+          fi
+      - name: Verify translations after auto-translate
+        if: steps.compile.outcome == 'failure'
         run: pnpm --filter @adt/studio compile --strict
       - name: Check for hardcoded strings
         run: pnpm --filter @adt/studio lint

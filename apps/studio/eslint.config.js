@@ -2,7 +2,7 @@ import tseslint from "typescript-eslint"
 import linguiPlugin from "eslint-plugin-lingui"
 
 export default [
-  { ignores: ["src/routeTree.gen.ts", "src/locales/**/*", "dist/**", "src/**/*.test.*", "src/**/*.d.ts"] },
+  { ignores: ["src/routeTree.gen.ts", "src/locales/**/*", "src/i18n/locales.ts", "dist/**", "src/**/*.test.*", "src/**/*.d.ts"] },
   {
     files: ["src/**/*.{ts,tsx}"],
     languageOptions: {
@@ -105,6 +105,10 @@ export default [
 
             // --- React internals ---
             "displayName",
+
+            // --- i18n locale metadata (intentionally not translated — must stay in native script) ---
+            "LOCALE_LABEL_MESSAGES",
+            "LOCALE_FLAGS",
           ],
           ignoreFunctions: [
             // --- Console / logging ---
