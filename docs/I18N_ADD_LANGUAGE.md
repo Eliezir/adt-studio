@@ -8,11 +8,38 @@ Locale codes follow **BCP-47 language tags** (e.g. `fr`, `fr-CA`, `pt-BR`).
 
 ---
 
-### 1) Add the locale to `lingui.config.ts`
+### 1) Add the locale to `src/i18n/locales.ts`
 
-Edit `apps/studio/lingui.config.ts` and append the locale code to `locales`.
+This is the **single source of truth** for all locale metadata. Edit `apps/studio/src/i18n/locales.ts` and add the new locale to all four exports:
 
-Example (adding French `fr`):
+```ts
+// 1. Add to the LOCALES tuple
+export const LOCALES = ["en", "pt-BR", "es", "fr"] as const
+
+// 2. Add a translated display label (shown in the language switcher)
+export const LOCALE_LABEL_MESSAGES: Record<AppLocale, MessageDescriptor> = {
+  // ...existing entries...
+  fr: msg`French`,
+}
+
+// 3. Add a flag emoji
+export const LOCALE_FLAGS: Record<AppLocale, string> = {
+  // ...existing entries...
+  fr: "🇫🇷",
+}
+
+// 4. Add the full English name (used by the auto-translate script)
+export const LOCALE_NAMES: Record<string, string> = {
+  // ...existing entries...
+  fr: "French",
+}
+```
+
+---
+
+### 2) Also update `lingui.config.ts`
+
+`lingui.config.ts` is read directly by the Lingui CLI and cannot import from `src/`, so it must be updated separately:
 
 ```ts
 export default defineConfig({
@@ -24,7 +51,7 @@ export default defineConfig({
 
 ---
 
-### 2) Generate the catalog file
+### 3) Generate the catalog file
 
 Run the extract command to create the new `.po` file:
 
@@ -36,11 +63,17 @@ This generates `apps/studio/src/locales/fr.po` pre-populated with all existing m
 
 ---
 
-### 3) Translate all messages
+### 4) Translate all messages
 
-Open `apps/studio/src/locales/<locale>.po` and fill in every `msgstr` entry.
+You can auto-fill all empty `msgstr` entries using the translate script:
 
-Example:
+```bash
+OPENAI_API_KEY=<key> pnpm --filter @adt/studio translate:missing
+```
+
+This calls the OpenAI API and patches the `.po` file in place. CI runs this automatically when `OPENAI_API_KEY` is set as a repository secret.
+
+Alternatively, translate manually by editing `apps/studio/src/locales/<locale>.po` directly:
 
 ```po
 #: src/components/Sidebar.tsx
@@ -48,47 +81,22 @@ msgid "Books"
 msgstr "Livres"
 ```
 
-CI enforces that **no `msgstr` entries are left empty** in non-English locales. The build will fail if any are missing.
+CI enforces that **no `msgstr` entries are left empty** in non-English locales.
 
 ---
 
-### 4) Load the catalog in `main.tsx`
+### 5) Load the catalog in `main.tsx`
 
 Edit `apps/studio/src/main.tsx` to import and register the new locale:
 
 ```ts
 import { messages as frMessages } from "./locales/fr.po"
 
-// Add to the LOCALES tuple:
-export const LOCALES = ["en", "pt-BR", "es", "fr"] as const
-
 // Add to i18n.load():
 i18n.load({ en: enMessages, "pt-BR": ptBRMessages, es: esMessages, fr: frMessages })
 ```
 
----
-
-### 5) Add the locale to the language switcher
-
-Edit `apps/studio/src/components/LocaleSwitcher.tsx` and add a display label and flag:
-
-```ts
-const LOCALE_LABELS: Record<AppLocale, string> = {
-  en: "English",
-  "pt-BR": "Português (BR)",
-  es: "Español",
-  fr: "Français",
-}
-
-const LOCALE_FLAGS: Record<AppLocale, string> = {
-  en: "🇺🇸",
-  "pt-BR": "🇧🇷",
-  es: "🇪🇸",
-  fr: "🇫🇷",
-}
-```
-
-The switcher renders all entries in `LOCALES` automatically — no other changes needed there.
+> `LOCALES` and `AppLocale` are now re-exported from `main.tsx` via `src/i18n/locales.ts` — no change needed there.
 
 ---
 

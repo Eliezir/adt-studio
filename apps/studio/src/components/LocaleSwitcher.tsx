@@ -2,7 +2,6 @@ import { Globe } from "lucide-react"
 import { useLingui } from "@lingui/react"
 import { msg } from "@lingui/core/macro"
 import { i18n } from "@lingui/core"
-import type { MessageDescriptor } from "@lingui/core"
 import { cn } from "@/lib/utils"
 import {
   Select,
@@ -11,21 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { LOCALES, type AppLocale } from "@/main"
-
-type AppLocaleInSwitcher = Exclude<AppLocale, "fr">
-
-const LOCALE_LABEL_MESSAGES: Record<AppLocaleInSwitcher, MessageDescriptor> = {
-  en: msg`English`,
-  "pt-BR": msg`Portuguese (BR)`,
-  es: msg`Spanish`,
-}
-
-const LOCALE_FLAGS: Record<AppLocaleInSwitcher, string> = {
-  en: "🇺🇸",
-  "pt-BR": "🇧🇷",
-  es: "🇪🇸",
-}
+import { LOCALES, LOCALE_LABEL_MESSAGES, LOCALE_FLAGS, type AppLocale } from "@/i18n/locales"
 
 export function LocaleSwitcher({ className }: { className?: string }) {
   const { i18n: lingui } = useLingui()

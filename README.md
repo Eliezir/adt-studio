@@ -205,6 +205,8 @@ pnpm lint             # Lint all packages
 # i18n
 pnpm --filter @adt/studio lint     # Lint Studio only (includes lingui/no-unlocalized-strings)
 pnpm --filter @adt/studio extract  # Extract strings and update .po catalogs
+OPENAI_API_KEY=<key> pnpm --filter @adt/studio translate:missing                          # Auto-translate missing strings (default: gpt-4o)
+OPENAI_API_KEY=<key> TRANSLATE_MODEL=openai:gpt-4o-mini pnpm --filter @adt/studio translate:missing  # Use a different model
 ```
 
 ## Core Principles
