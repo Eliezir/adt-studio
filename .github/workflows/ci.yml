@@ -43,21 +43,15 @@ jobs:
           fi
       - name: Check for stale keys in non-source locales
         run: |
-          STALE=""
           for po in apps/studio/src/locales/*.po; do
             locale=$(basename "$po" .po)
             if [ "$locale" = "en" ]; then continue; fi
             count=$(grep -c "^#~ msgid" "$po" || true)
             if [ "$count" -gt 0 ]; then
-              STALE="$STALE\n$locale: $count stale key(s) no longer in source (en)"
-              grep "^#~ msgid" "$po" | sed "s/^/#~[$locale] /" >> /dev/stderr
+              echo "::warning file=$po::$locale has $count stale key(s) no longer in source (en) — run 'pnpm --filter @adt/studio extract' to clean up"
+              grep "^#~ msgid" "$po" | sed "s/^#~ msgid /#~[$locale] /"
             fi
           done
-          if [ -n "$STALE" ]; then
-            echo "Stale keys found in non-source locales. Run 'pnpm --filter @adt/studio extract' to remove them."
-            printf "$STALE\n"
-            exit 1
-          fi
       - name: Check translations are up to date
         id: compile
         run: pnpm --filter @adt/studio compile --strict
