@@ -147,7 +147,7 @@ async function main() {
     process.exit(1)
   }
 
-  const modelId = process.env.TRANSLATE_MODEL ?? "openai:gpt-4o"
+  const modelId = process.env.TRANSLATE_MODEL || "openai:gpt-4o"
   const model = resolveModel(modelId)
   console.log(`Using model: ${modelId}`)
 
