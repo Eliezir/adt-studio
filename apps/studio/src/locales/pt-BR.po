@@ -1865,6 +1865,9 @@ msgstr "A estratégia de renderização usada para seções sem um mapeamento ex
 msgid "The table of contents."
 msgstr "O índice."
 
+msgid "This is a test banner for CI validation!"
+msgstr ""
+
 msgid "This page has no captioned images"
 msgstr "Esta página não tem imagens legendadas"
 
@@ -2031,6 +2034,9 @@ msgstr "Renderização web"
 
 msgid "WebPub Export"
 msgstr "Exportação WebPub"
+
+msgid "Welcome to ADT Studio"
+msgstr ""
 
 msgid "What should the AI change?"
 msgstr "O que a IA deve alterar?"
