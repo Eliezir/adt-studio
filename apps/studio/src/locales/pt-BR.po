@@ -1863,7 +1863,7 @@ msgid "The table of contents."
 msgstr "O índice."
 
 msgid "This is a test banner for CI validation"
-msgstr ""
+msgstr "Este é um banner de teste para validação de CI"
 
 msgid "This page has no captioned images"
 msgstr "Esta página não tem imagens legendadas"
@@ -2033,7 +2033,7 @@ msgid "WebPub Export"
 msgstr "Exportação WebPub"
 
 msgid "Welcome to ADT Studio"
-msgstr ""
+msgstr "Bem-vindo ao ADT Studio"
 
 msgid "What should the AI change?"
 msgstr "O que a IA deve alterar?"
