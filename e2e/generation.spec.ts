@@ -1,11 +1,11 @@
-import { test, expect, type Page, type CDPSession } from '@playwright/test';
+import { test, expect } from '@playwright/test';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import fs from 'fs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 // If you run studio on docker, you can change the port to 8080.
-const port = 5173;
+const port = process.env.REUSE_SERVER === 'true' ? 8080 : 5173;
 const baseUrl = `http://localhost:${port}`;
 const file = `${process.env.BOOK_TEST_NAME || "raven"}.pdf`;
 const previewTimeout = 1000 * 60 * 5 // 5 minutes
@@ -52,10 +52,10 @@ test('Generate book from PDF', async ({ page }) => {
 
   const bookInputLabel = page.locator('#book-label');
   const timestamp = Date.now().toString();
-  await bookInputLabel.fill(`raven-${timestamp}`);
+  await bookInputLabel.fill(`${baseName}-${timestamp}`);
 
   const bookInputLabelValue = await bookInputLabel.inputValue();
-  expect(bookInputLabelValue).toBe(`raven-${timestamp}`);
+  expect(bookInputLabelValue).toBe(`${baseName}-${timestamp}`);
 
   const nextButton1 = page.getByRole('button', { name: 'Next' });
   await nextButton1.click();
