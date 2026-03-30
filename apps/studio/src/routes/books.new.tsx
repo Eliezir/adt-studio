@@ -544,6 +544,9 @@ function AddBookPage() {
             <div key={1} className="animate-wizard-enter space-y-4">
               {/* Drop zone */}
               <div
+                data-testid="drop-zone"
+                tabIndex={0}
+                role="button"
                 className={`flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed transition-colors ${
                   file ? "p-4" : "p-8"
                 } ${

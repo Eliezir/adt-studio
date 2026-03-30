@@ -63,3 +63,10 @@ coverage/
 
 # Auto-generated TTS cache artifacts from pipeline test runs
 packages/pipeline/src/__tests__/fixtures/raven-cache/tts/*.mp3
+
+# Playwright
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+/playwright/.auth/

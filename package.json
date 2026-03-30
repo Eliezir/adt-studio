@@ -18,9 +18,14 @@
     "dev:desktop": "pnpm --filter @adt/desktop dev",
     "build:desktop": "pnpm build && pnpm --filter @adt/desktop build",
     "pdf-extract": "tsx packages/pdf/src/cli.ts",
-    "pipeline": "tsx packages/pipeline/src/cli.ts"
+    "pipeline": "tsx packages/pipeline/src/cli.ts",
+    "e2e": "playwright test && playwright show-report",
+    "e2e:watch": "playwright test --ui",
+    "e2e:report": "playwright show-report"
   },
   "devDependencies": {
+    "@playwright/test": "^1.58.2",
+    "dotenv": "^17.3.1",
     "@types/js-yaml": "^4.0.9",
     "@types/node": "^20",
     "tsx": "^4.21.0",

@@ -154,6 +154,7 @@ export function StageRunCard({
               </div>
             ) : (
               <Button
+                data-testid={`run-stage-button-${stageSlug}`}
                 variant="ghost"
                 size="icon"
                 className={cn(
