@@ -89,6 +89,10 @@ msgstr "{0} audio"
 msgid "{0} checks per page"
 msgstr "{0} kontrolle për faqe"
 
+#. placeholder {0}: getStageLabelI18n(uiStage)
+msgid "{0} complete"
+msgstr "{0} u krye"
+
 #. placeholder {0}: String(p.stats.decorative)
 msgid "{0} decorative"
 msgstr "{0} dekorative"
@@ -96,6 +100,10 @@ msgstr "{0} dekorative"
 #. placeholder {0}: entries.length
 msgid "{0} entries"
 msgstr "{0} hyrje"
+
+#. placeholder {0}: getStageLabelI18n(uiStage)
+msgid "{0} failed"
+msgstr "{0} dështoi"
 
 #. placeholder {0}: activeMetrics.flagged.length
 msgid "{0} flagged findings in this review"
@@ -326,6 +334,10 @@ msgstr "{stageLabel} nuk është gati ende — çdo seksion në Storyboard ësht
 
 msgid "{stageLabel} isn't ready yet — Storyboard hasn't finished, so there's nothing to work with. Finish that stage first."
 msgstr "{stageLabel} nuk është gati ende — Storyboard nuk ka përfunduar, kështu që nuk ka asgjë me të cilën të punohet. Përfundoni atë fazë fillimisht."
+
+#. placeholder {0}: getStageStatusLabelI18n(statusKey)
+msgid "{stepLabel}: {0}"
+msgstr "{stepLabel}: {0}"
 
 msgid "{textCount} text leaves"
 msgstr "{textCount} gjethe teksti"
@@ -722,6 +734,12 @@ msgstr "Shto autor"
 
 msgid "Add Book"
 msgstr "Shto Libër"
+
+msgid "Add Book: Choose a preset"
+msgstr "Shto Libër: Zgjidh një paracaktim"
+
+msgid "Add Book: Upload PDF"
+msgstr "Shto Libër: Ngarko PDF"
 
 msgid "Add caption…"
 msgstr "Shto titull…"
@@ -1283,6 +1301,9 @@ msgstr "Gjuha e librit"
 
 msgid "Book order"
 msgstr "Rendi i librit"
+
+msgid "Book package ready"
+msgstr "Paketa e librit gati"
 
 msgid "Book preview"
 msgstr "Pamje paraprake e librit"
@@ -2001,6 +2022,10 @@ msgstr "Përkufizime dhe Terminologji"
 msgid "Delete"
 msgstr "Fshi"
 
+#. placeholder {0}: book.title ?? book.label
+msgid "Delete {0}"
+msgstr "Fshi {0}"
+
 msgid "Delete all speech"
 msgstr "Fshi të gjitha fjalët"
 
@@ -2126,6 +2151,9 @@ msgstr "Shpërnda nëpërmjet aplikacioneve dhe bibliotekave të leximit të paj
 
 msgid "Don't have a project yet?"
 msgstr "Nuk ke ende një projekt?"
+
+msgid "done"
+msgstr "u krye"
 
 msgid "Done"
 msgstr "U krye"
@@ -2266,6 +2294,10 @@ msgstr "Ekosistem"
 
 msgid "Edit"
 msgstr "Redakto"
+
+#. placeholder {0}: book.title ?? book.label
+msgid "Edit {0}"
+msgstr "Redakto {0}"
 
 msgid "Edit & enrich"
 msgstr "Redakto dhe pasuro"
@@ -2561,6 +2593,9 @@ msgstr "Nxjerr të dhëna teksti dhe imazhi nga çdo faqe e PDF-it."
 
 msgid "Extracts the correct answer key from the generated activity HTML."
 msgstr "Nxjerr çelësin e saktë të përgjigjeve nga HTML-i i gjeneruar i aktivitetit."
+
+msgid "failed"
+msgstr "dështoi"
 
 msgid "Failed"
 msgstr "Dështoi"
@@ -3062,6 +3097,9 @@ msgstr "Prerja e Imazheve"
 msgid "Image Cropping Prompt"
 msgstr "Prompt i Prerjes së Imazheve"
 
+msgid "Image edit complete"
+msgstr "Modifikimi i imazhit u krye"
+
 msgid "Image Edit Prompt"
 msgstr "Prompt i Editimit të Imazhit"
 
@@ -3181,6 +3219,9 @@ msgstr "Nëse nuk doni të konvertoni të gjithë librin, rregulloni rrëshqitë
 
 msgid "In development"
 msgstr "Në zhvillim"
+
+msgid "in progress"
+msgstr "në proces"
 
 msgid "in the book"
 msgstr "në libër"
@@ -3821,6 +3862,9 @@ msgstr "Kërkon ndryshime"
 msgid "Needs rebuild"
 msgstr "Kërkon rindërtim"
 
+msgid "needs update"
+msgstr "nevojitet përditësim"
+
 msgid "Never"
 msgstr "Kurrë"
 
@@ -4136,6 +4180,9 @@ msgstr "Nuk u rishikua"
 
 msgid "Not run during the last execution — likely because its inputs weren't ready or its stage's settings turned it off."
 msgstr "Nuk u ekzekutua gjatë ekzekutimit të fundit — me shumë gjasë sepse hyrjet e tij nuk ishin gati ose cilësimet e fazës e çaktivizuan."
+
+msgid "not started"
+msgstr "e panisur"
 
 msgid "Not started yet"
 msgstr "Nuk ka filluar ende"
@@ -4465,6 +4512,9 @@ msgstr "Gama e Faqeve"
 msgid "Page range help"
 msgstr "Ndihmë për gamën e faqeve"
 
+msgid "Page re-rendered"
+msgstr "Faqja u rirenderua"
+
 msgid "Page Sectioning"
 msgstr "Ndarja e Faqeve në Seksione"
 
@@ -4613,6 +4663,9 @@ msgstr "Pipeline · storyboard"
 
 msgid "Pipeline features"
 msgstr "Veçoritë e Pipeline"
+
+msgid "Pipeline stages"
+msgstr "Fazat e procesit"
 
 msgid "Pipeline Stages"
 msgstr "Fazat e Pipeline"
@@ -4779,6 +4832,9 @@ msgstr "Parametri i pyetjes"
 
 msgid "question"
 msgstr "pyetje"
+
+msgid "queued"
+msgstr "në radhë"
 
 msgid "Queued"
 msgstr "Në radhë"
@@ -5157,6 +5213,9 @@ msgstr "Riprovime"
 msgid "Retry"
 msgstr "Riprovo"
 
+msgid "Retry {stageLabel}"
+msgstr "Riprovo {stageLabel}"
+
 msgid "Retry Export"
 msgstr "Riprovo Eksportimin"
 
@@ -5316,6 +5375,9 @@ msgstr "Duke ekzekutuar"
 
 msgid "RUNNING"
 msgstr "NË EKZEKUTIM"
+
+msgid "Running {stageLabel}"
+msgstr "Duke ekzekutuar {stageLabel}"
 
 msgid "Running Sectioning will run Extract first, then section the extracted pages."
 msgstr "Ekzekutimi i Seksionimit do të ekzekutojë Ekstraktimin së pari, pastaj do të seksionojë faqet e ekstraktuara."
@@ -6017,6 +6079,9 @@ msgstr "HTML i Strukturuar"
 msgid "Structures each page into a tree of sections and nodes."
 msgstr "Strukturon çdo faqe në një pemë seksionesh dhe nyjesh."
 
+msgid "Studio actions"
+msgstr "Veprimet e studios"
+
 msgid "Style"
 msgstr "Stili"
 
@@ -6097,6 +6162,16 @@ msgstr "Klasa Tailwind"
 
 msgid "Takes liberties and produces something similar."
 msgstr "Merr liri dhe prodhon diçka të ngjashme."
+
+msgid "Task complete"
+msgstr "Detyra u krye"
+
+msgid "Task failed"
+msgstr "Detyra dështoi"
+
+#. placeholder {0}: d.error
+msgid "Task failed: {0}"
+msgstr "Detyra dështoi: {0}"
 
 msgid "Task Running"
 msgstr "Detyra po Ekzekutohet"
@@ -6967,6 +7042,9 @@ msgstr "Eksport WebPub"
 msgid "Weight"
 msgstr "Peshë"
 
+msgid "Welcome"
+msgstr "Mirë se vini"
+
 msgid "Welcome to ADT Studio"
 msgstr "Mirë se vini në ADT Studio"
 
@@ -7035,6 +7113,9 @@ msgstr "Fjala dhe përkufizimi kërkohen."
 
 msgid "Word Highlighting"
 msgstr "Theksim fjalësh"
+
+msgid "Word highlighting ready"
+msgstr "Theksimi i fjalëve gati"
 
 msgid "Word-level highlighting"
 msgstr "Theksim në nivel fjale"
