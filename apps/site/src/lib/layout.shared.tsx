@@ -1,7 +1,13 @@
 import type { BaseLayoutProps } from 'fumadocs-ui/layouts/shared';
+import { Trans } from '@lingui/react/macro';
+import { Button } from '@/components/Button';
+import { GithubIcon } from '@/components/icons/GithubIcon';
+import { LocaleSwitcher } from '@/components/LocaleSwitcher';
 import { appName, gitConfig } from './shared';
 
 export function baseOptions(): BaseLayoutProps {
+  const githubUrl = `https://github.com/${gitConfig.user}/${gitConfig.repo}`;
+
   return {
     nav: {
       url: '/docs',
@@ -20,10 +26,39 @@ export function baseOptions(): BaseLayoutProps {
         </div>
       ),
     },
+    // Mirror the landing-page top bar: Star on GitHub, Download, language
+    // picker. Rendered as a single custom secondary item so the cluster sits
+    // on the right of the docs sub-nav with the same components and order.
     links: [
-      { type: 'button', text: 'Download', url: '/download', external: true },
+      {
+        type: 'custom',
+        secondary: true,
+        children: (
+          <div className="flex items-center gap-2">
+            <Button
+              href={githubUrl}
+              target="_blank"
+              rel="noreferrer noopener"
+              variant="ghost"
+              size="md"
+              className="hidden h-9 gap-1.5 px-3 text-[13px] sm:inline-flex"
+            >
+              <GithubIcon className="h-3.5 w-3.5" />
+              <Trans>Star</Trans>
+            </Button>
+            <Button
+              href="/download"
+              variant="primary"
+              size="md"
+              className="hidden h-9 px-4 text-[13px] sm:inline-flex"
+            >
+              <Trans>Download</Trans>
+            </Button>
+            <LocaleSwitcher />
+          </div>
+        ),
+      },
     ],
     searchToggle: { enabled: false },
-    githubUrl: `https://github.com/${gitConfig.user}/${gitConfig.repo}`,
   };
 }

@@ -62,6 +62,17 @@
 }
 
 /*
+ * Lighter, faintly cool page surface (light mode) so the docs read fresh and
+ * branded instead of a flat, dull grey. The content panel stays pure white,
+ * so the two-tone separation is preserved but softer.
+ */
+:root {
+  --color-fd-background: oklch(0.985 0.004 255);
+  --color-fd-muted: oklch(0.972 0.006 255);
+  --color-fd-secondary: oklch(0.967 0.007 255);
+}
+
+/*
  * Kaneo-style integrated chrome (notebook layout, nav.mode: 'auto'). The logo
  * sits at the top of the sidebar column and the navbar is contained above the
  * content only. The sidebar and navbar share the page surface with no card
@@ -76,6 +87,46 @@
   #nd-sidebar {
     background-color: transparent;
     border-inline-end: none;
+  }
+
+  /*
+   * Inner scroll: lock the shell (sidebar + top bar) to the viewport height
+   * and let the main content scroll inside its own region.
+   */
+  #nd-notebook-layout {
+    height: var(--fd-docs-height, 100dvh);
+    min-height: var(--fd-docs-height, 100dvh);
+    overflow: hidden;
+  }
+  #nd-page {
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in oklab, var(--color-fd-muted-foreground) 30%, transparent)
+      transparent;
+  }
+  /*
+   * Minimal scrollbar: a thin, fully-rounded thumb floating on a transparent
+   * track (the 3px transparent border + padding-box clip keeps it slim and
+   * inset from the card edge). Hidden until needed on overlay platforms.
+   */
+  #nd-page::-webkit-scrollbar {
+    width: 11px;
+  }
+  #nd-page::-webkit-scrollbar-track {
+    background: transparent;
+    /* Inset the track by the card's corner radius so the thumb stays within
+       the straight edges and never pokes into the rounded corners. */
+    margin-block: 0.75rem;
+  }
+  #nd-page::-webkit-scrollbar-thumb {
+    background-color: color-mix(in oklab, var(--color-fd-muted-foreground) 28%, transparent);
+    background-clip: padding-box;
+    border: 3px solid transparent;
+    border-radius: 9999px;
+  }
+  #nd-page::-webkit-scrollbar-thumb:hover {
+    background-color: color-mix(in oklab, var(--color-fd-muted-foreground) 50%, transparent);
   }
 }
 
@@ -105,9 +156,13 @@
     background-color: var(--fd-content-surface);
     border: 1px solid var(--color-fd-border);
     border-radius: 0.75rem;
-    /* margin: 0.75rem; */
+    /* Float the card above the page bottom edge (matches the right-side gap). */
+    margin-bottom: 0.75rem;
     grid-column: 3 / 5;
     padding-inline-end: var(--fd-toc-width);
+    /* Mirror the top padding so scrolled-to-bottom content keeps breathing
+       room equal to the top and sides (fumadocs only sets pt, not pb). */
+    padding-bottom: 2rem;
   }
   /*
    * The card (container) is full width, but the content is a centered reading
@@ -118,6 +173,13 @@
     width: 100%;
     max-width: 48rem;
     margin-inline: auto;
+  }
+}
+
+/* Match the larger top padding at the xl breakpoint (fumadocs uses pt-14). */
+@media (min-width: 1280px) {
+  #nd-page {
+    padding-bottom: 3.5rem;
   }
 }
 

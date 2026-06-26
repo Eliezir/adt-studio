@@ -5,9 +5,9 @@ import { STAGES } from "@/data/stages";
 
 /**
  * Featured "Get Started" cover card for the docs Overview — a gradient panel
- * with a subtle grid + glow, the app icon centered above the pipeline stages
- * (each in its own brand color), and the heading/description bottom-left on a
- * shadow scrim. Links to the Quick Start.
+ * with a subtle glow, the app icon centered above the pipeline stages (each in
+ * its own brand color), and the heading/description bottom-left on a shadow
+ * scrim. Links to the Quick Start.
  */
 export function GetStartedBanner() {
   const { i18n } = useLingui();
