@@ -55,10 +55,148 @@
   --radius: 0.625rem;
 }
 
-/* Align fumadocs docs/blog chrome with the ADT brand accent */
+/* Align fumadocs docs chrome with the ADT brand accent */
 :root {
   --color-fd-primary: oklch(0.623 0.189 260);
   --color-fd-ring: oklch(0.623 0.189 260);
+}
+
+/*
+ * Kaneo-style integrated chrome (notebook layout, nav.mode: 'auto'). The logo
+ * sits at the top of the sidebar column and the navbar is contained above the
+ * content only. The sidebar and navbar share the page surface with no card
+ * background and no dividers, so the chrome reads as one seamless frame.
+ */
+#nd-subnav,
+#nd-subnav > div {
+  border-bottom: none;
+}
+
+@media (min-width: 768px) {
+  #nd-sidebar {
+    background-color: transparent;
+    border-inline-end: none;
+  }
+}
+
+/*
+ * Full-bleed shell + two-tone surface (Kaneo-style). The default layout caps
+ * at ~97rem and centers on wide screens, leaving a gutter before the sidebar;
+ * widening the cap keeps the sidebar hugging the left edge. The main content
+ * sits on a distinct, lighter surface so it reads as its own container, while
+ * the sidebar/top bar share the muted page background.
+ */
+:root {
+  --fd-layout-width: 200rem;
+  --fd-content-surface: #ffffff;
+}
+.dark {
+  --fd-content-surface: rgb(28, 28, 30);
+}
+
+@media (min-width: 768px) {
+  /*
+   * Main content as a floating, rounded card. The card spans both the content
+   * (main) and TOC columns so the "On this page" indicator sits inside it; the
+   * article is kept clear of the TOC area with a matching inline-end padding
+   * (collapses to 0 on full-width pages, where --fd-toc-width is 0).
+   */
+  #nd-page {
+    background-color: var(--fd-content-surface);
+    border: 1px solid var(--color-fd-border);
+    border-radius: 0.75rem;
+    /* margin: 0.75rem; */
+    grid-column: 3 / 5;
+    padding-inline-end: var(--fd-toc-width);
+  }
+  /*
+   * The card (container) is full width, but the content is a centered reading
+   * column. Override fumadocs' left-aligned `*:max-w-[900px]` per-child cap
+   * with a comfortable width that's centered within the content area.
+   */
+  #nd-page > * {
+    width: 100%;
+    max-width: 48rem;
+    margin-inline: auto;
+  }
+}
+
+/* Logo: breathing room at the top of the sidebar, aligned with the nav items. */
+#nd-sidebar > div:first-child {
+  padding-top: 1.25rem;
+}
+#nd-sidebar a:has(> img) {
+  padding-inline-start: 0.625rem;
+}
+
+/*
+ * Minimal sidebar (Kaneo-style): a neutral subtle active state (no brand color
+ * or accent bar) and quiet group labels. Item icons are shown.
+ */
+#nd-sidebar a[data-active='true'] {
+  background-color: color-mix(in oklab, var(--color-fd-primary) 12%, transparent);
+  color: var(--color-fd-primary);
+  font-weight: 500;
+}
+#nd-sidebar a[data-active='true']::before {
+  content: none;
+}
+
+#nd-sidebar p > .fd-page-tree-item-name {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-fd-muted-foreground);
+}
+
+#nd-sidebar a > .fd-page-tree-item-name {
+  font-size: 0.8125rem;
+}
+
+/*
+ * Dark theme (docs). The landing is light-only, so we only need the brand
+ * tokens to have dark values for the docs surfaces. Map them onto fumadocs'
+ * dark palette so our custom docs UI (home, topic cards) matches the chrome,
+ * and keep a brightened brand-blue accent for contrast on dark.
+ */
+.dark {
+  --color-background: var(--color-fd-background);
+  --color-foreground: var(--color-fd-foreground);
+  --color-card: var(--color-fd-card);
+  --color-card-foreground: var(--color-fd-card-foreground);
+  --color-muted: var(--color-fd-muted);
+  --color-muted-foreground: var(--color-fd-muted-foreground);
+  --color-accent: var(--color-fd-accent);
+  --color-accent-foreground: var(--color-fd-accent-foreground);
+  --color-border: var(--color-fd-border);
+  --color-primary: oklch(0.7 0.16 260);
+  --color-primary-foreground: oklch(0.18 0.02 260);
+  --color-ring: oklch(0.7 0.16 260);
+  --color-fd-primary: oklch(0.7 0.16 260);
+  --color-fd-ring: oklch(0.7 0.16 260);
+}
+
+/*
+ * The landing page is light-only by design. Pin its brand tokens to the light
+ * palette so the global theme class (toggled within the docs) never turns the
+ * landing dark — even for visitors whose OS prefers dark. These set the
+ * @theme color tokens directly (the values the components read), since the
+ * `--color-* : var(--*)` indirection is resolved at :root and can't be
+ * re-pointed by overriding the inner variable further down the tree.
+ */
+.landing-light {
+  --color-background: oklch(1 0 0);
+  --color-foreground: oklch(0.145 0 0);
+  --color-card: oklch(1 0 0);
+  --color-card-foreground: oklch(0.145 0 0);
+  --color-primary: oklch(0.623 0.189 260);
+  --color-primary-foreground: oklch(1 0 0);
+  --color-muted: oklch(0.97 0 0);
+  --color-muted-foreground: oklch(0.556 0 0);
+  --color-accent: oklch(0.97 0 0);
+  --color-accent-foreground: oklch(0.205 0 0);
+  --color-border: oklch(0.922 0 0);
+  --color-ring: oklch(0.623 0.189 260);
+  color-scheme: light;
 }
 
 html {

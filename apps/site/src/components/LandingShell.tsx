@@ -10,7 +10,7 @@ export function LandingShell({
   isHome?: boolean;
 }) {
   return (
-    <div className="min-h-screen bg-[color:var(--color-background)] text-[color:var(--color-foreground)]">
+    <div className="landing-light min-h-screen bg-[color:var(--color-background)] text-[color:var(--color-foreground)]">
       <Nav isHome={isHome} />
       <main>{children}</main>
       <Footer />

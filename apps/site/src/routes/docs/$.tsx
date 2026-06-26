@@ -1,18 +1,12 @@
 import { createFileRoute, Link, notFound } from '@tanstack/react-router';
-import { DocsLayout } from 'fumadocs-ui/layouts/docs';
+import { DocsLayout } from 'fumadocs-ui/layouts/notebook';
 import { createServerFn } from '@tanstack/react-start';
 import { slugsToMarkdownPath, source } from '@/lib/source';
 import browserCollections from 'collections/browser';
-import {
-  DocsBody,
-  DocsDescription,
-  DocsPage,
-  DocsTitle,
-  MarkdownCopyButton,
-  ViewOptionsPopover,
-} from 'fumadocs-ui/layouts/docs/page';
+import { DocsBody, DocsPage } from 'fumadocs-ui/layouts/notebook/page';
 import { baseOptions } from '@/lib/layout.shared';
-import { gitConfig } from '@/lib/shared';
+import { SidebarBanner } from '@/components/docs/SidebarBanner';
+import { PageHeader } from '@/components/docs/PageHeader';
 import { staticFunctionMiddleware } from '@tanstack/start-static-server-functions';
 import { useFumadocsLoader } from 'fumadocs-core/source/client';
 import { Suspense } from 'react';
@@ -56,16 +50,13 @@ const clientLoader = browserCollections.docs.createClientLoader({
     },
   ) {
     return (
-      <DocsPage toc={toc}>
-        <DocsTitle>{frontmatter.title}</DocsTitle>
-        <DocsDescription>{frontmatter.description}</DocsDescription>
-        <div className="flex flex-row gap-2 items-center border-b -mt-4 pb-6">
-          <MarkdownCopyButton markdownUrl={markdownUrl} />
-          <ViewOptionsPopover
-            markdownUrl={markdownUrl}
-            githubUrl={`https://github.com/${gitConfig.user}/${gitConfig.repo}/blob/${gitConfig.branch}/apps/web/content/docs/${path}`}
-          />
-        </div>
+      // No headings → no TOC, so render full-width instead of reserving the
+      // (empty) TOC column on the right.
+      <DocsPage toc={toc} full={toc.length === 0} breadcrumb={{ enabled: false }}>
+        <PageHeader
+          title={frontmatter.title}
+          description={frontmatter.description}
+        />
         <DocsBody>
           <MDX components={useMDXComponents()} />
         </DocsBody>
@@ -76,9 +67,15 @@ const clientLoader = browserCollections.docs.createClientLoader({
 
 function Page() {
   const { pageTree, path, markdownUrl } = useFumadocsLoader(Route.useLoaderData());
+  const base = baseOptions();
 
   return (
-    <DocsLayout {...baseOptions()} tree={pageTree}>
+    <DocsLayout
+      {...base}
+      nav={{ ...base.nav, mode: 'auto' }}
+      sidebar={{ banner: <SidebarBanner />, collapsible: false }}
+      tree={pageTree}
+    >
       <Link to={markdownUrl} hidden />
       <Suspense>{clientLoader.useContent(path, { markdownUrl, path })}</Suspense>
     </DocsLayout>

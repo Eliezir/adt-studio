@@ -1,0 +1,17 @@
+{
+  "title": "Pipeline",
+  "icon": "Workflow",
+  "pages": [
+    "index",
+    "extract",
+    "sectioning",
+    "storyboard",
+    "quizzes",
+    "captions",
+    "glossary",
+    "toc",
+    "translate",
+    "speech",
+    "package"
+  ]
+}

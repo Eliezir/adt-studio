@@ -1,0 +1,20 @@
+{
+  "pages": [
+    "---Overview---",
+    "index",
+    "---Get Started---",
+    "install",
+    "new-project",
+    "quickstart",
+    "concepts",
+    "---Learn---",
+    "pipeline",
+    "templates",
+    "llm",
+    "output",
+    "---Help---",
+    "faq",
+    "reporting-issues",
+    "support"
+  ]
+}
