@@ -9,7 +9,6 @@ import { Suspense } from "react";
 import { baseOptions } from "@/lib/layout.shared";
 import { slugsToMarkdownPath, source } from "@/lib/source";
 import { SidebarBanner } from "@/components/docs/SidebarBanner";
-import { PageHeader } from "@/components/docs/PageHeader";
 import { useMDXComponents } from "@/components/mdx";
 import { seo } from "@/lib/seo";
 
@@ -27,16 +26,11 @@ const loader = createServerFn({ method: "GET" })
   });
 
 const clientLoader = browserCollections.docs.createClientLoader({
-  component(
-    { toc, frontmatter, default: MDX },
-    { markdownUrl, path }: { markdownUrl: string; path: string },
-  ) {
+  // The Overview is a landing page: a custom hero (in the MDX) instead of the
+  // standard page header, rendered full-width with no table of contents.
+  component({ default: MDX }) {
     return (
-      <DocsPage toc={toc} breadcrumb={{ enabled: false }}>
-        <PageHeader
-          title={frontmatter.title}
-          description={frontmatter.description}
-        />
+      <DocsPage full breadcrumb={{ enabled: false }}>
         <DocsBody>
           <MDX components={useMDXComponents()} />
         </DocsBody>
@@ -74,7 +68,7 @@ function Page() {
       tree={pageTree}
     >
       <Link to={markdownUrl} hidden />
-      <Suspense>{clientLoader.useContent(path, { markdownUrl, path })}</Suspense>
+      <Suspense>{clientLoader.useContent(path)}</Suspense>
     </DocsLayout>
   );
 }

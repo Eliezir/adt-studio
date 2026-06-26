@@ -1,9 +1,21 @@
+import { useEffect, useState } from "react";
 import { Search } from "lucide-react";
 import { useSearchContext } from "fumadocs-ui/contexts/search";
 
-/** Search trigger rendered at the top of the docs sidebar (Kaneo-style). */
+const KBD =
+  "inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded border border-[color:var(--color-border)] bg-[color:var(--color-background)] px-1 text-[11px] font-medium text-[color:var(--color-muted-foreground)]";
+
+/** Search trigger at the top of the docs sidebar — OS-aware ⌘/Ctrl + K hint. */
 export function SidebarSearch() {
-  const { setOpenSearch, hotKey } = useSearchContext();
+  const { setOpenSearch } = useSearchContext();
+  // Default to the macOS symbol so SSR and the first client render agree; the
+  // effect corrects it to "Ctrl" on Windows/Linux after mount.
+  const [mod, setMod] = useState("⌘");
+
+  useEffect(() => {
+    const ua = `${navigator.platform} ${navigator.userAgent}`;
+    setMod(/mac|iphone|ipad|ipod/i.test(ua) ? "⌘" : "Ctrl");
+  }, []);
 
   return (
     <button
@@ -13,11 +25,10 @@ export function SidebarSearch() {
     >
       <Search className="size-4" />
       <span className="flex-1">Search</span>
-      <kbd className="inline-flex items-center gap-0.5 rounded border border-[color:var(--color-border)] bg-[color:var(--color-background)] px-1.5 text-[11px]">
-        {hotKey.map((k, i) => (
-          <span key={i}>{k.display}</span>
-        ))}
-      </kbd>
+      <span className="flex items-center gap-1">
+        <kbd className={KBD}>{mod}</kbd>
+        <kbd className={KBD}>K</kbd>
+      </span>
     </button>
   );
 }
