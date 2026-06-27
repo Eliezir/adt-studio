@@ -80,7 +80,7 @@ function RootComponent() {
       </head>
       <body className="flex flex-col min-h-screen">
         <I18nProvider i18n={i18n}>
-          <RootProvider search={{ SearchDialog }}>
+          <RootProvider search={{ SearchDialog }} theme={{ enabled: false }}>
             <LocaleInitializer />
             <MatomoTracker />
             <Outlet />

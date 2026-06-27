@@ -209,6 +209,47 @@
   content: none;
 }
 
+/*
+ * Hover for non-active items: fumadocs' default is a heavy gray slab
+ * (hover:bg-fd-accent/50) that, on nested items, spans full width and crosses
+ * the indent rail — reading as a much louder treatment than the subtle active
+ * pill. Replace it with a faint, smoothly-transitioned tint that matches the
+ * minimal active state instead of competing with it. (Exclude the logo link.)
+ */
+#nd-sidebar a:not(:has(> img)) {
+  transition:
+    background-color 150ms ease,
+    color 150ms ease;
+}
+#nd-sidebar a:not([data-active='true']):not(:has(> img)):hover {
+  background-color: color-mix(in oklab, var(--color-fd-foreground) 6%, transparent);
+  color: var(--color-fd-foreground);
+}
+
+/*
+ * Nested (collapsible) items: their hover/active pill spans full width and
+ * pokes out to the left of the indent rail. Shift the box right so the pill
+ * starts just inside the rail, compensating with padding so the icon/label
+ * stay put. Result: a clean inset pill that never crosses the rail.
+ */
+#nd-sidebar div[class*='collapsible'] a:not(:has(> img)) {
+  margin-inline-start: 0.75rem;
+  padding-inline-start: 0.5rem;
+}
+
+/*
+ * Sidebar keyboard focus: the browser's default outline renders as a heavy
+ * blue box that hugs the rounded items (most obvious on nested entries).
+ * Replace it with a clean, subtle ring that follows the item's radius and
+ * never clips against the scroll area, keeping focus visible but quiet.
+ */
+#nd-sidebar a:focus-visible,
+#nd-sidebar button:focus-visible {
+  outline: none;
+  box-shadow: inset 0 0 0 1.5px
+    color-mix(in oklab, var(--color-fd-primary) 55%, transparent);
+}
+
 /* Section headers carry the contrast via color (near-black), matching the
    fumadocs default — normal weight, 14px; the prominence is the color, not bold. */
 #nd-sidebar p > .fd-page-tree-item-name {

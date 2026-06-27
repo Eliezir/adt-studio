@@ -1,0 +1,67 @@
+name: Deploy site
+
+# Builds and deploys the unified site (landing page + docs) from apps/site to
+# GitHub Pages. Replaces the old apps/landing deploy.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "apps/site/**"
+      - ".github/workflows/site.yml"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Build site (landing + docs)
+        env:
+          # GitHub Pages serves project sites under /<repo>/.
+          BASE_PATH: /${{ github.event.repository.name }}/
+        run: pnpm --filter @adt/site build
+      - name: SPA fallback for unknown URLs
+        working-directory: apps/site/.output/public
+        run: |
+          # GitHub Pages serves 404.html for any path without a matching file.
+          # Use the SPA shell so the app boots and redirects unknown URLs home.
+          cp _shell.html 404.html
+          # The home ("/") prerender is currently non-deterministic and can emit
+          # an empty or truncated index.html. If it isn't a complete document,
+          # fall back to the SPA shell so the home always renders.
+          if ! grep -aq "</html>" index.html; then
+            echo "::warning::home prerender incomplete — serving the SPA shell for /"
+            cp _shell.html index.html
+          fi
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: apps/site/.output/public
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

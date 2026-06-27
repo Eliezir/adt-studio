@@ -4,6 +4,7 @@ import { Button } from '@/components/Button';
 import { GithubIcon } from '@/components/icons/GithubIcon';
 import { LocaleSwitcher } from '@/components/LocaleSwitcher';
 import { appName, gitConfig } from './shared';
+import { withBase } from './href';
 
 export function baseOptions(): BaseLayoutProps {
   const githubUrl = `https://github.com/${gitConfig.user}/${gitConfig.repo}`;
@@ -47,7 +48,7 @@ export function baseOptions(): BaseLayoutProps {
               <Trans>Star</Trans>
             </Button>
             <Button
-              href="/download"
+              href={withBase("/download")}
               variant="primary"
               size="md"
               className="hidden h-9 px-4 text-[13px] sm:inline-flex"
@@ -60,5 +61,7 @@ export function baseOptions(): BaseLayoutProps {
       },
     ],
     searchToggle: { enabled: false },
+    // The docs are light-only (matching the landing page) — no dark mode.
+    themeSwitch: { enabled: false },
   };
 }

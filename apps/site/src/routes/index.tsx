@@ -5,9 +5,9 @@ import { WelcomeScene } from "@/components/sections/WelcomeScene";
 import { TrustStrip } from "@/components/sections/TrustStrip";
 import { FeaturesScene } from "@/components/sections/FeaturesScene";
 import { CarouselScene } from "@/components/sections/CarouselScene";
-import { PrinciplesScene } from "@/components/sections/PrinciplesScene";
 import { ShowcaseScene } from "@/components/sections/ShowcaseScene";
 import { ReleasesScene } from "@/components/sections/ReleasesScene";
+import { DocsScene } from "@/components/sections/DocsScene";
 import { FinaleScene } from "@/components/sections/FinaleScene";
 import { seo } from "@/lib/seo";
 
@@ -38,9 +38,9 @@ function Home() {
       <TrustStrip />
       <FeaturesScene />
       <CarouselScene />
-      <PrinciplesScene />
       <ShowcaseScene />
       <ReleasesScene />
+      <DocsScene />
       <FinaleScene />
     </LandingShell>
   );

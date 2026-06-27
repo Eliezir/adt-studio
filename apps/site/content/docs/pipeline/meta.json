@@ -2,7 +2,6 @@
   "title": "Pipeline",
   "icon": "Workflow",
   "pages": [
-    "index",
     "extract",
     "sectioning",
     "storyboard",

@@ -2,6 +2,7 @@ import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { MessageDescriptor } from "@lingui/core";
 import { GithubIcon } from "@/components/icons/GithubIcon";
+import { withBase } from "@/lib/href";
 
 type LinkCol = {
   title: MessageDescriptor;
@@ -45,6 +46,8 @@ const COLUMNS: LinkCol[] = [
   {
     title: msg`Docs`,
     links: [
+      { label: msg`Documentation`, href: "/docs" },
+      { label: msg`Quickstart`, href: "/docs/quickstart" },
       {
         label: msg`Guidelines`,
         href: "https://github.com/unicef/adt-studio/blob/main/docs/GUIDELINES.md",
@@ -67,7 +70,7 @@ export function Footer() {
       <div className="mx-auto w-full max-w-6xl px-6 pb-10 pt-16">
         <div className="grid grid-cols-1 gap-10 md:grid-cols-[1.2fr_1fr_1fr_1fr]">
           <div className="flex flex-col gap-4">
-            <a href="/#top" className="flex items-center gap-2.5">
+            <a href={withBase("/#top")} className="flex items-center gap-2.5">
               <img
                 src={`${import.meta.env.BASE_URL}logo.png`}
                 alt=""
@@ -105,7 +108,7 @@ export function Footer() {
                 {col.links.map((l) => (
                   <li key={l.href}>
                     <a
-                      href={l.href}
+                      href={l.external ? l.href : withBase(l.href)}
                       target={l.external ? "_blank" : undefined}
                       rel={l.external ? "noreferrer noopener" : undefined}
                       className="text-sm text-[color:var(--color-muted-foreground)] transition-colors hover:text-[color:var(--color-foreground)]"

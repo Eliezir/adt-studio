@@ -3,6 +3,7 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import { GithubIcon } from "@/components/icons/GithubIcon";
 import { Button } from "@/components/Button";
 import { SectionEyebrow } from "@/components/SectionEyebrow";
+import { withBase } from "@/lib/href";
 import { trackEvent } from "@/lib/matomo";
 import { STAGES, type Stage } from "@/data/stages";
 import { cn } from "@/lib/cn";
@@ -77,7 +78,7 @@ export function FinaleScene() {
           style={{ transitionDelay: "420ms" }}
         >
           <Button
-            href="/download"
+            href={withBase("/download")}
             size="lg"
             variant="primary"
             onClick={() => trackEvent("cta", "download_click", "finale")}

@@ -1,0 +1,44 @@
+name: Site CI
+
+# Checks for the unified site (landing page + docs) in apps/site.
+# Replaces the old apps/landing CI.
+
+on:
+  pull_request:
+    paths:
+      - "apps/site/**"
+      - ".github/workflows/site-ci.yml"
+  push:
+    branches: [main]
+    paths:
+      - "apps/site/**"
+
+permissions:
+  contents: read
+
+jobs:
+  site:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Check for unextracted strings
+        run: |
+          pnpm --filter @adt/site extract
+          NEW=$(git diff -- apps/site/src/locales/ | grep '^+msgid "' | grep -v '^+msgid ""' || true)
+          if [ -n "$NEW" ]; then
+            echo "New unextracted strings found. Run 'pnpm --filter @adt/site extract' and commit the updated .po files."
+            echo "$NEW"
+            exit 1
+          fi
+      - name: Typecheck
+        run: pnpm --filter @adt/site run types:check
+      - name: Build
+        env:
+          BASE_PATH: /${{ github.event.repository.name }}/
+        run: pnpm --filter @adt/site build

@@ -5,6 +5,7 @@ import { GithubIcon } from "@/components/icons/GithubIcon";
 import { Button } from "@/components/Button";
 import { ReleaseMarkdown } from "@/components/ReleaseMarkdown";
 import { cn } from "@/lib/cn";
+import { withBase } from "@/lib/href";
 import {
   sectionTone,
   summarizeSections,
@@ -57,7 +58,7 @@ export function ReleasesPage({ focusTag }: { focusTag?: string }) {
           )}
         >
           <a
-            href="/#top"
+            href={withBase("/#top")}
             className="group inline-flex items-center gap-1.5 rounded-full border border-[color:var(--color-border)] bg-[color:var(--color-card)]/70 px-3 py-1 text-xs font-semibold text-[color:var(--color-muted-foreground)] shadow-sm backdrop-blur-sm transition-all hover:border-[color:var(--color-primary)]/30 hover:text-[color:var(--color-foreground)]"
           >
             <ArrowLeft className="h-3.5 w-3.5 transition-transform duration-200 group-hover:-translate-x-0.5" />

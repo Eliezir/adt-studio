@@ -3,6 +3,7 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/Button";
 import { cn } from "@/lib/cn";
+import { withBase } from "@/lib/href";
 import { trackDownload } from "@/lib/matomo";
 import {
   formatDownloads,
@@ -85,7 +86,7 @@ export function DownloadPage() {
 
       <div className="relative mx-auto flex w-full max-w-2xl flex-1 flex-col items-center justify-center px-4 py-16 text-center">
         <a
-          href="/#top"
+          href={withBase("/#top")}
           aria-label={t`ADT Studio home`}
           className={cn(
             "group relative inline-flex transition-all duration-700",

@@ -14,6 +14,7 @@ import { useDocsSearch } from 'fumadocs-core/search/client';
 import { oramaStaticClient } from 'fumadocs-core/search/client/orama-static';
 import { create } from '@orama/orama';
 import { useI18n } from 'fumadocs-ui/contexts/i18n';
+import { withBase } from '@/lib/href';
 
 function initOrama() {
   return create({
@@ -27,6 +28,9 @@ export default function DefaultSearchDialog(props: SharedProps) {
   const { locale } = useI18n(); // (optional) for i18n
   const { search, setSearch, query } = useDocsSearch({
     client: oramaStaticClient({
+      // The static index is prerendered under the deployment base (e.g.
+      // /adt-studio/api/search on GitHub Pages), so fetch it base-aware.
+      from: withBase('/api/search'),
       initOrama,
       locale,
     }),

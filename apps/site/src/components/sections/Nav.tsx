@@ -7,6 +7,7 @@ import { Button } from "@/components/Button";
 import { GithubIcon } from "@/components/icons/GithubIcon";
 import { LocaleSwitcher } from "@/components/LocaleSwitcher";
 import { cn } from "@/lib/cn";
+import { withBase } from "@/lib/href";
 import { useScrolled } from "@/lib/useScrolled";
 import { useSectionNav } from "@/lib/useSectionNav";
 import { trackEvent } from "@/lib/matomo";
@@ -17,6 +18,7 @@ const LINKS: { href: string; id: string; label: MessageDescriptor }[] = [
   { href: "/#carousel", id: "carousel", label: msg`How it works` },
   { href: "/#showcase", id: "showcase", label: msg`Output` },
   { href: "/#releases", id: "releases", label: msg`Releases` },
+  { href: "/#docs", id: "docs", label: msg`Docs` },
   { href: "/#finale", id: "finale", label: msg`Get started` },
 ];
 
@@ -55,7 +57,7 @@ export function Nav({ isHome = false }: { isHome?: boolean }) {
         )}
       >
         <a
-          href="/#top"
+          href={withBase("/#top")}
           className="group flex items-center gap-2.5"
           aria-label={t`ADT Studio home`}
         >
@@ -86,7 +88,7 @@ export function Nav({ isHome = false }: { isHome?: boolean }) {
             return (
               <a
                 key={l.href}
-                href={l.href}
+                href={withBase(l.href)}
                 aria-current={active ? "true" : undefined}
                 className={cn(
                   "relative rounded-md px-3 py-1.5 text-[13px] font-medium transition-colors duration-200",
@@ -121,7 +123,7 @@ export function Nav({ isHome = false }: { isHome?: boolean }) {
             <Trans>Star</Trans>
           </Button>
           <Button
-            href="/download"
+            href={withBase("/download")}
             variant="primary"
             size="md"
             className="hidden h-9 px-4 text-[13px] sm:inline-flex"
@@ -156,7 +158,7 @@ export function Nav({ isHome = false }: { isHome?: boolean }) {
             return (
               <a
                 key={l.href}
-                href={l.href}
+                href={withBase(l.href)}
                 onClick={() => setOpen(false)}
                 aria-current={active ? "true" : undefined}
                 className={cn(
@@ -184,7 +186,7 @@ export function Nav({ isHome = false }: { isHome?: boolean }) {
               <Trans>Star</Trans>
             </Button>
             <Button
-              href="/download"
+              href={withBase("/download")}
               variant="primary"
               size="md"
               className="flex-1"

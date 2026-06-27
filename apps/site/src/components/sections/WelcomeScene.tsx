@@ -2,9 +2,10 @@ import { ArrowRight, ChevronDown, Sparkles } from "lucide-react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/Button";
-import { GithubIcon } from "@/components/icons/GithubIcon";
+import { SearchTrigger } from "@/components/SearchTrigger";
 import { PdfToBookDiagram } from "@/components/PdfToBookDiagram";
 import { cn } from "@/lib/cn";
+import { withBase } from "@/lib/href";
 import {
   formatRelativeDate,
   useStableReleases,
@@ -42,11 +43,11 @@ export function WelcomeScene() {
       <div className="relative mx-auto grid w-full max-w-6xl grid-cols-1 items-center gap-14 lg:grid-cols-[1.3fr_1fr] lg:gap-10">
         <div className="flex flex-col items-center gap-6 text-center lg:items-start lg:text-left">
           <a
-            href={
+            href={withBase(
               latest
                 ? `/releases/${encodeURIComponent(latest.tag_name)}`
-                : "/releases"
-            }
+                : "/releases",
+            )}
             className={cn(
               "group relative inline-flex max-w-full items-center gap-2 rounded-full border border-[color:var(--color-border)] bg-[color:var(--color-card)]/70 px-3 py-1 text-xs font-semibold text-[color:var(--color-muted-foreground)] shadow-sm backdrop-blur-sm transition-all duration-500 hover:border-[color:var(--color-primary)]/30 hover:text-[color:var(--color-foreground)]",
               mounted ? "translate-y-0 opacity-100" : "translate-y-1 opacity-0",
@@ -118,7 +119,7 @@ export function WelcomeScene() {
             style={{ transitionDelay: "500ms" }}
           >
             <Button
-              href="/download"
+              href={withBase("/download")}
               size="lg"
               variant="primary"
               onClick={() => trackEvent("cta", "download_click", "hero")}
@@ -126,17 +127,7 @@ export function WelcomeScene() {
               <Trans>Download for free</Trans>
               <ArrowRight className="h-4 w-4" />
             </Button>
-            <Button
-              href="https://github.com/unicef/adt-studio"
-              target="_blank"
-              rel="noreferrer noopener"
-              size="lg"
-              variant="secondary"
-              onClick={() => trackEvent("outbound", "github_star", "hero")}
-            >
-              <GithubIcon className="h-4 w-4" />
-              <Trans>Star on GitHub</Trans>
-            </Button>
+            <SearchTrigger source="hero" className="w-full sm:w-[230px]" />
           </div>
 
           <div
@@ -176,7 +167,7 @@ export function WelcomeScene() {
       </div>
 
       <a
-        href="/#features"
+        href={withBase("/#features")}
         aria-label={t`Scroll to next section`}
         className={cn(
           "absolute bottom-6 left-1/2 grid h-10 w-10 -translate-x-1/2 cursor-pointer place-items-center rounded-full border border-[color:var(--color-border)] bg-[color:var(--color-card)]/70 text-[color:var(--color-muted-foreground)] backdrop-blur-sm transition-all duration-500 hover:border-[color:var(--color-primary)]/40 hover:text-[color:var(--color-foreground)]",
