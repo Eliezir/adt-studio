@@ -7,6 +7,9 @@ import { createLLMModel, createPromptEngine, createRateLimiter, renderLiquidTemp
 import type { LlmLogEntry } from "@adt/llm"
 import {
   extractPDF,
+  resolveFontsCacheDir,
+  buildBookFontsPromptContext,
+  ensureBookGoogleFontsCached,
   extractMetadata,
   buildMetadataConfig,
   classifyPageImages,
@@ -572,6 +575,7 @@ async function runExtractStep(
         spreadMode: config.spread_mode,
         vectorTextGrouping: config.vector_text_grouping,
         fixedLayout: isFixedLayoutBook(config),
+        fontsCacheDir: resolveFontsCacheDir(booksDir),
       },
       storage,
       progress
@@ -1013,6 +1017,8 @@ async function runStoryboardStep(
       `[stage-run] ${label}: rendering storyboard for ${totalPages} pages (concurrency=${effectiveConcurrency})`
     )
 
+    await ensureBookGoogleFontsCached(storage, resolveFontsCacheDir(booksDir))
+
     let completedRendering = 0
     const failedPages: string[] = []
 
@@ -1067,6 +1073,7 @@ async function runStoryboardStep(
               sectioning: sectioning,
               images: renderImages,
               styleguide: styleguideContent,
+              bookFonts: buildBookFontsPromptContext(storage),
             },
             resolveRenderConfig,
             resolveRenderModel,

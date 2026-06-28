@@ -4,7 +4,7 @@ import path from "node:path"
 import { z } from "zod"
 import { Hono } from "hono"
 import { HTTPException } from "hono/http-exception"
-import { parseBookLabel, ImageClassificationOutput, PageSectioningOutput, WebRenderingOutput, ImageCaptioningOutput, ImageSegmentRegion, DEFAULT_LLM_MAX_RETRIES, primaryFontFamily, reflowableFontChain } from "@adt/types"
+import { parseBookLabel, ImageClassificationOutput, PageSectioningOutput, WebRenderingOutput, ImageCaptioningOutput, ImageSegmentRegion, DEFAULT_LLM_MAX_RETRIES, primaryFontFamily, reflowableFontChain, BookFontRegistry, bookBodyFont, bookFontFamilyChain } from "@adt/types"
 import type { ContentNodeData, ExtractionWarning } from "@adt/types"
 import { classifyExtractionWarning, flattenVisibleSectioningText } from "../services/extraction-warning.js"
 import { openBookDb } from "@adt/storage"
@@ -19,6 +19,7 @@ import {
   loadBookConfig,
   applyCrop,
   generateStyleguide,
+  buildBookFontsPromptContext,
   buildStyleguideGenerationConfig,
   buildScreenshotHtml,
   createScreenshotRenderer,
@@ -752,12 +753,26 @@ export function createPageRoutes(
       let reflowableFontFamily: string | null = null
       try {
         const cfg = loadBookConfig(safeLabel, booksDir, configPath)
+        const fixedLayout = isFixedLayoutBook(cfg)
+        if (!fixedLayout) {
+          const registryRows = db.all(
+            "SELECT data FROM node_data WHERE node = 'font-registry' AND item_id = 'book' ORDER BY version DESC LIMIT 1",
+            []
+          ) as Array<{ data: string }>
+          const registryParsed = registryRows.length > 0
+            ? BookFontRegistry.safeParse(JSON.parse(registryRows[0].data))
+            : null
+          const bodyFont = registryParsed?.success ? bookBodyFont(registryParsed.data) : null
+          if (bodyFont) reflowableFontFamily = bookFontFamilyChain(bodyFont)
+        }
         // Same resolver packaging + preview use, so the Extract display and the
         // storyboard preview can't drift from the shipped output.
-        reflowableFontFamily = reflowableFontChain(fontProfile?.category ?? null, {
-          fixedLayout: isFixedLayoutBook(cfg),
-          reflowableFont: cfg.reflowable_font,
-        })
+        if (!reflowableFontFamily) {
+          reflowableFontFamily = reflowableFontChain(fontProfile?.category ?? null, {
+            fixedLayout,
+            reflowableFont: cfg.reflowable_font,
+          })
+        }
       } catch {
         // config unavailable → no override
       }
@@ -2416,6 +2431,7 @@ export function createPageRoutes(
     // Load page images
     const storage = createBookStorage(safeLabel, booksDir)
     const pageImages: Array<{ pageId: string; pageNumber: number; imageBase64: string }> = []
+    let bookFonts: ReturnType<typeof buildBookFontsPromptContext> = []
     try {
       const pages = storage.getPages()
       for (const pageId of pageIds) {
@@ -2430,6 +2446,7 @@ export function createPageRoutes(
           imageBase64,
         })
       }
+      bookFonts = buildBookFontsPromptContext(storage)
     } finally {
       storage.close()
     }
@@ -2450,7 +2467,7 @@ export function createPageRoutes(
       })
 
       const result = await generateStyleguide(
-        { pageImages },
+        { pageImages, bookFonts },
         config,
         llmModel
       )

@@ -25,6 +25,11 @@ import type {
   WebRenderingOutput,
 } from "@adt/types"
 import { extractPDF } from "./pdf-extraction.js"
+import {
+  resolveFontsCacheDir,
+  buildBookFontsPromptContext,
+  ensureBookGoogleFontsCached,
+} from "./fonts-bundle.js"
 import { extractMetadata, buildMetadataConfig } from "./metadata-extraction.js"
 import { generateBookSummary, buildBookSummaryConfig } from "./book-summary.js"
 import {
@@ -204,6 +209,7 @@ export async function runFullPipeline(
           // Gates the positioned-text pipeline (fixed-layout rendering is its
           // only consumer). Must match stage-runner so re-runs are consistent.
           fixedLayout: isFixedLayoutBook(config),
+          fontsCacheDir: resolveFontsCacheDir(booksRoot),
         },
         storage,
         progressOnly(p),
@@ -542,6 +548,8 @@ export async function runFullPipeline(
         return
       }
 
+      await ensureBookGoogleFontsCached(storage, resolveFontsCacheDir(booksRoot))
+
       const renderModels = new Map<string, LLMModel>()
       const resolveRenderModel = (modelId: string): LLMModel => {
         let model = renderModels.get(modelId)
@@ -570,7 +578,14 @@ export async function runFullPipeline(
         }
         const pageImageBase64 = storage.getPageImageBase64(page.pageId)
         const result = await renderPage(
-          { label, pageId: page.pageId, pageImageBase64, sectioning: sectioning, images: renderImages },
+          {
+            label,
+            pageId: page.pageId,
+            pageImageBase64,
+            sectioning: sectioning,
+            images: renderImages,
+            bookFonts: buildBookFontsPromptContext(storage),
+          },
           resolveRenderConfig,
           resolveRenderModel,
           templateEngine,
