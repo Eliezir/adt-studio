@@ -1,5 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { Globe } from "lucide-react";
+import { Trans } from "@lingui/react/macro";
 import { gitConfig } from "@/lib/shared";
 import { SidebarSearch } from "./SidebarSearch";
 
@@ -29,7 +30,9 @@ export function SidebarBanner() {
       <nav className="flex flex-col">
         <Link to="/" className={linkClass}>
           <Globe className="size-4" />
-          <span>Website</span>
+          <span>
+            <Trans>Website</Trans>
+          </span>
         </Link>
         <a
           href={`https://github.com/${gitConfig.user}/${gitConfig.repo}`}

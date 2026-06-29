@@ -115,6 +115,9 @@ msgstr "Browse all documentation"
 msgid "Built with UNICEF"
 msgstr "Built with UNICEF"
 
+msgid "Cached & inspectable"
+msgstr "Cached & inspectable"
+
 msgid "Captions"
 msgstr "Captions"
 
@@ -142,11 +145,17 @@ msgstr "Coming soon"
 msgid "Configure each stage — extract, storyboard, layout — then let ADT Studio build the book. Review the output, correct anything that needs a human touch."
 msgstr "Configure each stage — extract, storyboard, layout — then let ADT Studio build the book. Review the output, correct anything that needs a human touch."
 
+msgid "Connect a model and track cost."
+msgstr "Connect a model and track cost."
+
 msgid "Contents"
 msgstr "Contents"
 
 msgid "Core concepts"
 msgstr "Core concepts"
+
+msgid "Core Concepts"
+msgstr "Core Concepts"
 
 msgid "Couldn’t load the changelog"
 msgstr "Couldn’t load the changelog"
@@ -156,6 +165,9 @@ msgstr "Couldn't reach GitHub"
 
 msgid "Cover · Chapter 1"
 msgstr "Cover · Chapter 1"
+
+msgid "Create a New Project"
+msgstr "Create a New Project"
 
 msgid "Custom"
 msgstr "Custom"
@@ -234,14 +246,23 @@ msgstr "EN · PT · ES"
 msgid "English"
 msgstr "English"
 
+msgid "Entities are versioned, never replaced. You can always roll back to an earlier result."
+msgstr "Entities are versioned, never replaced. You can always roll back to an earlier result."
+
 msgid "Every accessibility feature, <0>built in from page one</0>."
 msgstr "Every accessibility feature, <0>built in from page one</0>."
+
+msgid "Every book lives in a single, shareable directory — zip it, move it, hand it off."
+msgstr "Every book lives in a single, shareable directory — zip it, move it, hand it off."
 
 msgid "Every book, every learner."
 msgstr "Every book, every learner."
 
 #~ msgid "Every edit creates a new version. Roll back any stage, compare outputs, keep a full trail of what changed and why."
 #~ msgstr "Every edit creates a new version. Roll back any stage, compare outputs, keep a full trail of what changed and why."
+
+msgid "Every LLM call is cached and openable. Change the inputs and only the changed work reruns."
+msgstr "Every LLM call is cached and openable. Change the inputs and only the changed work reruns."
 
 #~ msgid "Every prompt, every LLM call, every cost is visible. Audit the whole pipeline or hand it off to the next person with confidence."
 #~ msgstr "Every prompt, every LLM call, every cost is visible. Audit the whole pipeline or hand it off to the next person with confidence."
@@ -263,6 +284,9 @@ msgstr "Export to a reader"
 
 msgid "Extract"
 msgstr "Extract"
+
+msgid "Extract, structure, translate, narrate, and package — all on your machine and fully inspectable. Go from install to your first finished book."
+msgstr "Extract, structure, translate, narrate, and package — all on your machine and fully inspectable. Go from install to your first finished book."
 
 msgid "Features"
 msgstr "Features"
@@ -303,11 +327,17 @@ msgstr "Generating panels"
 msgid "Get started"
 msgstr "Get started"
 
+msgid "Get started with ADT Studio"
+msgstr "Get started with ADT Studio"
+
 msgid "GitHub"
 msgstr "GitHub"
 
 msgid "Glossary"
 msgstr "Glossary"
+
+msgid "Go from a PDF to a finished book, end to end."
+msgstr "Go from a PDF to a finished book, end to end."
 
 msgid "Grouping content by purpose, then laying out every section as reviewable HTML."
 msgstr "Grouping content by purpose, then laying out every section as reviewable HTML."
@@ -324,6 +354,9 @@ msgstr "Here's what shipped in the latest version — and there are plenty more 
 msgid "Home"
 msgstr "Home"
 
+msgid "How extraction and generation actually work."
+msgstr "How extraction and generation actually work."
+
 msgid "How it works"
 msgstr "How it works"
 
@@ -338,6 +371,12 @@ msgstr "If your device has been wrongly detected, <0>see all downloads</0>. Plea
 
 msgid "Install"
 msgstr "Install"
+
+msgid "Install the app, create a project, and produce your first accessible book — start to finish, in a few guided steps."
+msgstr "Install the app, create a project, and produce your first accessible book — start to finish, in a few guided steps."
+
+msgid "Installation"
+msgstr "Installation"
 
 msgid "Issues"
 msgstr "Issues"
@@ -371,6 +410,9 @@ msgstr "Linux"
 
 msgid "LIVE"
 msgstr "LIVE"
+
+msgid "LLM Providers & API Keys"
+msgstr "LLM Providers & API Keys"
 
 msgid "macOS"
 msgstr "macOS"
@@ -418,6 +460,9 @@ msgstr "No releases yet — once the first build ships, it'll show up here."
 #~ msgid "Nothing is overwritten"
 #~ msgstr "Nothing is overwritten"
 
+msgid "Nothing overwritten"
+msgstr "Nothing overwritten"
+
 msgid "Now on macOS, Windows, Linux"
 msgstr "Now on macOS, Windows, Linux"
 
@@ -429,6 +474,9 @@ msgstr "On GitHub"
 
 msgid "One book, every format"
 msgstr "One book, every format"
+
+msgid "One book, one folder"
+msgstr "One book, one folder"
 
 #~ msgid "One folder per book"
 #~ msgstr "One folder per book"
@@ -484,6 +532,9 @@ msgstr "Pipeline · storyboard"
 msgid "Play"
 msgstr "Play"
 
+msgid "Popular:"
+msgstr "Popular:"
+
 msgid "Portuguese (BR)"
 msgstr "Portuguese (BR)"
 
@@ -501,6 +552,9 @@ msgstr "Product"
 
 msgid "Project"
 msgstr "Project"
+
+msgid "Quick Start"
+msgstr "Quick Start"
 
 msgid "Quickstart"
 msgstr "Quickstart"
@@ -549,6 +603,9 @@ msgstr "Resolving latest release…"
 #~ msgid "Results are cached at the LLM call level. Tweak a prompt and only the affected steps re-run — fast, deterministic, inspectable."
 #~ msgstr "Results are cached at the LLM call level. Tweak a prompt and only the affected steps re-run — fast, deterministic, inspectable."
 
+msgid "Run ADT Studio as a desktop app or with Docker."
+msgstr "Run ADT Studio as a desktop app or with Docker."
+
 msgid "Run the pipeline"
 msgstr "Run the pipeline"
 
@@ -567,6 +624,9 @@ msgstr "Science Textbook"
 msgid "Scroll to next section"
 msgstr "Scroll to next section"
 
+msgid "Search"
+msgstr "Search"
+
 msgid "Search docs"
 msgstr "Search docs"
 
@@ -581,6 +641,9 @@ msgstr "Search docs"
 
 msgid "Search the documentation"
 msgstr "Search the documentation"
+
+msgid "Search the documentation…"
+msgstr "Search the documentation…"
 
 msgid "See all releases on GitHub"
 msgstr "See all releases on GitHub"
@@ -624,6 +687,9 @@ msgstr "Start building accessible books."
 msgid "Start from a PDF"
 msgstr "Start from a PDF"
 
+msgid "Start your first book and load a PDF."
+msgstr "Start your first book and load a PDF."
+
 msgid "Storyboard"
 msgstr "Storyboard"
 
@@ -645,11 +711,17 @@ msgstr "Textbooks & Activities"
 msgid "The documentation walks you through ADT Studio end to end — from installing the app to mastering every step of building an accessible book."
 msgstr "The documentation walks you through ADT Studio end to end — from installing the app to mastering every step of building an accessible book."
 
+msgid "The ideas the whole app is built on."
+msgstr "The ideas the whole app is built on."
+
 msgid "The output"
 msgstr "The output"
 
 msgid "The pipeline"
 msgstr "The pipeline"
+
+msgid "The Pipeline"
+msgstr "The Pipeline"
 
 msgid "Translate"
 msgstr "Translate"
@@ -659,6 +731,9 @@ msgstr "Translations"
 
 msgid "Trust"
 msgstr "Trust"
+
+msgid "Turn any PDF into an <0>accessible book</0>"
+msgstr "Turn any PDF into an <0>accessible book</0>"
 
 msgid "Turn any textbook into something every student can read, hear, see, and understand — audio, structured layouts, translations, and sign language, all built in."
 msgstr "Turn any textbook into something every student can read, hear, see, and understand — audio, structured layouts, translations, and sign language, all built in."
@@ -684,6 +759,9 @@ msgstr "We don’t ship a mobile version. To install ADT Studio, open this page 
 #. placeholder {0}: meta.label
 msgid "We don't ship a prebuilt installer for {0} in this release. Pick another platform below or follow progress on GitHub."
 msgstr "We don't ship a prebuilt installer for {0} in this release. Pick another platform below or follow progress on GitHub."
+
+msgid "Website"
+msgstr "Website"
 
 msgid "What happens when you drop in a PDF"
 msgstr "What happens when you drop in a PDF"

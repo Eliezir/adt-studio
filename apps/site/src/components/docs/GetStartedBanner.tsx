@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { ArrowRight } from "lucide-react";
-import { useLingui } from "@lingui/react";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { STAGES } from "@/data/stages";
 
 /**
@@ -61,12 +61,14 @@ export function GetStartedBanner() {
       {/* Bottom-left heading + description on a shadow scrim */}
       <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/65 via-black/30 to-transparent p-6 pt-20 text-left">
         <span className="flex items-center gap-1.5 text-xl font-semibold text-white">
-          Get started with ADT Studio
+          <Trans>Get started with ADT Studio</Trans>
           <ArrowRight className="size-5 transition-transform group-hover:translate-x-0.5" />
         </span>
         <p className="mt-1.5 max-w-md text-sm leading-relaxed text-white/85">
-          Install the app, create a project, and produce your first accessible
-          book — start to finish, in a few guided steps.
+          <Trans>
+            Install the app, create a project, and produce your first accessible
+            book — start to finish, in a few guided steps.
+          </Trans>
         </p>
       </div>
     </Link>

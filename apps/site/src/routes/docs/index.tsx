@@ -4,10 +4,12 @@ import { staticFunctionMiddleware } from "@tanstack/start-static-server-function
 import { DocsLayout } from "fumadocs-ui/layouts/notebook";
 import { DocsBody, DocsPage } from "fumadocs-ui/layouts/notebook/page";
 import { useFumadocsLoader } from "fumadocs-core/source/client";
+import { useLingui } from "@lingui/react";
 import browserCollections from "collections/browser";
 import { Suspense } from "react";
 import { baseOptions } from "@/lib/layout.shared";
 import { slugsToMarkdownPath, source } from "@/lib/source";
+import { overviewContentPath } from "@/lib/docs-i18n";
 import { SidebarBanner } from "@/components/docs/SidebarBanner";
 import { useMDXComponents } from "@/components/mdx";
 import { seo } from "@/lib/seo";
@@ -58,7 +60,11 @@ function Page() {
   const { pageTree, path, markdownUrl } = useFumadocsLoader(
     Route.useLoaderData(),
   );
+  const { i18n } = useLingui();
   const base = baseOptions();
+  // Render the Overview in the active (landing) locale: load the matching
+  // index.<locale>.mdx when one exists, falling back to English.
+  const contentPath = overviewContentPath(path, i18n.locale);
 
   return (
     <DocsLayout
@@ -68,7 +74,7 @@ function Page() {
       tree={pageTree}
     >
       <Link to={markdownUrl} hidden />
-      <Suspense>{clientLoader.useContent(path)}</Suspense>
+      <Suspense>{clientLoader.useContent(contentPath)}</Suspense>
     </DocsLayout>
   );
 }
