@@ -1,7 +1,9 @@
 name: Site CI
 
 # Checks for the unified site (landing page + docs) in apps/site, which lives on
-# its own standalone branch (landing-page-v1) and is never merged into main.
+# its own standalone branch (landing-page) and is never merged into main.
+# PRs into landing-page (e.g. from landing-page-v1) run via the pull_request
+# trigger below.
 
 on:
   pull_request:
@@ -9,7 +11,7 @@ on:
       - "apps/site/**"
       - ".github/workflows/site-ci.yml"
   push:
-    branches: [landing-page-v1]
+    branches: [landing-page]
     paths:
       - "apps/site/**"
       - ".github/workflows/site-ci.yml"
