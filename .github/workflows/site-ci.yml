@@ -40,9 +40,11 @@ jobs:
         # Reports per-locale coverage; fails on structural errors (orphan
         # translations, missing frontmatter title, unknown locale folders).
         run: node apps/site/scripts/check-translations.mjs
-      - name: Typecheck
-        run: pnpm --filter @adt/site run types:check
+      # Build first: the Vite plugin generates src/routeTree.gen.ts (gitignored)
+      # which the type-check needs — there's no standalone generator for it.
       - name: Build
         env:
           BASE_PATH: /${{ github.event.repository.name }}/
         run: pnpm --filter @adt/site build
+      - name: Typecheck
+        run: pnpm --filter @adt/site run types:check
