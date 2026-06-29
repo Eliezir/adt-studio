@@ -6,11 +6,12 @@ import {
   useRouterState,
 } from '@tanstack/react-router';
 import * as React from 'react';
-import { I18nProvider } from '@lingui/react';
+import { I18nProvider, useLingui } from '@lingui/react';
 import { i18n } from '@lingui/core';
 import appCss from '@/styles/app.css?url';
 import { RootProvider } from 'fumadocs-ui/provider/tanstack';
 import SearchDialog from '@/components/search';
+import { docsUiI18n } from '@/lib/fumadocs-ui-i18n';
 import { activateDetectedLocale } from '@/i18n/setup';
 import { trackPageView } from '@/lib/matomo';
 import { seo } from '@/lib/seo';
@@ -65,7 +66,12 @@ function MatomoTracker() {
 
 function LocaleInitializer() {
   React.useEffect(() => {
-    activateDetectedLocale();
+    // The docs are prerendered in the default locale; switching the locale
+    // before late-hydrating boundaries (e.g. the lazy MDX content) finish
+    // causes a hydration mismatch. Defer activation past the first paint so the
+    // initial client render matches the server, then apply the detected locale.
+    const raf = requestAnimationFrame(() => activateDetectedLocale());
+    return () => cancelAnimationFrame(raf);
   }, []);
 
   return null;
@@ -80,14 +86,31 @@ function RootComponent() {
       </head>
       <body className="flex flex-col min-h-screen">
         <I18nProvider i18n={i18n}>
-          <RootProvider search={{ SearchDialog }} theme={{ enabled: false }}>
-            <LocaleInitializer />
-            <MatomoTracker />
-            <Outlet />
-          </RootProvider>
+          <LocalizedShell />
         </I18nProvider>
         <Scripts />
       </body>
     </html>
+  );
+}
+
+/**
+ * Bridges our client-side Lingui locale into fumadocs' built-in UI
+ * translations: the active locale picks the chrome dictionary (TOC, search
+ * dialog, pagination, …) passed to RootProvider, re-rendering on locale change.
+ */
+function LocalizedShell() {
+  const { i18n: lingui } = useLingui();
+
+  return (
+    <RootProvider
+      search={{ SearchDialog }}
+      theme={{ enabled: false }}
+      i18n={docsUiI18n(lingui.locale)}
+    >
+      <LocaleInitializer />
+      <MatomoTracker />
+      <Outlet />
+    </RootProvider>
   );
 }

@@ -142,6 +142,9 @@ msgstr "Close menu"
 msgid "Coming soon"
 msgstr "Coming soon"
 
+msgid "Community & Support"
+msgstr "Community & Support"
+
 msgid "Configure each stage — extract, storyboard, layout — then let ADT Studio build the book. Review the output, correct anything that needs a human touch."
 msgstr "Configure each stage — extract, storyboard, layout — then let ADT Studio build the book. Review the output, correct anything that needs a human touch."
 
@@ -327,6 +330,9 @@ msgstr "Generating panels"
 msgid "Get started"
 msgstr "Get started"
 
+msgid "Get Started"
+msgstr "Get Started"
+
 msgid "Get started with ADT Studio"
 msgstr "Get started with ADT Studio"
 
@@ -347,6 +353,9 @@ msgstr "Guidelines"
 
 #~ msgid "Guides, core concepts and a walkthrough of every pipeline stage — searchable, and always in step with the latest release."
 #~ msgstr "Guides, core concepts and a walkthrough of every pipeline stage — searchable, and always in step with the latest release."
+
+msgid "Help"
+msgstr "Help"
 
 msgid "Here's what shipped in the latest version — and there are plenty more where this came from."
 msgstr "Here's what shipped in the latest version — and there are plenty more where this came from."
@@ -369,6 +378,9 @@ msgstr "HTML, audio, translations and sign-language — exported together as a s
 msgid "If your device has been wrongly detected, <0>see all downloads</0>. Please report any issues you encounter on <1>GitHub</1>."
 msgstr "If your device has been wrongly detected, <0>see all downloads</0>. Please report any issues you encounter on <1>GitHub</1>."
 
+msgid "Image Captions"
+msgstr "Image Captions"
+
 msgid "Install"
 msgstr "Install"
 
@@ -377,6 +389,9 @@ msgstr "Install the app, create a project, and produce your first accessible boo
 
 msgid "Installation"
 msgstr "Installation"
+
+msgid "Introduction"
+msgstr "Introduction"
 
 msgid "Issues"
 msgstr "Issues"
@@ -398,6 +413,9 @@ msgstr "Layer on translations, text-to-speech, and a glossary — all inspectabl
 
 msgid "Laying out spreads"
 msgstr "Laying out spreads"
+
+msgid "Learn"
+msgstr "Learn"
 
 #~ msgid "Learn it once, <0>build any book</0>."
 #~ msgstr "Learn it once, <0>build any book</0>."
@@ -502,8 +520,14 @@ msgstr "Open-source desktop pipeline for turning PDFs into accessible books — 
 msgid "Output"
 msgstr "Output"
 
-#~ msgid "Overview"
-#~ msgstr "Overview"
+msgid "Output Bundles"
+msgstr "Output Bundles"
+
+msgid "Overview"
+msgstr "Overview"
+
+msgid "Package"
+msgstr "Package"
 
 msgid "Package the finished book with every accessibility feature baked in — ready for a kid to open, listen, and read along."
 msgstr "Package the finished book with every accessibility feature baked in — ready for a kid to open, listen, and read along."
@@ -520,14 +544,17 @@ msgstr "Pause"
 msgid "Pick a preset"
 msgstr "Pick a preset"
 
-#~ msgid "Pipeline"
-#~ msgstr "Pipeline"
+msgid "Pipeline"
+msgstr "Pipeline"
 
 msgid "Pipeline · extract"
 msgstr "Pipeline · extract"
 
 msgid "Pipeline · storyboard"
 msgstr "Pipeline · storyboard"
+
+msgid "Pipeline Overview"
+msgstr "Pipeline Overview"
 
 msgid "Play"
 msgstr "Play"
@@ -594,6 +621,9 @@ msgstr "Released {0}"
 msgid "Releases"
 msgstr "Releases"
 
+msgid "Reporting Issues"
+msgstr "Reporting Issues"
+
 #~ msgid "Rerun what matters"
 #~ msgstr "Rerun what matters"
 
@@ -644,6 +674,9 @@ msgstr "Search the documentation"
 
 msgid "Search the documentation…"
 msgstr "Search the documentation…"
+
+msgid "Sectioning"
+msgstr "Sectioning"
 
 msgid "See all releases on GitHub"
 msgstr "See all releases on GitHub"
@@ -705,6 +738,12 @@ msgstr "Structured layouts"
 msgid "Successfully uploaded"
 msgstr "Successfully uploaded"
 
+msgid "Table of Contents"
+msgstr "Table of Contents"
+
+msgid "Templates"
+msgstr "Templates"
+
 msgid "Textbooks & Activities"
 msgstr "Textbooks & Activities"
 
@@ -728,6 +767,9 @@ msgstr "Translate"
 
 msgid "Translations"
 msgstr "Translations"
+
+msgid "Troubleshooting & FAQ"
+msgstr "Troubleshooting & FAQ"
 
 msgid "Trust"
 msgstr "Trust"

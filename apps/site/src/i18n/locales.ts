@@ -34,3 +34,15 @@ export const LOCALE_NAMES: Record<string, string> = {
 export function isAppLocale(value: string): value is AppLocale {
   return (LOCALES as readonly string[]).includes(value);
 }
+
+/**
+ * Orama tokenizer language per locale, for docs search. Orama only accepts its
+ * own language names (not BCP-47 tags like "pt-BR"), so both the static index
+ * (server) and the client query must map the locale through this.
+ */
+export const ORAMA_LANGUAGE = {
+  en: "english",
+  "pt-BR": "portuguese",
+  es: "spanish",
+  fr: "french",
+} as const satisfies Record<AppLocale, string>;

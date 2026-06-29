@@ -17,29 +17,34 @@ apps/site/
 ├─ content/
 │  ├─ README.md             ← this guide
 │  └─ docs/                 ← all documentation content
-│     ├─ meta.json          ← top-level sidebar order + section headers
-│     ├─ index.mdx          ← the Overview (docs home) — English
-│     ├─ index.pt-BR.mdx    ← Overview translated to Portuguese (BR)
-│     ├─ index.es.mdx       ← Overview translated to Spanish
-│     ├─ index.fr.mdx       ← Overview translated to French
-│     ├─ install.mdx, faq.mdx, … ← individual pages
-│     └─ pipeline/          ← a folder (nested section)
-│        ├─ meta.json       ← the folder's title, icon, and page order
-│        ├─ index.mdx       ← the folder's landing page ("Pipeline" overview)
-│        └─ extract.mdx, …  ← the steps
+│     ├─ en/                ← English — the source of truth
+│     │  ├─ meta.json       ← sidebar order + section headers
+│     │  ├─ index.mdx       ← the Overview (docs home)
+│     │  ├─ install.mdx, faq.mdx, … ← individual pages
+│     │  └─ pipeline/       ← a nested section (folder)
+│     │     ├─ meta.json    ← the folder's title, icon, and page order
+│     │     ├─ index.mdx    ← the folder's landing page ("Pipeline" overview)
+│     │     └─ extract.mdx, …
+│     ├─ pt-BR/             ╮  one folder per locale, mirroring en/. Add only the
+│     ├─ es/                │  pages you've translated — anything missing falls
+│     └─ fr/                ╯  back to English. The locale is stripped from URLs
+│        └─ index.mdx          (fr/pipeline/extract.mdx → /docs/pipeline/extract).
 ├─ src/components/docs/     ← the docs UI (hero, cards, sidebar, search)
-└─ src/lib/docs-i18n.ts     ← MDX translation helper (see §5)
+├─ src/lib/source.ts        ← fumadocs source + i18n config (parser 'dir')
+└─ src/lib/docs-i18n.ts     ← MDX path resolver + sidebar-label translation (see §5)
 ```
 
-`content/docs/` is the **single source of truth** — fumadocs scans every
-`.md`/`.mdx` file in it. (Files there **must** have frontmatter; that's why this
-guide lives in `content/`, not `content/docs/`.)
+Docs use **fumadocs i18n** with one folder per locale (`parser: 'dir'`), so a
+file like `fr/pipeline/extract.mdx` is the French *variant* of `pipeline/extract`
+— not a separate page. `en/` is the source of truth and the fallback. fumadocs
+scans every `.md`/`.mdx` file, and each **must** have frontmatter — that's why
+this guide lives in `content/`, not `content/docs/`.
 
 ---
 
 ## 2. Add a new page
 
-1. Create a file, e.g. `content/docs/my-page.mdx`.
+1. Create a file in the English folder, e.g. `content/docs/en/my-page.mdx`.
 2. Add frontmatter:
    ```mdx
    ---
@@ -50,9 +55,8 @@ guide lives in `content/`, not `content/docs/`.)
 
    Your Markdown / MDX content here.
    ```
-3. List it in `meta.json` so it appears in the sidebar (see §3). **A page not
-   listed in `meta.json` still builds and is reachable by URL, but won't show in
-   the sidebar** — that's how the translated Overview files stay hidden.
+3. List it in `en/meta.json` so it appears in the sidebar (see §3). A page not
+   listed still builds and is reachable by URL, but won't show in the sidebar.
 
 ### Available MDX components
 
@@ -71,8 +75,9 @@ see the [fumadocs docs](https://fumadocs.dev/docs/ui).
 
 ## 3. Sidebar order & sections — `meta.json`
 
-`meta.json` controls order and grouping. Strings wrapped in `---…---` render as
-**section headers**; everything else is a page slug:
+`en/meta.json` controls order and grouping (the sidebar is always built from the
+English tree). Strings wrapped in `---…---` render as **section headers**;
+everything else is a page slug:
 
 ```json
 {
@@ -135,34 +140,40 @@ left unwrapped (the same check the landing page uses).
 
 ## 5. Translation — MDX content
 
-UI strings live in components; the **prose inside `.mdx` files** is translated
-with locale-suffixed files. To translate a page into locale `XX`, create a
-sibling file `<page>.XX.mdx` with the same structure and translated text:
+UI strings live in components; the **prose inside `.mdx` files** is translated by
+putting a copy under the matching **locale folder**, mirroring the `en/` tree. To
+translate a page into locale `XX`, create the same path under `XX/`:
 
 ```
-index.mdx        →  index.pt-BR.mdx   index.es.mdx   index.fr.mdx
+en/index.mdx              →  fr/index.mdx
+en/install.mdx            →  fr/install.mdx
+en/pipeline/extract.mdx   →  fr/pipeline/extract.mdx
 ```
 
-The translated file can reuse the same components — only the Markdown prose and
-frontmatter need translating; the components localize themselves via §4.
+Only translate the pages you want — **any page without a translation falls back
+to English automatically**. The translated file reuses the same components; only
+the Markdown prose and frontmatter (`title`, `description`) need translating,
+since the components localize themselves via §4.
 
-**How it's wired:** `src/lib/docs-i18n.ts#overviewContentPath` maps the active
-locale to `index.<locale>.mdx`, and the Overview route renders that file
-(falling back to English when no translation exists). This is currently enabled
-for the **Overview only** — the demonstration the rest of the docs can follow.
+**How it's wired:** `src/lib/source.ts` enables fumadocs i18n (`parser: 'dir'`,
+`hideLocale: 'always'`), so locale folders are *variants* (not pages), URLs stay
+clean, and the search index is **partitioned per locale** (⌘ K works in every
+language). The active locale comes from client state (shared with the landing),
+not the URL. Each route resolves the file to render via
+`docs-i18n.ts#localizedContentPath(path, locale)`, with an English fallback.
 
-To translate the Overview for a **new locale**: add the locale to
-`src/i18n/locales.ts`, create `index.<locale>.mdx`, and it's picked up
-automatically (the locale list drives `TRANSLATED_OVERVIEW_LOCALES`).
+> Adding a new locale: add it to `src/i18n/locales.ts` (`LOCALES`,
+> `ORAMA_LANGUAGE`, flag), create its `<locale>/` folder, and translate at least
+> the Overview. Everything else falls back to English until translated.
 
-To extend MDX translation to **other pages**, apply the same
-`overviewContentPath` pattern in the catch-all route (`src/routes/docs/$.tsx`):
-derive the locale path and load it through the client loader with an English
-fallback.
+To add a **new locale**: add it to `src/i18n/locales.ts` (and `lingui.config.ts`),
+then create files under its folder, e.g. `de/index.mdx`. Nothing else to wire up.
 
-> Note: fumadocs also has a built-in path-based i18n (`/<locale>/docs/…`). We
-> deliberately don't use it — this site uses **client-side** locale switching to
-> stay in sync with the landing page and keep one URL per page.
+> Note: fumadocs also has a built-in path-based i18n (`/<locale>/docs/…` with the
+> loader resolving per locale). We deliberately don't use it — this site uses
+> **client-side** locale switching to stay in sync with the landing page and keep
+> one URL per page. The per-locale folders are hidden from the sidebar because
+> they aren't listed in `meta.json`.
 
 ---
 
@@ -200,5 +211,19 @@ with that source of truth.
 pnpm --filter @adt/site dev            # local dev server
 pnpm --filter @adt/site run types:check
 pnpm --filter @adt/site build          # static build → .output/public
-pnpm --filter @adt/site extract        # update translation catalogs
+pnpm --filter @adt/site extract        # update UI string catalogs (.po)
+node apps/site/scripts/check-translations.mjs   # docs MDX translation report
 ```
+
+### Translation checks (CI-enforced)
+
+Two complementary checks run in `site-ci.yml`:
+
+- **UI strings** — `lingui extract` must leave no new unwrapped strings (every
+  visible component string must be in a macro). Fails the build otherwise.
+- **MDX content** — `scripts/check-translations.mjs` reports per-locale
+  coverage and **fails** on structural errors: an *orphan* translation (a
+  `<locale>/<path>.mdx` with no English source — usually a page that was renamed
+  or deleted), a translated page missing its frontmatter `title`, or a
+  mis-cased locale folder. Missing translations are only a warning — untranslated
+  pages fall back to English, so you translate incrementally.

@@ -9,8 +9,12 @@ import { SidebarBanner } from '@/components/docs/SidebarBanner';
 import { PageHeader } from '@/components/docs/PageHeader';
 import { staticFunctionMiddleware } from '@tanstack/start-static-server-functions';
 import { useFumadocsLoader } from 'fumadocs-core/source/client';
-import { Suspense } from 'react';
+import { useLingui } from '@lingui/react';
+import { Suspense, useMemo } from 'react';
 import { useMDXComponents } from '@/components/mdx';
+import { translatePageTree } from '@/lib/docs-i18n';
+import { useLocalizedContent } from '@/lib/useLocalizedContent';
+import { DEFAULT_LOCALE } from '@/i18n/locales';
 
 export const Route = createFileRoute('/docs/$')({
   component: Page,
@@ -28,13 +32,15 @@ const loader = createServerFn({
   .inputValidator((slugs: string[]) => slugs)
   .middleware([staticFunctionMiddleware])
   .handler(async ({ data: slugs }) => {
-    const page = source.getPage(slugs);
+    const page = source.getPage(slugs, DEFAULT_LOCALE);
     if (!page) throw notFound();
 
     return {
       path: page.path,
       markdownUrl: slugsToMarkdownPath(page.slugs).url,
-      pageTree: await source.serializePageTree(source.getPageTree()),
+      pageTree: await source.serializePageTree(
+        source.getPageTree(DEFAULT_LOCALE),
+      ),
     };
   });
 
@@ -67,17 +73,25 @@ const clientLoader = browserCollections.docs.createClientLoader({
 
 function Page() {
   const { pageTree, path, markdownUrl } = useFumadocsLoader(Route.useLoaderData());
+  const { i18n } = useLingui();
   const base = baseOptions();
+  const tree = useMemo(() => translatePageTree(pageTree), [pageTree]);
+  // Load the translated MDX for the active locale when it exists (English
+  // fallback), preloading it before swapping so hydration matches the
+  // prerendered (default-locale) HTML.
+  const contentPath = useLocalizedContent(clientLoader, path, i18n.locale);
 
   return (
     <DocsLayout
       {...base}
       nav={{ ...base.nav, mode: 'auto' }}
       sidebar={{ banner: <SidebarBanner />, collapsible: false }}
-      tree={pageTree}
+      tree={tree}
     >
       <Link to={markdownUrl} hidden />
-      <Suspense>{clientLoader.useContent(path, { markdownUrl, path })}</Suspense>
+      <Suspense>
+        {clientLoader.useContent(contentPath, { markdownUrl, path })}
+      </Suspense>
     </DocsLayout>
   );
 }

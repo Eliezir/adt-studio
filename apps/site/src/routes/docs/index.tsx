@@ -6,24 +6,28 @@ import { DocsBody, DocsPage } from "fumadocs-ui/layouts/notebook/page";
 import { useFumadocsLoader } from "fumadocs-core/source/client";
 import { useLingui } from "@lingui/react";
 import browserCollections from "collections/browser";
-import { Suspense } from "react";
+import { Suspense, useMemo } from "react";
 import { baseOptions } from "@/lib/layout.shared";
 import { slugsToMarkdownPath, source } from "@/lib/source";
-import { overviewContentPath } from "@/lib/docs-i18n";
+import { translatePageTree } from "@/lib/docs-i18n";
+import { useLocalizedContent } from "@/lib/useLocalizedContent";
 import { SidebarBanner } from "@/components/docs/SidebarBanner";
 import { useMDXComponents } from "@/components/mdx";
 import { seo } from "@/lib/seo";
+import { DEFAULT_LOCALE } from "@/i18n/locales";
 
 const loader = createServerFn({ method: "GET" })
   .middleware([staticFunctionMiddleware])
   .handler(async () => {
-    const page = source.getPage([]);
+    const page = source.getPage([], DEFAULT_LOCALE);
     if (!page) throw notFound();
 
     return {
       path: page.path,
       markdownUrl: slugsToMarkdownPath(page.slugs).url,
-      pageTree: await source.serializePageTree(source.getPageTree()),
+      pageTree: await source.serializePageTree(
+        source.getPageTree(DEFAULT_LOCALE),
+      ),
     };
   });
 
@@ -63,15 +67,17 @@ function Page() {
   const { i18n } = useLingui();
   const base = baseOptions();
   // Render the Overview in the active (landing) locale: load the matching
-  // index.<locale>.mdx when one exists, falling back to English.
-  const contentPath = overviewContentPath(path, i18n.locale);
+  // index.<locale>.mdx when one exists, falling back to English — preloading
+  // it before swapping so hydration matches the prerendered HTML.
+  const contentPath = useLocalizedContent(clientLoader, path, i18n.locale);
+  const tree = useMemo(() => translatePageTree(pageTree), [pageTree]);
 
   return (
     <DocsLayout
       {...base}
       nav={{ ...base.nav, mode: "auto" }}
       sidebar={{ banner: <SidebarBanner />, collapsible: false }}
-      tree={pageTree}
+      tree={tree}
     >
       <Link to={markdownUrl} hidden />
       <Suspense>{clientLoader.useContent(contentPath)}</Suspense>

@@ -1,11 +1,30 @@
 import { loader } from 'fumadocs-core/source';
+import { defineI18n } from 'fumadocs-core/i18n';
 import { lucideIconsPlugin } from 'fumadocs-core/source/lucide-icons';
 import { docs } from 'collections/server';
 import { docsRoute } from './shared';
+import { DEFAULT_LOCALE, LOCALES } from '@/i18n/locales';
+
+/**
+ * Docs i18n. Translations live in per-locale folders (`parser: 'dir'`), so a
+ * file like `fr/pipeline/extract.mdx` is the French *variant* of
+ * `pipeline/extract` — not a separate page. `hideLocale: 'always'` keeps one
+ * clean URL per page (we drive the active locale from client state, shared with
+ * the landing page, rather than from the URL). Untranslated pages fall back to
+ * English. This also makes the search index locale-partitioned.
+ */
+export const i18n = defineI18n({
+  languages: [...LOCALES],
+  defaultLanguage: DEFAULT_LOCALE,
+  fallbackLanguage: DEFAULT_LOCALE,
+  parser: 'dir',
+  hideLocale: 'always',
+});
 
 export const source = loader({
   source: docs.toFumadocsSource(),
   baseUrl: docsRoute,
+  i18n,
   plugins: [lucideIconsPlugin()],
 });
 
