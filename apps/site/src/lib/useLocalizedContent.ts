@@ -33,7 +33,13 @@ export function useLocalizedContent(
 
   useEffect(() => {
     const target = localizedContentPath(enPath, locale);
-    if (target === enPath) return;
+    // Switching to the default locale (or a page with no translation): the
+    // English module is already loaded, so swap back immediately. (Without this
+    // the content would stay in the previously-selected locale until a reload.)
+    if (target === enPath) {
+      setResolved(enPath);
+      return;
+    }
     let cancelled = false;
     Promise.resolve(clientLoader.preload(target)).then(() => {
       if (!cancelled) setResolved(target);
