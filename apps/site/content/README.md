@@ -62,6 +62,14 @@ this guide lives in `content/`, not `content/docs/`.
 3. List it in `en/meta.json` so it appears in the sidebar (see §3). A page not
    listed still builds and is reachable by URL, but won't show in the sidebar.
 
+> **Adding or renaming a page? One dev step is needed for translated sidebars.**
+> Sidebar/nav labels are translated from a registry in `src/lib/docs-i18n.ts`
+> (`SIDEBAR_LABELS`), keyed by the English title. A brand-new title won't appear
+> there, so in `es`/`fr`/`pt-BR` the **sidebar label** stays English until a
+> developer adds it (the page **content** still translates normally). Ask a dev
+> to add the new/renamed title to `SIDEBAR_LABELS` and run
+> `pnpm --filter @adt/site extract`.
+
 ### Available MDX components
 
 These are registered globally (see `src/components/mdx.tsx`) and can be used in
@@ -158,6 +166,12 @@ Only translate the pages you want — **any page without a translation falls bac
 to English automatically**. The translated file reuses the same components; only
 the Markdown prose and frontmatter (`title`, `description`) need translating,
 since the components localize themselves via §4.
+
+> **Keeping translations current — the checker only verifies *existence*, not
+> freshness.** If you rewrite an English page that already has a translation, the
+> translation is now stale but `check-translations.mjs` will still report it as
+> "translated" (the file exists). When you change `en/<page>.mdx`, update its
+> `<locale>/<page>.mdx` siblings too — there's no automatic staleness flag.
 
 **How it's wired:** `src/lib/source.ts` enables fumadocs i18n (`parser: 'dir'`,
 `hideLocale: 'always'`), so locale folders are *variants* (not pages), URLs stay
