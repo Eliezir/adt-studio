@@ -569,8 +569,8 @@ msgstr "Portugués (BR)"
 msgid "Pre-release — APIs and behavior may still change before the stable cut."
 msgstr "Pre-lanzamiento — las APIs y el comportamiento aún pueden cambiar antes de la versión estable."
 
-msgid "Preview"
-msgstr "Vista previa"
+#~ msgid "Preview"
+#~ msgstr "Vista previa"
 
 msgid "Primary"
 msgstr "Principal"
