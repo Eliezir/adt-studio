@@ -163,7 +163,6 @@ export function SLVideo() {
           key={src}
           src={src}
           autoPlay
-          loop
           playsInline
           controls
           onLoadedMetadata={(e) => {
