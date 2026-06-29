@@ -1,7 +1,7 @@
 name: Site CI
 
-# Checks for the unified site (landing page + docs) in apps/site.
-# Replaces the old apps/landing CI.
+# Checks for the unified site (landing page + docs) in apps/site, which lives on
+# its own standalone branch (landing-page-v1) and is never merged into main.
 
 on:
   pull_request:
@@ -9,7 +9,7 @@ on:
       - "apps/site/**"
       - ".github/workflows/site-ci.yml"
   push:
-    branches: [main]
+    branches: [landing-page-v1]
     paths:
       - "apps/site/**"
       - ".github/workflows/site-ci.yml"

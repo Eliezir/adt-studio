@@ -1,11 +1,12 @@
 name: Deploy site
 
 # Builds and deploys the unified site (landing page + docs) from apps/site to
-# GitHub Pages. Replaces the old apps/landing deploy.
+# GitHub Pages. The site lives on its own standalone branch (landing-page-v1) —
+# it is never merged into main, so main stays in sync with upstream.
 
 on:
   push:
-    branches: [main]
+    branches: [landing-page-v1]
     paths:
       - "apps/site/**"
       - ".github/workflows/site.yml"
