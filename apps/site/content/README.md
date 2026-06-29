@@ -5,6 +5,10 @@ rendered by the unified site app (`apps/site`) — the same app that serves the
 landing page — using [fumadocs](https://fumadocs.dev) on top of TanStack Start.
 The site is built as a **static SPA** and deployed to GitHub Pages.
 
+> This guide is about **writing docs content**. For how the *site* is built,
+> served, and deployed (architecture, dev, the `landing-page` deploy branch),
+> see [`../README.md`](../README.md).
+>
 > This guide lives outside `docs/` on purpose: everything inside `docs/` is
 > scanned and published, so the authoring guide sits one level up.
 
