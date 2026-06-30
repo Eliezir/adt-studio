@@ -803,8 +803,8 @@ msgstr "Nous ne proposons pas de version mobile. Pour installer ADT Studio, ouvr
 msgid "We don't ship a prebuilt installer for {0} in this release. Pick another platform below or follow progress on GitHub."
 msgstr "Nous ne proposons pas d'installateur préconstruit pour {0} dans cette version. Choisissez une autre plateforme ci-dessous ou suivez les progrès sur GitHub."
 
-msgid "Website"
-msgstr "Site web"
+#~ msgid "Website"
+#~ msgstr "Site web"
 
 msgid "What happens when you drop in a PDF"
 msgstr "Que se passe-t-il lorsque vous déposez un PDF"

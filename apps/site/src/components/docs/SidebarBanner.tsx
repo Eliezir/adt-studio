@@ -1,6 +1,5 @@
 import { Link } from "@tanstack/react-router";
 import { Globe } from "lucide-react";
-import { Trans } from "@lingui/react/macro";
 import { gitConfig } from "@/lib/shared";
 import { SidebarSearch } from "./SidebarSearch";
 
@@ -30,9 +29,9 @@ export function SidebarBanner() {
       <nav className="flex flex-col">
         <Link to="/" className={linkClass}>
           <Globe className="size-4" />
-          <span>
-            <Trans>Website</Trans>
-          </span>
+          {/* "Landing page" is a borrowed English term (kept as-is in pt-BR and
+              commonly in es/fr too), so it's not translated — like "GitHub". */}
+          <span>Landing page</span>
         </Link>
         <a
           href={`https://github.com/${gitConfig.user}/${gitConfig.repo}`}
