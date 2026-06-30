@@ -82,6 +82,13 @@
 #nd-subnav > div {
   border-bottom: none;
 }
+/* Drop the sub-nav's own horizontal padding (md+) so the top-bar action cluster
+   lines up with the content card's edges instead of being inset from them. */
+@media (min-width: 768px) {
+  #nd-subnav > div {
+    padding-inline: 0;
+  }
+}
 
 @media (min-width: 768px) {
   #nd-sidebar {
