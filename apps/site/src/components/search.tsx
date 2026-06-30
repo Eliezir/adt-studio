@@ -43,7 +43,9 @@ export default function DefaultSearchDialog(props: SharedProps) {
   return (
     <SearchDialog search={search} onSearchChange={setSearch} isLoading={query.isLoading} {...props}>
       <SearchDialogOverlay />
-      <SearchDialogContent>
+      {/* Push the dialog clear of the sticky top bar on mobile (it defaults to
+          top-4, which tucks the input behind the h-14 navbar). */}
+      <SearchDialogContent className="adt-search-content">
         <SearchDialogHeader>
           <SearchDialogIcon />
           <SearchDialogInput />

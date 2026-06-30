@@ -53,6 +53,9 @@
   --border: oklch(0.922 0 0);
   --ring: oklch(0.623 0.189 260);
   --radius: 0.625rem;
+
+  /* Hamburger (lucide "menu") used to re-skin the mobile sidebar trigger. */
+  --adt-hamburger-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 6h16'/%3E%3Cpath d='M4 12h16'/%3E%3Cpath d='M4 18h16'/%3E%3C/svg%3E");
 }
 
 /* Align fumadocs docs chrome with the ADT brand accent */
@@ -87,6 +90,48 @@
 @media (min-width: 768px) {
   #nd-subnav > div {
     padding-inline: 0;
+  }
+}
+
+/*
+ * Mobile-only chrome fixes (< md).
+ */
+@media (max-width: 767px) {
+  /* On mobile the link cluster is hidden inside the sidebar (the language
+     picker lives in the top bar instead); collapse its now-empty wrapper so it
+     leaves no gap above the nav tree. */
+  #nd-sidebar-mobile div:has(> .max-md\:hidden) {
+    display: none;
+  }
+
+  /* Pin the top-bar language picker to the right, next to the hamburger —
+     fumadocs renders nav.children on the left (by the logo), so anchor it to
+     the positioned #nd-subnav instead (matches the landing-page top bar). */
+  #nd-subnav [data-docs-mobile-lang] {
+    position: absolute;
+    top: 0.625rem;
+    inset-inline-end: 3.25rem;
+  }
+  /* Search dialog defaults to top-4, which tucks the input behind the sticky
+     h-14 top bar. Drop it below the bar (with a small gap). */
+  [role='dialog'].adt-search-content {
+    top: 4.75rem;
+  }
+
+  /* The notebook layout's sidebar trigger uses a panel icon; swap it for a
+     hamburger (the panel icon is hidden, a menu glyph is masked in its place).
+     Scoped to the top bar's trigger — the desktop collapse trigger is hidden
+     here, so its empty ::before never renders. */
+  #nd-subnav button:has(> svg.lucide-panel-left) > svg {
+    display: none;
+  }
+  #nd-subnav button:has(> svg.lucide-panel-left)::before {
+    content: '';
+    width: 1.25rem;
+    height: 1.25rem;
+    background-color: currentColor;
+    -webkit-mask: var(--adt-hamburger-icon) center / contain no-repeat;
+    mask: var(--adt-hamburger-icon) center / contain no-repeat;
   }
 }
 

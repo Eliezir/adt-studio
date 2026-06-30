@@ -16,7 +16,7 @@ export function GetStartedBanner() {
     <Link
       to="/docs/$"
       params={{ _splat: "quickstart" }}
-      className="not-prose group relative mt-8 flex aspect-[4/3] w-full items-center justify-center overflow-hidden rounded-2xl border border-fd-border shadow-sm transition-shadow hover:shadow-lg sm:aspect-[3/2]"
+      className="not-prose group relative mt-8 flex w-full flex-col overflow-hidden rounded-2xl border border-fd-border shadow-sm transition-shadow hover:shadow-lg sm:aspect-[3/2] sm:items-center sm:justify-center"
     >
       {/* Gradient base */}
       <div className="absolute inset-0 bg-gradient-to-br from-[oklch(0.63_0.19_260)] via-[oklch(0.5_0.18_262)] to-[oklch(0.37_0.15_266)]" />
@@ -31,14 +31,17 @@ export function GetStartedBanner() {
         className="absolute -top-20 left-1/3 size-80 -translate-x-1/2 rounded-full bg-white/25 blur-3xl"
       />
 
-      {/* Centered icon + pipeline stages (each in its own color) */}
-      <div className="relative z-10 flex -translate-y-6 flex-col items-center gap-5">
+      {/* Centered icon + pipeline stages (each in its own color). On mobile the
+          card has no fixed aspect ratio, so this and the heading below flow
+          normally (no overlap); on sm+ this block is vertically centered and
+          the heading is pinned to the bottom. */}
+      <div className="relative z-10 flex flex-col items-center gap-5 px-6 pb-4 pt-9 sm:px-0 sm:pb-0 sm:pt-0 sm:-translate-y-6">
         <img
           src={`${import.meta.env.BASE_URL}logo.png`}
           alt=""
           width={84}
           height={84}
-          className="rounded-2xl shadow-xl"
+          className="size-16 rounded-2xl shadow-xl sm:size-[84px]"
         />
         <div className="flex max-w-xl flex-wrap justify-center gap-2">
           {STAGES.map(({ slug, label, icon: Icon, hex }) => (
@@ -58,8 +61,9 @@ export function GetStartedBanner() {
         </div>
       </div>
 
-      {/* Bottom-left heading + description on a shadow scrim */}
-      <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/65 via-black/30 to-transparent p-6 pt-20 text-left">
+      {/* Heading + description on a shadow scrim — flows below the stages on
+          mobile, pinned to the bottom-left on sm+. */}
+      <div className="relative z-10 w-full bg-gradient-to-t from-black/65 via-black/30 to-transparent p-6 pt-10 text-left sm:absolute sm:inset-x-0 sm:bottom-0 sm:pt-20">
         <span className="flex items-center gap-1.5 text-xl font-semibold text-white">
           <Trans>Get started with ADT Studio</Trans>
           <ArrowRight className="size-5 transition-transform group-hover:translate-x-0.5" />

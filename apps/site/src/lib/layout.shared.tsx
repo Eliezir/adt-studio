@@ -26,6 +26,16 @@ export function baseOptions(): BaseLayoutProps {
           </span>
         </div>
       ),
+      // Below md, fumadocs only renders the logo + sidebar trigger in the top
+      // bar (the link cluster moves into the sidebar). Surface the language
+      // picker here too — like the landing page top bar — pinned next to the
+      // hamburger via the `data-docs-mobile-lang` hook (see app.css). md+ keeps
+      // it in the right-hand cluster below.
+      children: (
+        <div data-docs-mobile-lang className="md:hidden">
+          <LocaleSwitcher />
+        </div>
+      ),
     },
     // Mirror the landing-page top bar: Star on GitHub, Download, language
     // picker. Rendered as a single custom secondary item so the cluster sits
@@ -35,7 +45,11 @@ export function baseOptions(): BaseLayoutProps {
         type: 'custom',
         secondary: true,
         children: (
-          <div className="flex items-center gap-2">
+          // Below lg, fumadocs re-renders this cluster inside the sidebar. On
+          // mobile (< md) we hide it there and surface the language picker in
+          // the top bar instead (see nav.children); on tablet (md–lg) it stays
+          // in the sidebar as before.
+          <div className="flex items-center gap-2 max-md:hidden">
             <Button
               href={githubUrl}
               target="_blank"
