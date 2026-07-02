@@ -1,6 +1,5 @@
 import type { WizardFormValues } from "./wizardForm"
 import { PRESETS } from "./constants"
-import { SECTION_TYPES } from "@/lib/section-constants"
 
 function parsePositiveInt(raw: string): number | undefined {
   const n = Number(raw.trim())
@@ -17,30 +16,6 @@ export function buildConfigOverrides(values: WizardFormValues): Record<string, u
   const baseConfig = preset?.baseConfig ?? {}
   const baseImageFilters = (baseConfig.image_filters ?? {}) as Record<string, unknown>
 
-  const renderStrategies = (baseConfig.render_strategies ?? {}) as Record<string, { render_type?: string }>
-  const activityTypeNames = Object.keys(renderStrategies).filter(
-    (name) => renderStrategies[name].render_type === "activity"
-  )
-
-  // Section types to leave out of activity detection. Two independent reasons
-  // to seed an activity type as disabled (the Sectioning page reads/writes
-  // disabled_section_types and shows the toggle accordingly — still
-  // overridable there):
-  const disabledSectionTypes = new Set<string>()
-  // 1. Activities generator off → skip the activity render strategies the
-  //    preset defines.
-  if (!values.activitiesGenerator) {
-    for (const name of activityTypeNames) disabledSectionTypes.add(name)
-  }
-  // 2. Fixed layout bakes activities into the page image, so they shouldn't be
-  //    split into their own interactive sections — disable the activity
-  //    section types by default.
-  if (values.renderStrategy === "fixed_layout") {
-    for (const { value } of SECTION_TYPES) {
-      if (value.startsWith("activity_")) disabledSectionTypes.add(value)
-    }
-  }
-
   const config: Record<string, unknown> = {
     ...baseConfig,
     default_render_strategy: values.renderStrategy,
@@ -48,8 +23,14 @@ export function buildConfigOverrides(values: WizardFormValues): Record<string, u
     spread_mode: values.pageGrouping === "spread",
     vector_text_grouping: values.figureExtraction,
     apply_body_background: true,
-    ...(disabledSectionTypes.size > 0 && {
-      disabled_section_types: Array.from(disabledSectionTypes),
+    // Single flag governs activities everywhere (sectioning + web-rendering),
+    // via the `activity_` prefix — no hand-maintained type list to drift.
+    // Activities are off when the user disabled the generator, or for
+    // fixed-layout books (activities are baked into the page image, so
+    // detecting them as their own interactive sections just adds noise —
+    // still overridable on the Sectioning page).
+    ...((!values.activitiesGenerator || values.renderStrategy === "fixed_layout") && {
+      generate_activities: false,
     }),
     image_filters: {
       ...baseImageFilters,
@@ -80,8 +61,13 @@ export function buildConfigOverrides(values: WizardFormValues): Record<string, u
   if (values.styleguide.trim()) config.styleguide = values.styleguide.trim()
   if (values.editingLanguage.trim()) config.editing_language = values.editingLanguage.trim()
   if (values.outputLanguages.length > 0) config.output_languages = values.outputLanguages
-  if (validPageRange && parsedStartPage !== undefined) config.start_page = parsedStartPage
-  if (validPageRange && parsedEndPage !== undefined) config.end_page = parsedEndPage
+  // Only a "range" scope bakes a global page window into the book. "whole"
+  // processes every page; "split" treats the whole book as the canonical basis
+  // and sets per-part windows at export time — neither writes start/end_page.
+  if (values.scope === "range") {
+    if (validPageRange && parsedStartPage !== undefined) config.start_page = parsedStartPage
+    if (validPageRange && parsedEndPage !== undefined) config.end_page = parsedEndPage
+  }
   if (values.imageSegmentation && values.segmentationMinSide.trim()) {
     const n = Number(values.segmentationMinSide.trim())
     if (Number.isInteger(n) && n >= 0) config.image_segmentation = { min_side: n }

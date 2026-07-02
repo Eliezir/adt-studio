@@ -70,6 +70,7 @@ export {
   STAGE_BY_NAME,
   ALL_STEP_NAMES,
   PAGE_PROGRESS_STEPS,
+  BOOK_LEVEL_STAGES,
 } from "./pipeline.js"
 
 export {
@@ -83,6 +84,13 @@ export {
   getCacheResourcesForStageOutput,
   getCacheResourcesForStageClear,
 } from "./pipeline-effects.js"
+
+// NOTE: fingerprint.* is intentionally NOT re-exported here. It imports
+// `node:crypto`, which is unavailable in the browser, and this root barrel is
+// imported by the Studio SPA (for PIPELINE and friends). Node-only consumers
+// import it from the "@adt/types/fingerprint" subpath instead.
+
+export { PartRange, PartManifest, ExportedPartEntry, PartsLedger } from "./part.js"
 
 export { ProgressEvent } from "./progress.js"
 

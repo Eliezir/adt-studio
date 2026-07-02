@@ -119,6 +119,73 @@ export interface ImportPreview {
   validationError: string | null
 }
 
+export interface PartInfo {
+  sourceLabel: string
+  range: { startPage: number; endPage: number }
+}
+
+export interface PageRange {
+  startPage: number
+  endPage: number
+}
+
+export interface SplitStatus {
+  pageCount: number
+  exported: PageRange[]
+  exportGaps: PageRange[]
+  nextGap: PageRange | null
+  fullySplit: boolean
+  mergedRanges: PageRange[]
+  missingRanges: PageRange[]
+  fullyMerged: boolean
+}
+
+/** Preview shape returned by the import endpoints for a lightweight part
+ *  archive (PDF + window + manifest, no DB). Discriminated by `isPart`. */
+export interface PartImportPreview {
+  isPart: true
+  label: string
+  sourceLabel: string
+  title: string | null
+  range: { startPage: number; endPage: number }
+  pageCount: number
+  coverBase64: string | null
+}
+
+export type AnyImportPreview = ImportPreview | PartImportPreview
+
+export function isPartImportPreview(
+  preview: AnyImportPreview,
+): preview is PartImportPreview {
+  return (preview as PartImportPreview).isPart === true
+}
+
+export interface MergePreview {
+  targetLabel: string
+  sourceLabel: string
+  title: string | null
+  range: { startPage: number; endPage: number }
+  identityMatch: boolean
+  semanticsMatch: boolean
+  semanticsDiff: string[]
+  blocked: boolean
+  blockReason: string | null
+  warnings: string[]
+  addedPageNumbers: number[]
+  replacedPageNumbers: number[]
+  coverage: Array<{ node: string; pages: number }>
+}
+
+export interface MergeResult {
+  targetLabel: string
+  addedPages: number
+  replacedPages: number
+  staleSteps: string[]
+  bookSummaryStale: boolean
+  semanticsOverridden: boolean
+  metadataMerged: boolean
+}
+
 export interface AzureCredentials {
   key: string
   region: string
@@ -738,7 +805,7 @@ export const api = {
   previewImport: (zip: File) => {
     const formData = new FormData()
     formData.append("zip", zip)
-    return request<ImportPreview>("/books/preview-import", {
+    return request<AnyImportPreview>("/books/preview-import", {
       method: "POST",
       body: formData,
     })
@@ -748,6 +815,39 @@ export const api = {
     const formData = new FormData()
     formData.append("zip", zip)
     return request<BookSummary>("/books/import", {
+      method: "POST",
+      body: formData,
+    })
+  },
+
+  getPartInfo: (label: string) =>
+    request<PartInfo | null>(`/books/${label}/part-info`),
+
+  getSplitStatus: (label: string) =>
+    request<SplitStatus>(`/books/${label}/split-status`),
+
+  exportPart: (label: string, startPage: number, endPage: number) => {
+    triggerDirectDownload(
+      `${BASE_URL}/books/${label}/export-part?startPage=${startPage}&endPage=${endPage}`,
+    )
+  },
+
+  previewMerge: (label: string, zip: File) => {
+    const formData = new FormData()
+    formData.append("zip", zip)
+    return request<MergePreview>(`/books/${label}/preview-merge`, {
+      method: "POST",
+      body: formData,
+    })
+  },
+
+  mergePart: (label: string, zip: File, acknowledgeSemanticsMismatch: boolean) => {
+    const formData = new FormData()
+    formData.append("zip", zip)
+    if (acknowledgeSemanticsMismatch) {
+      formData.append("acknowledgeSemanticsMismatch", "true")
+    }
+    return request<MergeResult>(`/books/${label}/merge`, {
       method: "POST",
       body: formData,
     })

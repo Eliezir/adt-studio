@@ -301,8 +301,12 @@ export function BookCreationWizard() {
       })
 
       // Kick off extraction automatically so the user lands on the book home
-      // with the Extract stage already running.
-      if (hasApiKey) {
+      // with the Extract stage already running — but only when the user intends
+      // to process the book here ("whole" or windowed "range"). For the "split"
+      // scope we skip it: each contributor extracts their own page-range part,
+      // so extracting the full book on this machine would be the very cost the
+      // split feature avoids.
+      if (values.scope !== "split" && hasApiKey) {
         try {
           await api.runStages(
             book.label,
@@ -322,6 +326,11 @@ export function BookCreationWizard() {
         }
       }
 
+      // When splitting, surface the Split & merge panel on the overview.
+      if (values.scope === "split" && typeof window !== "undefined") {
+        window.sessionStorage.setItem("adt:focus-parts", book.label)
+      }
+
       navigate({ to: "/books/$label/$step", params: { label: book.label, step: "book" } })
     } catch (error) {
       creatingRef.current = false
@@ -333,8 +342,21 @@ export function BookCreationWizard() {
 
   const isFixedLayout = values.renderStrategy === "fixed_layout"
 
+  // When scoping to a page range, preview exactly which pages will be processed
+  // — emphasise the selected range and dim the rest. Only once a bound is typed,
+  // so an untouched range doesn't read as "whole book selected". An empty end
+  // means "to the last page"; the preview clamps it to the real page count.
+  const previewRange =
+    values.scope === "range" && (values.startPage !== "" || values.endPage !== "")
+      ? {
+          startPage: parseInt(values.startPage) || 1,
+          endPage: parseInt(values.endPage) || Number.MAX_SAFE_INTEGER,
+        }
+      : null
+
   function renderPreviewContent({mobileMode}: {mobileMode: boolean} = {mobileMode: false}) {
-    if (currentStep === 1) return <PdfCoverPreview file={file} width={650} height={812} />
+    if (currentStep === 1)
+      return <PdfCoverPreview file={file} width={650} height={812} highlightRange={previewRange} />
     if (currentStep === 2) return <LayoutPreview strategy={renderStrategy} />
     if (currentStep === 3) {
       if (isFixedLayout) return <PdfCoverPreview file={file} width={650} height={812} />

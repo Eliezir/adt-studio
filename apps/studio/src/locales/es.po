@@ -37,6 +37,9 @@ msgstr ", y "
 msgid "? This will remove all extracted data and cannot be undone."
 msgstr "? Esto eliminará todos los datos extraídos y no se puede deshacer."
 
+#~ msgid "· choose another"
+#~ msgstr "· elegir otro"
+
 msgid "\"A landscape forged by fire.\""
 msgstr "\\\"Un paisaje forjado por el fuego.\\\""
 
@@ -65,6 +68,20 @@ msgstr "(p.{0})"
 msgid "(template)"
 msgstr "(plantilla)"
 
+#. placeholder {0}: preview.addedPageNumbers.length
+#. placeholder {0}: result.addedPages
+msgid "{0, plural, one {# page added} other {# pages added}}"
+msgstr "{0, plural, one {# página añadida} other {# páginas añadidas}}"
+
+#. placeholder {0}: preview.replacedPageNumbers.length
+#. placeholder {0}: result.replacedPages
+msgid "{0, plural, one {# page replaced} other {# pages replaced}}"
+msgstr "{0, plural, one {# página reemplazada} other {# páginas reemplazadas}}"
+
+#. placeholder {0}: Math.max(0, endPage - startPage + 1)
+msgid "{0, plural, one {# page} other {# pages}}"
+msgstr "{0, plural, one {# página} other {# páginas}}"
+
 #. placeholder {0}: lockedLang.name
 msgid "{0} — type country or Enter for base"
 msgstr "{0} — escribe el país o pulsa Enter para el básico"
@@ -88,6 +105,9 @@ msgstr "{0} × {1}px"
 #. placeholder {2}: points.length
 msgid "{0} × {1}px · {2} points"
 msgstr "{0} × {1}px · {2} puntos"
+
+#~ msgid "{0} added"
+#~ msgstr "{0} añadidas"
 
 #. placeholder {0}: String(totalAudioFiles)
 msgid "{0} audio"
@@ -203,6 +223,9 @@ msgstr "{0} pendientes"
 msgid "{0} questions"
 msgstr "{0} preguntas"
 
+#~ msgid "{0} replaced"
+#~ msgstr "{0} reemplazadas"
+
 #. placeholder {0}: String(group.blocks.length)
 msgid "{0} sections"
 msgstr "{0} secciones"
@@ -310,6 +333,9 @@ msgstr "{issueCount} {0}"
 
 msgid "{issuesLabel}, {reviewLabel}"
 msgstr "{issuesLabel}, {reviewLabel}"
+
+msgid "{merged, plural, =0 {0 of {total} pages merged} one {# of {total} pages merged} other {# of {total} pages merged}}"
+msgstr "{merged, plural, =0 {0 de {total} páginas combinadas} one {# de {total} páginas combinadas} other {# de {total} páginas combinadas}}"
 
 msgid "{missingAudioCount} missing"
 msgstr "{missingAudioCount} faltantes"
@@ -994,6 +1020,13 @@ msgstr "Alinea la narración con el texto para permitir el resaltado a nivel de 
 msgid "All"
 msgstr "Todo"
 
+#. placeholder {0}: status.pageCount
+msgid "All {0} pages merged in"
+msgstr "Las {0} páginas están fusionadas"
+
+#~ msgid "All {0} parts merged in"
+#~ msgstr "Las {0} partes están fusionadas"
+
 msgid "All categories"
 msgstr "Todas las categorías"
 
@@ -1005,6 +1038,9 @@ msgstr "Todos los problemas y elementos de revisión manual"
 
 msgid "All pages are pruned"
 msgstr "Todas las páginas están podadas"
+
+msgid "All parts merged"
+msgstr "Todas las partes combinadas"
 
 msgid "All sections are covered"
 msgstr "Todas las secciones están cubiertas"
@@ -1027,6 +1063,9 @@ msgstr "Alegoría"
 msgid "Alphabetical"
 msgstr "Alfabético"
 
+msgid "Already handed out"
+msgstr "Ya repartidas"
+
 msgid "Alt"
 msgstr "Alt"
 
@@ -1047,6 +1086,9 @@ msgstr "Una actividad de respuesta abierta."
 
 msgid "Analyze with AI"
 msgstr "Analizar con IA"
+
+msgid "Analyzing part…"
+msgstr "Analizando la parte…"
 
 msgid "Analyzing..."
 msgstr "Analizando..."
@@ -1343,6 +1385,9 @@ msgstr "El cuerpo del texto usa esta fuente hoy. Adjunta una fuente abajo y así
 msgid "Book"
 msgstr "Libro"
 
+msgid "Book coverage"
+msgstr "Cobertura del libro"
+
 msgid "Book creation stages"
 msgstr "Etapas de creación del libro"
 
@@ -1358,11 +1403,20 @@ msgstr "Información del libro"
 msgid "Book Language"
 msgstr "Idioma del libro"
 
+#~ msgid "Book metadata"
+#~ msgstr "Metadatos del libro"
+
+msgid "Book metadata (title, authors, publisher) was taken from this part and now appears in the Extract step, where you can edit it."
+msgstr "Los metadatos del libro (título, autores, editorial) se tomaron de esta parte y ahora aparecen en el paso de Extracción, donde puedes editarlos."
+
 msgid "Book order"
 msgstr "Orden del libro"
 
 msgid "Book package ready"
 msgstr "Paquete del libro listo"
+
+msgid "Book part"
+msgstr "Parte del libro"
 
 msgid "Book preview"
 msgstr "Vista previa del libro"
@@ -1372,6 +1426,9 @@ msgstr "Vista Previa del Libro"
 
 msgid "Book Summary"
 msgstr "Resumen del libro"
+
+msgid "Book summary regeneration queued"
+msgstr "Regeneración del resumen del libro en cola"
 
 msgid "Book title"
 msgstr "Título del libro"
@@ -1603,8 +1660,14 @@ msgstr "Elige cómo debe formatearse el contenido."
 msgid "Choose images..."
 msgstr "Elegir imágenes..."
 
+#~ msgid "Choose part file…"
+#~ msgstr "Elegir archivo de parte…"
+
 msgid "Choose Provider"
 msgstr "Elegir proveedor"
+
+msgid "Choose the part file that was shared with you, or export it again."
+msgstr "Elige el archivo de parte que te compartieron, o expórtalo de nuevo."
 
 msgid "Choose the source pages and where the quiz lands in the page editor."
 msgstr "Elige las páginas de origen y dónde se ubica el cuestionario en el editor de páginas."
@@ -1644,6 +1707,9 @@ msgstr "Limpiar búsqueda"
 
 msgid "Clear, descriptive captions for middle and high school readers."
 msgstr "Subtítulos claros y descriptivos para lectores de secundaria y preparatoria."
+
+msgid "Click a start page, then an end page to set the range."
+msgstr "Haz clic en una página inicial y luego en una final para definir el intervalo."
 
 msgid "Click an image to select"
 msgstr "Haz clic en una imagen para seleccionar"
@@ -1728,6 +1794,9 @@ msgstr "Completado"
 
 msgid "Completed language-based stages (quizzes, glossary, captions, audio) will be cleared and need to run again. You'll confirm first."
 msgstr "Las etapas completadas basadas en el idioma (cuestionarios, glosario, leyendas, audio) se borrarán y deberán ejecutarse de nuevo. Lo confirmarás primero."
+
+msgid "Completed Part"
+msgstr "Parte completada"
 
 msgid "Completion"
 msgstr "Finalización"
@@ -1873,6 +1942,9 @@ msgstr "No se pudieron leer las dimensiones de la imagen"
 msgid "Could not read this PDF. The file may be corrupted or password-protected."
 msgstr "No se pudo leer este PDF. El archivo puede estar dañado o protegido con contraseña."
 
+msgid "Couldn't load the PDF preview. The pages can still be split using the controls."
+msgstr "No se pudo cargar la vista previa del PDF. Las páginas aún se pueden dividir con los controles."
+
 msgid "Couldn't read this PDF"
 msgstr "No se pudo leer este PDF"
 
@@ -1991,6 +2063,9 @@ msgstr "Instrucciones Personalizadas"
 msgid "Custom Layout Demo"
 msgstr "Demostración de Diseño Personalizado"
 
+msgid "Custom range"
+msgstr "Intervalo personalizado"
+
 msgid "Custom section {index}"
 msgstr "Custom section {index}"
 
@@ -1999,6 +2074,9 @@ msgstr "El modo de depuración no está habilitado."
 
 msgid "Decorative"
 msgstr "Decorativa"
+
+msgid "Decrease {label}"
+msgstr "Disminuir {label}"
 
 msgid "Decrease indent"
 msgstr "Disminuir sangría"
@@ -2226,6 +2304,9 @@ msgstr "Visualización"
 msgid "Distribute through Readium-compatible reading apps and libraries."
 msgstr "Distribuir a través de aplicaciones y bibliotecas de lectura compatibles con Readium."
 
+msgid "Divide the book into equal windows, then export each to hand out."
+msgstr "Divide el libro en ventanas iguales y luego exporta cada una para repartirlas."
+
 msgid "Don't have a project yet?"
 msgstr "¿Aún no tienes un proyecto?"
 
@@ -2240,6 +2321,12 @@ msgstr "HECHO"
 
 msgid "Download a full backup of this project"
 msgstr "Descargar una copia de seguridad completa de este proyecto"
+
+msgid "Download a lightweight part (the full PDF plus a page range and a fingerprint) for someone else to process on their own machine, then merge their result back here."
+msgstr "Descarga una parte ligera (el PDF completo más un rango de páginas y una huella) para que otra persona la procese en su propia máquina y luego fusiona su resultado aquí."
+
+msgid "Download part"
+msgstr "Descargar parte"
 
 msgid "Download size"
 msgstr "Tamaño de descarga"
@@ -2281,6 +2368,9 @@ msgstr "Arrastra los vértices para cambiar la forma. Haz clic en los puntos med
 
 msgid "Drawn from"
 msgstr "Basado en"
+
+msgid "Drop a part <0>.zip</0> here, or browse"
+msgstr "Suelta una parte <0>.zip</0> aquí o examina"
 
 msgid "Drop a PDF to get started"
 msgstr "Suelta un PDF para empezar"
@@ -2489,8 +2579,8 @@ msgstr "EN"
 msgid "Enable {0}"
 msgstr "Enable {0}"
 
-msgid "Enable for scanned books where two pages appear on a single PDF page."
-msgstr "Activa para libros escaneados donde dos páginas aparecen en una sola página del PDF."
+#~ msgid "Enable for scanned books where two pages appear on a single PDF page."
+#~ msgstr "Activa para libros escaneados donde dos páginas aparecen en una sola página del PDF."
 
 msgid "Enable or disable reviewer-authored checklist reviews for this book. Automated accessibility assessment remains available either way."
 msgstr "Enable or disable reviewer-authored checklist reviews for this book. Automated accessibility assessment remains available either way."
@@ -2528,6 +2618,12 @@ msgstr "Mejoras"
 msgid "Enter a valid minimum dimension (whole number ≥ 0)"
 msgstr "Introduce una dimensión mínima válida (número entero ≥ 0)"
 
+#~ msgid "Enter a valid page range"
+#~ msgstr "Introduce un rango de páginas válido"
+
+msgid "Enter a valid page range within 1–{pageCount}."
+msgstr "Introduce un intervalo de páginas válido entre 1 y {pageCount}."
+
 msgid "Enter a valid project name"
 msgstr "Introduce un nombre de proyecto válido"
 
@@ -2551,6 +2647,9 @@ msgstr "EPUB 3"
 
 msgid "EPUB Export"
 msgstr "Exportar EPUB"
+
+#~ msgid "equal parts"
+#~ msgstr "partes iguales"
 
 msgid "Error"
 msgstr "Error"
@@ -2581,6 +2680,9 @@ msgstr "Cada pocas páginas"
 
 msgid "Every notable concept and named entity."
 msgstr "Cada concepto notable y entidad nombrada."
+
+msgid "Every page has been merged back from its part — the whole book is in place."
+msgstr "Todas las páginas se han combinado desde su parte — el libro completo está en su lugar."
 
 msgid "Every page in this book has all sections pruned. There is no content available to generate {stageName} from."
 msgstr "Cada página de este libro tiene todas las secciones podadas. No hay contenido disponible para generar {stageName}."
@@ -2628,6 +2730,9 @@ msgstr "Exportar"
 msgid "Export {0}"
 msgstr "Exportar {0}"
 
+msgid "Export a part"
+msgstr "Exportar una parte"
+
 msgid "Export is not blocked by the stages below. As soon as Storyboard is done, you can ship a bundle. Enhancements, Localization, and Validation are optional ways to enrich the book — you can export again anytime later."
 msgstr "La exportación no está bloqueada por las etapas siguientes. En cuanto se complete Storyboard, puedes enviar un paquete. Mejoras, Localización y Validación son maneras opcionales de enriquecer el libro: puedes exportar de nuevo en cualquier momento."
 
@@ -2640,11 +2745,23 @@ msgstr "La preparación de la exportación falló"
 msgid "Export Preview"
 msgstr "Vista previa de Exportación"
 
+msgid "Export the finished part from its Export step, then upload that file."
+msgstr "Exporta la parte terminada desde su paso de Exportación y luego sube ese archivo."
+
 msgid "Export the packaged book and related artifacts for delivery."
 msgstr "Exportar el libro empaquetado y los artefactos relacionados para la entrega."
 
 msgid "Export to a reader"
 msgstr "Exportar a un lector"
+
+msgid "Exported"
+msgstr "Exportado"
+
+msgid "Exported:"
+msgstr "Exportado:"
+
+msgid "Exporting"
+msgstr "Exportando"
 
 msgid "Exporting..."
 msgstr "Exportando..."
@@ -2679,6 +2796,9 @@ msgstr "Texto extraído"
 
 msgid "Extracting..."
 msgstr "Extrayendo..."
+
+msgid "Extraction is skipped now. After the book is created, use the Split & merge panel on its overview to export page-range parts and merge the completed results back."
+msgstr "La extracción se omite ahora. Una vez creado el libro, usa el panel Dividir y combinar en su resumen para exportar partes por rango de páginas y combinar los resultados completados."
 
 msgid "Extraction notes"
 msgstr "Notas de extracción"
@@ -2796,8 +2916,8 @@ msgstr "Filtra imágenes decorativas o sin contenido en cada página."
 msgid "Final Page"
 msgstr "Página Final"
 
-msgid "First"
-msgstr "Primera"
+#~ msgid "First"
+#~ msgstr "Primera"
 
 msgid "First images from the deep-field telescope."
 msgstr "Primeras imágenes del telescopio de campo profundo."
@@ -2888,6 +3008,9 @@ msgstr "Francés"
 
 msgid "From attached fonts · Body text"
 msgstr "De las fuentes adjuntas · Texto del cuerpo"
+
+msgid "From page"
+msgstr "Desde la página"
 
 msgid "From reference image..."
 msgstr "Desde imagen de referencia..."
@@ -3099,6 +3222,12 @@ msgstr "Agrupando el contenido por propósito y maquetando cada sección como HT
 msgid "Groups image regions into discrete illustrations on each page."
 msgstr "Agrupa regiones de imágenes en ilustraciones discretas en cada página."
 
+msgid "Hand out page-range parts and merge them back later."
+msgstr "Reparte partes por rango de páginas y combínalas más tarde."
+
+#~ msgid "Handwriting"
+#~ msgstr "Manuscrita"
+
 msgid "Header"
 msgstr "Encabezado"
 
@@ -3183,6 +3312,9 @@ msgstr "Cómo funciona"
 msgid "How many pages of content go into each quiz. A lower number means more quizzes across the book."
 msgstr "Cuántas páginas de contenido entran en cada cuestionario. Un número menor significa más cuestionarios a lo largo del libro."
 
+msgid "How much of this book do you want to process?"
+msgstr "¿Qué parte de este libro quieres procesar?"
+
 msgid "How quizzes work"
 msgstr "Cómo funcionan los cuestionarios"
 
@@ -3197,6 +3329,9 @@ msgstr "Cómo añadir cuestionarios"
 
 msgid "HTML"
 msgstr "HTML"
+
+msgid "I understand the part was processed with different prompts/models and want to merge it anyway."
+msgstr "Entiendo que la parte se procesó con distintos prompts/modelos y quiero fusionarla de todos modos."
 
 msgid "I'll start later"
 msgstr "Empezaré más tarde"
@@ -3348,6 +3483,17 @@ msgstr "Importar proyecto"
 msgid "Import Project"
 msgstr "Importar proyecto"
 
+#. placeholder {0}: partInfo.range.startPage
+#. placeholder {1}: partInfo.range.endPage
+msgid "Imported part · pages {0}–{1}"
+msgstr "Parte importada · páginas {0}–{1}"
+
+msgid "Imported:"
+msgstr "Importado:"
+
+msgid "Importing creates a new book limited to {windowSize} pages. Run the per-page stages, then export it as a project to merge back into the full book."
+msgstr "La importación crea un libro nuevo limitado a {windowSize} páginas. Ejecuta las etapas por página y luego expórtalo como proyecto para fusionarlo de nuevo en el libro completo."
+
 msgid "Importing..."
 msgstr "Importando..."
 
@@ -3369,8 +3515,14 @@ msgstr "en el libro"
 msgid "Include in render"
 msgstr "Incluir en la renderización"
 
-msgid "Include text overlays in vector groups"
-msgstr "Incluir superposiciones de texto en grupos vectoriales"
+#~ msgid "Include text overlays in vector groups"
+#~ msgstr "Incluir superposiciones de texto en grupos vectoriales"
+
+msgid "Includes:"
+msgstr "Incluye:"
+
+msgid "Increase {label}"
+msgstr "Aumentar {label}"
 
 msgid "Increase indent"
 msgstr "Aumentar sangría"
@@ -3423,11 +3575,20 @@ msgstr "Introducción a la Fotosíntesis"
 msgid "Invalid project archive"
 msgstr "Archivo de proyecto no válido"
 
+msgid "Invalid range"
+msgstr "Intervalo no válido"
+
 msgid "Isolated asset"
 msgstr "Recurso aislado"
 
 msgid "Issues"
 msgstr "Problemas"
+
+msgid "It contains unexpected file paths. Use a .zip exported from ADT Studio."
+msgstr "Contiene rutas de archivo inesperadas. Usa un archivo .zip exportado desde ADT Studio."
+
+msgid "It was created from a different PDF or settings, so it can't be merged here."
+msgstr "Se creó a partir de un PDF o una configuración diferente, por lo que no se puede combinar aquí."
 
 msgid "italic"
 msgstr "cursiva"
@@ -3498,6 +3659,9 @@ msgstr "N{0}"
 msgid "Label"
 msgstr "Etiqueta"
 
+msgid "labeled {printedLabel}"
+msgstr "etiquetada {printedLabel}"
+
 msgid "Language"
 msgstr "Idioma"
 
@@ -3516,8 +3680,8 @@ msgstr "Lo suficientemente grande"
 msgid "Large images, narrative flow. Best for illustrated books with high-fidelity TTS voices."
 msgstr "Imágenes grandes, flujo narrativo. Mejor para libros ilustrados con voces TTS de alta fidelidad."
 
-msgid "Last"
-msgstr "Última"
+#~ msgid "Last"
+#~ msgstr "Última"
 
 msgid "Last modified"
 msgstr "Última modificación"
@@ -3552,8 +3716,8 @@ msgstr "Dejar vacío si no es necesario"
 msgid "Leave empty to output only in the book language."
 msgstr "Dejar vacío para generar solo en el idioma del libro."
 
-msgid "Leave empty to process all pages."
-msgstr "Deja vacío para procesar todas las páginas."
+#~ msgid "Leave empty to process all pages."
+#~ msgstr "Deja vacío para procesar todas las páginas."
 
 msgid "Leave empty to use the book language."
 msgstr "Deja vacío para usar el idioma del libro."
@@ -3563,6 +3727,9 @@ msgstr "Manuales legales y de cumplimiento"
 
 msgid "Legal Compliance Guide"
 msgstr "Guía de Cumplimiento Legal"
+
+msgid "Legend"
+msgstr "Leyenda"
 
 msgid "Let the model write descriptive chapter titles based on each section's contents. Best for storybooks or when headings are missing."
 msgstr "Deja que el modelo escriba títulos de capítulos descriptivos basados en el contenido de cada sección. Mejor para libros de cuentos o cuando faltan encabezados."
@@ -3855,8 +4022,17 @@ msgstr "Referencias médicas"
 msgid "Medium"
 msgstr "Medio"
 
-msgid "Merge facing pages as spreads"
-msgstr "Combinar páginas enfrentadas como dobles"
+msgid "Merge a completed part"
+msgstr "Fusionar una parte completada"
+
+msgid "Merge another"
+msgstr "Fusionar otra"
+
+msgid "Merge another part"
+msgstr "Combinar otra parte"
+
+#~ msgid "Merge facing pages as spreads"
+#~ msgstr "Combinar páginas enfrentadas como dobles"
 
 msgid "Merge failed"
 msgstr "Merge failed"
@@ -3872,6 +4048,9 @@ msgstr "fusionar en la página anterior"
 
 msgid "Merge into previous page"
 msgstr "Fusionar en la página anterior"
+
+msgid "Merge part"
+msgstr "Fusionar parte"
 
 msgid "merge with next"
 msgstr "fusionar con la siguiente"
@@ -3890,6 +4069,23 @@ msgstr "Fusionar con la anterior"
 
 msgid "merge with previous section"
 msgstr "fusionar con la sección anterior"
+
+msgid "Merged"
+msgstr "Fusionado"
+
+#~ msgid "Merged · {0} added, {1} replaced"
+#~ msgstr "Fusionado · {0} añadidas, {1} reemplazadas"
+
+#. placeholder {0}: book.split.mergedPages
+#. placeholder {1}: book.split.totalPages
+msgid "Merged · {0}/{1}"
+msgstr "Combinadas · {0}/{1}"
+
+#~ msgid "Merged:"
+#~ msgstr "Fusionado:"
+
+msgid "Merging…"
+msgstr "Fusionando…"
 
 msgid "Messages"
 msgstr "Mensajes"
@@ -3959,6 +4155,9 @@ msgstr "Fallos"
 
 msgid "Missing"
 msgstr "Faltante"
+
+msgid "Missing:"
+msgstr "Faltan:"
 
 msgid "Mission 01"
 msgstr "Misión 01"
@@ -4360,17 +4559,26 @@ msgstr "Not reviewed"
 msgid "Not run during the last execution — likely because its inputs weren't ready or its stage's settings turned it off."
 msgstr "No se ejecutó durante la última ejecución, probablemente porque sus entradas no estaban listas o la configuración de su etapa lo desactivó."
 
+msgid "Not split yet"
+msgstr "Sin dividir aún"
+
 msgid "not started"
 msgstr "sin iniciar"
 
 msgid "Not started yet"
 msgstr "No iniciado aún"
 
+msgid "Not yet split:"
+msgstr "Aún sin dividir:"
+
 msgid "Note"
 msgstr "Nota"
 
 msgid "Nothing to show"
 msgstr "Nada que mostrar"
+
+msgid "Now click the end page."
+msgstr "Ahora haz clic en la página final."
 
 msgid "Number of pages of content to include per quiz question."
 msgstr "Número de páginas de contenido a incluir por pregunta de quiz."
@@ -4416,6 +4624,9 @@ msgstr "Solo letras, números, puntos, guiones, guiones bajos. Debe comenzar con
 
 msgid "Only pages containing these section types are counted when grouping pages for quiz generation."
 msgstr "Solo las páginas que contienen estos tipos de sección se cuentan al agrupar páginas para la generación de quiz."
+
+msgid "Only parts exported from this book can be merged back."
+msgstr "Solo se pueden volver a combinar las partes exportadas de este libro."
 
 msgid "Only PDF files are supported"
 msgstr "Solo se admiten archivos PDF"
@@ -4559,6 +4770,9 @@ msgstr "Otras imágenes"
 msgid "Other options"
 msgstr "Otras opciones"
 
+msgid "Out for processing"
+msgstr "En procesamiento"
+
 msgid "Out of date"
 msgstr "Desactualizado"
 
@@ -4657,6 +4871,8 @@ msgid "Page {0} captions"
 msgstr "Subtítulos de la página {0}"
 
 #. placeholder {0}: current.pageNumber
+#. placeholder {0}: zoom + 1
+#. placeholder {1}: pages.length
 #. placeholder {1}: renderedPages.length
 msgid "Page {0} of {1}"
 msgstr "Página {0} de {1}"
@@ -4664,8 +4880,14 @@ msgstr "Página {0} de {1}"
 msgid "Page {n}"
 msgstr "Página {n}"
 
+#~ msgid "Page {p}"
+#~ msgstr "Página {p}"
+
 msgid "Page {pageId}"
 msgstr "Página {0}"
+
+msgid "Page {pageNum}"
+msgstr "Página {pageNum}"
 
 msgid "page {shownStr}"
 msgstr "página {shownStr}"
@@ -4691,11 +4913,17 @@ msgstr "Modo de Página"
 msgid "Page preview"
 msgstr "Vista previa de la página"
 
+msgid "Page range"
+msgstr "Rango de páginas"
+
 msgid "Page Range"
 msgstr "Rango de páginas"
 
 msgid "Page range help"
 msgstr "Ayuda de rango de páginas"
+
+msgid "Page range locked"
+msgstr "Rango de páginas bloqueado"
 
 msgid "Page re-rendered"
 msgstr "Página renderizada de nuevo"
@@ -4715,13 +4943,28 @@ msgstr "páginas"
 msgid "Pages"
 msgstr "Páginas"
 
+#. placeholder {0}: fmtRange({ startPage, endPage })
+msgid "Pages {0}"
+msgstr "Páginas {0}"
+
 #. placeholder {0}: activeSession.session.start_page ?? "?"
+#. placeholder {0}: preview.range.startPage
 #. placeholder {1}: activeSession.session.end_page ?? "?"
+#. placeholder {1}: preview.range.endPage
 msgid "Pages {0}–{1}"
 msgstr "Pages {0}–{1}"
 
+#. placeholder {0}: preview.range.startPage
+#. placeholder {1}: preview.range.endPage
+#. placeholder {2}: preview.pageCount
+msgid "Pages {0}–{1} of {2}"
+msgstr "Páginas {0}–{1} de {2}"
+
 msgid "pages {shownStr}"
 msgstr "páginas {shownStr}"
+
+msgid "Pages in the selected range"
+msgstr "Páginas del intervalo seleccionado"
 
 msgid "pages per quiz"
 msgstr "páginas por cuestionario"
@@ -4747,8 +4990,36 @@ msgstr "Analizando páginas"
 msgid "Parsing pages into text, figures, and layout boxes — cached by content hash."
 msgstr "Analizando páginas en texto, figuras y cajas de diseño — con caché por hash de contenido."
 
+msgid "Part"
+msgstr "Parte"
+
+#~ msgid "Part · p{0}–{1}"
+#~ msgstr "Parte · p{0}–{1}"
+
+#. placeholder {0}: book.part.range.startPage
+#. placeholder {1}: book.part.range.endPage
+msgid "Part · pages {0}–{1}"
+msgstr "Parte · páginas {0}–{1}"
+
+#. placeholder {0}: planStart.index + 1
+msgid "Part {0}"
+msgstr "Parte {0}"
+
+#~ msgid "Part {0} · pages {1}–{2}"
+#~ msgstr "Parte {0} · páginas {1}–{2}"
+
+msgid "Part info"
+msgstr "Información de la parte"
+
+#. placeholder {0}: book.part.sourceLabel
+msgid "Part of {0}"
+msgstr "Parte de {0}"
+
 msgid "Parts"
 msgstr "Partes"
+
+msgid "Parts can't be split further. Process the assigned pages, then return the finished part from its Export step to merge it back into the source book."
+msgstr "Las partes no se pueden dividir más. Procesa las páginas asignadas y luego devuelve la parte terminada desde su paso de Exportación para combinarla de nuevo en el libro de origen."
 
 msgid "Pass"
 msgstr "Pass"
@@ -4836,6 +5107,9 @@ msgstr "Elegir del libro"
 
 msgid "Pick one layout approach."
 msgstr "Elige un enfoque de diseño."
+
+#~ msgid "Pick page range"
+#~ msgstr "Elegir intervalo de páginas"
 
 msgid "Pick the languages you want to translate to. The book's original language stays as-is."
 msgstr "Elige los idiomas a los que deseas traducir. El idioma original del libro permanece igual."
@@ -4928,6 +5202,9 @@ msgstr "Anterior"
 msgid "Preview"
 msgstr "Previsualización"
 
+#~ msgid "Preview & split pages"
+#~ msgstr "Previsualizar y dividir páginas"
+
 msgid "Preview linked page"
 msgstr "Vista previa de la página vinculada"
 
@@ -4954,6 +5231,15 @@ msgstr "Página anterior"
 
 msgid "Previous slide"
 msgstr "Diapositiva anterior"
+
+msgid "Process every page on this machine."
+msgstr "Procesar todas las páginas en esta máquina."
+
+msgid "Process only a range of pages here."
+msgstr "Procesar solo un rango de páginas aquí."
+
+#~ msgid "Process the whole book here"
+#~ msgstr "Procesar todo el libro aquí"
 
 msgid "Processing metadata…"
 msgstr "Procesando metadatos…"
@@ -5138,6 +5424,9 @@ msgstr "¿Re-ejecutar {stageLabel}?"
 msgid "Re-run speech"
 msgstr "Reejecutar audio"
 
+msgid "Re-run these book-level stages on the assembled book:"
+msgstr "Vuelve a ejecutar estas etapas de nivel de libro en el libro ensamblado:"
+
 msgid "Re-run translation"
 msgstr "Reejecutar traducción"
 
@@ -5234,6 +5523,9 @@ msgstr "Refreshing results for this packaged preview."
 
 msgid "Regenerate"
 msgstr "Regenerar"
+
+msgid "Regenerate book summary"
+msgstr "Regenerar resumen del libro"
 
 msgid "Regenerate definition, variations, and emoji"
 msgstr "Regenerar definición, variaciones y emoji"
@@ -5431,6 +5723,9 @@ msgstr "Reintentar {stageLabel}"
 
 msgid "Retry Export"
 msgstr "Reintentar exportación"
+
+msgid "Return to coordinator"
+msgstr "Devolver al coordinador"
 
 msgid "Revert language change"
 msgstr "Revertir cambio de idioma"
@@ -5863,6 +6158,9 @@ msgstr "Secciones"
 msgid "See examples"
 msgstr "Ver ejemplos"
 
+msgid "See the book & pick pages"
+msgstr "Ver el libro y elegir páginas"
+
 msgid "Segment"
 msgstr "Segmentar"
 
@@ -5898,6 +6196,9 @@ msgstr "Segmentando..."
 
 msgid "Segmenting…"
 msgstr "Segmentando..."
+
+msgid "Select a .zip project archive exported from ADT Studio."
+msgstr "Selecciona un archivo de proyecto .zip exportado desde ADT Studio."
 
 msgid "Select a node type and enter an item ID to view versions."
 msgstr "Selecciona un tipo de nodo e ingresa un ID de elemento para ver las versiones."
@@ -5959,6 +6260,10 @@ msgstr "Selecciona hasta 5 páginas para usar como referencias visuales. El LLM 
 msgid "Selected images"
 msgstr "Imágenes seleccionadas"
 
+#. placeholder {0}: fmtRange(w)
+msgid "Selected pages {0}."
+msgstr "Páginas seleccionadas {0}."
+
 msgid "Selected: {styleImageId}"
 msgstr "Seleccionada: {0}"
 
@@ -5967,6 +6272,9 @@ msgstr "Seleccionar \\\"Ninguno\\\" permite al LLM elegir su propio estilo para 
 
 msgid "Self-contained ADT web app"
 msgstr "Aplicación web ADT autónoma"
+
+msgid "Send this project archive back to the coordinator to merge into the source book."
+msgstr "Envía este archivo de proyecto al coordinador para combinarlo en el libro de origen."
 
 msgid "Separator"
 msgstr "Separador"
@@ -6003,6 +6311,9 @@ msgstr "Definida manualmente"
 
 msgid "Set the editing language and choose output languages for the book."
 msgstr "Establece el idioma de edición y elige los idiomas de salida para el libro."
+
+msgid "Set your API key first"
+msgstr "Configura primero tu clave de API"
 
 msgid "Set your API key to auto-generate"
 msgstr "Configura tu clave de API para autogenerar"
@@ -6122,6 +6433,9 @@ msgstr "sk-..."
 msgid "sk-ant-..."
 msgstr "sk-ant-..."
 
+#~ msgid "Skip extraction — hand out page-range parts and merge the results back later."
+#~ msgstr "Omitir la extracción: reparte las partes por rango de páginas y fusiona los resultados más adelante."
+
 msgid "Skip for now"
 msgstr "Omitir por ahora"
 
@@ -6216,6 +6530,46 @@ msgstr "Indicaciones de voz"
 msgid "Speech Settings"
 msgstr "Configuración de Voz"
 
+#. placeholder {0}: book.split.splitPages
+#. placeholder {1}: book.split.totalPages
+msgid "Split · {0}/{1}"
+msgstr "Dividido · {0}/{1}"
+
+#~ msgid "Split · {0}/{1} pages merged"
+#~ msgstr "Dividido · {0}/{1} páginas fusionadas"
+
+#~ msgid "Split · {0}/{1} pages split"
+#~ msgstr "Dividido · {0}/{1} páginas divididas"
+
+#~ msgid "Split · all parts merged"
+#~ msgstr "Dividido · todas las partes fusionadas"
+
+msgid "Split & merge"
+msgstr "Dividir y fusionar"
+
+msgid "Split into"
+msgstr "Dividir en"
+
+#~ msgid "Split into {0} part(s)"
+#~ msgstr "Dividido en {0} parte(s)"
+
+#. placeholder {0}: book.split.exportedParts
+#. placeholder {1}: book.split.splitPages
+#. placeholder {2}: book.split.totalPages
+#. placeholder {3}: book.split.mergedPages
+#. placeholder {4}: book.split.totalPages
+msgid "Split into {0} part(s) · {1}/{2} pages split off · {3}/{4} merged back"
+msgstr "Dividido en {0} parte(s) · {1}/{2} páginas separadas · {3}/{4} fusionadas"
+
+msgid "Split into parts"
+msgstr "Dividir en partes"
+
+#~ msgid "Split into parts for others"
+#~ msgstr "Dividir en partes para otros"
+
+msgid "Split preview"
+msgstr "Previsualización de división"
+
 msgid "Split segments"
 msgstr "Segmentos divididos"
 
@@ -6246,8 +6600,14 @@ msgstr "Inicio"
 msgid "Start a reviewer session"
 msgstr "Start a reviewer session"
 
+#~ msgid "Start extracting on this machine right after creating the book."
+#~ msgstr "Comienza a extraer en esta máquina justo después de crear el libro."
+
 msgid "Start from a PDF"
 msgstr "Empieza con un PDF"
+
+msgid "Start of an equal-split window"
+msgstr "Inicio de una ventana de división equitativa"
 
 msgid "Start page"
 msgstr "Start page"
@@ -6516,6 +6876,9 @@ msgstr "La IA preservará el estilo original al aplicar tus cambios."
 msgid "The application ran into an unexpected error. You can try reloading — your work in progress is saved on disk."
 msgstr "La aplicación encontró un error inesperado. Puedes intentar recargar — tu trabajo en progreso está guardado en el disco."
 
+msgid "The archive must contain a project database and its PDF. Re-export it from ADT Studio."
+msgstr "El archivo debe contener una base de datos de proyecto y su PDF. Vuelve a exportarlo desde ADT Studio."
+
 msgid "The back cover of the book."
 msgstr "La contraportada del libro."
 
@@ -6524,6 +6887,12 @@ msgstr "El libro está escrito en {langName}."
 
 msgid "The book keeps using the current font above until you attach and assign new ones."
 msgstr "El libro sigue usando la fuente actual de arriba hasta que adjuntes y asignes nuevas."
+
+msgid "The book summary covers the whole book — regenerate it on the assembled book once you've merged your last part."
+msgstr "El resumen del libro abarca todo el libro: regéneralo en el libro ensamblado una vez que hayas fusionado tu última parte."
+
+msgid "The book's title and metadata arrive with the part that contains page 1 — merge that part to fill them in."
+msgstr "El título y los metadatos del libro llegan con la parte que contiene la página 1 — combina esa parte para completarlos."
 
 msgid "The community of living organisms in a place and the way they interact with each other and their environment."
 msgstr "La comunidad de organismos vivos en un lugar y la forma en que interactúan entre sí y con su entorno."
@@ -6639,6 +7008,9 @@ msgstr "El Ciclo del Agua"
 msgid "The weather was very bad."
 msgstr "El tiempo estaba muy malo."
 
+msgid "The whole book has been split into parts."
+msgstr "El libro completo se ha dividido en partes."
+
 msgid "The world before us"
 msgstr "El mundo ante nosotros"
 
@@ -6672,15 +7044,40 @@ msgstr "Producen flores para atraer polinizadores."
 msgid "They release oxygen directly into the air."
 msgstr "Liberan oxígeno directamente al aire."
 
+msgid "This archive can't be opened safely"
+msgstr "Este archivo no se puede abrir de forma segura"
+
+msgid "This book has {pageCount} pages."
+msgstr "Este libro tiene {pageCount} páginas."
+
 msgid "This book has no images to caption"
 msgstr "Este libro no tiene imágenes para subtitular"
 
 msgid "This book has no pages. Make sure the extraction and storyboard stages produced content before generating {stageName}."
 msgstr "Este libro no tiene páginas. Asegúrate de que las etapas de extracción y storyboard produjeron contenido antes de generar {stageName}."
 
+msgid "This book is a part — its page range is fixed to the assigned subset and cannot be changed."
+msgstr "Este libro es una parte: su rango de páginas es fijo, corresponde al subconjunto asignado y no se puede cambiar."
+
+msgid "This book is a part. Export it as a <0>Completed Part</0> and send the file back to the coordinator to merge into the source book."
+msgstr "Este libro es una parte. Expórtalo como <0>Parte completada</0> y envía el archivo al coordinador para combinarlo en el libro de origen."
+
+#~ msgid "This book is a part. Export it as a <0>Project Archive</0> and send the file back to the coordinator to merge into the source book."
+#~ msgstr "Este libro es una parte. Expórtalo como <0>Archivo del Proyecto</0> y envía el archivo al coordinador para fusionarlo con el libro de origen."
+
+#~ msgid "This book is an imported part. Parts can't be split or merged further — process the assigned pages, then return the finished part from the Export step to merge it back into the source book."
+#~ msgstr "Este libro es una parte importada. Las partes no se pueden volver a dividir ni fusionar: procesa las páginas asignadas y luego devuelve la parte terminada desde el paso Exportar para fusionarla de nuevo en el libro de origen."
+
+msgid "This book is fully assembled"
+msgstr "Este libro está completamente ensamblado"
+
 #. placeholder {0}: book.title
 msgid "This book is titled \"{0}\"."
 msgstr "Este libro se titula \\\"{0}\\\"."
+
+#. placeholder {0}: status.missingRanges.map(fmtRange).join(", ")
+msgid "This book isn't fully assembled yet — pages <0>{0}</0> haven't been merged back. Anything you run here covers only the merged pages, so the result will be incomplete until every part is merged."
+msgstr "Este libro aún no está completo — las páginas <0>{0}</0> no se han combinado. Lo que ejecutes aquí solo cubre las páginas combinadas, por lo que el resultado estará incompleto hasta que se combinen todas las partes."
 
 msgid "This book renders fixed-layout, so it keeps the original PDF fonts. Attached fonts still guide the AI for activities and generated pages."
 msgstr "Este libro se renderiza con diseño fijo, por lo que mantiene las fuentes originales del PDF. Las fuentes adjuntas igualmente guían a la IA en actividades y páginas generadas."
@@ -6706,11 +7103,23 @@ msgstr "Esto es <0>ADT Studio</0>."
 msgid "This is a preview of the options you have selected for your book, each option affects the preview in a different way."
 msgstr "Esta es una vista previa de las opciones que has seleccionado para tu libro, cada opción afecta la vista previa de una manera diferente."
 
+msgid "This is a project, not a book part"
+msgstr "Esto es un proyecto, no una parte del libro"
+
 msgid "This is Pip! He has a wiggly tail."
 msgstr "¡Este es Pip! Tiene una cola que se mueve."
 
 msgid "This is Pip! He is a happy caramel dog with a very wiggly tail. Pip loves the green grass, the bright yellow sun, and making new friends in his garden."
 msgstr "¡Este es Pip! Es un perro caramelo feliz con una cola muy movida. A Pip le encanta el césped verde, el brillante sol amarillo y hacer nuevos amigos en su jardín."
+
+msgid "This isn't a completed part"
+msgstr "Esto no es una parte completada"
+
+msgid "This isn't a valid ADT Studio project"
+msgstr "Este no es un proyecto válido de ADT Studio"
+
+msgid "This isn't a valid part file"
+msgstr "Este no es un archivo de parte válido"
 
 msgid "This page has no captioned images"
 msgstr "Esta página no tiene imágenes con leyendas"
@@ -6750,6 +7159,12 @@ msgstr "This page has not been reviewed yet"
 
 msgid "This page's embedded text layer is empty, but the Sectioning step recovered text from the page image — so it looks like a scanned or image-only page. The pipeline can still work from the recovered text, but for better summaries, metadata, and translations, try to obtain a text-based version of this PDF (one with a real text layer) rather than a scanned copy."
 msgstr "La capa de texto incrustado de esta página está vacía, pero el paso de Seccionamiento recuperó texto a partir de la imagen de la página, por lo que parece una página escaneada o solo de imagen. La canalización aún puede funcionar con el texto recuperado, pero para obtener mejores resúmenes, metadatos y traducciones, intenta conseguir una versión de este PDF basada en texto (con una capa de texto real) en lugar de una copia escaneada."
+
+msgid "This part cannot be merged"
+msgstr "Esta parte no se puede fusionar"
+
+msgid "This part doesn't match this book"
+msgstr "Esta parte no coincide con este libro"
 
 #~ msgid "This PDF appears to be image-based or uses fonts we can't read as text, so the extracted text may be incomplete. The Sectioning step can still recover some text from the page image, but for better summaries, metadata, and translations, first try to obtain a better-quality, text-based version of this PDF — and only run OCR on it if no such version is available."
 #~ msgstr "Este PDF parece estar basado en imágenes o usa fuentes que no podemos leer como texto, por lo que el texto extraído puede estar incompleto. El paso de Seccionamiento aún puede recuperar parte del texto a partir de la imagen de la página, pero para obtener mejores resúmenes, metadatos y traducciones, primero intenta conseguir una versión de este PDF de mejor calidad y basada en texto, y aplica OCR solo si no hay ninguna disponible."
@@ -6847,8 +7262,11 @@ msgstr "Títulos generados por el modelo a partir del contenido de la sección."
 msgid "Titles taken verbatim from typed section headings."
 msgstr "Títulos tomados textualmente de los encabezados de sección escritos."
 
-msgid "to"
-msgstr "hasta"
+#~ msgid "to"
+#~ msgstr "hasta"
+
+msgid "To page"
+msgstr "Hasta la página"
 
 msgid "to stream API logs here."
 msgstr "para transmitir registros de API aquí."
@@ -7087,6 +7505,9 @@ msgstr "Actualización descargada. Reinicia para instalar."
 msgid "Upload"
 msgstr "Subir"
 
+msgid "Upload a completed part (exported as a project). Per-page results are copied in as new versions; book-level stages are marked for re-running."
+msgstr "Sube una parte completada (exportada como proyecto). Los resultados por página se copian como nuevas versiones; las etapas de nivel de libro se marcan para volver a ejecutarse."
+
 msgid "Upload a new image file from your computer"
 msgstr "Sube un nuevo archivo de imagen desde tu computadora"
 
@@ -7212,8 +7633,8 @@ msgstr "Variables"
 msgid "Variations"
 msgstr "Variaciones"
 
-msgid "Vector Extraction"
-msgstr "Extracción vectorial"
+#~ msgid "Vector Extraction"
+#~ msgstr "Extracción vectorial"
 
 msgid "Verified applied"
 msgstr "Aplicación verificada"
@@ -7254,6 +7675,9 @@ msgstr "Ver licencia"
 
 msgid "View page"
 msgstr "Ver página"
+
+msgid "View page {pageNum} larger"
+msgstr "Ver la página {pageNum} más grande"
 
 msgid "vision"
 msgstr "visión"
@@ -7381,14 +7805,17 @@ msgstr "Qué hay dentro"
 msgid "What's new"
 msgstr "Novedades"
 
+#~ msgid "What's next for this book?"
+#~ msgstr "¿Qué sigue para este libro?"
+
 msgid "When describing images, mention any culturally specific objects, locations, or recurring characters by name."
 msgstr "Al describir imágenes, menciona cualquier objeto, ubicación o personaje recurrente específico de la cultura por su nombre."
 
 msgid "When enabled, background colors from the styleguide are applied to the full page body."
 msgstr "Cuando está activado, los colores de fondo de la guía de estilo se aplican al cuerpo completo de la página."
 
-msgid "When enabled, text labels near vector images (e.g. chart dimensions, speech bubbles) are grouped together and extracted as raster crops. Disable to extract only the core vector shapes without text."
-msgstr "Cuando está activado, las etiquetas de texto cercanas a imágenes vectoriales (p. ej. dimensiones de gráficos, globos de diálogo) se agrupan y extraen como recortes rasterizados. Desactive para extraer solo las formas vectoriales sin texto."
+#~ msgid "When enabled, text labels near vector images (e.g. chart dimensions, speech bubbles) are grouped together and extracted as raster crops. Disable to extract only the core vector shapes without text."
+#~ msgstr "Cuando está activado, las etiquetas de texto cercanas a imágenes vectoriales (p. ej. dimensiones de gráficos, globos de diálogo) se agrupan y extraen como recortes rasterizados. Desactive para extraer solo las formas vectoriales sin texto."
 
 msgid "When enabled, the selected images below are regenerated for every output language during the translate stage."
 msgstr "Cuando está activado, las imágenes seleccionadas a continuación se regeneran para cada idioma de salida durante la etapa de traducción."
@@ -7419,6 +7846,9 @@ msgstr "Ancho"
 
 msgid "Will be reset"
 msgstr "Será restablecido"
+
+msgid "Windows"
+msgstr "Ventanas"
 
 msgid "Within range"
 msgstr "Dentro del rango"
