@@ -34,6 +34,7 @@ apps/              # Application tier
   api/             # Hono HTTP server
   studio/          # React SPA (Vite)
   desktop/         # Tauri v2 desktop wrapper
+  site/            # Public site — landing page + docs (TanStack Start + fumadocs)
 
 templates/         # Layout templates
 config/            # Global configuration
@@ -44,6 +45,13 @@ docs/              # Documentation (guidelines, architecture)
 Frontend MUST NOT import from packages directly. All data flows through the API.
 
 **Exception**: `@adt/types` may be imported by `studio` for the shared `PIPELINE` definition and derived constants (stage/step names, ordering). No business logic — only type-level and constant data.
+
+## Public site (`apps/site`)
+
+The landing page **and** the end-user documentation (`/docs`) are one TanStack Start app (fumadocs for docs, Lingui + per-locale MDX for i18n). It is **not** built/deployed from `main`: it lives on the standalone **`landing-page`** branch (deploys to GitHub Pages, never merged into `main`); work happens on `landing-page-v1` and is PR'd into the protected `landing-page` branch to publish.
+
+- **`apps/site/README.md`** — how the site is built, run, and deployed (architecture, dev, the `landing-page` deploy branch, Pages prerequisites, troubleshooting).
+- **`apps/site/content/README.md`** — how to write and translate documentation content (pages, frontmatter, `meta.json`, per-locale folders).
 
 ## Pipeline Architecture
 

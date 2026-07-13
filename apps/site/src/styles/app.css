@@ -1,0 +1,453 @@
+@import 'tailwindcss';
+@import 'fumadocs-ui/css/neutral.css';
+@import 'fumadocs-ui/css/preset.css';
+
+@theme inline {
+  --font-sans:
+    "Atkinson Hyperlegible", ui-sans-serif, system-ui, -apple-system,
+    BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial,
+    "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji",
+    "Segoe UI Symbol", "Noto Color Emoji";
+  --font-mono:
+    ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
+    "Liberation Mono", "Courier New", monospace;
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-border: var(--border);
+  --color-ring: var(--ring);
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+
+  --animate-fade-ring: fade-ring 1.5s ease-out forwards;
+  --animate-onboarding-fade-up:
+    onboarding-fade-up 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+  --animate-onboarding-fade-in: onboarding-fade-in 0.8s ease-out both;
+  --animate-onboarding-icon-float:
+    onboarding-icon-float 5s ease-in-out infinite;
+  --animate-onboarding-shimmer: onboarding-shimmer 2.8s ease-in-out infinite;
+}
+
+:root {
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.145 0 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.145 0 0);
+  --primary: oklch(0.623 0.189 260);
+  --primary-foreground: oklch(1 0 0);
+  --muted: oklch(0.97 0 0);
+  --muted-foreground: oklch(0.556 0 0);
+  --accent: oklch(0.97 0 0);
+  --accent-foreground: oklch(0.205 0 0);
+  --border: oklch(0.922 0 0);
+  --ring: oklch(0.623 0.189 260);
+  --radius: 0.625rem;
+
+  /* Hamburger (lucide "menu") used to re-skin the mobile sidebar trigger. */
+  --adt-hamburger-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 6h16'/%3E%3Cpath d='M4 12h16'/%3E%3Cpath d='M4 18h16'/%3E%3C/svg%3E");
+}
+
+/* Align fumadocs docs chrome with the ADT brand accent */
+:root {
+  --color-fd-primary: oklch(0.623 0.189 260);
+  --color-fd-ring: oklch(0.623 0.189 260);
+}
+
+/*
+ * Lighter, faintly cool page surface (light mode) so the docs read fresh and
+ * branded instead of a flat, dull grey. The content panel stays pure white,
+ * so the two-tone separation is preserved but softer.
+ */
+:root {
+  --color-fd-background: oklch(0.985 0.004 255);
+  --color-fd-muted: oklch(0.972 0.006 255);
+  --color-fd-secondary: oklch(0.967 0.007 255);
+}
+
+/*
+ * Kaneo-style integrated chrome (notebook layout, nav.mode: 'auto'). The logo
+ * sits at the top of the sidebar column and the navbar is contained above the
+ * content only. The sidebar and navbar share the page surface with no card
+ * background and no dividers, so the chrome reads as one seamless frame.
+ */
+#nd-subnav,
+#nd-subnav > div {
+  border-bottom: none;
+}
+/* Drop the sub-nav's own horizontal padding (md+) so the top-bar action cluster
+   lines up with the content card's edges instead of being inset from them. */
+@media (min-width: 768px) {
+  #nd-subnav > div {
+    padding-inline: 0;
+  }
+}
+
+/*
+ * Mobile-only chrome fixes (< md).
+ */
+@media (max-width: 767px) {
+  /* On mobile the link cluster is hidden inside the sidebar (the language
+     picker lives in the top bar instead); collapse its now-empty wrapper so it
+     leaves no gap above the nav tree. */
+  #nd-sidebar-mobile div:has(> .max-md\:hidden) {
+    display: none;
+  }
+
+  /* Pin the top-bar language picker to the right, next to the hamburger —
+     fumadocs renders nav.children on the left (by the logo), so anchor it to
+     the positioned #nd-subnav instead (matches the landing-page top bar). */
+  #nd-subnav [data-docs-mobile-lang] {
+    position: absolute;
+    top: 0.625rem;
+    inset-inline-end: 3.25rem;
+  }
+  /* Search dialog defaults to top-4, which tucks the input behind the sticky
+     h-14 top bar. Drop it below the bar (with a small gap). */
+  [role='dialog'].adt-search-content {
+    top: 4.75rem;
+  }
+
+  /* The notebook layout's sidebar trigger uses a panel icon; swap it for a
+     hamburger (the panel icon is hidden, a menu glyph is masked in its place).
+     Scoped to the top bar's trigger — the desktop collapse trigger is hidden
+     here, so its empty ::before never renders. */
+  #nd-subnav button:has(> svg.lucide-panel-left) > svg {
+    display: none;
+  }
+  #nd-subnav button:has(> svg.lucide-panel-left)::before {
+    content: '';
+    width: 1.25rem;
+    height: 1.25rem;
+    background-color: currentColor;
+    -webkit-mask: var(--adt-hamburger-icon) center / contain no-repeat;
+    mask: var(--adt-hamburger-icon) center / contain no-repeat;
+  }
+}
+
+@media (min-width: 768px) {
+  #nd-sidebar {
+    background-color: transparent;
+    border-inline-end: none;
+  }
+
+  /*
+   * Inner scroll: lock the shell (sidebar + top bar) to the viewport height
+   * and let the main content scroll inside its own region.
+   */
+  #nd-notebook-layout {
+    height: var(--fd-docs-height, 100dvh);
+    min-height: var(--fd-docs-height, 100dvh);
+    overflow: hidden;
+  }
+  #nd-page {
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in oklab, var(--color-fd-muted-foreground) 30%, transparent)
+      transparent;
+  }
+  /*
+   * Minimal scrollbar: a thin, fully-rounded thumb floating on a transparent
+   * track (the 3px transparent border + padding-box clip keeps it slim and
+   * inset from the card edge). Hidden until needed on overlay platforms.
+   */
+  #nd-page::-webkit-scrollbar {
+    width: 11px;
+  }
+  #nd-page::-webkit-scrollbar-track {
+    background: transparent;
+    /* Inset the track by the card's corner radius so the thumb stays within
+       the straight edges and never pokes into the rounded corners. */
+    margin-block: 0.75rem;
+  }
+  #nd-page::-webkit-scrollbar-thumb {
+    background-color: color-mix(in oklab, var(--color-fd-muted-foreground) 28%, transparent);
+    background-clip: padding-box;
+    border: 3px solid transparent;
+    border-radius: 9999px;
+  }
+  #nd-page::-webkit-scrollbar-thumb:hover {
+    background-color: color-mix(in oklab, var(--color-fd-muted-foreground) 50%, transparent);
+  }
+}
+
+/*
+ * Full-bleed shell + two-tone surface (Kaneo-style). The default layout caps
+ * at ~97rem and centers on wide screens, leaving a gutter before the sidebar;
+ * widening the cap keeps the sidebar hugging the left edge. The main content
+ * sits on a distinct, lighter surface so it reads as its own container, while
+ * the sidebar/top bar share the muted page background.
+ */
+:root {
+  --fd-layout-width: 200rem;
+  --fd-content-surface: #ffffff;
+}
+.dark {
+  --fd-content-surface: rgb(28, 28, 30);
+}
+
+@media (min-width: 768px) {
+  /*
+   * Main content as a floating, rounded card. The card spans both the content
+   * (main) and TOC columns so the "On this page" indicator sits inside it; the
+   * article is kept clear of the TOC area with a matching inline-end padding
+   * (collapses to 0 on full-width pages, where --fd-toc-width is 0).
+   */
+  #nd-page {
+    background-color: var(--fd-content-surface);
+    border: 1px solid var(--color-fd-border);
+    border-radius: 0.75rem;
+    /* Float the card above the page bottom edge (matches the right-side gap). */
+    margin-bottom: 0.75rem;
+    grid-column: 3 / 5;
+    padding-inline-end: var(--fd-toc-width);
+    /* Mirror the top padding so scrolled-to-bottom content keeps breathing
+       room equal to the top and sides (fumadocs only sets pt, not pb). */
+    padding-bottom: 2rem;
+  }
+  /*
+   * The card (container) is full width, but the content is a centered reading
+   * column. Override fumadocs' left-aligned `*:max-w-[900px]` per-child cap
+   * with a comfortable width that's centered within the content area.
+   */
+  #nd-page > * {
+    width: 100%;
+    max-width: 48rem;
+    margin-inline: auto;
+  }
+}
+
+/* Match the larger top padding at the xl breakpoint (fumadocs uses pt-14). */
+@media (min-width: 1280px) {
+  #nd-page {
+    padding-bottom: 3.5rem;
+  }
+}
+
+/* Logo: aligned with the nav items, minimal padding around it. */
+#nd-sidebar > div:first-child {
+  padding-top: 0.75rem;
+  padding-bottom: 0;
+}
+#nd-sidebar a:has(> img) {
+  padding-inline-start: 0.625rem;
+}
+/* The logo/wordmark is a header, not a nav link — fumadocs always wraps it in
+   an anchor, so neutralize it (it's the only sidebar link with an <img>). */
+#nd-sidebar a:has(img) {
+  pointer-events: none;
+}
+/* Tighten the gap between the search box and the first nav group. */
+#nd-sidebar [data-radix-scroll-area-viewport] {
+  padding-top: 0.375rem;
+}
+
+/*
+ * Minimal sidebar (Kaneo-style): a neutral subtle active state (no brand color
+ * or accent bar) and quiet group labels. Item icons are shown.
+ */
+#nd-sidebar a[data-active='true'] {
+  background-color: color-mix(in oklab, var(--color-fd-primary) 10%, transparent);
+  color: var(--color-fd-primary);
+  font-weight: 400;
+}
+#nd-sidebar a[data-active='true']::before {
+  content: none;
+}
+
+/*
+ * Hover for non-active items: fumadocs' default is a heavy gray slab
+ * (hover:bg-fd-accent/50) that, on nested items, spans full width and crosses
+ * the indent rail — reading as a much louder treatment than the subtle active
+ * pill. Replace it with a faint, smoothly-transitioned tint that matches the
+ * minimal active state instead of competing with it. (Exclude the logo link.)
+ */
+#nd-sidebar a:not(:has(> img)) {
+  transition:
+    background-color 150ms ease,
+    color 150ms ease;
+}
+#nd-sidebar a:not([data-active='true']):not(:has(> img)):hover {
+  background-color: color-mix(in oklab, var(--color-fd-foreground) 6%, transparent);
+  color: var(--color-fd-foreground);
+}
+
+/*
+ * Nested (collapsible) items: their hover/active pill spans full width and
+ * pokes out to the left of the indent rail. Shift the box right so the pill
+ * starts just inside the rail, compensating with padding so the icon/label
+ * stay put. Result: a clean inset pill that never crosses the rail.
+ */
+#nd-sidebar div[class*='collapsible'] a:not(:has(> img)) {
+  margin-inline-start: 0.75rem;
+  padding-inline-start: 0.5rem;
+}
+
+/*
+ * Sidebar keyboard focus: the browser's default outline renders as a heavy
+ * blue box that hugs the rounded items (most obvious on nested entries).
+ * Replace it with a clean, subtle ring that follows the item's radius and
+ * never clips against the scroll area, keeping focus visible but quiet.
+ */
+#nd-sidebar a:focus-visible,
+#nd-sidebar button:focus-visible {
+  outline: none;
+  box-shadow: inset 0 0 0 1.5px
+    color-mix(in oklab, var(--color-fd-primary) 55%, transparent);
+}
+
+/* Section headers carry the contrast via color (near-black), matching the
+   fumadocs default — normal weight, 14px; the prominence is the color, not bold. */
+#nd-sidebar p > .fd-page-tree-item-name {
+  font-size: 0.875rem;
+  font-weight: 400;
+  color: var(--color-fd-foreground);
+}
+
+#nd-sidebar a > .fd-page-tree-item-name {
+  font-size: 0.875rem;
+}
+
+/* Items are lighter than the section headers (active stays brand blue). */
+#nd-sidebar a:has(> .fd-page-tree-item-name):not([data-active='true']) {
+  color: var(--color-fd-muted-foreground);
+}
+
+/*
+ * Dark theme (docs). The landing is light-only, so we only need the brand
+ * tokens to have dark values for the docs surfaces. Map them onto fumadocs'
+ * dark palette so our custom docs UI (home, topic cards) matches the chrome,
+ * and keep a brightened brand-blue accent for contrast on dark.
+ */
+.dark {
+  --color-background: var(--color-fd-background);
+  --color-foreground: var(--color-fd-foreground);
+  --color-card: var(--color-fd-card);
+  --color-card-foreground: var(--color-fd-card-foreground);
+  --color-muted: var(--color-fd-muted);
+  --color-muted-foreground: var(--color-fd-muted-foreground);
+  --color-accent: var(--color-fd-accent);
+  --color-accent-foreground: var(--color-fd-accent-foreground);
+  --color-border: var(--color-fd-border);
+  --color-primary: oklch(0.7 0.16 260);
+  --color-primary-foreground: oklch(0.18 0.02 260);
+  --color-ring: oklch(0.7 0.16 260);
+  --color-fd-primary: oklch(0.7 0.16 260);
+  --color-fd-ring: oklch(0.7 0.16 260);
+}
+
+/*
+ * The landing page is light-only by design. Pin its brand tokens to the light
+ * palette so the global theme class (toggled within the docs) never turns the
+ * landing dark — even for visitors whose OS prefers dark. These set the
+ * @theme color tokens directly (the values the components read), since the
+ * `--color-* : var(--*)` indirection is resolved at :root and can't be
+ * re-pointed by overriding the inner variable further down the tree.
+ */
+.landing-light {
+  --color-background: oklch(1 0 0);
+  --color-foreground: oklch(0.145 0 0);
+  --color-card: oklch(1 0 0);
+  --color-card-foreground: oklch(0.145 0 0);
+  --color-primary: oklch(0.623 0.189 260);
+  --color-primary-foreground: oklch(1 0 0);
+  --color-muted: oklch(0.97 0 0);
+  --color-muted-foreground: oklch(0.556 0 0);
+  --color-accent: oklch(0.97 0 0);
+  --color-accent-foreground: oklch(0.205 0 0);
+  --color-border: oklch(0.922 0 0);
+  --color-ring: oklch(0.623 0.189 260);
+  color-scheme: light;
+}
+
+html {
+  scrollbar-gutter: stable;
+}
+
+html > body[data-scroll-locked] {
+  margin-right: 0px !important;
+  --removed-body-scroll-bar-size: 0px !important;
+}
+
+@layer base {
+  body {
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+/* Landing-only scroll experience — scoped so docs/blog keep normal scrolling */
+html.landing-snap {
+  scroll-behavior: smooth;
+  scroll-padding-top: 3rem;
+  scrollbar-gutter: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+@media (min-width: 768px) {
+  html.landing-snap {
+    scroll-snap-type: y proximity;
+  }
+}
+html.landing-snap::-webkit-scrollbar,
+html.landing-snap body::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none;
+}
+
+.snap-section {
+  scroll-snap-align: start;
+  scroll-snap-stop: normal;
+}
+
+@keyframes fade-ring {
+  0% { opacity: 0.6; transform: scale(0.9); }
+  100% { opacity: 0; transform: scale(1.4); }
+}
+@keyframes onboarding-fade-up {
+  from { opacity: 0; transform: translateY(24px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes onboarding-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes onboarding-icon-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+@keyframes onboarding-shimmer {
+  0%, 100% { opacity: 0.4; transform: scale(1); }
+  50% { opacity: 0.7; transform: scale(1.04); }
+}
+@keyframes onboarding-spin {
+  to { transform: rotate(360deg); }
+}
+@keyframes onboarding-blink-dot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

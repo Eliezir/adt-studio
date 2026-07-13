@@ -1,0 +1,6 @@
+{
+  "rewrites": [
+    { "source": "/", "destination": "/_shell.html" },
+    { "source": "/releases/:tag", "destination": "/_shell.html" }
+  ]
+}
