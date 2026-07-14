@@ -1,0 +1,81 @@
+name: Deploy site (fork preview)
+
+# Fork-only preview deploy of the unified site (landing page + docs) to the
+# GitHub Pages of the Eliezir/adt-studio fork (https://eliezir.github.io/adt-studio/).
+#
+# It does NOT depend on this fork's own branches: it checks out the upstream
+# unicef/adt-studio branch directly and builds that, then deploys to this fork's
+# Pages. A scheduled poll picks up new upstream commits automatically, so a
+# teammate pushing to the upstream branch updates the preview with no manual
+# sync (latency = the cron interval; GitHub may delay scheduled runs).
+#
+# This file must live on the fork's DEFAULT branch — GitHub only fires the
+# `schedule` trigger from the default branch. The `if` guard scopes every job to
+# the fork so this is a no-op anywhere else.
+
+on:
+  schedule:
+    - cron: "*/10 * * * *" # poll upstream every ~10 minutes
+  workflow_dispatch: # allow manual runs
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+env:
+  UPSTREAM_REPO: unicef/adt-studio
+  UPSTREAM_REF: docs/enable-site-docs-v1
+
+jobs:
+  build:
+    if: github.repository == 'Eliezir/adt-studio'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ env.UPSTREAM_REPO }}
+          ref: ${{ env.UPSTREAM_REF }}
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Build site (landing + docs)
+        env:
+          # GitHub Pages serves project sites under /<repo>/.
+          BASE_PATH: /${{ github.event.repository.name }}/
+        run: pnpm --filter @adt/site build
+      - name: SPA fallback for unknown URLs
+        working-directory: apps/site/.output/public
+        run: |
+          # GitHub Pages serves 404.html for any path without a matching file.
+          # Use the SPA shell so the app boots and redirects unknown URLs home.
+          cp _shell.html 404.html
+          # The home ("/") prerender is currently non-deterministic and can emit
+          # an empty or truncated index.html. If it isn't a complete document,
+          # fall back to the SPA shell so the home always renders.
+          if ! grep -aq "</html>" index.html; then
+            echo "::warning::home prerender incomplete — serving the SPA shell for /"
+            cp _shell.html index.html
+          fi
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: apps/site/.output/public
+
+  deploy:
+    if: github.repository == 'Eliezir/adt-studio'
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
