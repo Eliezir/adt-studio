@@ -238,7 +238,7 @@ msgstr "{0} imagens selecionadas não estão mais no storyboard."
 msgid "{0} terms"
 msgstr "{0} termos"
 
-#. placeholder {0}: String(displayEntries.length)
+#. placeholder {0}: String(visibleEntries.length)
 msgid "{0} texts"
 msgstr "{0} textos"
 
@@ -6671,6 +6671,9 @@ msgstr "Mostrar todas"
 msgid "Show all {0}"
 msgstr "Show all {0}"
 
+msgid "Show all entries"
+msgstr "Mostrar todas as entradas"
+
 msgid "Show all pages"
 msgstr "Mostrar todas as páginas"
 
@@ -6682,6 +6685,9 @@ msgstr "Mostrar detalhes do erro"
 
 msgid "Show fewer"
 msgstr "Show fewer"
+
+msgid "Show only entries missing audio"
+msgstr "Mostrar apenas as entradas sem áudio"
 
 msgid "Show only the terms you added manually"
 msgstr "Mostrar apenas os termos que você adicionou manualmente"

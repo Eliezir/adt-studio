@@ -245,6 +245,7 @@ export {
 
 export {
   TTSProviderConfig,
+  TTSRateLimitConfig,
   SpeechConfig,
   isSpeechWordHighlightingEnabled,
   type TtsExclusionConfig,
