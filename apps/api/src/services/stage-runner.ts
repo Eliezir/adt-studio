@@ -9,6 +9,7 @@ import {
   extractPDF,
   resolveFontsCacheDir,
   buildBookFontsPromptContext,
+  readTypography,
   ensureBookGoogleFontsCached,
   extractMetadata,
   buildMetadataConfig,
@@ -1286,6 +1287,8 @@ async function runStoryboardStep(
     const pages = storage.getPages()
     const totalPages = pages.length
     const effectiveConcurrency = config.concurrency ?? 32
+    // Book typography (editable size-per-role map) — resolve once, share with all pages.
+    const typography = readTypography(storage)
 
     if (isFixedLayoutBook(config)) {
       // Fixed-layout: build the positioned tree (into `fixed-layout-sectioning`)
@@ -1398,6 +1401,7 @@ async function runStoryboardStep(
               sourcePageImages,
               styleguide: styleguideContent,
               bookFonts: buildBookFontsPromptContext(storage),
+              typography,
             },
             resolveRenderConfig,
             resolveRenderModel,
