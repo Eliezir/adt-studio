@@ -23,7 +23,7 @@ Do not fix one issue by omitting, weakening, or changing another part of the sou
 Only return suggested_text if you would mark that suggested replacement acceptable under the same review criteria.
 `.trim()
 
-export const DEFAULT_TRANSLATION_EVALUATION_JUDGE_MODEL = "openai:/gpt-5.4"
+export const DEFAULT_TRANSLATION_EVALUATION_JUDGE_MODEL = "openai:gpt-5.4"
 export const DEFAULT_TRANSLATION_EVALUATION_MAX_RETRIES = 3
 export const DEFAULT_TRANSLATION_EVALUATION_BATCH_SIZE = 1
 export const DEFAULT_TRANSLATION_EVALUATION_TEMPERATURE = 0

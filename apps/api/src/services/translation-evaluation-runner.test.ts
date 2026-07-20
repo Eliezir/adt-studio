@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { createBookStorage } from "@adt/storage"
 import type { LLMModel } from "@adt/llm"
 import type { TranslationEvaluationRunRequest } from "@adt/types"
+import { DEFAULT_TRANSLATION_EVALUATION_JUDGE_MODEL } from "@adt/types"
 import { evaluateTranslationInApi, translationEvaluationRunnerInternals } from "./translation-evaluation-runner.js"
 
 let tmpDir = ""
@@ -55,6 +56,23 @@ function buildRequest(label: string): TranslationEvaluationRunRequest {
     ],
   }
 }
+
+describe("judge model defaults", () => {
+  // The shipped default was "openai:/gpt-5.4" — the stray slash made resolveModel
+  // parse the model as "/gpt-5.4", and only normalizeJudgeModel hid it.
+  it("uses the provider:model form the rest of the config uses", () => {
+    expect(DEFAULT_TRANSLATION_EVALUATION_JUDGE_MODEL).toBe("openai:gpt-5.4")
+    expect(DEFAULT_TRANSLATION_EVALUATION_JUDGE_MODEL).not.toContain(":/")
+  })
+
+  // Books configured while the malformed default shipped still have it persisted,
+  // so the normalizer has to keep tolerating it.
+  it("still normalizes a legacy slashed model id", () => {
+    expect(
+      translationEvaluationRunnerInternals.normalizeJudgeModel("openai:/gpt-5.4"),
+    ).toBe("openai:gpt-5.4")
+  })
+})
 
 describe("evaluateTranslationInApi", () => {
   it("evaluates entries with page context and stores item-level results", async () => {

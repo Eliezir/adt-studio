@@ -4,6 +4,7 @@ import { Lock, ArrowLeft, ChevronDown } from "lucide-react"
 import { Trans } from "@lingui/react/macro"
 import { useQuery } from "@tanstack/react-query"
 import type { StageName } from "@adt/types"
+import { DEFAULT_TRANSLATION_EVALUATION_JUDGE_MODEL } from "@adt/types"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -39,7 +40,6 @@ type TranslationEvaluationIssueType =
 type TranslationEvaluationSeverity = "low" | "medium" | "high"
 type TranslationReviewStyle = "light" | "standard" | "detailed" | "custom"
 
-const DEFAULT_TRANSLATION_EVALUATION_JUDGE_MODEL = "openai:/gpt-5.4"
 const DEFAULT_TRANSLATION_EVALUATION_MAX_RETRIES = 3
 const DEFAULT_TRANSLATION_EVALUATION_TEMPERATURE = 0
 const DEFAULT_TRANSLATION_EVALUATION_SEVERITY_THRESHOLD: TranslationEvaluationSeverity = "medium"

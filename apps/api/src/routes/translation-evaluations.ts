@@ -53,6 +53,26 @@ function getBearerToken(authorizationHeader: string | undefined): string {
   return match?.[1]?.trim() ?? ""
 }
 
+/**
+ * Provider credentials for the run. The judge model is configurable, so the key
+ * that matters depends on which provider it names — the runner picks.
+ */
+function getProviderCredentialsFromRequest(c: {
+  req: { header: (name: string) => string | undefined }
+}): {
+  anthropicApiKey?: string
+  googleApiKey?: string
+  customBaseUrl?: string
+  customApiKey?: string
+} {
+  return {
+    anthropicApiKey: c.req.header("X-Anthropic-API-Key")?.trim() || undefined,
+    googleApiKey: c.req.header("X-Google-API-Key")?.trim() || undefined,
+    customBaseUrl: c.req.header("X-Custom-Base-URL")?.trim() || undefined,
+    customApiKey: c.req.header("X-Custom-API-Key")?.trim() || undefined,
+  }
+}
+
 function getOpenAIApiKeyFromRequest(c: { req: { header: (name: string) => string | undefined } }): string {
   return c.req.header("X-OpenAI-Key")?.trim()
     || c.req.header("X-ADT-OpenAI-Key")?.trim()
@@ -389,6 +409,7 @@ export function createTranslationEvaluationRoutes(
     const safeLabel = safeParseLabel(label)
     const safeLanguage = parseLanguage(language)
     const apiKey = getOpenAIApiKeyFromRequest(c)
+    const providerCredentials = getProviderCredentialsFromRequest(c)
     const body = await parseRunBody(c)
 
     const evaluation = getTranslationEvaluationStatus(safeLabel, booksDir, safeLanguage)
@@ -403,9 +424,14 @@ export function createTranslationEvaluationRoutes(
       })
     }
 
-    if (!apiKey) {
+    const hasAnyCredential =
+      !!apiKey ||
+      !!providerCredentials.anthropicApiKey ||
+      !!providerCredentials.googleApiKey ||
+      !!providerCredentials.customApiKey
+    if (!hasAnyCredential) {
       throw new HTTPException(400, {
-        message: "OpenAI API key required for translation evaluation. Set X-OpenAI-Key header or OPENAI_API_KEY on the API server.",
+        message: "An API key is required for translation evaluation. Set X-OpenAI-Key (or the header matching your judge model's provider) or OPENAI_API_KEY on the API server.",
       })
     }
 
@@ -451,7 +477,11 @@ export function createTranslationEvaluationRoutes(
         emitProgress("Preparing translation evaluation payload", 10)
 
         emitProgress("Evaluating visible translations", 40)
-        const result = await evaluateTranslation(request, { booksDir, apiKey }, emitProgress)
+        const result = await evaluateTranslation(
+          request,
+          { booksDir, apiKey, ...providerCredentials },
+          emitProgress,
+        )
         assertMatchingEvaluationResult(request, result)
 
         emitProgress("Saving translation evaluation result", 85)

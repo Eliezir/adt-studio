@@ -1405,15 +1405,18 @@ export const api = {
   getTranslationEvaluation: (label: string, language: string) =>
     request<TranslationEvaluationStatusResponse>(`/books/${label}/evaluations/translations/${language}`),
 
+  // The judge model is configurable, so send every provider credential the user
+  // has — the server picks the one matching the configured model.
   runTranslationEvaluation: (
     label: string,
     language: string,
     apiKey: string,
     scope: { pageId?: string; entryIds?: string[] } = {},
+    providerCredentials?: StageRunProviderCredentials,
   ) =>
     request<TranslationEvaluationRunResponse>(`/books/${label}/evaluations/translations/${language}/run`, {
       method: "POST",
-      headers: apiKey ? { "X-OpenAI-Key": apiKey } : undefined,
+      headers: buildApiHeaders(apiKey, providerCredentials),
       body: JSON.stringify({
         ...(scope.pageId ? { page_id: scope.pageId } : {}),
         ...(scope.entryIds && scope.entryIds.length > 0 ? { entry_ids: scope.entryIds } : {}),

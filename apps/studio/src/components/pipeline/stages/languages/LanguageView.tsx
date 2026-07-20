@@ -299,7 +299,17 @@ export function LanguageView({
     error: runError,
   } = useBookRun();
   const { isTaskRunning, tasks } = useBookTasks(bookLabel);
-  const { apiKey, hasApiKey, azureKey, azureRegion, geminiKey } = useApiKey();
+  const {
+    apiKey,
+    hasApiKey,
+    azureKey,
+    azureRegion,
+    geminiKey,
+    anthropicKey,
+    googleKey,
+    customBaseUrl,
+    customApiKey,
+  } = useApiKey();
   const translateState = stageState("translate");
   const speechState = stageState("speech");
   const activeState = isSpeechStage ? speechState : translateState;
@@ -821,10 +831,21 @@ export function LanguageView({
         throw new Error(i18n._(msg`Select a target language first.`));
       if (reviewEntryIds.length === 0)
         throw new Error(i18n._(msg`No visible translations to review.`));
-      return api.runTranslationEvaluation(bookLabel, selectedLang, apiKey, {
-        pageId: selectedPageId ?? undefined,
-        entryIds: reviewEntryIds,
-      });
+      return api.runTranslationEvaluation(
+        bookLabel,
+        selectedLang,
+        apiKey,
+        {
+          pageId: selectedPageId ?? undefined,
+          entryIds: reviewEntryIds,
+        },
+        {
+          anthropicApiKey: anthropicKey || undefined,
+          googleApiKey: googleKey || undefined,
+          customBaseUrl: customBaseUrl || undefined,
+          customApiKey: customApiKey || undefined,
+        },
+      );
     },
     onSuccess: async (result) => {
       shouldAutoSurfaceReviewRef.current = true;

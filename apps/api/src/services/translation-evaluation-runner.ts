@@ -96,7 +96,12 @@ type TranslationEvaluationSuggestionValidationOutput = z.infer<typeof Translatio
 
 export interface TranslationEvaluationRunnerOptions {
   booksDir: string
+  /** OpenAI key. Still the common case, and the default judge is an OpenAI model. */
   apiKey: string
+  anthropicApiKey?: string
+  googleApiKey?: string
+  customBaseUrl?: string
+  customApiKey?: string
   createModel?: (options: {
     modelId: string
     cacheDir: string
@@ -111,6 +116,32 @@ function utcNow(): string {
 function normalizeJudgeModel(modelId: string | undefined): string {
   const resolved = modelId?.trim() || DEFAULT_TRANSLATION_EVALUATION_JUDGE_MODEL
   return resolved.replace(/^([a-zA-Z0-9_-]+):\/+/, "$1:")
+}
+
+/** Provider half of a `provider:model` id, defaulting to openai like resolveModel does. */
+function judgeProvider(modelId: string): string {
+  const colonIdx = modelId.indexOf(":")
+  return colonIdx >= 0 ? modelId.slice(0, colonIdx) : "openai"
+}
+
+/**
+ * The credential the configured judge actually needs. Requiring an OpenAI key
+ * for an Anthropic judge would reject a perfectly valid setup.
+ */
+function requiredCredentialFor(
+  provider: string,
+  options: TranslationEvaluationRunnerOptions,
+): { key: string | undefined; label: string; header: string } {
+  switch (provider) {
+    case "anthropic":
+      return { key: options.anthropicApiKey, label: "Anthropic", header: "X-Anthropic-API-Key" }
+    case "google":
+      return { key: options.googleApiKey, label: "Google", header: "X-Google-API-Key" }
+    case "custom":
+      return { key: options.customApiKey, label: "custom provider", header: "X-Custom-API-Key" }
+    default:
+      return { key: options.apiKey, label: "OpenAI", header: "X-OpenAI-Key" }
+  }
 }
 
 function buildJudgeInstructions(request: TranslationEvaluationRunRequestData): string {
@@ -495,12 +526,15 @@ export async function evaluateTranslationInApi(
   emitProgress?: TaskProgressEmitter,
 ): Promise<TranslationEvaluationResultData> {
   const parsedRequest = TranslationEvaluationRunRequest.parse(request)
-  const apiKey = options.apiKey.trim()
-  if (!apiKey) {
-    throw new Error("OpenAI API key required for translation evaluation")
+  const modelId = normalizeJudgeModel(parsedRequest.judge_model)
+  const provider = judgeProvider(modelId)
+  const required = requiredCredentialFor(provider, options)
+  if (!required.key?.trim()) {
+    throw new Error(
+      `${required.label} API key required for translation evaluation with judge model "${modelId}". Set the ${required.header} header or the matching key on the API server.`,
+    )
   }
 
-  const modelId = normalizeJudgeModel(parsedRequest.judge_model)
   const instructions = buildJudgeInstructions(parsedRequest)
   const system = buildSystemPrompt(instructions, parsedRequest)
   const batchSize = parsedRequest.batch_size ?? DEFAULT_TRANSLATION_EVALUATION_BATCH_SIZE
@@ -509,13 +543,18 @@ export async function evaluateTranslationInApi(
   const storage = createBookStorage(parsedRequest.book_label, options.booksDir)
 
   try {
-    const previousOpenAIKey = process.env.OPENAI_API_KEY
-    process.env.OPENAI_API_KEY = apiKey
     const onLog = (entry: LlmLogEntry) => storage.appendLlmLog(entry)
+    const credentials = {
+      openaiApiKey: options.apiKey,
+      anthropicApiKey: options.anthropicApiKey,
+      googleApiKey: options.googleApiKey,
+      customBaseUrl: options.customBaseUrl,
+      customApiKey: options.customApiKey,
+    }
     const llmModel = options.createModel
       ? options.createModel({ modelId, cacheDir, onLog })
-      : createLLMModel({ modelId, cacheDir, onLog })
-    try {
+      : createLLMModel({ modelId, cacheDir, onLog, credentials })
+    {
       const pageBatches = chunkPages(parsedRequest.pages, batchSize)
       const items: TranslationEvaluationResultData["items"] = []
       let failedPages = 0
@@ -612,12 +651,6 @@ export async function evaluateTranslationInApi(
 
       emitProgress?.("Translation evaluation completed", 80)
       return result
-    } finally {
-      if (previousOpenAIKey === undefined) {
-        delete process.env.OPENAI_API_KEY
-      } else {
-        process.env.OPENAI_API_KEY = previousOpenAIKey
-      }
     }
   } finally {
     storage.close()
