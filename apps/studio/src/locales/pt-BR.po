@@ -2038,7 +2038,7 @@ msgid "Contents"
 msgstr "Conteúdo"
 
 msgid "Context"
-msgstr ""
+msgstr "Contexto"
 
 msgid "Context included"
 msgstr "Contexto incluído"
@@ -3181,7 +3181,7 @@ msgid "Flexible"
 msgstr "Flexível"
 
 msgid "Fluency"
-msgstr ""
+msgstr "Fluência"
 
 msgid "Font"
 msgstr "Fonte"
@@ -3214,7 +3214,7 @@ msgid "Format"
 msgstr "Formato"
 
 msgid "Formatting"
-msgstr ""
+msgstr "Formatação"
 
 msgid "Formatting and placeholders"
 msgstr "Formatação e espaços reservados"
@@ -4322,7 +4322,7 @@ msgid "Maximize"
 msgstr "Maximizar"
 
 msgid "Meaning"
-msgstr ""
+msgstr "Significado"
 
 msgid "Meaning changed"
 msgstr "Significado alterado"
@@ -5017,7 +5017,7 @@ msgid "Off"
 msgstr "Desligado"
 
 msgid "Omission or addition"
-msgstr ""
+msgstr "Omissão ou adição"
 
 msgid "On"
 msgstr "Ligado"
