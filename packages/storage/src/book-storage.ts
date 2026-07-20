@@ -78,6 +78,24 @@ export function createBookStorage(label: string, booksRoot: string): Storage {
       }
     },
 
+    deletePage(pageId: string): void {
+      const rows = db.all("SELECT path FROM images WHERE page_id = ?", [pageId]) as Array<{
+        path: string
+      }>
+      for (const r of rows) {
+        try {
+          const filePath = path.resolve(paths.bookDir, r.path)
+          ensureWithinRoot(filePath, paths.bookDir)
+          if (fs.existsSync(filePath)) fs.rmSync(filePath)
+        } catch {
+          // Best effort — the DB rows are removed regardless.
+        }
+      }
+      db.run("DELETE FROM images WHERE page_id = ?", [pageId])
+      db.run("DELETE FROM pages WHERE page_id = ?", [pageId])
+      db.run("DELETE FROM node_data WHERE item_id = ?", [pageId])
+    },
+
     getPages(): PageData[] {
       const rows = db.all(
         "SELECT page_id, page_number, text FROM pages ORDER BY page_number"
@@ -195,17 +213,22 @@ export function createBookStorage(label: string, booksRoot: string): Storage {
       const filename = `${segId}.png`
       fs.writeFileSync(path.join(paths.imagesDir, filename), input.buffer)
 
+      const b = input.bounds
       db.run(
         `INSERT INTO images
-           (image_id, page_id, path, hash, width, height, source)
-         VALUES (?, ?, ?, ?, ?, ?, ?)
+           (image_id, page_id, path, hash, width, height, source, bounds_x, bounds_y, bounds_w, bounds_h)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
          ON CONFLICT (image_id) DO UPDATE SET
            page_id = excluded.page_id,
            path = excluded.path,
            hash = excluded.hash,
            width = excluded.width,
            height = excluded.height,
-           source = excluded.source`,
+           source = excluded.source,
+           bounds_x = excluded.bounds_x,
+           bounds_y = excluded.bounds_y,
+           bounds_w = excluded.bounds_w,
+           bounds_h = excluded.bounds_h`,
         [
           segId,
           input.pageId,
@@ -214,6 +237,10 @@ export function createBookStorage(label: string, booksRoot: string): Storage {
           input.width,
           input.height,
           "segment",
+          b ? b.x : null,
+          b ? b.y : null,
+          b ? b.width : null,
+          b ? b.height : null,
         ]
       )
     },
@@ -312,7 +339,15 @@ export function createBookStorage(label: string, booksRoot: string): Storage {
       )
     },
 
-    markStepCompleted(step: string): void {
+    markStepCompleted(step: string, message?: string): void {
+      if (message !== undefined) {
+        db.run(
+          `INSERT INTO step_runs (step, status, completed_at, message) VALUES (?, 'done', ?, ?)
+           ON CONFLICT (step) DO UPDATE SET status='done', completed_at=excluded.completed_at, message=excluded.message`,
+          [step, new Date().toISOString(), message]
+        )
+        return
+      }
       db.run(
         `INSERT INTO step_runs (step, status, completed_at) VALUES (?, 'done', ?)
          ON CONFLICT (step) DO UPDATE SET status='done', completed_at=excluded.completed_at`,
@@ -354,6 +389,10 @@ export function createBookStorage(label: string, booksRoot: string): Storage {
       if (steps.length === 0) return
       const placeholders = steps.map(() => "?").join(", ")
       db.run(`DELETE FROM step_runs WHERE step IN (${placeholders})`, steps)
+    },
+
+    clearRunningStepRuns(): void {
+      db.run("DELETE FROM step_runs WHERE status = 'running'")
     },
 
     getLatestNodeData(node: string, itemId: string): NodeDataRow | null {
@@ -493,7 +532,7 @@ function clearImageFiles(imagesDir: string): void {
 function clearExtractedRows(db: sqlite.Database): void {
   db.exec("BEGIN IMMEDIATE")
   try {
-    db.run("DELETE FROM node_data")
+    db.run("DELETE FROM node_data WHERE node NOT IN ('font-registry', 'font-assignment')")
     db.run("DELETE FROM images")
     db.run("DELETE FROM pages")
     db.run("DELETE FROM step_runs")

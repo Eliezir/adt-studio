@@ -1,6 +1,7 @@
 import { useRef, useMemo, useEffect, useState, useCallback, forwardRef, useImperativeHandle } from "react"
 import DOMPurify from "dompurify"
-import { BASE_URL } from "@/api/client"
+import { BASE_URL, getBookFontFileUrl } from "@/api/client"
+import { useBookFonts } from "@/hooks/use-book-fonts"
 import type { DeviceView } from "./style-editor/device-breakpoint"
 import {
   getDeviceFrame,
@@ -22,7 +23,7 @@ import {
   weightToToken,
 } from "./iframe-computed-styles"
 import { INTERACTIVE_SCRIPT, INTERACTIVE_STYLES } from "./iframe-interactive"
-import { primaryFontFamily, googleFontsCss2Url } from "@adt/types"
+import { primaryFontFamily, googleFontsCss2Url, FIXED_LAYOUT_MAX_SCALE } from "@adt/types"
 
 export type { ComputedTypographyStyles }
 
@@ -41,17 +42,22 @@ function previewAssetsUrl(bookLabel: string): string {
  *  actual panel width. */
 const DEFAULT_RENDER_WIDTH = 1280
 
+function stripTransientAttributes(doc: Document): void {
+  doc
+    .querySelectorAll("[data-adt-selected], [data-adt-editing], [contenteditable]")
+    .forEach((el) => {
+      el.removeAttribute("data-adt-selected")
+      el.removeAttribute("data-adt-editing")
+      el.removeAttribute("contenteditable")
+    })
+}
+
 /** Parse a pixel value (e.g. "612px") to a number, or null for non-px values. */
 function parsePxStyle(value: string | undefined): number | null {
   if (!value) return null
   const match = /^(\d+(?:\.\d+)?)px$/.exec(value.trim())
   return match ? parseFloat(match[1]) : null
 }
-
-// Upper bound for upscaling fixed-layout pages so small-page PDFs fill the
-// preview panel instead of rendering boxed. 2× keeps rasterised assets from
-// getting unacceptably soft while still filling the panel for typical books.
-const FL_MAX_SCALE = 2
 
 export interface BookPreviewFrameHandle {
   /** Get the iframe element's bounding rect in the viewport */
@@ -63,6 +69,10 @@ export interface BookPreviewFrameHandle {
   getElementClasses: (dataId: string) => string[]
   /** Set the full class list on an element by data-id. Returns updated full HTML, or null. */
   setElementClasses: (dataId: string, classes: string[]) => string | null
+  /** Set (or remove, when value is empty) a single inline CSS property on an
+   *  element by data-id. Returns updated full HTML, or null. Used for styling
+   *  that must win over class/cascade rules (e.g. per-element font-family). */
+  setElementStyleProp: (dataId: string, property: string, value: string) => string | null
   /** Re-inject the current `html` prop into the iframe, discarding any in-iframe
    *  DOM mutations (e.g. live `setElementClasses` edits). Used when the parent
    *  wants to revert to the saved state without changing the html prop. */
@@ -184,11 +194,26 @@ export const BookPreviewFrame = forwardRef<BookPreviewFrameHandle, BookPreviewFr
       el.className = classes.join(" ")
       // Don't strip `_el#` data-ids here — the inspector relies on them across
       // edits in a session. They're stripped only at API persist time.
-      const transientEls = doc.querySelectorAll("[data-adt-selected], [data-adt-editing]")
-      transientEls.forEach((te) => {
-        te.removeAttribute("data-adt-selected")
-        te.removeAttribute("data-adt-editing")
-      })
+      stripTransientAttributes(doc)
+      const wrapper = doc.getElementById("content")
+      let html: string
+      if (wrapper) {
+        const cls = (wrapper.getAttribute("class") || "").trim()
+        html = cls ? wrapper.outerHTML : wrapper.innerHTML
+      } else {
+        html = doc.body.innerHTML
+      }
+      el.setAttribute("data-adt-selected", "true")
+      return demoteFirstHeadingIfPromoted(html, sanitizedHtmlRef.current)
+    },
+    setElementStyleProp: (dataId: string, property: string, value: string): string | null => {
+      const doc = iframeRef.current?.contentDocument
+      if (!doc) return null
+      const el = doc.querySelector(`[data-id="${CSS.escape(dataId)}"]`) as HTMLElement | null
+      if (!el) return null
+      if (value) el.style.setProperty(property, value)
+      else el.style.removeProperty(property)
+      stripTransientAttributes(doc)
       const wrapper = doc.getElementById("content")
       let html: string
       if (wrapper) {
@@ -211,6 +236,7 @@ export const BookPreviewFrame = forwardRef<BookPreviewFrameHandle, BookPreviewFr
         lineHeight: null,
         textAlign: null,
         fontFamily: null,
+        inlineFontFamily: null,
       }
       const doc = iframeRef.current?.contentDocument
       const win = doc?.defaultView
@@ -228,6 +254,7 @@ export const BookPreviewFrame = forwardRef<BookPreviewFrameHandle, BookPreviewFr
       const fontEl =
         (el.querySelector('[style*="font-family"]') as HTMLElement | null) ?? el
       const family = primaryFontFamily(win.getComputedStyle(fontEl).fontFamily)
+      const inlineFamily = primaryFontFamily(fontEl.style.fontFamily || el.style.fontFamily || "")
       return {
         fontSize,
         color: rgbToHex(s.color),
@@ -235,6 +262,7 @@ export const BookPreviewFrame = forwardRef<BookPreviewFrameHandle, BookPreviewFr
         lineHeight: lineHeightToMultiplier(s.lineHeight, fontSize),
         textAlign: normalizeTextAlign(s.textAlign),
         fontFamily: family || null,
+        inlineFontFamily: inlineFamily || null,
       }
     },
   }))
@@ -261,7 +289,10 @@ export const BookPreviewFrame = forwardRef<BookPreviewFrameHandle, BookPreviewFr
   const originalTextsRef = useRef<Record<string, string>>({})
   const measureTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  const sanitizedHtml = useMemo(() => DOMPurify.sanitize(html), [html])
+  const sanitizedHtml = useMemo(
+    () => DOMPurify.sanitize(html, { FORBID_ATTR: ["contenteditable"] }),
+    [html],
+  )
   // Convert LaTeX to MathML for display via the API — the underlying data stays as LaTeX.
   // Start with sanitized HTML immediately, then update when the API responds.
   const [displayHtml, setDisplayHtml] = useState(sanitizedHtml)
@@ -306,6 +337,39 @@ export const BookPreviewFrame = forwardRef<BookPreviewFrameHandle, BookPreviewFr
   // injectContent can trigger another pass after content swaps.
   // eslint-disable-next-line lingui/no-unlocalized-strings
   const autoFitScript = `<script src="${assetsPrefix}/assets/auto-fit.js"></script>`
+  const { data: bookFontsData } = useBookFonts(bookLabel)
+  // Attached book fonts are injected into the live iframe head by an effect
+  // below — NOT baked into `srcdoc` — so attaching a font (which refetches this
+  // data) doesn't change `srcdoc` and reload the iframe. A reload would discard
+  // unsaved in-iframe edits, e.g. a just-applied per-element font.
+  const bookGoogleFontsUrl = useMemo(
+    () =>
+      googleFontsCss2Url(
+        (bookFontsData?.fonts ?? [])
+          .filter((f) => f.source === "google")
+          .map((f) => f.family),
+      ),
+    [bookFontsData],
+  )
+  const bookUploadFacesCss = useMemo(() => {
+    /* eslint-disable lingui/no-unlocalized-strings -- CSS, not user-visible text */
+    return (bookFontsData?.fonts ?? [])
+      .filter((f) => f.source === "upload")
+      .flatMap((f) =>
+        f.faces.map(
+          (face) => `@font-face {
+  font-family: ${JSON.stringify(f.family)};
+  font-style: ${face.style};
+  font-weight: ${face.weight};
+  font-display: swap;
+  src: url(${JSON.stringify(getBookFontFileUrl(bookLabel, f.id, face.file))});
+  ${face.unicodeRange ? `unicode-range: ${face.unicodeRange};` : ""}
+}`,
+        ),
+      )
+      .join("\n")
+    /* eslint-enable lingui/no-unlocalized-strings */
+  }, [bookFontsData, bookLabel])
   // Reflowable base-font override: load the family from Google Fonts and
   // re-declare the global element font (last in <head> so it wins over
   // fonts.css's Merriweather rule). Mirrors renderPageHtml's injection so the
@@ -341,7 +405,8 @@ ${autoFitScript}
 </html>`,
     // autoFitScript embeds assetsPrefix; INTERACTIVE_SCRIPT/INTERACTIVE_STYLES
     // are stable module constants. Re-memoise when the prefix (auto-fit URL) or
-    // the reflowable font override changes.
+    // the reflowable font override changes. Attached book fonts are injected
+    // dynamically (see effect below), so they intentionally don't reload here.
     [assetsPrefix, autoFitScript, fontOverride]
   )
 
@@ -562,6 +627,42 @@ ${autoFitScript}
     styleEl.textContent = `body[data-editable="true"] img[data-id] { z-index: auto; }`
   }, [fixedLayoutSize, iframeReady])
 
+  // Inject/update the attached book fonts (Google <link> + uploaded @font-face)
+  // into the live iframe head. Done here rather than in `srcdoc` so attaching a
+  // font doesn't reload the iframe and wipe unsaved inline edits (see the
+  // bookGoogleFontsUrl/bookUploadFacesCss memos above).
+  useEffect(() => {
+    const doc = iframeRef.current?.contentDocument
+    if (!doc?.head) return
+    const linkId = "adt-book-fonts-link"
+    let linkEl = doc.getElementById(linkId) as HTMLLinkElement | null
+    if (bookGoogleFontsUrl) {
+      if (!linkEl) {
+        linkEl = doc.createElement("link")
+        linkEl.id = linkId
+        linkEl.rel = "stylesheet"
+        doc.head.appendChild(linkEl)
+      }
+      if (linkEl.getAttribute("href") !== bookGoogleFontsUrl) {
+        linkEl.setAttribute("href", bookGoogleFontsUrl)
+      }
+    } else {
+      linkEl?.remove()
+    }
+    const styleId = "adt-book-fonts-faces"
+    let styleEl = doc.getElementById(styleId) as HTMLStyleElement | null
+    if (bookUploadFacesCss) {
+      if (!styleEl) {
+        styleEl = doc.createElement("style")
+        styleEl.id = styleId
+        doc.head.appendChild(styleEl)
+      }
+      if (styleEl.textContent !== bookUploadFacesCss) styleEl.textContent = bookUploadFacesCss
+    } else {
+      styleEl?.remove()
+    }
+  }, [bookGoogleFontsUrl, bookUploadFacesCss, iframeReady])
+
   // Inject/update pruned element styles into the iframe
   useEffect(() => {
     const doc = iframeRef.current?.contentDocument
@@ -654,12 +755,14 @@ ${selectors}:hover {
   // page shares one scale — a full spread fills the panel, a single cover/end
   // page renders centered at its natural fraction (e.g. half) of the panel
   // rather than being upscaled to fill it. Small books (reference width below
-  // the panel) still upscale up to FL_MAX_SCALE so they don't render boxed.
+  // the panel) still upscale up to FIXED_LAYOUT_MAX_SCALE so they don't render
+  // boxed — the same cap the packaged reader's fit script uses, so the preview
+  // reads at the size edited here.
   // Reflowable: fit to the device-frame base width, desktop capped at 1× and
   // mobile/tablet grown up to a target visible width for legibility.
   useEffect(() => {
     if (fixedLayoutSize) {
-      setScale(Math.min(FL_MAX_SCALE, availableWidth / fixedLayoutSize.referenceWidth))
+      setScale(Math.min(FIXED_LAYOUT_MAX_SCALE, availableWidth / fixedLayoutSize.referenceWidth))
       return
     }
     const fitScale = Math.max(0, availableWidth / baseWidth)

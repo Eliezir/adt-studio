@@ -8,6 +8,8 @@ export const TaskKind = z.enum([
   "prepare-export",
   "transcribe-timestamps",
   "translation-evaluation",
+  "book-summary",
+  "font-assignment",
 ])
 export type TaskKind = z.infer<typeof TaskKind>
 

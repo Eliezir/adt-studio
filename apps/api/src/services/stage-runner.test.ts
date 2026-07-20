@@ -523,6 +523,7 @@ describe("createStageRunner storyboard render-only", () => {
     seedStoryboardBook(booksDir, "render-only")
 
     const events: ProgressEvent[] = []
+    const controller = new AbortController()
     const runner = createStageRunner()
     await runner.run(
       "render-only",
@@ -534,12 +535,16 @@ describe("createStageRunner storyboard render-only", () => {
         fromStage: "storyboard",
         toStage: "storyboard",
         renderOnly: true,
+        signal: controller.signal,
       },
       { emit: (event) => events.push(event) }
     )
 
     expect(sectionPageMock).not.toHaveBeenCalled()
     expect(renderPageMock).toHaveBeenCalledTimes(1)
+    expect(renderPageMock.mock.calls[0]?.[5]).toEqual({
+      signal: controller.signal,
+    })
     expect(
       events.some(
         (event) =>
@@ -740,6 +745,122 @@ output_languages:
       verify.close()
     }
   })
+
+  // Regression: a present-but-empty text-catalog node (e.g. persisted by
+  // GET /text-catalog when the book was opened before Storyboard rendered)
+  // previously stuck — Translate only rebuilt when the node was absent, so the
+  // empty catalog silently skipped all translation. Translate must rebuild it.
+  it("rebuilds a stale empty text-catalog instead of skipping translation", async () => {
+    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "stage-runner-translate-emptycatalog-"))
+    const booksDir = path.join(tmpDir, "books")
+    const promptsDir = path.join(tmpDir, "prompts")
+    const configPath = path.join(tmpDir, "config.yaml")
+    fs.mkdirSync(promptsDir, { recursive: true })
+    fs.writeFileSync(
+      configPath,
+      `role_types:
+  section_text: Main body text
+structure_types:
+  paragraph: Paragraph
+output_languages:
+  - fr
+`
+    )
+
+    // Seed a book with rendered text AND a stale, empty text-catalog node.
+    const seed = createBookStorage("translate-empty-catalog", booksDir)
+    try {
+      seed.putExtractedPage({
+        pageId: "pg001",
+        pageNumber: 1,
+        text: "Page text",
+        pageImage: {
+          imageId: "pg001_page",
+          buffer: Buffer.from("fake-page-image"),
+          format: "png",
+          hash: "hash-page",
+          width: 800,
+          height: 600,
+        },
+        images: [],
+      })
+      seed.putNodeData("web-rendering", "pg001", {
+        sections: [
+          {
+            sectionIndex: 0,
+            sectionType: "content",
+            reasoning: "",
+            html: '<p data-id="pg001_t001">Hello world</p>',
+          },
+        ],
+      })
+      // The poison: a persisted catalog with zero entries.
+      seed.putNodeData("text-catalog", "book", {
+        entries: [],
+        generatedAt: "2026-01-01T00:00:00.000Z",
+      })
+      const seeded = seed.getLatestNodeData("text-catalog", "book")?.data as
+        | { entries?: unknown[] }
+        | undefined
+      expect(seeded?.entries?.length).toBe(0)
+    } finally {
+      seed.close()
+    }
+
+    easyReadGenerateObjectMock.mockImplementation(async (options: {
+      context?: { texts?: Array<{ text: string }> }
+      validate?: (raw: unknown, context: unknown) => { valid: boolean; errors: string[] }
+    }) => {
+      const texts = options.context?.texts ?? []
+      const object = { translations: texts.map((t) => `FR: ${t.text}`) }
+      const validation = options.validate?.(object, options.context)
+      if (validation && !validation.valid) {
+        throw new Error(validation.errors.join("\n"))
+      }
+      return { object, usage: { inputTokens: 1, outputTokens: 1 } }
+    })
+
+    const events: ProgressEvent[] = []
+    const runner = createStageRunner()
+    await runner.run(
+      "translate-empty-catalog",
+      {
+        booksDir,
+        apiKey: "sk-test",
+        promptsDir,
+        configPath,
+        fromStage: "translate",
+        toStage: "translate",
+      },
+      { emit: (event) => events.push(event) }
+    )
+
+    // Translation must run, not skip on the stale empty catalog.
+    expect(
+      events.some(
+        (event) => event.type === "step-skip" && event.step === "catalog-translation"
+      )
+    ).toBe(false)
+    expect(
+      events.some(
+        (event) => event.type === "step-start" && event.step === "catalog-translation"
+      )
+    ).toBe(true)
+
+    const verify = createBookStorage("translate-empty-catalog", booksDir)
+    try {
+      const catalog = verify.getLatestNodeData("text-catalog", "book")?.data as
+        | { entries?: unknown[] }
+        | undefined
+      expect(catalog?.entries?.length).toBeGreaterThan(0)
+
+      const frTranslation = verify.getLatestNodeData("text-catalog-translation", "fr")
+        ?.data as { entries?: unknown[] } | undefined
+      expect(frTranslation?.entries?.length).toBeGreaterThan(0)
+    } finally {
+      verify.close()
+    }
+  })
 })
 
 describe("createStageRunner speech Gemini partial failures", () => {
@@ -834,7 +955,7 @@ output_languages:
     }
   })
 
-  it("keeps Gemini TTS in error state when some audio items fail", async () => {
+  it("completes the Gemini TTS step with gaps when some audio items permanently fail", async () => {
     tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "stage-runner-tts-"))
     const booksDir = path.join(tmpDir, "books")
     const promptsDir = path.join(tmpDir, "prompts")
@@ -856,8 +977,10 @@ speech:
     )
     seedTextAndSpeechBook(booksDir, "gemini-tts-failure")
 
+    // A non-retryable error (not a 429 or a transient 5xx/empty-audio) fails
+    // the item immediately, standing in for an item that never converts.
     generateSpeechFileMock.mockRejectedValueOnce(
-      new Error("Gemini TTS response did not include audio data")
+      new Error("Gemini TTS request failed (400): request rejected")
     )
 
     const events: ProgressEvent[] = []
@@ -876,25 +999,28 @@ speech:
       { emit: (event) => events.push(event) }
     )
 
+    // The step completes with gaps rather than erroring, so the stage finishes
+    // and downstream export isn't blocked by a stray failed item.
     expect(
       events.some(
-        (event) =>
-          event.type === "step-error" &&
-          event.step === "tts" &&
-          event.error.includes("Missing Gemini audio can be generated one by one")
+        (event) => event.type === "step-complete" && event.step === "tts"
       )
     ).toBe(true)
     expect(
       events.some(
-        (event) => event.type === "step-complete" && event.step === "tts"
+        (event) => event.type === "step-error" && event.step === "tts"
       )
     ).toBe(false)
 
     const storage = createBookStorage("gemini-tts-failure", booksDir)
     try {
       const ttsStep = storage.getStepRuns().find((step) => step.step === "tts")
-      expect(ttsStep?.status).toBe("error")
-      expect(ttsStep?.error).toContain("Missing Gemini audio can be generated one by one")
+      expect(ttsStep?.status).toBe("done")
+      // The failed item is persisted per-language for the Speech view to surface.
+      const ttsOutput = storage.getLatestNodeData("tts", "en")?.data as
+        | { failed?: Array<{ textId: string; error: string }> }
+        | undefined
+      expect(ttsOutput?.failed?.length).toBeGreaterThan(0)
     } finally {
       storage.close()
     }
@@ -965,6 +1091,150 @@ speech:
     try {
       const ttsStep = storage.getStepRuns().find((step) => step.step === "tts")
       expect(ttsStep?.status).toBe("done")
+    } finally {
+      storage.close()
+    }
+  })
+
+  it("retries transient Gemini TTS server errors and completes the step when a retry succeeds", async () => {
+    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "stage-runner-tts-"))
+    const booksDir = path.join(tmpDir, "books")
+    const promptsDir = path.join(tmpDir, "prompts")
+    const configPath = path.join(tmpDir, "config.yaml")
+    fs.mkdirSync(promptsDir, { recursive: true })
+    fs.writeFileSync(
+      configPath,
+      `role_types:
+  section_text: Main body text
+structure_types:
+  paragraph: Paragraph
+speech:
+  default_provider: gemini
+  providers:
+    gemini:
+      languages:
+        - en
+`
+    )
+    seedTextAndSpeechBook(booksDir, "gemini-tts-transient")
+
+    // A transient 500 on the first attempt, then success — the item must not
+    // be permanently failed just because Gemini had a server-side hiccup.
+    generateSpeechFileMock
+      .mockRejectedValueOnce(
+        new Error(
+          "Gemini TTS request failed (500): An internal error has occurred. Please retry"
+        )
+      )
+      .mockResolvedValueOnce(undefined)
+
+    const events: ProgressEvent[] = []
+    const runner = createStageRunner()
+    await runner.run(
+      "gemini-tts-transient",
+      {
+        booksDir,
+        apiKey: "sk-test",
+        geminiApiKey: "gm-test",
+        promptsDir,
+        configPath,
+        fromStage: "translate",
+        toStage: "speech",
+      },
+      { emit: (event) => events.push(event) }
+    )
+
+    expect(generateSpeechFileMock).toHaveBeenCalledTimes(2)
+    expect(
+      events.some(
+        (event) => event.type === "step-complete" && event.step === "tts"
+      )
+    ).toBe(true)
+    expect(
+      events.some(
+        (event) => event.type === "step-error" && event.step === "tts"
+      )
+    ).toBe(false)
+
+    const storage = createBookStorage("gemini-tts-transient", booksDir)
+    try {
+      const ttsStep = storage.getStepRuns().find((step) => step.step === "tts")
+      expect(ttsStep?.status).toBe("done")
+    } finally {
+      storage.close()
+    }
+  })
+
+  it("stops admitting TTS items and unwinds without step errors when the run is cancelled", async () => {
+    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "stage-runner-tts-"))
+    const booksDir = path.join(tmpDir, "books")
+    const promptsDir = path.join(tmpDir, "prompts")
+    const configPath = path.join(tmpDir, "config.yaml")
+    fs.mkdirSync(promptsDir, { recursive: true })
+    fs.writeFileSync(
+      configPath,
+      `role_types:
+  section_text: Main body text
+structure_types:
+  paragraph: Paragraph
+concurrency: 1
+speech:
+  default_provider: gemini
+  providers:
+    gemini:
+      languages:
+        - en
+`
+    )
+    seedTextAndSpeechBook(booksDir, "gemini-tts-cancel")
+    // Second catalog entry so there is still work queued when the cancel lands.
+    const seedStorage = createBookStorage("gemini-tts-cancel", booksDir)
+    try {
+      seedStorage.putNodeData("text-catalog", "book", {
+        entries: [
+          { id: "pg001_t001", text: "Hello world" },
+          { id: "pg001_t002", text: "Second entry" },
+        ],
+        generatedAt: "2026-01-01T00:00:00.000Z",
+      })
+    } finally {
+      seedStorage.close()
+    }
+
+    const controller = new AbortController()
+    generateSpeechFileMock.mockImplementation(async () => {
+      controller.abort()
+      return undefined
+    })
+
+    const events: ProgressEvent[] = []
+    const runner = createStageRunner()
+    await expect(
+      runner.run(
+        "gemini-tts-cancel",
+        {
+          booksDir,
+          apiKey: "sk-test",
+          geminiApiKey: "gm-test",
+          promptsDir,
+          configPath,
+          fromStage: "speech",
+          toStage: "speech",
+          signal: controller.signal,
+        },
+        { emit: (event) => events.push(event) }
+      )
+    ).rejects.toThrow("Run cancelled")
+
+    // The second item must never start once the cancel has landed.
+    expect(generateSpeechFileMock).toHaveBeenCalledTimes(1)
+    // A cancel is not a failure: no step-error, and no partial tts output committed.
+    expect(events.some((event) => event.type === "step-error")).toBe(false)
+    const storage = createBookStorage("gemini-tts-cancel", booksDir)
+    try {
+      expect(storage.getLatestNodeData("tts", "en")).toBeFalsy()
+      const ttsStep = storage.getStepRuns().find((step) => step.step === "tts")
+      expect(ttsStep?.status).not.toBe("error")
     } finally {
       storage.close()
     }

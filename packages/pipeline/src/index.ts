@@ -6,6 +6,12 @@ export {
 export { processWithConcurrency } from "./concurrency.js"
 export { extractPDF, type ExtractOptions } from "./pdf-extraction.js"
 export {
+  detectSpreads,
+  type SpreadEdgeSample,
+  type SpreadSuggestion,
+  type SpreadDetectionOptions,
+} from "./spread-detection.js"
+export {
   sectionPage,
   runValidator as validatePageSectioning,
   finalizePageSectioning,
@@ -40,6 +46,7 @@ export {
 export {
   segmentPageImages,
   applySegmentation,
+  segmentBoundsOnPage,
   buildSegmentationConfig,
   getSegmentedImageId,
   type AppliedSegment,
@@ -63,6 +70,8 @@ export {
   renderPage,
   buildRenderStrategyResolver,
   buildRenderContext,
+  collectReferencedImageIds,
+  collectSourcePageImages,
   GROUP_CONTAINER_STRUCTURES,
   type RenderConfig,
   type VisualRefinementConfig,
@@ -117,6 +126,7 @@ export {
 } from "./image-captioning.js"
 export {
   generateGlossary,
+  regenerateGlossaryPreservingEdits,
   generateGlossaryItem,
   buildGlossaryConfig,
   stripHtml,
@@ -155,11 +165,13 @@ export {
   buildPageEasyReadBlocks,
   createEmptyEasyReadOutput,
   generateEasyRead,
+  rewriteBlockEasyRead,
   flattenEasyReadEntries,
   DEFAULT_EASY_READ_MODEL_ID,
   EMPTY_EASY_READ_GENERATED_AT,
   isDeterministicEmptyEasyReadOutput,
   type EasyReadConfig,
+  type GenerateEasyReadOptions,
 } from "./easy-read.js"
 export {
   resolveVoice,
@@ -167,6 +179,9 @@ export {
   resolveProviderForLanguage,
   resolveSpeechModel,
   resolveSpeechFormat,
+  resolveGeminiTtsRateLimit,
+  getDocumentedGeminiTtsRpm,
+  type ResolvedGeminiTtsRateLimit,
   isSpeakableText,
   stripEmojis,
   loadVoicesConfig,
@@ -199,6 +214,38 @@ export {
   type StyleguideGenerationConfig,
   type StyleguideGenerationInput,
 } from "./styleguide-generation.js"
+export {
+  detectFontFormat,
+  parseFontMetadata,
+  type ParsedFontMetadata,
+} from "./font-metadata.js"
+export {
+  resolveFontsCacheDir,
+  readCachedGoogleFont,
+  parseCss2FontFaces,
+  fetchGoogleFontFaces,
+  validateGoogleFamily,
+  ensureGoogleFontsCached,
+  ensureBookGoogleFontsCached,
+  parseGoogleFontsCatalog,
+  fetchGoogleFontsCatalog,
+  type GoogleCatalogFamily,
+  readBookFontRegistry,
+  buildBookFontsPromptContext,
+  type BookFontPromptEntry,
+  bundleBookFontsIntoCss,
+  type CachedGoogleFont,
+  type EnsureCachedResult,
+  type FontsCacheFetchers,
+  type BundleBookFontsOptions,
+} from "./fonts-bundle.js"
+export {
+  generateFontAssignment,
+  buildFontAssignmentConfig,
+  type FontAssignmentConfig,
+  type FontAssignmentInput,
+} from "./font-assignment.js"
+export { applyFontToHtml, type FontScope } from "./font-apply.js"
 export { loadConfig, loadBookConfig, deepMerge } from "./config.js"
 export { runFullPipeline, type FullPipelineOptions } from "./pipeline-dag.js"
 export {
@@ -232,10 +279,35 @@ export {
   rewriteImageUrls,
   htmlToXhtml,
   renderQuizHtml,
+  type QuizStyle,
   buildQuizAnswers,
   pad3,
   convertLatexToMathml,
 } from "./package-web.js"
+export {
+  resolveQuizPalette,
+  deriveQuizPalette,
+  DEFAULT_QUIZ_PALETTE,
+  type QuizPalette,
+} from "./quiz-palette.js"
+export {
+  tallyFontSizes,
+  mergeTallies,
+  deriveTypeScale,
+  deriveTypeScaleFromHistogram,
+  readTypeScale,
+  TYPE_SCALE_NODE,
+  TYPE_SCALE_ITEM,
+} from "./type-scale.js"
+export {
+  readTypography,
+  resolveDetectedTypography,
+  buildTypographyCss,
+  resolveTypographyCss,
+  typographyPreservationErrors,
+  TYPOGRAPHY_NODE,
+  TYPOGRAPHY_ITEM,
+} from "./typography.js"
 export {
   runAccessibilityAssessment,
   type RunAccessibilityAssessmentOptions,
@@ -249,3 +321,9 @@ export {
 } from "./browser-accessibility-assessment.js"
 export { mergeAccessibilityResults } from "./accessibility-assessment-shared.js"
 export { processFixedLayoutPages, isFixedLayoutBook } from "./fixed-layout-rendering.js"
+export {
+  getRenderSectioning,
+  getRenderSectioningRow,
+  FIXED_LAYOUT_SECTIONING_NODE,
+  PAGE_SECTIONING_NODE,
+} from "./render-sectioning.js"

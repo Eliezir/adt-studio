@@ -2,7 +2,13 @@ import { isElectron } from "@/lib/utils"
 import type {
   AccessibilityAssessmentOutput,
   BookDetail,
+  BookFont,
+  BookFontRole,
+  BookMetadata,
   BookSummary,
+  BookTypography,
+  FontAssignmentOutput,
+  ExtractionWarning,
   ReviewerPageValidationRecord,
   ReviewerValidationIdentificationField,
   ReviewerValidationInstruction,
@@ -115,6 +121,74 @@ export interface ImportPreview {
   validationError: string | null
 }
 
+export interface PartInfo {
+  sourceLabel: string
+  range: { startPage: number; endPage: number }
+}
+
+export interface PageRange {
+  startPage: number
+  endPage: number
+}
+
+export interface SplitStatus {
+  pageCount: number
+  exported: PageRange[]
+  exportGaps: PageRange[]
+  nextGap: PageRange | null
+  fullySplit: boolean
+  mergedRanges: PageRange[]
+  missingRanges: PageRange[]
+  fullyMerged: boolean
+  hasMergeActivity: boolean
+}
+
+/** Preview shape returned by the import endpoints for a lightweight part
+ *  archive (PDF + window + manifest, no DB). Discriminated by `isPart`. */
+export interface PartImportPreview {
+  isPart: true
+  label: string
+  sourceLabel: string
+  title: string | null
+  range: { startPage: number; endPage: number }
+  pageCount: number
+  coverBase64: string | null
+}
+
+export type AnyImportPreview = ImportPreview | PartImportPreview
+
+export function isPartImportPreview(
+  preview: AnyImportPreview,
+): preview is PartImportPreview {
+  return (preview as PartImportPreview).isPart === true
+}
+
+export interface MergePreview {
+  targetLabel: string
+  sourceLabel: string
+  title: string | null
+  range: { startPage: number; endPage: number }
+  identityMatch: boolean
+  semanticsMatch: boolean
+  semanticsDiff: string[]
+  blocked: boolean
+  blockReason: string | null
+  warnings: string[]
+  addedPageNumbers: number[]
+  replacedPageNumbers: number[]
+  coverage: Array<{ node: string; pages: number }>
+}
+
+export interface MergeResult {
+  targetLabel: string
+  addedPages: number
+  replacedPages: number
+  staleSteps: string[]
+  bookSummaryStale: boolean
+  semanticsOverridden: boolean
+  metadataMerged: boolean
+}
+
 export interface AzureCredentials {
   key: string
   region: string
@@ -134,6 +208,9 @@ export interface RunStagesOptions {
   toStage: string
   /** When true, skip page-sectioning and only re-render from existing section data. */
   renderOnly?: boolean
+  /** How to react when a page fails inside a per-page step. The Studio sends
+   *  "ask" so page errors surface an interactive skip/stop dialog. */
+  pageErrorPolicy?: "ask" | "stop"
 }
 
 function buildApiHeaders(
@@ -165,9 +242,16 @@ function buildApiHeaders(
   return headers
 }
 
+export interface PendingDecision {
+  decisionId: string
+  step: string
+  pageId: string
+  error: string
+}
+
 export interface StageRunStatus {
   label: string
-  status: "idle" | "running" | "completed" | "failed"
+  status: "idle" | "running" | "cancelling" | "cancelled" | "completed" | "failed"
   fromStage?: string
   toStage?: string
   error?: string
@@ -198,6 +282,10 @@ export interface PageSummaryItem {
   renderingVersion: number | null
   sectioningVersion: number | null
   sections: PageSummarySection[]
+  /** `text-layer-missing` when the page's embedded text layer was empty but the
+   *  Sectioning step (vision) recovered text from the page image (a scanned /
+   *  image-only page); null otherwise. */
+  extractionWarning: ExtractionWarning | null
 }
 
 export interface SectionRendering {
@@ -282,6 +370,10 @@ export interface PageDetail {
    *  the Merriweather default). The storyboard preview injects it to match the
    *  packaged output. */
   reflowableFontFamily: string | null
+  /** `text-layer-missing` when the page's embedded text layer was empty but the
+   *  Sectioning step (vision) recovered text from the page image (a scanned /
+   *  image-only page); null otherwise. */
+  extractionWarning: ExtractionWarning | null
   versions: {
     imageClassification: number | null
     imageCropping: number | null
@@ -437,14 +529,23 @@ export interface TTSEntry {
   cacheKey?: string
 }
 
+export interface TTSFailedEntry {
+  textId: string
+  error: string
+}
+
 export interface TTSLanguageData {
   entries: TTSEntry[]
+  /** Items whose generation failed in the run that produced this data */
+  failed?: TTSFailedEntry[]
   generatedAt: string
   version: number
 }
 
 export interface TTSResponse {
   languages: Record<string, TTSLanguageData>
+  /** True when served from an in-flight speech run's live snapshot */
+  live?: boolean
 }
 
 export interface GenerateSingleTTSResponse {
@@ -599,6 +700,44 @@ export interface SignLanguageVideo {
   createdAt: string
 }
 
+export type BookFontWithStatus = BookFont & { cached: boolean }
+
+export interface GoogleCatalogFamily {
+  family: string
+  category?: string
+  variants?: number
+  variable?: boolean
+  popularity?: number
+  dateAdded?: string
+}
+
+export interface BookCurrentFont {
+  detectedCategory: "serif" | "sans" | null
+  setting: string
+  fixedLayout: boolean
+  bodyRole: boolean
+  font: { id: string; family: string; category: string; google: boolean }
+}
+
+export interface BookFontsResponse {
+  version: number
+  fonts: BookFontWithStatus[]
+  assignment: FontAssignmentOutput | null
+  current: BookCurrentFont
+}
+
+export type BookFontScope = "whole" | "heading" | "paragraph" | "body" | "caption"
+
+export interface ApplyBookFontPayload {
+  scope: BookFontScope
+  font?: { kind: "registry" | "reflowable"; id: string }
+  reset?: boolean
+}
+
+export function getBookFontFileUrl(label: string, fontId: string, file: string): string {
+  return `${BASE_URL}/books/${label}/fonts/${fontId}/files/${file}`
+}
+
 // --- Task types ---
 
 export interface TaskInfoResponse {
@@ -621,8 +760,96 @@ export const api = {
 
   getBook: (label: string) => request<BookDetail>(`/books/${label}`),
 
+  updateMetadata: (label: string, data: BookMetadata) =>
+    request<{ version: number; languageChanged: boolean; baseLanguageChanged: boolean }>(
+      `/books/${label}/metadata`,
+      {
+        method: "PUT",
+        body: JSON.stringify(data),
+      },
+    ),
+
+  regenerateBookSummary: (label: string, apiKey: string) =>
+    request<{ taskId?: string; status?: string; version?: number }>(
+      `/books/${label}/book-summary/regenerate`,
+      {
+        method: "POST",
+        headers: { "X-OpenAI-Key": apiKey },
+      },
+    ),
+
   getSourcePdfInfo: (label: string) =>
     request<{ pageCount: number }>(`/books/${label}/source-pdf/info`),
+
+  getSpreadSuggestions: (label: string) =>
+    request<{ suggestions: { lead: number; confidence: number }[] }>(
+      `/books/${label}/spread-suggestions`,
+    ),
+
+  applySpreads: (label: string, spreadPairs: number[]) =>
+    request<{ merged: number; removed: number; pageCount: number }>(
+      `/books/${label}/spreads/apply`,
+      { method: "POST", body: JSON.stringify({ spreadPairs }) },
+    ),
+
+  getBookFonts: (label: string) => request<BookFontsResponse>(`/books/${label}/fonts`),
+
+  getTypography: (label: string) =>
+    request<{ data: BookTypography; version: number; isDefault: boolean; detected: BookTypography }>(
+      `/books/${label}/typography`
+    ),
+
+  updateTypography: (label: string, data: BookTypography) =>
+    request<{ version: number }>(`/books/${label}/typography`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    }),
+
+  getGoogleFontsCatalog: () =>
+    request<{ families: GoogleCatalogFamily[] }>("/google-fonts/catalog"),
+
+  uploadBookFonts: (label: string, files: File[]) => {
+    const formData = new FormData()
+    for (const file of files) formData.append("fonts", file)
+    return request<BookFontsResponse>(`/books/${label}/fonts`, {
+      method: "POST",
+      body: formData,
+    })
+  },
+
+  addGoogleFont: (label: string, family: string) =>
+    request<BookFontsResponse>(`/books/${label}/fonts/google`, {
+      method: "POST",
+      body: JSON.stringify({ family }),
+    }),
+
+  updateBookFont: (
+    label: string,
+    fontId: string,
+    data: { family?: string; role?: BookFontRole; roleLockedByUser?: boolean },
+  ) =>
+    request<BookFontsResponse>(`/books/${label}/fonts/${fontId}`, {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    }),
+
+  deleteBookFont: (label: string, fontId: string) =>
+    request<BookFontsResponse>(`/books/${label}/fonts/${fontId}`, { method: "DELETE" }),
+
+  analyzeBookFonts: (label: string, apiKey: string) =>
+    request<{ taskId?: string; status?: string; version?: number }>(
+      `/books/${label}/fonts/analyze`,
+      {
+        method: "POST",
+        headers: { "X-OpenAI-Key": apiKey },
+      },
+    ),
+
+  applyBookFont: (label: string, payload: ApplyBookFontPayload) =>
+    request<BookFontsResponse & { pagesUpdated: number }>(`/books/${label}/fonts/apply`, {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
 
   createBook: (label: string, pdf: File, config?: Record<string, unknown>) => {
     const formData = new FormData()
@@ -643,7 +870,7 @@ export const api = {
   previewImport: (zip: File) => {
     const formData = new FormData()
     formData.append("zip", zip)
-    return request<ImportPreview>("/books/preview-import", {
+    return request<AnyImportPreview>("/books/preview-import", {
       method: "POST",
       body: formData,
     })
@@ -653,6 +880,39 @@ export const api = {
     const formData = new FormData()
     formData.append("zip", zip)
     return request<BookSummary>("/books/import", {
+      method: "POST",
+      body: formData,
+    })
+  },
+
+  getPartInfo: (label: string) =>
+    request<PartInfo | null>(`/books/${label}/part-info`),
+
+  getSplitStatus: (label: string) =>
+    request<SplitStatus>(`/books/${label}/split-status`),
+
+  exportPart: (label: string, startPage: number, endPage: number) => {
+    triggerDirectDownload(
+      `${BASE_URL}/books/${label}/export-part?startPage=${startPage}&endPage=${endPage}`,
+    )
+  },
+
+  previewMerge: (label: string, zip: File) => {
+    const formData = new FormData()
+    formData.append("zip", zip)
+    return request<MergePreview>(`/books/${label}/preview-merge`, {
+      method: "POST",
+      body: formData,
+    })
+  },
+
+  mergePart: (label: string, zip: File, acknowledgeSemanticsMismatch: boolean) => {
+    const formData = new FormData()
+    formData.append("zip", zip)
+    if (acknowledgeSemanticsMismatch) {
+      formData.append("acknowledgeSemanticsMismatch", "true")
+    }
+    return request<MergeResult>(`/books/${label}/merge`, {
       method: "POST",
       body: formData,
     })
@@ -675,6 +935,35 @@ export const api = {
 
   getStagesStatus: (label: string) =>
     request<StageRunStatus>(`/books/${label}/stages/status`),
+
+  /** Cancel the active run. Queued runs are preserved and start after it unwinds;
+   *  a pending queue with no active run is cleared instead. A 404 (nothing to
+   *  cancel — the run may have finished between the click and this request)
+   *  resolves silently. */
+  cancelRun: async (label: string): Promise<void> => {
+    const res = await fetch(`${BASE_URL}/books/${label}/stages/cancel`, {
+      method: "POST",
+    })
+    if (res.ok || res.status === 404) return
+    const text = await res.text().catch(() => "")
+    throw new Error(text || `Cancel failed: ${res.status}`)
+  },
+
+  /** Resolve a pending page-error decision. A 409 (already resolved by
+   *  timeout/cancel) is treated as success — the caller drops the stale dialog. */
+  resolveDecision: async (
+    label: string,
+    body: { decisionId: string; action: "skip" | "stop"; applyToAll?: boolean },
+  ): Promise<void> => {
+    const res = await fetch(`${BASE_URL}/books/${label}/stages/decision`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    })
+    if (res.ok || res.status === 409) return
+    const text = await res.text().catch(() => "")
+    throw new Error(text || `Decision failed: ${res.status}`)
+  },
 
   getPages: (label: string) =>
     request<PageSummaryItem[]>(`/books/${label}/pages`),
@@ -716,6 +1005,21 @@ export const api = {
       renderingVersion: number | null
     }>(`/books/${label}/pages/${pageId}/sections/${sectionIndex}/clone`, {
       method: "POST",
+    }),
+
+  splitSection: (
+    label: string,
+    pageId: string,
+    sectionIndex: number,
+    at: { beforeNodeIndex: number } | { beforeNodeId: string }
+  ) =>
+    request<{
+      splitSectionIndex: number
+      sectioningVersion: number
+      renderingVersion: number | null
+    }>(`/books/${label}/pages/${pageId}/sections/${sectionIndex}/split`, {
+      method: "POST",
+      body: JSON.stringify(at),
     }),
 
   mergeSection: (
@@ -1129,6 +1433,8 @@ export const api = {
       error: string | null
       stepErrors: Record<string, string> | null
       stepMessages: Record<string, string> | null
+      runStatus: "idle" | "running" | "cancelling" | "cancelled" | "completed" | "failed"
+      pendingDecisions: PendingDecision[]
     }>(`/books/${label}/step-status`),
 
   getTTS: (label: string) =>
