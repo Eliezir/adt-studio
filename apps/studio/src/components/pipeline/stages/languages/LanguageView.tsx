@@ -1730,11 +1730,16 @@ export function LanguageView({
             </div>
           )}
 
-          {/* Review status is announced politely: the run finishes asynchronously,
-              so a screen-reader user would otherwise never hear the outcome. */}
-          <div role="status" aria-live="polite" className="contents">
-            {!isSourceLang && !isSpeechStage && hasReviewResults && (
-              <div className="rounded-md border border-emerald-200 bg-emerald-50/70 px-3 py-2 text-xs text-emerald-950">
+          {/* Each banner is its own polite live region: the review runs
+              asynchronously, so a screen-reader user would otherwise never hear
+              the outcome. They are alternatives in practice, so at most one
+              announces at a time. */}
+          {!isSourceLang && !isSpeechStage && hasReviewResults && (
+            <div
+              role="status"
+              aria-live="polite"
+              className="rounded-md border border-emerald-200 bg-emerald-50/70 px-3 py-2 text-xs text-emerald-950"
+            >
                 <div className="flex flex-wrap items-center gap-2">
                   <Check className="h-3.5 w-3.5 shrink-0 text-emerald-700" />
                   <span className="font-medium text-emerald-900">
@@ -1813,8 +1818,12 @@ export function LanguageView({
               </div>
             )}
 
-            {!isSourceLang && !isSpeechStage && activeEvaluationTask && (
-              <div className="flex items-center gap-2 rounded-md border border-sky-200 bg-sky-50 px-3 py-2 text-xs text-sky-800">
+          {!isSourceLang && !isSpeechStage && activeEvaluationTask && (
+            <div
+              role="status"
+              aria-live="polite"
+              className="flex items-center gap-2 rounded-md border border-sky-200 bg-sky-50 px-3 py-2 text-xs text-sky-800"
+            >
                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
                 <span>
                   {activeEvaluationTask.progressMessage ??
@@ -1828,20 +1837,27 @@ export function LanguageView({
               </div>
             )}
 
-            {!isSourceLang && !isSpeechStage && evaluationStatus?.isStale && (
-              <div className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
-                {t`The saved translation review is stale. Run Review again for the visible translations.`}
+          {!isSourceLang && !isSpeechStage && evaluationStatus?.isStale && (
+            <div
+              role="status"
+              aria-live="polite"
+              className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900"
+            >
+              {t`The saved translation review is stale. Run Review again for the visible translations.`}
+            </div>
+          )}
+
+          {!isSourceLang &&
+            !isSpeechStage &&
+            hasTranslationEvaluationRunFailure && (
+              <div
+                role="status"
+                aria-live="polite"
+                className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900"
+              >
+                {t`The last translation review failed before producing reliable item-level results. Run Review again for the visible translations.`}
               </div>
             )}
-
-            {!isSourceLang &&
-              !isSpeechStage &&
-              hasTranslationEvaluationRunFailure && (
-                <div className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
-                  {t`The last translation review failed before producing reliable item-level results. Run Review again for the visible translations.`}
-                </div>
-              )}
-          </div>
 
           {!isSourceLang && !isSpeechStage && runTranslationReview.error && (
             <Alert variant="destructive" className="rounded-md">

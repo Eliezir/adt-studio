@@ -44,28 +44,26 @@ function parseLatestRows<T>(
   node: string,
   schema: ZodType<T>,
 ): Array<{ itemId: string; version: number; data: T }> {
-  {
-    const rows = db.all(
-      `SELECT current.item_id as item_id, current.version as version, current.data as data
-       FROM node_data current
-       INNER JOIN (
-         SELECT item_id, MAX(version) as max_version
-         FROM node_data
-         WHERE node = ?
-         GROUP BY item_id
-       ) latest
-       ON current.item_id = latest.item_id AND current.version = latest.max_version
-       WHERE current.node = ?
-       ORDER BY current.item_id ASC`,
-      [node, node],
-    ) as Array<{ item_id: string; version: number; data: string }>
+  const rows = db.all(
+    `SELECT current.item_id as item_id, current.version as version, current.data as data
+     FROM node_data current
+     INNER JOIN (
+       SELECT item_id, MAX(version) as max_version
+       FROM node_data
+       WHERE node = ?
+       GROUP BY item_id
+     ) latest
+     ON current.item_id = latest.item_id AND current.version = latest.max_version
+     WHERE current.node = ?
+     ORDER BY current.item_id ASC`,
+    [node, node],
+  ) as Array<{ item_id: string; version: number; data: string }>
 
-    return rows.map((row) => ({
-      itemId: row.item_id,
-      version: row.version,
-      data: schema.parse(JSON.parse(row.data)),
-    }))
-  }
+  return rows.map((row) => ({
+    itemId: row.item_id,
+    version: row.version,
+    data: schema.parse(JSON.parse(row.data)),
+  }))
 }
 
 function getLatestNodeVersion(
@@ -81,24 +79,22 @@ function getLatestNodeVersion(
 }
 
 function getLatestNodeVersions(db: BookDb, node: string): Map<string, number> {
-  {
-    const rows = db.all(
-      `SELECT current.item_id as item_id, current.version as version
-       FROM node_data current
-       INNER JOIN (
-         SELECT item_id, MAX(version) as max_version
-         FROM node_data
-         WHERE node = ?
-         GROUP BY item_id
-       ) latest
-       ON current.item_id = latest.item_id AND current.version = latest.max_version
-       WHERE current.node = ?
-       ORDER BY current.item_id ASC`,
-      [node, node],
-    ) as Array<{ item_id: string; version: number }>
+  const rows = db.all(
+    `SELECT current.item_id as item_id, current.version as version
+     FROM node_data current
+     INNER JOIN (
+       SELECT item_id, MAX(version) as max_version
+       FROM node_data
+       WHERE node = ?
+       GROUP BY item_id
+     ) latest
+     ON current.item_id = latest.item_id AND current.version = latest.max_version
+     WHERE current.node = ?
+     ORDER BY current.item_id ASC`,
+    [node, node],
+  ) as Array<{ item_id: string; version: number }>
 
-    return new Map(rows.map((row) => [row.item_id, row.version]))
-  }
+  return new Map(rows.map((row) => [row.item_id, row.version]))
 }
 
 function buildEvaluationStatus(

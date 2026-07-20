@@ -23,8 +23,6 @@ const TranslationEvaluationLanguageParam = z.string().min(1)
 const TranslationEvaluationRunBody = z.object({
   page_id: z.string().min(1).optional(),
   entry_ids: z.array(z.string().min(1)).min(1).optional(),
-  /** Re-run even when the cached result already matches this scope and config. */
-  force: z.boolean().optional(),
 }).optional()
 const TranslationCatalogEntries = z.object({
   entries: z.array(z.object({ id: z.string(), text: z.string() })),
@@ -452,10 +450,7 @@ export function createTranslationEvaluationRoutes(
 
     const requestedEntryIds = request.pages.flatMap((page) => page.entries.map((entry) => entry.entry_id))
 
-    // Without `force` an identical scope+config returns the cached result, so
-    // there is otherwise no way to ask for a fresh judgement.
     if (
-      !body.force &&
       evaluation.evaluation &&
       evaluation.evaluation.source_catalog_version === request.source_catalog_version &&
       evaluation.evaluation.translation_version === request.translation_version &&
