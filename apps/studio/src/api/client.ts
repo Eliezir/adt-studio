@@ -1411,7 +1411,7 @@ export const api = {
     label: string,
     language: string,
     apiKey: string,
-    scope: { pageId?: string; entryIds?: string[] } = {},
+    scope: { pageId?: string; entryIds?: string[]; force?: boolean } = {},
     providerCredentials?: StageRunProviderCredentials,
   ) =>
     request<TranslationEvaluationRunResponse>(`/books/${label}/evaluations/translations/${language}/run`, {
@@ -1420,6 +1420,7 @@ export const api = {
       body: JSON.stringify({
         ...(scope.pageId ? { page_id: scope.pageId } : {}),
         ...(scope.entryIds && scope.entryIds.length > 0 ? { entry_ids: scope.entryIds } : {}),
+        ...(scope.force ? { force: true } : {}),
       }),
     }),
 

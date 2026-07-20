@@ -2038,6 +2038,9 @@ msgstr "Përpunim Përmbajtjeje"
 msgid "Contents"
 msgstr "Përmbajtja"
 
+msgid "Context"
+msgstr ""
+
 msgid "Context included"
 msgstr ""
 
@@ -3178,6 +3181,9 @@ msgstr "Vektor i sheshtë"
 msgid "Flexible"
 msgstr "Fleksibël"
 
+msgid "Fluency"
+msgstr ""
+
 msgid "Font"
 msgstr "Font"
 
@@ -3207,6 +3213,9 @@ msgstr "Parathënie"
 
 msgid "Format"
 msgstr "Format"
+
+msgid "Formatting"
+msgstr ""
 
 msgid "Formatting and placeholders"
 msgstr ""
@@ -4313,6 +4322,9 @@ msgstr "Gjerësia maksimale"
 msgid "Maximize"
 msgstr "Maksimizo"
 
+msgid "Meaning"
+msgstr ""
+
 msgid "Meaning changed"
 msgstr ""
 
@@ -5004,6 +5016,9 @@ msgstr "nga"
 
 msgid "Off"
 msgstr "Joaktiv"
+
+msgid "Omission or addition"
+msgstr ""
 
 msgid "On"
 msgstr "Aktiv"

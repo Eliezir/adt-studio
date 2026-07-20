@@ -203,7 +203,7 @@ export function LanguageSettings({ bookLabel, tab = "general", stageSlug = "tran
     }
     if (m.translation_evaluation && typeof m.translation_evaluation === "object") {
       const te = m.translation_evaluation as Record<string, unknown>
-      setReviewEnabled(te.enable_translation_evaluation !== false && te.enabled !== false)
+      setReviewEnabled(te.enable_translation_evaluation !== false)
       setReviewModel(typeof te.judge_model === "string" ? te.judge_model : DEFAULT_TRANSLATION_EVALUATION_JUDGE_MODEL)
       setReviewRetries(typeof te.max_retries === "number" ? String(te.max_retries) : String(DEFAULT_TRANSLATION_EVALUATION_MAX_RETRIES))
       setReviewBatchSize(typeof te.batch_size === "number" ? String(te.batch_size) : "1")

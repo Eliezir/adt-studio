@@ -37,13 +37,14 @@ function ensureBookExists(dbPath: string, safeLabel: string) {
   }
 }
 
+type BookDb = ReturnType<typeof openBookDb>
+
 function parseLatestRows<T>(
-  dbPath: string,
+  db: BookDb,
   node: string,
   schema: ZodType<T>,
 ): Array<{ itemId: string; version: number; data: T }> {
-  const db = openBookDb(dbPath)
-  try {
+  {
     const rows = db.all(
       `SELECT current.item_id as item_id, current.version as version, current.data as data
        FROM node_data current
@@ -64,31 +65,23 @@ function parseLatestRows<T>(
       version: row.version,
       data: schema.parse(JSON.parse(row.data)),
     }))
-  } finally {
-    db.close()
   }
 }
 
 function getLatestNodeVersion(
-  dbPath: string,
+  db: BookDb,
   node: string,
   itemId: string,
 ): number | null {
-  const db = openBookDb(dbPath)
-  try {
-    const rows = db.all(
-      "SELECT version FROM node_data WHERE node = ? AND item_id = ? ORDER BY version DESC LIMIT 1",
-      [node, itemId],
-    ) as Array<{ version: number }>
-    return rows[0]?.version ?? null
-  } finally {
-    db.close()
-  }
+  const rows = db.all(
+    "SELECT version FROM node_data WHERE node = ? AND item_id = ? ORDER BY version DESC LIMIT 1",
+    [node, itemId],
+  ) as Array<{ version: number }>
+  return rows[0]?.version ?? null
 }
 
-function getLatestNodeVersions(dbPath: string, node: string): Map<string, number> {
-  const db = openBookDb(dbPath)
-  try {
+function getLatestNodeVersions(db: BookDb, node: string): Map<string, number> {
+  {
     const rows = db.all(
       `SELECT current.item_id as item_id, current.version as version
        FROM node_data current
@@ -105,8 +98,6 @@ function getLatestNodeVersions(dbPath: string, node: string): Map<string, number
     ) as Array<{ item_id: string; version: number }>
 
     return new Map(rows.map((row) => [row.item_id, row.version]))
-  } finally {
-    db.close()
   }
 }
 
@@ -142,14 +133,22 @@ export function listTranslationEvaluationStatuses(
   const { safeLabel, dbPath } = getDbPath(label, booksDir)
   ensureBookExists(dbPath, safeLabel)
 
-  const evaluationRows = parseLatestRows(
-    dbPath,
-    TRANSLATION_EVALUATION_NODE,
-    TranslationEvaluationResultSchema,
-  )
-  const evaluationByLanguage = new Map(evaluationRows.map((row) => [row.itemId, row]))
-  const translationVersions = getLatestNodeVersions(dbPath, "text-catalog-translation")
-  const currentSourceCatalogVersion = getLatestNodeVersion(dbPath, "text-catalog", "book")
+  const db = openBookDb(dbPath)
+  let evaluationByLanguage: Map<string, { itemId: string; version: number; data: TranslationEvaluationResult }>
+  let translationVersions: Map<string, number>
+  let currentSourceCatalogVersion: number | null
+  try {
+    const evaluationRows = parseLatestRows(
+      db,
+      TRANSLATION_EVALUATION_NODE,
+      TranslationEvaluationResultSchema,
+    )
+    evaluationByLanguage = new Map(evaluationRows.map((row) => [row.itemId, row]))
+    translationVersions = getLatestNodeVersions(db, "text-catalog-translation")
+    currentSourceCatalogVersion = getLatestNodeVersion(db, "text-catalog", "book")
+  } finally {
+    db.close()
+  }
   const languages = new Set<string>([
     ...translationVersions.keys(),
     ...evaluationByLanguage.keys(),
@@ -173,14 +172,22 @@ export function getTranslationEvaluationStatus(
   const { safeLabel, dbPath } = getDbPath(label, booksDir)
   ensureBookExists(dbPath, safeLabel)
 
-  const evaluationRows = parseLatestRows(
-    dbPath,
-    TRANSLATION_EVALUATION_NODE,
-    TranslationEvaluationResultSchema,
-  )
-  const evaluationRow = evaluationRows.find((row) => row.itemId === language)
-  const currentTranslationVersion = getLatestNodeVersion(dbPath, "text-catalog-translation", language)
-  const currentSourceCatalogVersion = getLatestNodeVersion(dbPath, "text-catalog", "book")
+  const db = openBookDb(dbPath)
+  let evaluationRow: { itemId: string; version: number; data: TranslationEvaluationResult } | undefined
+  let currentTranslationVersion: number | null
+  let currentSourceCatalogVersion: number | null
+  try {
+    const evaluationRows = parseLatestRows(
+      db,
+      TRANSLATION_EVALUATION_NODE,
+      TranslationEvaluationResultSchema,
+    )
+    evaluationRow = evaluationRows.find((row) => row.itemId === language)
+    currentTranslationVersion = getLatestNodeVersion(db, "text-catalog-translation", language)
+    currentSourceCatalogVersion = getLatestNodeVersion(db, "text-catalog", "book")
+  } finally {
+    db.close()
+  }
 
   if (!evaluationRow && currentTranslationVersion === null) {
     return null

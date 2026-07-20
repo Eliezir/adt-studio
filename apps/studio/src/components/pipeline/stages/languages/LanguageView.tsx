@@ -106,6 +106,37 @@ function TranslationReviewInline({
   const { t } = useLingui();
   const [open, setOpen] = useState(!item.accepted_anyway && !item.acceptable);
 
+  // The judge returns raw enum values; these badges are user-facing, so give
+  // them the same treatment the review settings give the same concepts.
+  const issueTypeLabel = (issueType: string): string => {
+    switch (issueType) {
+      case "meaning":
+        return t`Meaning`;
+      case "fluency":
+        return t`Fluency`;
+      case "terminology":
+        return t`Terminology`;
+      case "omission-or-addition":
+        return t`Omission or addition`;
+      case "formatting":
+        return t`Formatting`;
+      case "context":
+        return t`Context`;
+      default:
+        return t`Other`;
+    }
+  };
+  const severityLabel = (severity: string): string => {
+    switch (severity) {
+      case "low":
+        return t`Low`;
+      case "high":
+        return t`High`;
+      default:
+        return t`Medium`;
+    }
+  };
+
   useEffect(() => {
     setOpen(!item.accepted_anyway && !item.acceptable);
   }, [item.acceptable, item.accepted_anyway, item.entry_id, item.rationale]);
@@ -181,14 +212,14 @@ function TranslationReviewInline({
               {item.issue_types.map((issueType) => (
                 <span
                   key={`${item.entry_id}-${issueType}`}
-                  className="rounded bg-white/80 px-1.5 py-0.5 font-mono text-[10px] text-orange-800 ring-1 ring-orange-200"
+                  className="rounded bg-white/80 px-1.5 py-0.5 text-[10px] text-orange-800 ring-1 ring-orange-200"
                 >
-                  {issueType}
+                  {issueTypeLabel(issueType)}
                 </span>
               ))}
               {item.severity ? (
-                <span className="rounded bg-white/80 px-1.5 py-0.5 font-mono text-[10px] text-orange-800 ring-1 ring-orange-200">
-                  {item.severity}
+                <span className="rounded bg-white/80 px-1.5 py-0.5 text-[10px] text-orange-800 ring-1 ring-orange-200">
+                  {severityLabel(item.severity)}
                 </span>
               ) : null}
             </div>

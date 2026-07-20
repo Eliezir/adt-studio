@@ -2037,6 +2037,9 @@ msgstr "Content Processing"
 msgid "Contents"
 msgstr "Contents"
 
+msgid "Context"
+msgstr "Context"
+
 msgid "Context included"
 msgstr "Context included"
 
@@ -3177,6 +3180,9 @@ msgstr "Flat Vector"
 msgid "Flexible"
 msgstr "Flexible"
 
+msgid "Fluency"
+msgstr "Fluency"
+
 msgid "Font"
 msgstr "Font"
 
@@ -3206,6 +3212,9 @@ msgstr "Foreword"
 
 msgid "Format"
 msgstr "Format"
+
+msgid "Formatting"
+msgstr "Formatting"
 
 msgid "Formatting and placeholders"
 msgstr "Formatting and placeholders"
@@ -4312,6 +4321,9 @@ msgstr "Max width"
 msgid "Maximize"
 msgstr "Maximize"
 
+msgid "Meaning"
+msgstr "Meaning"
+
 msgid "Meaning changed"
 msgstr "Meaning changed"
 
@@ -5003,6 +5015,9 @@ msgstr "of"
 
 msgid "Off"
 msgstr "Off"
+
+msgid "Omission or addition"
+msgstr "Omission or addition"
 
 msgid "On"
 msgstr "On"

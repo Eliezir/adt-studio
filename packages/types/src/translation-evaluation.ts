@@ -70,7 +70,6 @@ export const DEFAULT_TRANSLATION_EVALUATION_CONTEXT_OPTIONS: Required<Translatio
 
 export const TranslationEvaluationConfig = z.object({
   enable_translation_evaluation: z.boolean().optional(),
-  enabled: z.boolean().optional(),
   judge_model: z.string().min(1).optional(),
   max_retries: z.number().int().min(0).optional(),
   batch_size: z.number().int().min(1).optional(),
@@ -112,9 +111,7 @@ export function resolveTranslationEvaluationConfig(
   config: TranslationEvaluationConfig | null | undefined,
 ): ResolvedTranslationEvaluationConfig {
   return {
-    enable_translation_evaluation: config?.enable_translation_evaluation
-      ?? config?.enabled
-      ?? true,
+    enable_translation_evaluation: config?.enable_translation_evaluation ?? true,
     judge_model: config?.judge_model ?? DEFAULT_TRANSLATION_EVALUATION_JUDGE_MODEL,
     max_retries: config?.max_retries ?? DEFAULT_TRANSLATION_EVALUATION_MAX_RETRIES,
     batch_size: config?.batch_size ?? DEFAULT_TRANSLATION_EVALUATION_BATCH_SIZE,
