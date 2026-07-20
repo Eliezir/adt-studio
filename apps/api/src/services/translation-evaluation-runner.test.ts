@@ -6,7 +6,7 @@ import { createBookStorage } from "@adt/storage"
 import type { LLMModel } from "@adt/llm"
 import type { TranslationEvaluationRunRequest } from "@adt/types"
 import { DEFAULT_TRANSLATION_EVALUATION_JUDGE_MODEL } from "@adt/types"
-import { evaluateTranslationInApi, translationEvaluationRunnerInternals } from "./translation-evaluation-runner.js"
+import { evaluateTranslationInApi, describeMissingJudgeCredential, translationEvaluationRunnerInternals } from "./translation-evaluation-runner.js"
 
 let tmpDir = ""
 
@@ -71,6 +71,67 @@ describe("judge model defaults", () => {
     expect(
       translationEvaluationRunnerInternals.normalizeJudgeModel("openai:/gpt-5.4"),
     ).toBe("openai:gpt-5.4")
+  })
+})
+
+describe("describeMissingJudgeCredential", () => {
+  const none = { apiKey: "" }
+
+  it("accepts an OpenAI judge with an OpenAI key", () => {
+    expect(describeMissingJudgeCredential("openai:gpt-5.4", { apiKey: "sk-test" })).toBeNull()
+  })
+
+  it("does not demand an OpenAI key for a non-OpenAI judge", () => {
+    expect(
+      describeMissingJudgeCredential("anthropic:claude-opus-4-8", {
+        apiKey: "",
+        anthropicApiKey: "sk-ant",
+      }),
+    ).toBeNull()
+    expect(
+      describeMissingJudgeCredential("google:gemini-2.5-pro", {
+        apiKey: "",
+        googleApiKey: "goog",
+      }),
+    ).toBeNull()
+  })
+
+  it("names the credential the configured judge actually needs", () => {
+    expect(describeMissingJudgeCredential("anthropic:claude-opus-4-8", none)).toContain(
+      "Anthropic API key",
+    )
+    expect(describeMissingJudgeCredential("google:gemini-2.5-pro", none)).toContain(
+      "Google API key",
+    )
+    expect(describeMissingJudgeCredential("openai:gpt-5.4", none)).toContain("OpenAI API key")
+  })
+
+  // resolveModel passes `apiKey || "dummy"` for custom, so a local model behind
+  // a base URL with no auth is a valid setup.
+  it("keys the custom provider on its base URL, not an API key", () => {
+    expect(
+      describeMissingJudgeCredential("custom:local-model", {
+        apiKey: "",
+        customBaseUrl: "http://localhost:1234/v1",
+      }),
+    ).toBeNull()
+    expect(describeMissingJudgeCredential("custom:local-model", none)).toContain("base URL")
+  })
+
+  it("accepts a server-configured key from the environment", () => {
+    const previous = process.env.ANTHROPIC_API_KEY
+    process.env.ANTHROPIC_API_KEY = "env-key"
+    try {
+      expect(describeMissingJudgeCredential("anthropic:claude-opus-4-8", none)).toBeNull()
+    } finally {
+      if (previous === undefined) delete process.env.ANTHROPIC_API_KEY
+      else process.env.ANTHROPIC_API_KEY = previous
+    }
+  })
+
+  it("treats a bare model id as OpenAI, matching resolveModel", () => {
+    expect(describeMissingJudgeCredential("gpt-5.4", { apiKey: "sk-test" })).toBeNull()
+    expect(describeMissingJudgeCredential("gpt-5.4", none)).toContain("OpenAI API key")
   })
 })
 

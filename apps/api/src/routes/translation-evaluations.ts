@@ -17,7 +17,7 @@ import {
   listTranslationEvaluationStatuses,
   saveTranslationEvaluationResult,
 } from "../services/translation-evaluation-service.js"
-import { evaluateTranslationInApi } from "../services/translation-evaluation-runner.js"
+import { evaluateTranslationInApi, describeMissingJudgeCredential } from "../services/translation-evaluation-runner.js"
 
 const TranslationEvaluationLanguageParam = z.string().min(1)
 const TranslationEvaluationRunBody = z.object({
@@ -426,17 +426,6 @@ export function createTranslationEvaluationRoutes(
       })
     }
 
-    const hasAnyCredential =
-      !!apiKey ||
-      !!providerCredentials.anthropicApiKey ||
-      !!providerCredentials.googleApiKey ||
-      !!providerCredentials.customApiKey
-    if (!hasAnyCredential) {
-      throw new HTTPException(400, {
-        message: "An API key is required for translation evaluation. Set X-OpenAI-Key (or the header matching your judge model's provider) or OPENAI_API_KEY on the API server.",
-      })
-    }
-
     if (!taskService) {
       throw new HTTPException(501, {
         message: "Translation evaluation task submission is not implemented yet",
@@ -451,6 +440,16 @@ export function createTranslationEvaluationRoutes(
       pageId: body.page_id,
       entryIds: body.entry_ids,
     })
+    // Checked here rather than earlier: which credential is needed depends on
+    // the judge model, which only exists once the request is built.
+    const missingCredential = describeMissingJudgeCredential(request.judge_model, {
+      apiKey,
+      ...providerCredentials,
+    })
+    if (missingCredential) {
+      throw new HTTPException(400, { message: missingCredential })
+    }
+
     const requestedEntryIds = request.pages.flatMap((page) => page.entries.map((entry) => entry.entry_id))
 
     // Without `force` an identical scope+config returns the cached result, so
