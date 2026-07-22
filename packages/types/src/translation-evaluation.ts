@@ -25,7 +25,6 @@ Only return suggested_text if you would mark that suggested replacement acceptab
 
 export const DEFAULT_TRANSLATION_EVALUATION_JUDGE_MODEL = "openai:gpt-5.4"
 export const DEFAULT_TRANSLATION_EVALUATION_MAX_RETRIES = 3
-export const DEFAULT_TRANSLATION_EVALUATION_BATCH_SIZE = 1
 export const DEFAULT_TRANSLATION_EVALUATION_TEMPERATURE = 0
 export const DEFAULT_TRANSLATION_EVALUATION_SEVERITY_THRESHOLD = "medium"
 
@@ -72,6 +71,8 @@ export const TranslationEvaluationConfig = z.object({
   enable_translation_evaluation: z.boolean().optional(),
   judge_model: z.string().min(1).optional(),
   max_retries: z.number().int().min(0).optional(),
+  // Legacy field retained so existing book configs continue to parse. Page
+  // evaluation is sequential and no longer derives execution behavior from it.
   batch_size: z.number().int().min(1).optional(),
   temperature: z.number().min(0).max(2).optional(),
   judge_instructions: z.string().min(1).optional(),
@@ -92,7 +93,6 @@ export interface ResolvedTranslationEvaluationConfig {
   enable_translation_evaluation: boolean
   judge_model: string
   max_retries: number
-  batch_size: number
   temperature: number
   judge_instructions: string
   additional_guidance: string | null
@@ -114,7 +114,6 @@ export function resolveTranslationEvaluationConfig(
     enable_translation_evaluation: config?.enable_translation_evaluation ?? true,
     judge_model: config?.judge_model ?? DEFAULT_TRANSLATION_EVALUATION_JUDGE_MODEL,
     max_retries: config?.max_retries ?? DEFAULT_TRANSLATION_EVALUATION_MAX_RETRIES,
-    batch_size: config?.batch_size ?? DEFAULT_TRANSLATION_EVALUATION_BATCH_SIZE,
     temperature: config?.temperature ?? DEFAULT_TRANSLATION_EVALUATION_TEMPERATURE,
     judge_instructions: config?.judge_instructions ?? DEFAULT_TRANSLATION_EVALUATION_JUDGE_INSTRUCTIONS,
     additional_guidance: config?.additional_guidance ?? null,
@@ -178,6 +177,7 @@ export const TranslationEvaluationJudgeMetadata = z.object({
   instructions: z.string().min(1),
   additional_guidance: z.string().min(1).nullable().optional(),
   max_retries: z.number().int().min(0).optional(),
+  // Legacy result field retained for previously saved evaluations.
   batch_size: z.number().int().min(1).optional(),
   temperature: z.number().min(0).max(2).optional(),
   strictness: z.enum(["lenient", "balanced", "strict"]).optional(),
@@ -196,6 +196,8 @@ export const TranslationEvaluationMetadata = z.object({
   failed_pages: z.number().int().min(0).optional(),
   selected_entry_count: z.number().int().min(0).optional(),
   page_id: z.string().min(1).nullable().optional(),
+  page_ids: z.array(z.string().min(1)).optional(),
+  scope_hash: z.string().min(1).optional(),
   selected_entry_ids: z.array(z.string().min(1)).optional(),
   book_metadata: z.record(z.string(), z.unknown()).nullable().optional(),
 })
@@ -223,9 +225,9 @@ export const TranslationEvaluationRunRequest = z.object({
   source_catalog_version: z.number().int().min(1),
   translation_version: z.number().int().min(1),
   eval_config_hash: z.string().min(1),
+  scope_hash: z.string().min(1),
   judge_model: z.string().min(1).optional(),
   max_retries: z.number().int().min(0).optional(),
-  batch_size: z.number().int().min(1).optional(),
   temperature: z.number().min(0).max(2).optional(),
   judge_instructions: z.string().min(1).optional(),
   additional_guidance: z.string().min(1).optional(),

@@ -129,6 +129,7 @@ describe("AppConfig", () => {
     expect(resolved.severity_threshold).toBe("medium")
     expect(resolved.generate_suggestions).toBe(true)
     expect(resolved.context.book_metadata).toBe(true)
+    expect(resolved).not.toHaveProperty("batch_size")
   })
 
 })

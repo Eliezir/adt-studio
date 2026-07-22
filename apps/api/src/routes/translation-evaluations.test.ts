@@ -5,7 +5,6 @@ import path from "node:path"
 import { afterEach, beforeEach, describe, expect, it } from "vitest"
 import { createBookStorage } from "@adt/storage"
 import {
-  DEFAULT_TRANSLATION_EVALUATION_BATCH_SIZE,
   DEFAULT_TRANSLATION_EVALUATION_CONTEXT_OPTIONS,
   DEFAULT_TRANSLATION_EVALUATION_ISSUE_TYPES,
   DEFAULT_TRANSLATION_EVALUATION_JUDGE_INSTRUCTIONS,
@@ -60,13 +59,76 @@ function seedBookWithEditedTranslation(label: string): void {
   }
 }
 
+function seedMultiPageBook(label: string): void {
+  const storage = createBookStorage(label, tmpDir)
+  try {
+    for (const [pageId, pageNumber] of [["pg001", 1], ["pg002", 2]] as const) {
+      storage.putExtractedPage({
+        pageId,
+        pageNumber,
+        text: `Page ${pageNumber}`,
+        pageImage: {
+          imageId: `${pageId}_page`,
+          buffer: Buffer.from(`page-${pageNumber}`),
+          format: "png",
+          hash: `hash-${pageNumber}`,
+          width: 100,
+          height: 100,
+        },
+        images: [],
+      })
+    }
+    storage.putNodeData("text-catalog", "book", {
+      entries: [
+        { id: "pg002_t001", text: "Second page" },
+        { id: "gl001", text: "Book term" },
+        { id: "pg001_t001", text: "First page" },
+      ],
+      generatedAt: new Date().toISOString(),
+    })
+    storage.putNodeData("easy-read", "book", {
+      blocks: [
+        {
+          pageId: "pg002",
+          pageNumber: 2,
+          sectionId: "pg002_sec001",
+          sectionIndex: 0,
+          sectionType: "body",
+          entries: [
+            {
+              sourceId: "pg002_t001",
+              easyReadId: "pg002_t001_easy_read",
+              originalText: "Second page",
+              text: "Easy second page",
+              pageId: "pg002",
+              sectionId: "pg002_sec001",
+              sectionIndex: 0,
+            },
+          ],
+        },
+      ],
+      generatedAt: new Date().toISOString(),
+    })
+    storage.putNodeData("text-catalog-translation", "es", {
+      entries: [
+        { id: "pg001_t001", text: "Primera página" },
+        { id: "pg002_t001", text: "Segunda página" },
+        { id: "pg002_t001_easy_read", text: "Segunda página fácil" },
+        { id: "gl001", text: "Término del libro" },
+      ],
+      generatedAt: new Date().toISOString(),
+    })
+  } finally {
+    storage.close()
+  }
+}
+
 function defaultEvalConfigHash(): string {
   return crypto
     .createHash("sha256")
     .update(JSON.stringify({
       judge_model: DEFAULT_TRANSLATION_EVALUATION_JUDGE_MODEL,
       max_retries: DEFAULT_TRANSLATION_EVALUATION_MAX_RETRIES,
-      batch_size: DEFAULT_TRANSLATION_EVALUATION_BATCH_SIZE,
       temperature: DEFAULT_TRANSLATION_EVALUATION_TEMPERATURE,
       judge_instructions: DEFAULT_TRANSLATION_EVALUATION_JUDGE_INSTRUCTIONS,
       additional_guidance: null,
@@ -84,6 +146,175 @@ function defaultEvalConfigHash(): string {
 }
 
 describe("translation evaluation routes", () => {
+  it("rejects a review run when translation evaluation is disabled", async () => {
+    const label = "disabled-review"
+    seedBook(label)
+    const configPath = path.join(tmpDir, "disabled-config.yaml")
+    fs.writeFileSync(configPath, [
+      "structure_types:",
+      "  paragraph: Paragraph",
+      "role_types:",
+      "  body: Body",
+      "translation_evaluation:",
+      "  enable_translation_evaluation: false",
+      "",
+    ].join("\n"))
+
+    let submitted = false
+    const taskService: TaskService = {
+      submitTask: () => {
+        submitted = true
+        return { taskId: "task-disabled" }
+      },
+      getActiveTasks: () => [],
+    }
+    const app = createTranslationEvaluationRoutes(tmpDir, configPath, taskService)
+
+    const res = await app.request(`/books/${label}/evaluations/translations/es/run`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-OpenAI-Key": "sk-test" },
+      body: JSON.stringify({ entry_ids: ["pg001_t001"] }),
+    })
+
+    expect(res.status).toBe(409)
+    expect(await res.text()).toBe("Translation evaluation is disabled for this book")
+    expect(submitted).toBe(false)
+  })
+
+  it("groups selected catalog and Easy Read entries by real page in book order", async () => {
+    const label = "multi-page-review"
+    seedMultiPageBook(label)
+    let capturedRequest: Parameters<NonNullable<Parameters<typeof createTranslationEvaluationRoutes>[3]>>[0] | null = null
+    let execution: Promise<unknown> | null = null
+    const taskService: TaskService = {
+      submitTask: (_label, _kind, _description, executor) => {
+        execution = executor(() => undefined)
+        return { taskId: "task-pages" }
+      },
+      getActiveTasks: () => [],
+    }
+    const app = createTranslationEvaluationRoutes(
+      tmpDir,
+      undefined,
+      taskService,
+      async (request) => {
+        capturedRequest = request
+        const items = request.pages.flatMap((page) => page.entries.map((entry) => ({
+          entry_id: entry.entry_id,
+          page_id: page.page_id,
+          acceptable: true,
+          source_text: entry.source_text,
+          translated_text: entry.translated_text,
+          rationale: "Translation is acceptable.",
+          issue_types: [],
+        })))
+        return {
+          generated_at: new Date().toISOString(),
+          provider: "adt-llm",
+          language: request.language,
+          source_catalog_version: request.source_catalog_version,
+          translation_version: request.translation_version,
+          eval_config_hash: request.eval_config_hash,
+          summary: { total: items.length, acceptable: items.length, unacceptable: 0 },
+          items,
+        }
+      },
+    )
+
+    const res = await app.request(`/books/${label}/evaluations/translations/es/run`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-OpenAI-Key": "sk-test" },
+      body: JSON.stringify({
+        entry_ids: ["pg002_t001_easy_read", "gl001", "pg002_t001", "pg001_t001"],
+      }),
+    })
+
+    expect(res.status).toBe(200)
+    await execution
+    expect(capturedRequest).not.toBeNull()
+    expect(capturedRequest!.pages.map((page) => ({
+      pageId: page.page_id,
+      entryIds: page.entries.map((entry) => entry.entry_id),
+    }))).toEqual([
+      { pageId: "pg001", entryIds: ["pg001_t001"] },
+      { pageId: "pg002", entryIds: ["pg002_t001", "pg002_t001_easy_read"] },
+      { pageId: "book-level", entryIds: ["gl001"] },
+    ])
+  })
+
+  it("reuses only an exact successful multi-page review scope", async () => {
+    const label = "cached-multi-page-review"
+    seedMultiPageBook(label)
+    let execution: Promise<unknown> | null = null
+    let evaluationRuns = 0
+    const taskService: TaskService = {
+      submitTask: (_label, _kind, _description, executor) => {
+        execution = executor(() => undefined)
+        return { taskId: `task-${evaluationRuns + 1}` }
+      },
+      getActiveTasks: () => [],
+    }
+    const app = createTranslationEvaluationRoutes(
+      tmpDir,
+      undefined,
+      taskService,
+      async (request) => {
+        evaluationRuns += 1
+        const items = request.pages.flatMap((page) => page.entries.map((entry) => ({
+          entry_id: entry.entry_id,
+          page_id: page.page_id,
+          acceptable: true,
+          source_text: entry.source_text,
+          translated_text: entry.translated_text,
+          rationale: "Translation is acceptable.",
+          issue_types: [],
+          source_hash: entry.source_hash,
+          translated_hash: entry.translated_hash,
+        })))
+        return {
+          generated_at: new Date().toISOString(),
+          provider: "adt-llm",
+          language: request.language,
+          source_catalog_version: request.source_catalog_version,
+          translation_version: request.translation_version,
+          eval_config_hash: request.eval_config_hash,
+          summary: { total: items.length, acceptable: items.length, unacceptable: 0 },
+          items,
+          metadata: {
+            failed_pages: 0,
+            page_id: null,
+            page_ids: request.pages.map((page) => page.page_id),
+            scope_hash: request.scope_hash,
+            selected_entry_count: items.length,
+            selected_entry_ids: items.map((item) => item.entry_id),
+          },
+        }
+      },
+    )
+    const request = (entryIds: string[]) => app.request(
+      `/books/${label}/evaluations/translations/es/run`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "X-OpenAI-Key": "sk-test" },
+        body: JSON.stringify({ entry_ids: entryIds }),
+      },
+    )
+    const fullScope = ["pg001_t001", "pg002_t001", "pg002_t001_easy_read"]
+
+    const first = await request(fullScope)
+    expect((await first.json()).status).toBe("submitted")
+    await execution
+
+    const unchanged = await request([...fullScope].reverse())
+    expect(await unchanged.json()).toMatchObject({ status: "current", taskId: null })
+    expect(evaluationRuns).toBe(1)
+
+    const changed = await request(["pg001_t001", "pg002_t001"])
+    expect((await changed.json()).status).toBe("submitted")
+    await execution
+    expect(evaluationRuns).toBe(2)
+  })
+
   it("marks a needs-attention item as accepted anyway without changing translation text", async () => {
     const label = "accept-anyway"
     seedBook(label)
@@ -368,5 +599,6 @@ describe("translation evaluation routes", () => {
       },
       judge_instructions: "Review meaning and terminology only.",
     })
+    expect(capturedRequest).not.toHaveProperty("batch_size")
   })
 })

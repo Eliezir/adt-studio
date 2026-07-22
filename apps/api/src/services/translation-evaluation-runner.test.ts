@@ -32,9 +32,9 @@ function buildRequest(label: string): TranslationEvaluationRunRequest {
     source_catalog_version: 1,
     translation_version: 2,
     eval_config_hash: "hash",
+    scope_hash: "scope-hash",
     judge_model: "openai:/gpt-5.4",
     max_retries: 1,
-    batch_size: 1,
     judge_instructions: "Review translations.",
     book_metadata: {
       title: "Forest Book",
@@ -136,6 +136,76 @@ describe("describeMissingJudgeCredential", () => {
 })
 
 describe("evaluateTranslationInApi", () => {
+  it("evaluates multiple pages sequentially and records their exact scope", async () => {
+    const label = "eval-runner-multiple-pages"
+    seedBook(label)
+    let inFlight = 0
+    let maxInFlight = 0
+    const observedPageIds: string[] = []
+    const generateObject = vi.fn<LLMModel["generateObject"]>().mockImplementation(async (options) => {
+      inFlight += 1
+      maxInFlight = Math.max(maxInFlight, inFlight)
+      const prompt = JSON.parse(String(options.messages?.[0]?.content)) as {
+        page: { page_id: string; entries: Array<{ entry_id: string }> }
+      }
+      observedPageIds.push(prompt.page.page_id)
+      await new Promise((resolve) => setTimeout(resolve, 5))
+      inFlight -= 1
+      return {
+        object: {
+          items: prompt.page.entries.map((entry) => ({
+            entry_id: entry.entry_id,
+            acceptable: true,
+            rationale: "Translation is acceptable.",
+            issue_types: [],
+            severity: null,
+            suggested_text: null,
+          })),
+        },
+      } as never
+    })
+    const model: LLMModel = {
+      generateObject,
+      renderPrompt: vi.fn(),
+    }
+    const request: TranslationEvaluationRunRequest = {
+      ...buildRequest(label),
+      scope_hash: "multi-page-scope",
+      pages: [
+        buildRequest(label).pages[0],
+        {
+          page_id: "pg002",
+          entries: [
+            {
+              entry_id: "pg002_t001",
+              source_text: "Second page",
+              translated_text: "Segunda página",
+              source_hash: "source-hash-2",
+              translated_hash: "translated-hash-2",
+            },
+          ],
+        },
+      ],
+    }
+
+    const result = await evaluateTranslationInApi(request, {
+      booksDir: tmpDir,
+      apiKey: "sk-test",
+      createModel: () => model,
+    })
+
+    expect(observedPageIds).toEqual(["pg001", "pg002"])
+    expect(maxInFlight).toBe(1)
+    expect(generateObject).toHaveBeenCalledTimes(2)
+    expect(result.metadata).toMatchObject({
+      page_id: null,
+      page_ids: ["pg001", "pg002"],
+      scope_hash: "multi-page-scope",
+      failed_pages: 0,
+    })
+    expect(result.judge).not.toHaveProperty("batch_size")
+  })
+
   it("evaluates entries with page context and stores item-level results", async () => {
     const label = "eval-runner"
     seedBook(label)

@@ -313,7 +313,6 @@ export {
 } from "./reviewer-validation.js"
 
 export {
-  DEFAULT_TRANSLATION_EVALUATION_BATCH_SIZE,
   DEFAULT_TRANSLATION_EVALUATION_CONTEXT_OPTIONS,
   DEFAULT_TRANSLATION_EVALUATION_ISSUE_TYPES,
   DEFAULT_TRANSLATION_EVALUATION_JUDGE_INSTRUCTIONS,
@@ -334,6 +333,7 @@ export {
   TranslationEvaluationRunPage,
   TranslationEvaluationRunRequest,
   TranslationEvaluationResult,
+  type ResolvedTranslationEvaluationConfig,
   resolveTranslationEvaluationConfig,
 } from "./translation-evaluation.js"
 

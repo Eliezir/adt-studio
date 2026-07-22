@@ -3,7 +3,6 @@ import { z } from "zod"
 import { createLLMModel, type LLMModel, type LlmLogEntry } from "@adt/llm"
 import { createBookStorage } from "@adt/storage"
 import {
-  DEFAULT_TRANSLATION_EVALUATION_BATCH_SIZE,
   DEFAULT_TRANSLATION_EVALUATION_JUDGE_INSTRUCTIONS,
   DEFAULT_TRANSLATION_EVALUATION_JUDGE_MODEL,
   DEFAULT_TRANSLATION_EVALUATION_MAX_RETRIES,
@@ -549,14 +548,6 @@ async function validateSuggestedTranslations({
   return validatedItems
 }
 
-function chunkPages<T>(pages: T[], batchSize: number): T[][] {
-  const chunks: T[][] = []
-  for (let index = 0; index < pages.length; index += batchSize) {
-    chunks.push(pages.slice(index, index + batchSize))
-  }
-  return chunks
-}
-
 export async function evaluateTranslationInApi(
   request: TranslationEvaluationRunRequestData,
   options: TranslationEvaluationRunnerOptions,
@@ -571,7 +562,6 @@ export async function evaluateTranslationInApi(
 
   const instructions = buildJudgeInstructions(parsedRequest)
   const system = buildSystemPrompt(instructions, parsedRequest)
-  const batchSize = parsedRequest.batch_size ?? DEFAULT_TRANSLATION_EVALUATION_BATCH_SIZE
   const maxRetries = parsedRequest.max_retries ?? DEFAULT_TRANSLATION_EVALUATION_MAX_RETRIES
   const cacheDir = path.join(path.resolve(options.booksDir), parsedRequest.book_label, ".cache")
   const storage = createBookStorage(parsedRequest.book_label, options.booksDir)
@@ -589,56 +579,53 @@ export async function evaluateTranslationInApi(
       ? options.createModel({ modelId, cacheDir, onLog })
       : createLLMModel({ modelId, cacheDir, onLog, credentials })
     {
-      const pageBatches = chunkPages(parsedRequest.pages, batchSize)
       const items: TranslationEvaluationResultData["items"] = []
       let failedPages = 0
       let completedPages = 0
       const totalPages = parsedRequest.pages.length
 
-      for (let batchIndex = 0; batchIndex < pageBatches.length; batchIndex += 1) {
+      for (const page of parsedRequest.pages) {
         emitProgress?.(
-          `Evaluating translation page batch ${batchIndex + 1} of ${pageBatches.length}`,
-          40 + Math.round((batchIndex / Math.max(1, pageBatches.length)) * 40),
+          `Evaluating translation page ${completedPages + 1} of ${totalPages}`,
+          40 + Math.round((completedPages / Math.max(1, totalPages)) * 40),
         )
 
-        for (const page of pageBatches[batchIndex]) {
-          try {
-            const result = await llmModel.generateObject<TranslationEvaluationJudgeOutput>({
-              schema: TranslationEvaluationJudgeOutput,
-              system,
-              messages: [
-                {
-                  role: "user",
-                  content: buildUserPrompt(page, parsedRequest),
-                },
-              ],
-              maxRetries,
-              temperature: parsedRequest.temperature ?? 0,
-              log: {
-                taskType: "translation-evaluation",
-                pageId: page.page_id,
-                promptName: "translation-evaluation-judge",
+        try {
+          const result = await llmModel.generateObject<TranslationEvaluationJudgeOutput>({
+            schema: TranslationEvaluationJudgeOutput,
+            system,
+            messages: [
+              {
+                role: "user",
+                content: buildUserPrompt(page, parsedRequest),
               },
-            })
-            const pageItems = normalizeJudgeOutput(page, result.object, parsedRequest)
-            items.push(...await validateSuggestedTranslations({
-              page,
-              items: pageItems,
-              request: parsedRequest,
-              instructions,
-              llmModel,
-              maxRetries,
-            }))
-          } catch (err) {
-            failedPages += 1
-            items.push(...buildFailedEvaluationItems(page, err))
-          }
-          completedPages += 1
-          emitProgress?.(
-            `Evaluated ${completedPages} of ${totalPages} pages`,
-            40 + Math.round((completedPages / Math.max(1, totalPages)) * 40),
-          )
+            ],
+            maxRetries,
+            temperature: parsedRequest.temperature ?? 0,
+            log: {
+              taskType: "translation-evaluation",
+              pageId: page.page_id,
+              promptName: "translation-evaluation-judge",
+            },
+          })
+          const pageItems = normalizeJudgeOutput(page, result.object, parsedRequest)
+          items.push(...await validateSuggestedTranslations({
+            page,
+            items: pageItems,
+            request: parsedRequest,
+            instructions,
+            llmModel,
+            maxRetries,
+          }))
+        } catch (err) {
+          failedPages += 1
+          items.push(...buildFailedEvaluationItems(page, err))
         }
+        completedPages += 1
+        emitProgress?.(
+          `Evaluated ${completedPages} of ${totalPages} pages`,
+          40 + Math.round((completedPages / Math.max(1, totalPages)) * 40),
+        )
       }
 
       const acceptableCount = items.filter((item) => item.acceptable).length
@@ -656,7 +643,6 @@ export async function evaluateTranslationInApi(
           instructions,
           additional_guidance: parsedRequest.additional_guidance ?? null,
           max_retries: maxRetries,
-          batch_size: batchSize,
           temperature: parsedRequest.temperature ?? 0,
           strictness: parsedRequest.strictness ?? "balanced",
           severity_threshold: parsedRequest.severity_threshold ?? "medium",
@@ -678,6 +664,8 @@ export async function evaluateTranslationInApi(
           failed_pages: failedPages,
           selected_entry_count: selectedEntryIds.length,
           page_id: parsedRequest.pages.length === 1 ? parsedRequest.pages[0].page_id : null,
+          page_ids: parsedRequest.pages.map((page) => page.page_id),
+          scope_hash: parsedRequest.scope_hash,
           selected_entry_ids: selectedEntryIds,
           book_metadata: parsedRequest.book_metadata ?? null,
         },

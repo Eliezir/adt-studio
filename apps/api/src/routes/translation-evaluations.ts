@@ -5,10 +5,13 @@ import { z } from "zod"
 import { createBookStorage } from "@adt/storage"
 import { loadBookConfig } from "@adt/pipeline"
 import {
+  EasyReadOutput,
   TextCatalogOutput,
   parseBookLabel,
   resolveTranslationEvaluationConfig,
+  type ResolvedTranslationEvaluationConfig,
   type TranslationEvaluationResult,
+  type TranslationEvaluationRunPage,
   type TranslationEvaluationRunRequest,
 } from "@adt/types"
 import type { TaskProgressEmitter, TaskService } from "../services/task-service.js"
@@ -88,7 +91,6 @@ function hashText(text: string): string {
 function buildEvalConfigHash(config: {
   judge_model?: string
   max_retries?: number
-  batch_size?: number
   temperature?: number
   judge_instructions?: string
   additional_guidance?: string | null
@@ -107,7 +109,6 @@ function buildEvalConfigHash(config: {
     .update(JSON.stringify({
       judge_model: config.judge_model ?? null,
       max_retries: config.max_retries ?? null,
-      batch_size: config.batch_size ?? null,
       temperature: config.temperature ?? null,
       judge_instructions: config.judge_instructions ?? null,
       additional_guidance: config.additional_guidance ?? null,
@@ -131,7 +132,6 @@ function getCurrentEvalConfigHash(booksDir: string, configPath: string | undefin
   return buildEvalConfigHash({
     judge_model: resolvedConfig.judge_model,
     max_retries: resolvedConfig.max_retries,
-    batch_size: resolvedConfig.batch_size,
     temperature: resolvedConfig.temperature,
     judge_instructions: resolvedConfig.judge_instructions,
     additional_guidance: resolvedConfig.additional_guidance,
@@ -164,10 +164,18 @@ function entryBelongsToPage(entryId: string, pageId: string): boolean {
   return entryId === pageId || entryId.startsWith(`${pageId}_`) || entryId.startsWith(`${pageId}:`)
 }
 
-function equalEntryIds(left: string[] | undefined, right: string[]): boolean {
-  if (!left || left.length !== right.length) return false
-  const leftSet = new Set(left)
-  return right.every((entryId) => leftSet.has(entryId))
+function buildScopeHash(pages: TranslationEvaluationRunPage[]): string {
+  return crypto
+    .createHash("sha256")
+    .update(JSON.stringify(pages.map((page) => ({
+      page_id: page.page_id,
+      entries: page.entries.map((entry) => ({
+        entry_id: entry.entry_id,
+        source_hash: entry.source_hash,
+        translated_hash: entry.translated_hash,
+      })),
+    }))))
+    .digest("hex")
 }
 
 async function parseRunBody(c: { req: { json: () => Promise<unknown> } }) {
@@ -183,17 +191,16 @@ async function parseRunBody(c: { req: { json: () => Promise<unknown> } }) {
 
 function buildTranslationEvaluationRunRequest(options: {
   booksDir: string
-  configPath?: string
   label: string
   language: string
   pageId?: string
   entryIds?: string[]
+  config: ReturnType<typeof loadBookConfig> | null
+  resolvedConfig: ResolvedTranslationEvaluationConfig
 }): TranslationEvaluationRunRequest {
   const storage = createBookStorage(options.label, options.booksDir)
   try {
-    const config = options.configPath
-      ? loadBookConfig(options.label, options.booksDir, options.configPath)
-      : null
+    const { config, resolvedConfig } = options
 
     const sourceRow = storage.getLatestNodeData("text-catalog", "book")
     if (!sourceRow) {
@@ -213,7 +220,6 @@ function buildTranslationEvaluationRunRequest(options: {
       throw new Error(`Stored translated text catalog data is invalid for language: ${options.language}`)
     }
 
-    const resolvedConfig = resolveTranslationEvaluationConfig(config?.translation_evaluation)
     const metadataRow = storage.getLatestNodeData("metadata", "book")
     const metadata = metadataRow?.data as Record<string, unknown> | null
     const sourceLanguage = config?.editing_language
@@ -222,20 +228,39 @@ function buildTranslationEvaluationRunRequest(options: {
     const translationEntries = new Map(
       parsedTranslation.data.entries.map((entry) => [entry.id, entry.text]),
     )
-    const selectedEntryIds = options.entryIds ? new Set(options.entryIds) : null
+    const pages = storage.getPages()
+    const pageIds = pages.map((page) => page.pageId)
+    const pageIdSet = new Set(pageIds)
+    const sourceEntries = parsedSource.data.entries.map((entry) => ({
+      ...entry,
+      pageId: pageIds.find((pageId) => entryBelongsToPage(entry.id, pageId)) ?? null,
+    }))
+    const easyReadRow = storage.getLatestNodeData("easy-read", "book")
+    if (easyReadRow) {
+      const parsedEasyRead = EasyReadOutput.safeParse(easyReadRow.data)
+      if (!parsedEasyRead.success) {
+        throw new Error("Stored Easy Read data is invalid")
+      }
+      sourceEntries.push(...parsedEasyRead.data.blocks.flatMap((block) =>
+        block.entries.map((entry) => ({
+          id: entry.easyReadId,
+          text: entry.text,
+          pageId: entry.pageId,
+        }))))
+    }
 
-    const selectedSourceEntries = parsedSource.data.entries.filter((entry) => {
-      if (selectedEntryIds) return selectedEntryIds.has(entry.id)
-      if (options.pageId) return entryBelongsToPage(entry.id, options.pageId)
+    const selectedEntryIds = options.entryIds ? new Set(options.entryIds) : null
+    const selectedSourceEntries = sourceEntries.filter((entry) => {
+      if (selectedEntryIds && !selectedEntryIds.has(entry.id)) return false
+      if (options.pageId && entry.pageId !== options.pageId) return false
       return true
     })
 
     if (selectedSourceEntries.length === 0) {
-      throw new Error("No text-catalog entries matched the requested translation review scope")
+      throw new Error("No translation entries matched the requested review scope")
     }
 
-    const pageId = options.pageId ?? "visible"
-    const entries = selectedSourceEntries.map((entry) => {
+    const buildEntry = (entry: typeof selectedSourceEntries[number]) => {
       const translatedText = translationEntries.get(entry.id) ?? ""
       return {
         entry_id: entry.id,
@@ -244,7 +269,20 @@ function buildTranslationEvaluationRunRequest(options: {
         source_hash: hashText(entry.text),
         translated_hash: hashText(translatedText),
       }
+    }
+    const requestPages: TranslationEvaluationRunPage[] = pages.flatMap((page) => {
+      const entries = selectedSourceEntries
+        .filter((entry) => entry.pageId === page.pageId)
+        .map(buildEntry)
+      return entries.length > 0 ? [{ page_id: page.pageId, entries }] : []
     })
+    const bookLevelEntries = selectedSourceEntries
+      .filter((entry) => entry.pageId === null || !pageIdSet.has(entry.pageId))
+      .map(buildEntry)
+    if (bookLevelEntries.length > 0) {
+      requestPages.push({ page_id: "book-level", entries: bookLevelEntries })
+    }
+    const scopeHash = buildScopeHash(requestPages)
 
     return {
       book_label: options.label,
@@ -252,10 +290,10 @@ function buildTranslationEvaluationRunRequest(options: {
       source_language: sourceLanguage,
       source_catalog_version: sourceRow.version,
       translation_version: translationRow.version,
+      scope_hash: scopeHash,
       eval_config_hash: buildEvalConfigHash({
         judge_model: resolvedConfig.judge_model,
         max_retries: resolvedConfig.max_retries,
-        batch_size: resolvedConfig.batch_size,
         temperature: resolvedConfig.temperature,
         judge_instructions: resolvedConfig.judge_instructions,
         additional_guidance: resolvedConfig.additional_guidance,
@@ -271,7 +309,6 @@ function buildTranslationEvaluationRunRequest(options: {
       }),
       judge_model: resolvedConfig.judge_model,
       max_retries: resolvedConfig.max_retries,
-      batch_size: resolvedConfig.batch_size,
       temperature: resolvedConfig.temperature,
       judge_instructions: resolvedConfig.judge_instructions,
       ...(resolvedConfig.additional_guidance
@@ -287,7 +324,7 @@ function buildTranslationEvaluationRunRequest(options: {
       ...(resolvedConfig.style_guidance ? { style_guidance: resolvedConfig.style_guidance } : {}),
       ...(resolvedConfig.terminology_guidance ? { terminology_guidance: resolvedConfig.terminology_guidance } : {}),
       book_metadata: metadata,
-      pages: [{ page_id: pageId, entries }],
+      pages: requestPages,
     }
   } finally {
     storage.close()
@@ -411,6 +448,14 @@ export function createTranslationEvaluationRoutes(
     const apiKey = getOpenAIApiKeyFromRequest(c)
     const providerCredentials = getProviderCredentialsFromRequest(c)
     const body = await parseRunBody(c)
+    const config = configPath ? loadBookConfig(safeLabel, booksDir, configPath) : null
+    const resolvedConfig = resolveTranslationEvaluationConfig(config?.translation_evaluation)
+
+    if (!resolvedConfig.enable_translation_evaluation) {
+      throw new HTTPException(409, {
+        message: "Translation evaluation is disabled for this book",
+      })
+    }
 
     const evaluation = getTranslationEvaluationStatus(safeLabel, booksDir, safeLanguage)
     if (!evaluation || evaluation.currentTranslationVersion === null) {
@@ -432,11 +477,12 @@ export function createTranslationEvaluationRoutes(
 
     const request = buildTranslationEvaluationRunRequest({
       booksDir,
-      configPath,
       label: safeLabel,
       language: safeLanguage,
       pageId: body.page_id,
       entryIds: body.entry_ids,
+      config,
+      resolvedConfig,
     })
     // Checked here rather than earlier: which credential is needed depends on
     // the judge model, which only exists once the request is built.
@@ -448,15 +494,12 @@ export function createTranslationEvaluationRoutes(
       throw new HTTPException(400, { message: missingCredential })
     }
 
-    const requestedEntryIds = request.pages.flatMap((page) => page.entries.map((entry) => entry.entry_id))
-
     if (
       evaluation.evaluation &&
       evaluation.evaluation.source_catalog_version === request.source_catalog_version &&
       evaluation.evaluation.translation_version === request.translation_version &&
       evaluation.evaluation.eval_config_hash === request.eval_config_hash &&
-      evaluation.evaluation.metadata?.page_id === request.pages[0]?.page_id &&
-      equalEntryIds(evaluation.evaluation.metadata?.selected_entry_ids, requestedEntryIds) &&
+      evaluation.evaluation.metadata?.scope_hash === request.scope_hash &&
       (evaluation.evaluation.metadata?.failed_pages ?? 0) === 0
     ) {
       return c.json({
@@ -468,6 +511,7 @@ export function createTranslationEvaluationRoutes(
       })
     }
 
+    const taskPageId = request.pages.length === 1 ? request.pages[0]?.page_id : undefined
     const { taskId } = taskService.submitTask(
       safeLabel,
       "translation-evaluation",
@@ -490,11 +534,11 @@ export function createTranslationEvaluationRoutes(
         return {
           language: safeLanguage,
           version: saved.version,
-          pageId: request.pages[0]?.page_id,
+          ...(taskPageId ? { pageId: taskPageId } : {}),
         }
       },
       {
-        pageId: request.pages[0]?.page_id,
+        pageId: taskPageId,
         url: `/books/${safeLabel}/translate`,
       },
     )
