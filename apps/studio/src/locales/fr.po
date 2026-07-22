@@ -8020,6 +8020,9 @@ msgstr "Traduction Invite"
 msgid "Translation Review"
 msgstr "Révision de traduction"
 
+msgid "Translation review is disabled for this book."
+msgstr "La révision de traduction est désactivée pour ce livre."
+
 msgid "Translation review is running."
 msgstr "La révision de traduction est en cours."
 

@@ -8018,6 +8018,9 @@ msgstr "Prompt de tradução"
 msgid "Translation Review"
 msgstr "Revisão de tradução"
 
+msgid "Translation review is disabled for this book."
+msgstr "A revisão de tradução está desativada para este livro."
+
 msgid "Translation review is running."
 msgstr "A revisão de tradução está em andamento."
 

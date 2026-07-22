@@ -127,7 +127,6 @@ export function LanguageSettings({ bookLabel, tab = "general", stageSlug = "tran
   const [reviewEnabled, setReviewEnabled] = useState(true)
   const [reviewModel, setReviewModel] = useState(DEFAULT_TRANSLATION_EVALUATION_JUDGE_MODEL)
   const [reviewRetries, setReviewRetries] = useState(String(DEFAULT_TRANSLATION_EVALUATION_MAX_RETRIES))
-  const [reviewBatchSize, setReviewBatchSize] = useState("1")
   const [reviewTemperature, setReviewTemperature] = useState(String(DEFAULT_TRANSLATION_EVALUATION_TEMPERATURE))
   const [reviewStrictness, setReviewStrictness] = useState<"lenient" | "balanced" | "strict">("balanced")
   const [reviewSeverityThreshold, setReviewSeverityThreshold] = useState<TranslationEvaluationSeverity>(DEFAULT_TRANSLATION_EVALUATION_SEVERITY_THRESHOLD)
@@ -206,7 +205,6 @@ export function LanguageSettings({ bookLabel, tab = "general", stageSlug = "tran
       setReviewEnabled(te.enable_translation_evaluation !== false)
       setReviewModel(typeof te.judge_model === "string" ? te.judge_model : DEFAULT_TRANSLATION_EVALUATION_JUDGE_MODEL)
       setReviewRetries(typeof te.max_retries === "number" ? String(te.max_retries) : String(DEFAULT_TRANSLATION_EVALUATION_MAX_RETRIES))
-      setReviewBatchSize(typeof te.batch_size === "number" ? String(te.batch_size) : "1")
       setReviewTemperature(typeof te.temperature === "number" ? String(te.temperature) : String(DEFAULT_TRANSLATION_EVALUATION_TEMPERATURE))
       setReviewStrictness(te.strictness === "lenient" || te.strictness === "strict" ? te.strictness : "balanced")
       setReviewSeverityThreshold(
@@ -234,7 +232,6 @@ export function LanguageSettings({ bookLabel, tab = "general", stageSlug = "tran
       setReviewEnabled(true)
       setReviewModel(DEFAULT_TRANSLATION_EVALUATION_JUDGE_MODEL)
       setReviewRetries(String(DEFAULT_TRANSLATION_EVALUATION_MAX_RETRIES))
-      setReviewBatchSize("1")
       setReviewTemperature(String(DEFAULT_TRANSLATION_EVALUATION_TEMPERATURE))
       setReviewStrictness("balanced")
       setReviewSeverityThreshold(DEFAULT_TRANSLATION_EVALUATION_SEVERITY_THRESHOLD)
@@ -281,11 +278,6 @@ export function LanguageSettings({ bookLabel, tab = "general", stageSlug = "tran
 
   const shouldWrite = (field: string) =>
     dirty[field] || (bookConfigData?.config && field in bookConfigData.config)
-
-  const parsePositiveInt = (value: string, fallback: number) => {
-    const parsed = Number.parseInt(value, 10)
-    return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback
-  }
 
   const parseNonNegativeInt = (value: string, fallback: number) => {
     const parsed = Number.parseInt(value, 10)
@@ -357,7 +349,10 @@ export function LanguageSettings({ bookLabel, tab = "general", stageSlug = "tran
       }
     }
     if (shouldWrite("translation_evaluation")) {
-      const existing = (bookConfigData?.config?.translation_evaluation ?? {}) as Record<string, unknown>
+      const existing = {
+        ...((bookConfigData?.config?.translation_evaluation ?? {}) as Record<string, unknown>),
+      }
+      delete existing.batch_size
       const selectedIssueTypes = Array.from(reviewIssueTypes)
       const issueTypes = selectedIssueTypes.includes("other")
         ? selectedIssueTypes
@@ -367,7 +362,6 @@ export function LanguageSettings({ bookLabel, tab = "general", stageSlug = "tran
         enable_translation_evaluation: reviewEnabled,
         judge_model: reviewModel.trim() || DEFAULT_TRANSLATION_EVALUATION_JUDGE_MODEL,
         max_retries: parseNonNegativeInt(reviewRetries, DEFAULT_TRANSLATION_EVALUATION_MAX_RETRIES),
-        batch_size: parsePositiveInt(reviewBatchSize, 1),
         temperature: parseTemperature(reviewTemperature),
         strictness: reviewStrictness,
         severity_threshold: reviewSeverityThreshold,
@@ -681,20 +675,6 @@ export function LanguageSettings({ bookLabel, tab = "general", stageSlug = "tran
                 value={reviewRetries}
                 onChange={(e) => {
                   setReviewRetries(e.target.value)
-                  markDirty("translation_evaluation")
-                }}
-                className="h-9 max-w-32 text-sm"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="translation-review-batch-size" className="text-xs">{t`Batch size`}</Label>
-              <Input
-                id="translation-review-batch-size"
-                type="number"
-                min={1}
-                value={reviewBatchSize}
-                onChange={(e) => {
-                  setReviewBatchSize(e.target.value)
                   markDirty("translation_evaluation")
                 }}
                 className="h-9 max-w-32 text-sm"

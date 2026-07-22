@@ -8019,6 +8019,9 @@ msgstr "Udhëzimi i Përkthimit"
 msgid "Translation Review"
 msgstr "Rishikimi i Përkthimit"
 
+msgid "Translation review is disabled for this book."
+msgstr "Rishikimi i përkthimit është çaktivizuar për këtë libër."
+
 msgid "Translation review is running."
 msgstr "Rishikimi i përkthimit është duke u zhvilluar."
 

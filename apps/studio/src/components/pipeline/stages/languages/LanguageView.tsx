@@ -63,7 +63,10 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { resolveTranslationLanguageState } from "./lib/translations-view-state";
+import {
+  isTranslationEvaluationEnabled,
+  resolveTranslationLanguageState,
+} from "./lib/translations-view-state";
 import {
   type CatalogCategory,
   getEntryCategory,
@@ -409,6 +412,9 @@ export function LanguageView({
     speechConfig && typeof speechConfig === "object"
       ? (speechConfig as Record<string, unknown>)
       : null;
+  const translationEvaluationEnabled =
+    !!activeConfigData &&
+    isTranslationEvaluationEnabled(merged?.translation_evaluation);
   const wordHighlightingEnabled =
     speechConfigRecord?.word_highlighting === true;
   const configExcludedTextIds = useMemo(
@@ -513,6 +519,10 @@ export function LanguageView({
     const base = catalog?.entries ?? [];
     return easyReadEntries.length > 0 ? [...base, ...easyReadEntries] : base;
   }, [catalog?.entries, easyReadEntries]);
+  const sourceEntriesById = useMemo(
+    () => new Map(entries.map((entry) => [entry.id, entry.text])),
+    [entries],
+  );
   const pageFilteredEntries = selectedPageId
     ? entries.filter((e) => e.id.startsWith(selectedPageId + "_"))
     : entries;
@@ -668,7 +678,10 @@ export function LanguageView({
 
   // Effective translated entries (pending overrides fetched data)
   const effectiveEntries = pendingEntries ?? translatedEntries;
-  const translatedMap = new Map(effectiveEntries.map((e) => [e.id, e.text]));
+  const translatedMap = useMemo(
+    () => new Map(effectiveEntries.map((entry) => [entry.id, entry.text])),
+    [effectiveEntries],
+  );
 
   const {
     label: pendingLabel,
@@ -746,10 +759,17 @@ export function LanguageView({
   const translationEvaluation = useQuery({
     queryKey: translationEvaluationKey,
     queryFn: () => api.getTranslationEvaluation(bookLabel, selectedLang!),
-    enabled: !!bookLabel && !!selectedLang && !isSourceLang && !isSpeechStage,
+    enabled:
+      translationEvaluationEnabled &&
+      !!bookLabel &&
+      !!selectedLang &&
+      !isSourceLang &&
+      !isSpeechStage,
     retry: false,
   });
-  const evaluationStatus = translationEvaluation.data ?? null;
+  const evaluationStatus = translationEvaluationEnabled
+    ? (translationEvaluation.data ?? null)
+    : null;
   const shouldAutoSurfaceReviewRef = useRef(false);
   const autoSurfaceAfterReviewVersionRef = useRef<number | null>(null);
   const hasTranslationEvaluationRunFailure =
@@ -769,13 +789,28 @@ export function LanguageView({
       : true;
     if (!matchesVisibleScope) return map;
     for (const item of evaluationStatus.evaluation.items) {
-      if (visibleIds.has(item.entry_id)) {
-        map.set(item.entry_id, item);
-      }
+      if (!visibleIds.has(item.entry_id)) continue;
+      const currentSourceText = sourceEntriesById.get(item.entry_id);
+      const currentTranslatedText = translatedMap.get(item.entry_id);
+      if (item.source_text !== undefined && item.source_text !== currentSourceText)
+        continue;
+      if (
+        item.translated_text !== undefined &&
+        item.translated_text !== currentTranslatedText
+      )
+        continue;
+      map.set(item.entry_id, item);
     }
     return map;
-  }, [evaluationStatus, hasTranslationEvaluationRunFailure, reviewEntryIds]);
+  }, [
+    evaluationStatus,
+    hasTranslationEvaluationRunFailure,
+    reviewEntryIds,
+    sourceEntriesById,
+    translatedMap,
+  ]);
   const hasReviewResults =
+    translationEvaluationEnabled &&
     !isSourceLang &&
     !isSpeechStage &&
     !!evaluationStatus?.evaluation &&
@@ -845,6 +880,7 @@ export function LanguageView({
     reviewFilter,
   ]);
   const activeEvaluationTask = useMemo(() => {
+    if (!translationEvaluationEnabled) return null;
     return (
       [...tasks]
         .filter(
@@ -855,9 +891,13 @@ export function LanguageView({
         .sort((left, right) => (right.startedAt ?? 0) - (left.startedAt ?? 0))[0] ??
       null
     );
-  }, [tasks]);
+  }, [tasks, translationEvaluationEnabled]);
   const runTranslationReview = useMutation({
     mutationFn: async () => {
+      if (!translationEvaluationEnabled)
+        throw new Error(
+          i18n._(msg`Translation review is disabled for this book.`),
+        );
       if (!selectedLang)
         throw new Error(i18n._(msg`Select a target language first.`));
       if (reviewEntryIds.length === 0)
@@ -908,6 +948,7 @@ export function LanguageView({
     },
   });
   const canReviewVisibleTranslations =
+    translationEvaluationEnabled &&
     !isSourceLang &&
     !isSpeechStage &&
     !!selectedLang &&
@@ -1333,38 +1374,41 @@ export function LanguageView({
             }}
           />
         )}
-      {selectedLang && !isSourceLang && !isSpeechStage && (
-        <button
-          type="button"
-          onClick={() => runTranslationReviewMutate()}
-          disabled={!canReviewVisibleTranslations}
-          title={
-            dirty
-              ? t`Save changes before reviewing`
-              : t`Review visible translations`
-          }
-          className="inline-flex h-6 items-center gap-1 rounded bg-white/20 px-2 text-[10px] font-medium text-white transition-colors hover:bg-white/30 disabled:cursor-default disabled:opacity-40"
-        >
-          {runTranslationReviewPending || activeEvaluationTask ? (
-            <Loader2 className="h-3 w-3 animate-spin" />
-          ) : hasReviewResults &&
-            reviewCounts.needsAttention === 0 &&
-            reviewCounts.pendingSave === 0 ? (
-            <Check className="h-3 w-3" />
-          ) : (
-            <WandSparkles className="h-3 w-3" />
-          )}
-          {runTranslationReviewPending || activeEvaluationTask
-            ? t`Reviewing...`
-            : hasReviewResults && reviewCounts.needsAttention > 0
-              ? t`${reviewCounts.needsAttention} issue/issues`
-              : hasReviewResults && reviewCounts.pendingSave > 0
-                ? t`${reviewCounts.pendingSave} pending save`
-                : hasReviewResults
-                  ? t`Reviewed`
-                  : t`Review`}
-        </button>
-      )}
+      {translationEvaluationEnabled &&
+        selectedLang &&
+        !isSourceLang &&
+        !isSpeechStage && (
+          <button
+            type="button"
+            onClick={() => runTranslationReviewMutate()}
+            disabled={!canReviewVisibleTranslations}
+            title={
+              dirty
+                ? t`Save changes before reviewing`
+                : t`Review visible translations`
+            }
+            className="inline-flex h-6 items-center gap-1 rounded bg-white/20 px-2 text-[10px] font-medium text-white transition-colors hover:bg-white/30 disabled:cursor-default disabled:opacity-40"
+          >
+            {runTranslationReviewPending || activeEvaluationTask ? (
+              <Loader2 className="h-3 w-3 animate-spin" />
+            ) : hasReviewResults &&
+              reviewCounts.needsAttention === 0 &&
+              reviewCounts.pendingSave === 0 ? (
+              <Check className="h-3 w-3" />
+            ) : (
+              <WandSparkles className="h-3 w-3" />
+            )}
+            {runTranslationReviewPending || activeEvaluationTask
+              ? t`Reviewing...`
+              : hasReviewResults && reviewCounts.needsAttention > 0
+                ? t`${reviewCounts.needsAttention} issue/issues`
+                : hasReviewResults && reviewCounts.pendingSave > 0
+                  ? t`${reviewCounts.pendingSave} pending save`
+                  : hasReviewResults
+                    ? t`Reviewed`
+                    : t`Review`}
+          </button>
+        )}
       <div className="w-px h-4 bg-white/20" />
       <button
         type="button"
@@ -1859,21 +1903,27 @@ export function LanguageView({
               </div>
             )}
 
-          {!isSourceLang && !isSpeechStage && runTranslationReview.error && (
-            <Alert variant="destructive" className="rounded-md">
-              <AlertDescription className="text-xs whitespace-pre-wrap break-words">
-                {runTranslationReview.error.message}
-              </AlertDescription>
-            </Alert>
-          )}
+          {translationEvaluationEnabled &&
+            !isSourceLang &&
+            !isSpeechStage &&
+            runTranslationReview.error && (
+              <Alert variant="destructive" className="rounded-md">
+                <AlertDescription className="text-xs whitespace-pre-wrap break-words">
+                  {runTranslationReview.error.message}
+                </AlertDescription>
+              </Alert>
+            )}
 
-          {!isSourceLang && !isSpeechStage && acceptAnyway.error && (
-            <Alert variant="destructive" className="rounded-md">
-              <AlertDescription className="text-xs whitespace-pre-wrap break-words">
-                {acceptAnyway.error.message}
-              </AlertDescription>
-            </Alert>
-          )}
+          {translationEvaluationEnabled &&
+            !isSourceLang &&
+            !isSpeechStage &&
+            acceptAnyway.error && (
+              <Alert variant="destructive" className="rounded-md">
+                <AlertDescription className="text-xs whitespace-pre-wrap break-words">
+                  {acceptAnyway.error.message}
+                </AlertDescription>
+              </Alert>
+            )}
 
           {!isSourceLang &&
             !isSourceLanguagePending &&

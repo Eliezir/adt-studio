@@ -8018,6 +8018,9 @@ msgstr "Translation Prompt"
 msgid "Translation Review"
 msgstr "Translation Review"
 
+msgid "Translation review is disabled for this book."
+msgstr "Translation review is disabled for this book."
+
 msgid "Translation review is running."
 msgstr "Translation review is running."
 
