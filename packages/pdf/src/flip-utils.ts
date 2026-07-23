@@ -21,26 +21,6 @@ function hashBuffer(buf: Buffer): string {
 }
 
 /**
- * Build an index of image stream operations by their native dimensions.
- * Used to match extracted images with their corresponding stream ops.
- */
-export function buildImageOpIndex(
-  ops: StreamOp[]
-): Map<string, ImageStreamOp> {
-  const index = new Map<string, ImageStreamOp>();
-  for (const op of ops) {
-    if (op.kind !== "image" && op.kind !== "imageMask") continue;
-    const key = `${op.nativeWidth}x${op.nativeHeight}`;
-    // Store first op with this dimension; further refinement with contentDigest
-    // would happen in stampRasterPlacementsFromOps if needed
-    if (!index.has(key)) {
-      index.set(key, op as ImageStreamOp);
-    }
-  }
-  return index;
-}
-
-/**
  * Detect if image needs horizontal/vertical flip based on CTM.
  * Negative X scale (a < 0) = horizontal flip; negative Y scale (d < 0) = vertical flip.
  */
@@ -165,8 +145,45 @@ export function flipImageBufferVertical(
 }
 
 /**
+ * Find the stream operation that matches an extracted image.
+ * Uses contentDigest (pixel hash) for precise matching when available,
+ * falls back to dimension-based matching for images without digest.
+ */
+function findMatchingStreamOp(
+  image: ExtractedImage,
+  streamOps: StreamOp[]
+): ImageStreamOp | undefined {
+  // First, try to match by contentDigest if available (most precise)
+  if (image.hash) {
+    for (const op of streamOps) {
+      if (op.kind !== "image" && op.kind !== "imageMask") continue;
+      if (
+        op.nativeWidth === image.width &&
+        op.nativeHeight === image.height &&
+        (op as ImageStreamOp).contentDigest === image.hash
+      ) {
+        return op as ImageStreamOp;
+      }
+    }
+  }
+
+  // Fallback: match by dimensions only (less precise, used when digest unavailable)
+  for (const op of streamOps) {
+    if (op.kind !== "image" && op.kind !== "imageMask") continue;
+    if (op.nativeWidth === image.width && op.nativeHeight === image.height) {
+      return op as ImageStreamOp;
+    }
+  }
+
+  return undefined;
+}
+
+/**
  * Apply CTM-based flip transforms to raster images based on stream operations.
  * Updates image buffers and hashes in-place.
+ * 
+ * Uses precise content-based matching when digests are available (preferred),
+ * falls back to dimension matching for images without digests.
  */
 export function applyFlipsToRasterImages(
   images: ExtractedImage[],
@@ -174,11 +191,8 @@ export function applyFlipsToRasterImages(
 ): void {
   if (streamOps.length === 0 || images.length === 0) return;
 
-  const opIndex = buildImageOpIndex(streamOps);
-
   for (const image of images) {
-    const dimKey = `${image.width}x${image.height}`;
-    const streamOp = opIndex.get(dimKey);
+    const streamOp = findMatchingStreamOp(image, streamOps);
 
     if (!streamOp || !streamOp.ctm) continue;
 

@@ -506,6 +506,9 @@ importers:
       '@resvg/resvg-wasm':
         specifier: ^2.6.2
         version: 2.6.2
+      jpeg-js:
+        specifier: ^0.4.4
+        version: 0.4.4
       mupdf:
         specifier: ^1.27.0
         version: 1.27.0
@@ -516,9 +519,6 @@ importers:
       '@types/pngjs':
         specifier: ^6.0.5
         version: 6.0.5
-      jpeg-js:
-        specifier: ^0.4.4
-        version: 0.4.4
 
   packages/pipeline:
     dependencies:
