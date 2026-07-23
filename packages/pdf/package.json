@@ -13,7 +13,7 @@
     "pngjs": "^7.0.0"
   },
   "devDependencies": {
-    "@types/pngjs": "^6.0.5",
-    "jpeg-js": "^0.4.4"
+    "jpeg-js": "^0.4.4",
+    "@types/pngjs": "^6.0.5"
   }
 }
