@@ -563,10 +563,6 @@ function classifyImageColorSpace(resolved: PDFObject): "displayable" | "needs-co
   }
 }
 
-/**
- * Build index of stream ops by native image dimensions.
- * Maps "widthxheight" to ImageStreamOp for quick lookup during extraction.
- */
 /** Read the /Matte array off an SMask dictionary, expressed as 8-bit RGB.
  * Only RGB (3) and Gray (1) source colorspaces are handled; for anything
  * else (e.g. CMYK) we conservatively skip un-matting. */
