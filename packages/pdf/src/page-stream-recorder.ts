@@ -78,7 +78,7 @@ export interface ImageStreamOp extends BaseStreamOp {
   nativeHeight: number
   /** The Current Transformation Matrix at the time this image was drawn.
    *  Used to detect and apply flip transforms when extracting raster images. */
-  ctm: number[]
+  currentTransformationMatrix: number[]
   /** True when the underlying mupdf Image has an SMask attached. */
   hasMask: boolean
   /** Full active clip-path stack at the time this image was drawn, outermost
@@ -295,7 +295,7 @@ export function recordPageStream(
         bbox: unitImageBbox(ctm),
         nativeWidth: image.getWidth(),
         nativeHeight: image.getHeight(),
-        ctm,
+        currentTransformationMatrix: ctm,
         hasMask: !!image.getMask(),
         activeClipBbox: activeClipBbox(),
         activeClipPaths: activeClipPaths(),
@@ -311,7 +311,7 @@ export function recordPageStream(
         bbox: unitImageBbox(ctm),
         nativeWidth: image.getWidth(),
         nativeHeight: image.getHeight(),
-        ctm,
+        currentTransformationMatrix: ctm,
         hasMask: false,
         activeClipBbox: activeClipBbox(),
         activeClipPaths: activeClipPaths(),

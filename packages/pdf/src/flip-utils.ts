@@ -1,8 +1,8 @@
 /**
  * Image Flip Transform Utilities
  *
- * Detects and applies CTM-based flip transformations to raster images
- * extracted from PDFs. Handles both JPEG and PNG formats.
+ * Detects and applies current transformation matrix (CTM) based flip transformations 
+ * to raster images extracted from PDFs. Handles both JPEG and PNG formats.
  */
 
 import { createHash } from "crypto";
@@ -21,7 +21,7 @@ function hashBuffer(buf: Buffer): string {
 }
 
 /**
- * Detect if image needs horizontal/vertical flip based on CTM.
+ * Detect if image needs horizontal/vertical flip based on current transformation matrix.
  * Negative X scale (a < 0) = horizontal flip; negative Y scale (d < 0) = vertical flip.
  */
 export interface ImageFlipTransform {
@@ -29,8 +29,8 @@ export interface ImageFlipTransform {
   flipVertical: boolean;
 }
 
-export function detectFlipFromCtm(ctm: number[]): ImageFlipTransform {
-  const [a, , , d] = ctm; // [a, b, c, d, e, f]
+export function detectFlipFromCurrentTransformationMatrix(currentTransformationMatrix: number[]): ImageFlipTransform {
+  const [a, , , d] = currentTransformationMatrix; // [a, b, c, d, e, f]
   return {
     flipHorizontal: a < 0, // Negative X scale
     flipVertical: d < 0,   // Negative Y scale
@@ -194,9 +194,9 @@ export function applyFlipsToRasterImages(
   for (const image of images) {
     const streamOp = findMatchingStreamOp(image, streamOps);
 
-    if (!streamOp || !streamOp.ctm) continue;
+    if (!streamOp || !streamOp.currentTransformationMatrix) continue;
 
-    const { flipHorizontal, flipVertical } = detectFlipFromCtm(streamOp.ctm);
+    const { flipHorizontal, flipVertical } = detectFlipFromCurrentTransformationMatrix(streamOp.currentTransformationMatrix);
     if (!flipHorizontal && !flipVertical) continue;
 
     let flippedBuf = image.buffer;

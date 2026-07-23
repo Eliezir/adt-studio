@@ -38,7 +38,7 @@ import {
 import type { DrawItem, PositionedTextOutput } from "@adt/types";
 import { classifyFontCategoryByName } from "@adt/types";
 import {
-  detectFlipFromCtm,
+  detectFlipFromCurrentTransformationMatrix,
   flipImageBufferHorizontal,
   flipImageBufferVertical,
   applyFlipsToRasterImages,
