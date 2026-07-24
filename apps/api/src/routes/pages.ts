@@ -13,6 +13,7 @@ import type { Storage } from "@adt/storage"
 import { detectSpreads, type SpreadEdgeSample, classifyPageImages, buildImageClassifyConfig } from "@adt/pipeline"
 import { samplePageEdges, extractPages, computeGroups, countPdfPages } from "@adt/pdf"
 import { reRenderPage, aiEditSection } from "../services/page-edit-service.js"
+import { getWritableStyleguidesDir } from "../services/styleguide.js"
 import type { TaskService } from "../services/task-service.js"
 import {
   segmentPageImages,
@@ -2798,13 +2799,22 @@ export function createPageRoutes(
         llmModel
       )
 
-      // Save to assets/styleguides/{label}-generated.md
-      const projectRoot = configPath ? path.dirname(configPath) : path.resolve(booksDir, "..")
-      const styleguidesDir = path.join(projectRoot, "assets", "styleguides")
-      fs.mkdirSync(styleguidesDir, { recursive: true })
+      // Save to the writable style guides dir as {label}-generated.md
+      const styleguidesDir = getWritableStyleguidesDir(resolvedBooksDir)
       const sgName = `${safeLabel}-generated`
-      fs.writeFileSync(path.join(styleguidesDir, `${sgName}.md`), result.content, "utf-8")
-      fs.writeFileSync(path.join(styleguidesDir, `${sgName}-preview.html`), result.preview_html, "utf-8")
+      try {
+        fs.mkdirSync(styleguidesDir, { recursive: true })
+        fs.writeFileSync(path.join(styleguidesDir, `${sgName}.md`), result.content, "utf-8")
+        fs.writeFileSync(path.join(styleguidesDir, `${sgName}-preview.html`), result.preview_html, "utf-8")
+      } catch (err) {
+        const code = (err as NodeJS.ErrnoException).code
+        if (code === "EPERM" || code === "EACCES" || code === "EROFS") {
+          throw new HTTPException(500, {
+            message: `Could not save the generated style guide — the target directory is not writable: ${styleguidesDir}`,
+          })
+        }
+        throw err
+      }
 
       return c.json({
         name: sgName,

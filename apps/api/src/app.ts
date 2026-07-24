@@ -112,7 +112,7 @@ app.route(
   createStageRoutes(stageService, eventBus, pageErrorDecisions, booksDir, promptsDir, webAssetsDir, configPath)
 )
 app.route("/api", createTaskRoutes(taskService))
-app.route("/api", createPresetRoutes(configPath))
+app.route("/api", createPresetRoutes(configPath, booksDir))
 app.route("/api", createAdtPreviewRoutes(booksDir, webAssetsDir, configPath))
 app.route("/api", createSpeechConfigRoutes(configPath))
 app.route("/api", createReviewerValidationRoutes(booksDir, configFolderPath, configPath))

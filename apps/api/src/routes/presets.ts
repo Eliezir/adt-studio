@@ -4,21 +4,25 @@ import { Hono } from "hono"
 import { HTTPException } from "hono/http-exception"
 import yaml from "js-yaml"
 import { StyleguideName } from "@adt/types"
+import {
+  getBundledStyleguidesDir,
+  getWritableStyleguidesDir,
+  resolveStyleguidePath,
+} from "../services/styleguide.js"
 
-export function createPresetRoutes(configPath: string): Hono {
+export function createPresetRoutes(configPath: string, booksDir: string): Hono {
   const app = new Hono()
 
-  // GET /styleguides — List available styleguide names
+  // GET /styleguides — List available styleguide names (writable + bundled)
   app.get("/styleguides", (c) => {
-    const styleguidesDir = path.join(path.dirname(configPath), "assets", "styleguides")
-    if (!fs.existsSync(styleguidesDir)) {
-      return c.json({ styleguides: [] })
+    const names = new Set<string>()
+    for (const dir of [getWritableStyleguidesDir(booksDir), getBundledStyleguidesDir(configPath)]) {
+      if (!fs.existsSync(dir)) continue
+      for (const f of fs.readdirSync(dir)) {
+        if (f.endsWith(".md")) names.add(f.replace(/\.md$/, ""))
+      }
     }
-    const files = fs.readdirSync(styleguidesDir)
-    const names = files
-      .filter((f) => f.endsWith(".md"))
-      .map((f) => f.replace(/\.md$/, ""))
-    return c.json({ styleguides: names })
+    return c.json({ styleguides: [...names] })
   })
 
   // GET /styleguides/:name/preview — Return preview HTML for a styleguide
@@ -28,15 +32,14 @@ export function createPresetRoutes(configPath: string): Hono {
       throw new HTTPException(400, { message: "Invalid styleguide name" })
     }
     const name = result.data
-    const styleguidesDir = path.join(path.dirname(configPath), "assets", "styleguides")
-    const previewPath = path.join(styleguidesDir, `${name}-preview.html`)
-    if (fs.existsSync(previewPath)) {
+    const previewPath = resolveStyleguidePath(name, "-preview.html", configPath, booksDir)
+    if (previewPath) {
       const html = fs.readFileSync(previewPath, "utf-8")
       return c.json({ name, html })
     }
     // Fallback: render the markdown content as a styled HTML page
-    const mdPath = path.join(styleguidesDir, `${name}.md`)
-    if (!fs.existsSync(mdPath)) {
+    const mdPath = resolveStyleguidePath(name, ".md", configPath, booksDir)
+    if (!mdPath) {
       throw new HTTPException(404, { message: `Styleguide not found: ${name}` })
     }
     const md = fs.readFileSync(mdPath, "utf-8")
@@ -83,7 +86,7 @@ table{border-collapse:collapse;width:100%;margin:0.75rem 0;}th,td{border:1px sol
     if (!result.success) {
       throw new HTTPException(400, { message: "Invalid styleguide name" })
     }
-    const styleguidesDir = path.join(path.dirname(configPath), "assets", "styleguides")
+    const styleguidesDir = getWritableStyleguidesDir(booksDir)
     fs.mkdirSync(styleguidesDir, { recursive: true })
     const content = await file.text()
     fs.writeFileSync(path.join(styleguidesDir, `${result.data}.md`), content, "utf-8")
