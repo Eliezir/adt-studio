@@ -1,0 +1,38 @@
+---
+title: "Formats"
+description: "The formats ADT Studio can package your ADT into, and how to distribute each one."
+icon: Package
+---
+
+Your project folder remains the source of truth. You can export the same book to several formats, and re-export at any time after making changes.
+
+{/* dynamic: format list and their exact names — verify against current UI on each update */}
+
+<StageCards>
+  <StageCard slug="export/project-archive" title="Project Archive" description="The complete project folder as a single file — for handing off or backing up the work itself. Someone else can open it in ADT Studio and continue exactly where you left off, with all versions and settings intact." />
+  <StageCard slug="export/web" title="Web Export" description="The ADT as a self-contained website. Hosted on any web server or opened locally, works in any modern browser. The most direct way to put an ADT in front of readers, and the format used by the public ADT demos." />
+  <StageCard slug="export/scorm" title="SCORM Export" description="A package for learning management systems (LMS). A widely supported standard — if your ministry, school network, or organisation runs an LMS (like Moodle), this format lets the ADT be uploaded as course content." />
+  <StageCard slug="export/webpub" title="WebPub Export" description="Beta — a standards-based web publication format, designed for digital reading platforms and library systems. It works, but is still maturing." />
+  <StageCard slug="export/epub" title="EPUB Export" description="Beta — the standard format for e-books, readable in most e-reader apps and devices. It works, but is still maturing." />
+</StageCards>
+
+### Not sure which format you need?
+
+| If readers will open it in... | Use... |
+|---|---|
+| A browser | Web Export |
+| A learning platform | SCORM |
+| An e-reader | EPUB |
+| Another ADT Studio user | Project Archive |
+
+## Distribution
+
+How you deliver the exported ADT depends on your context:
+
+- **Offline and low-connectivity settings** — exported ADTs can be preloaded on tablets or shared as files. Once on the device, no internet is needed.
+- **Learning platforms** — upload the SCORM package to your LMS like any course material.
+- **Web hosting** — publish the Web Export on any server; readers only need a browser and the link.
+
+## After distribution
+
+If the source content changes or you improve a feature, rerun the affected steps and export again. Earlier versions remain in your project folder — nothing is lost, and you can always see what changed.

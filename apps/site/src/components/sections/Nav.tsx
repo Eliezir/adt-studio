@@ -7,7 +7,6 @@ import { Button } from "@/components/Button";
 import { GithubIcon } from "@/components/icons/GithubIcon";
 import { LocaleSwitcher } from "@/components/LocaleSwitcher";
 import { cn } from "@/lib/cn";
-import { DOCS_ENABLED } from "@/lib/flags";
 import { withBase } from "@/lib/href";
 import { useScrolled } from "@/lib/useScrolled";
 import { useSectionNav } from "@/lib/useSectionNav";
@@ -20,9 +19,7 @@ const LINKS: { href: string; id: string; label: MessageDescriptor }[] = [
   { href: "/#demos", id: "demos", label: msg`Demos` },
   { href: "/#showcase", id: "showcase", label: msg`Output` },
   { href: "/#releases", id: "releases", label: msg`Releases` },
-  ...(DOCS_ENABLED
-    ? [{ href: "/#docs", id: "docs", label: msg`Docs` }]
-    : []),
+  { href: "/#docs", id: "docs", label: msg`Docs` },
   { href: "/#finale", id: "finale", label: msg`Get started` },
 ];
 

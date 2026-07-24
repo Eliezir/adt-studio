@@ -1,0 +1,46 @@
+---
+title: "Validate and preview"
+description: "Check your ADT with your own eyes — and with automated accessibility checks."
+icon: ShieldCheck
+---
+
+Before enhancing or exporting, take a moment to confirm that what you have is right. This happens in two complementary ways: **Preview** and **Validation**, both available as soon as your storyboard is built.
+
+<Callout title="Available now, useful throughout">
+Preview and Validation aren't a one-time checkpoint — they're stages you can reopen at any point later on. What they show only reflects what's been generated so far, so a quick look now (structure and layout) is worth repeating after [Enhance your ADT](/docs/enhance) (once quizzes, captions, translations, and narration exist too) and again before you export.
+</Callout>
+
+## Preview: check it as a reader
+
+The **Preview** stage packages what you have so far and shows it in an embedded view of the actual reader-facing ADT — not a mockup. Open it and go through the book — not as its producer, but as someone encountering it for the first time.
+
+- Does the content read naturally, in the right order?
+- Do images appear where they should?
+- Does navigation work — can you move between sections easily?
+
+While browsing the preview, a floating **Accessibility Findings** card shows a live read-out of the automated accessibility checks (see below) for the page you're on, without needing to switch to Validation.
+
+If reviewer validation is enabled for the book, a second floating **Validation** card lets a named reviewer work through a structured checklist as they browse: open a session (reviewer name, institution, language, page range), then mark each criterion **Pass**, **Needs changes**, **N/A**, or **Not reviewed** per page, with room for a comment and a suggested fix. This is opt-in and separate from the automated checks.
+
+## Validate: check it against accessibility standards
+
+The **Validation** stage runs an automated **Accessibility Summary**: your packaged ADT checked against WCAG, the international accessibility standard, using industry-standard tooling. It flags issues before you publish:
+
+- Missing image descriptions
+- Structural problems
+- Contrast issues
+- Similar accessibility barriers
+
+Where reviewer validation is enabled, the same stage also has a **Reviewer Validation** tab summarizing every session's checklist results, so you get both machine-checked and human-checked issues in one place.
+
+<Callout type="warn" title="This is not a formality">
+Accessibility validation **is the point of the tool**. An ADT that fails these checks is not yet doing its job for the learners who depend on it.
+</Callout>
+
+## Fix, rerun, repeat
+
+If validation or your own review surfaces problems, go back to the step responsible — [Sectioning](/docs/convert-pdf/sectioning) for structure issues, [Storyboard](/docs/convert-pdf/storyboard) for layout issues — fix it, and rerun. Only the affected work is redone; everything else is reused. Then revisit Validation to refresh the results against your fix.
+
+## When you're done
+
+Your structure and layout are solid. Now make the book richer: [Enhance your ADT](/docs/enhance) — and remember to come back to Preview and Validation once that's done, for the full picture before you export.

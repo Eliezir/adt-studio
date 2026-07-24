@@ -1,0 +1,84 @@
+---
+title: "Installation and minimum requirements"
+description: "How to install ADT Studio on your computer, and what your machine needs to run it."
+icon: Download
+---
+
+ADT Studio runs locally on your computer. For almost everyone, the desktop app is the way to install it — download it, double-click it, open it, like any normal program.
+
+## Install the desktop app
+
+The desktop app is available for **Windows** and **macOS**.
+
+<Steps>
+
+<Step>
+### Download
+Go to the [ADT Studio download page](https://unicef.github.io/adt-studio/download/) and download the installer for your system.
+</Step>
+
+<Step>
+### Install it
+Open the downloaded file and follow the installation steps.
+</Step>
+
+<Step>
+### Launch ADT Studio
+Open it like any other app on your computer.
+</Step>
+
+</Steps>
+
+## Minimum requirements
+
+| Requirement | Details |
+|---|---|
+| **Windows** | Windows 10 or newer, 64-bit only. Windows 7, 8, and 8.1, and 32-bit systems, aren't supported. |
+| **macOS** | macOS 12 (Monterey) or newer, on Apple Silicon (arm64). There is currently no Intel or Universal build — Intel Macs aren't supported. |
+| **Internet connection** | Required during installation, when applying updates, and during PDF conversion (for the AI processing). Not required to open or use a finished ADT. |
+| **An AI provider API key** | Required before you can convert a PDF. See [AI providers and costs](/docs/get-started/api-keys). |
+
+<Callout title="Working with a long book on a slower machine?">
+Very long or complex books can be demanding to process in one go, and on lower-powered machines this has, in some cases, caused the app to crash mid-run. If that happens, use **Split & merge** to break the book into smaller parts, process them separately (even across different people or machines), and reassemble the results afterward — see [Splitting a book into parts](/docs/convert-pdf/extract#splitting-a-book-into-parts).
+</Callout>
+
+## Notes
+
+- **Updates.** ADT Studio updates itself automatically, so you never need to download or run a new installer by hand. The update itself is still fetched over the internet in the background, so an internet connection is needed for a new version to apply.
+- **Something not working?** Check the [Troubleshooting & FAQ](/docs/faq) page, or [report the issue](/docs/reporting-issues).
+
+## Option for developers: run it from source
+
+If you want to build ADT Studio yourself, contribute to the project, or run it in an environment where the packaged installer doesn't fit — you can run it directly from source, using the same tools you'd use for any software project: an IDE, Git, and Node.js.
+
+<Steps>
+
+<Step>
+### Prerequisites
+[Node.js](https://nodejs.org/) 20+, [pnpm](https://pnpm.io/) 9+, and [Git](https://git-scm.com/). Running the desktop shell itself (rather than just the browser-based dev version) additionally needs the [Rust toolchain](https://rustup.rs/).
+</Step>
+
+<Step>
+### Clone and install
+```
+git clone git@github.com:unicef/adt-studio.git
+cd adt-studio
+pnpm install
+```
+</Step>
+
+<Step>
+### Run it
+```
+pnpm dev
+```
+This starts the API and Studio dev servers and opens the app in your browser. See the [GitHub repository](https://github.com/unicef/adt-studio) for the full setup, including how to launch the desktop shell (`pnpm dev:desktop`) instead of the browser version.
+</Step>
+
+</Steps>
+
+Self-hosting on shared infrastructure (e.g. for an IT-managed environment) is also possible — see [Can I self-host ADT Studio for my organisation?](/docs/faq#for-developers-and-it) in the FAQ.
+
+## Ready to continue?
+
+[AI providers and costs →](/docs/get-started/api-keys)

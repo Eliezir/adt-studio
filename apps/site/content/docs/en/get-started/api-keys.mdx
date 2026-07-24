@@ -1,0 +1,78 @@
+---
+title: "AI providers and costs"
+description: "Why ADT Studio needs an AI provider, how to connect one, and what it costs."
+icon: KeyRound
+---
+
+Converting a PDF into an ADT relies on artificial intelligence — to structure content, describe images, generate narration, create quizzes, and translate. Those AI capabilities come from an external **AI provider**, which you connect to ADT Studio using an **API key**. This page explains what that means, how to set it up, and what to expect in terms of cost.
+
+<Callout title="In short">
+**ADT Studio itself is free**, open-source software (AGPL-3.0). **The AI provider you connect may charge for usage** — that cost goes to the provider, not to ADT Studio or UNICEF. **Official ADT country programmes may be able to access API credits** instead of paying directly — see below.
+</Callout>
+
+## Why ADT Studio needs an AI provider
+
+ADT Studio does the orchestration: it reads your PDF, manages the pipeline, stores your work, and packages the result. But the intelligent steps — understanding the content, writing image descriptions, producing natural narration, generating comprehension questions — are performed by a large language model (an "LLM").
+
+ADT Studio does not include its own AI model. Instead, it connects to a provider that offers one — so you choose the provider, you control the cost, and you can see exactly what each AI call does.
+
+## What is an API key?
+
+An **API key** is a private code that lets ADT Studio use your account with an AI provider. Think of it as a password that says "this tool is allowed to make AI requests on my behalf, and charge my account for them."
+
+<Steps>
+
+<Step>
+### Get a key from your provider
+
+Sign up with the AI provider of your choice and generate an API key from their dashboard.
+</Step>
+
+<Step>
+### Add it to ADT Studio
+
+Paste the key into ADT Studio's **Settings**. From that point on, ADT Studio can use the provider's AI model when you run the steps that need it.
+
+If this is your first time opening ADT Studio, you don't need to go looking for it — the setup wizard prompts you to add your API key directly the first time you launch the app.
+</Step>
+
+</Steps>
+
+Two things to keep in mind:
+
+- **Keep it private.** Anyone with your key can use your AI account and run up costs. Treat it like a password — do not share it or post it anywhere public.
+- **It stays on your machine.** ADT Studio stores your key locally. It is used only to talk to the provider you chose.
+
+## Which AI providers can I use?
+
+Today, the main conversion pipeline (extraction, image descriptions, translation, quizzes, and the rest) relies on **OpenAI**, with growing support for other providers.
+
+The one step with real provider choice already available is **narration (text-to-speech)**: you can pick between **OpenAI**, **Google Gemini**, and **Azure** per language, and compare voices before committing. See [Speech](/docs/localize/speech).
+
+As provider support expands, you'll be able to switch providers for more of the pipeline — without being tied to one choice for cost, quality, or language coverage.
+
+## How much does it cost?
+
+There is no single answer — the cost depends on three things:
+
+- **Provider and model.** Different providers charge different rates, and within a provider, more capable models cost more than lighter ones.
+- **Document length.** AI providers charge based on the amount of content processed. A 20-page reader costs far less than a 300-page textbook.
+- **Features you run.** Extracting and structuring text is the baseline. Narration, translation into several languages, image descriptions, and quizzes each add AI calls — and cost.
+
+ADT Studio helps you stay in control of this in two ways. First, every AI call is **cached** — if you rerun a step without changing anything, it reuses the previous result at no extra cost. Second, the tool shows you the **cost of each call**, so you can see where your spending goes rather than facing a surprise bill.
+
+For a typical short document, costs are modest — often a small number of dollars. Longer documents with many features enabled cost more. The best way to understand your own costs is to run a short document first and review the reported figures before scaling up.
+
+## API credits for ADT country programmes
+
+If you are part of an **official ADT country programme or an implementing partner**, you may be able to access API credits rather than paying for AI usage directly.
+
+{/* TO VERIFY: the exact process and eligibility for API credits, and the right contact point. Confirm with the ADT team before publishing specifics. */}
+
+To find out whether this applies to you and how to request access, contact the ADT team through the [Accessible Textbooks for All initiative](https://www.accessibletextbooksforall.org).
+
+## Ready to continue?
+
+Once your AI provider is connected, you are ready to convert your first PDF.
+
+[Convert a PDF into an ADT →](/docs/convert-pdf/import-pdf)

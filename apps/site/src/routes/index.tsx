@@ -10,7 +10,6 @@ import { ShowcaseScene } from "@/components/sections/ShowcaseScene";
 import { ReleasesScene } from "@/components/sections/ReleasesScene";
 import { DocsScene } from "@/components/sections/DocsScene";
 import { FinaleScene } from "@/components/sections/FinaleScene";
-import { DOCS_ENABLED } from "@/lib/flags";
 import { seo } from "@/lib/seo";
 
 export const Route = createFileRoute("/")({
@@ -43,7 +42,7 @@ function Home() {
       <DemoScene />
       <ShowcaseScene />
       <ReleasesScene />
-      {DOCS_ENABLED && <DocsScene />}
+      <DocsScene />
       <FinaleScene />
     </LandingShell>
   );
