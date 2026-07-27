@@ -7429,6 +7429,9 @@ msgstr "Empieza a escribir para ver palabras del libro…"
 msgid "Start with a PDF"
 msgstr "Empezar con un PDF"
 
+msgid "Starting…"
+msgstr "Iniciando…"
+
 msgid "Stats"
 msgstr "Estadísticas"
 

@@ -7431,6 +7431,9 @@ msgstr "Commencez à taper pour voir les mots du livre…"
 msgid "Start with a PDF"
 msgstr "Commencer avec un PDF"
 
+msgid "Starting…"
+msgstr "Démarrage…"
+
 msgid "Stats"
 msgstr "Statistiques"
 
