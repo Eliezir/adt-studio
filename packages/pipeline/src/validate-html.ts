@@ -273,6 +273,19 @@ function hasEditableElement(node: any): boolean {
   return false
 }
 
+/** Append a class to an element's `class` attribute (no-op if already present). */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function addClass(node: any, cls: string): void {
+  if (node.type !== "tag") return
+  node.attribs = node.attribs ?? {}
+  const existing = typeof node.attribs.class === "string" ? node.attribs.class : ""
+  const classes = existing.split(/\s+/).filter(Boolean)
+  if (!classes.includes(cls)) {
+    classes.push(cls)
+    node.attribs.class = classes.join(" ")
+  }
+}
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function hasFitbSentenceClass(node: any): boolean {
   let current = node
@@ -379,12 +392,12 @@ function walkNode(
       const hasBlankMarkers = BLANK_MARKER_TEST_RE.test(actualText)
 
       if (hasBlankMarkers) {
-        // Verify the fitb-sentence class is present on this element or an ancestor,
+        // The fitb-sentence class must be present on this element or an ancestor,
         // otherwise the runtime JS won't find and hydrate the blank markers.
+        // Adding it is always the correct action when markers are present, so
+        // auto-heal it here rather than failing validation and forcing a retry.
         if (!hasFitbSentenceClass(node)) {
-          errors.push(
-            `Element with data-id "${dataId}" contains [[blank:item-N]] markers but is missing the "fitb-sentence" class (required on the element or an ancestor for runtime hydration)`
-          )
+          addClass(node, "fitb-sentence")
         }
         // Compare without the blank markers in actual and underscore/dot/placeholder markers in expected.
         // Also strip single `_` chars from the expected so inline letter blanks (e.g. source text `"en_ro"`
