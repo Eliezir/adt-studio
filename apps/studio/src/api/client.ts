@@ -393,6 +393,8 @@ export interface GlossaryItem {
   variations: string[]
   emojis: string[]
   pruned?: boolean
+  /** Optional image from the book's images table illustrating the term. */
+  imageId?: string
 }
 
 export interface GlossaryOutput {
@@ -1346,10 +1348,13 @@ export const api = {
     request<GlossaryOutput | null>(`/books/${label}/glossary`),
 
   updateGlossary: (label: string, data: unknown) =>
-    request<{ version: number }>(`/books/${label}/glossary`, {
-      method: "PUT",
-      body: JSON.stringify(data),
-    }),
+    request<{ version: number; imageRequirementsChanged: boolean }>(
+      `/books/${label}/glossary`,
+      {
+        method: "PUT",
+        body: JSON.stringify(data),
+      },
+    ),
 
   generateGlossaryItem: (
     label: string,
@@ -1576,11 +1581,6 @@ export const api = {
 
   deleteSignLanguageVideo: (label: string, videoId: string) =>
     request<{ ok: boolean }>(`/books/${label}/sign-language-videos/${videoId}`, {
-      method: "DELETE",
-    }),
-
-  deleteAllSignLanguageVideos: (label: string) =>
-    request<{ ok: boolean }>(`/books/${label}/sign-language-videos`, {
       method: "DELETE",
     }),
 
