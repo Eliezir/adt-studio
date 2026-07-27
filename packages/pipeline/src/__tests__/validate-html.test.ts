@@ -94,6 +94,26 @@ describe("validateSectionHtml", () => {
     )
   })
 
+  it("allows bare enumeration markers as text, but not bare prose", () => {
+    const markers = `
+      <section>
+        <span>1.</span><span>10.</span><span>(i)</span><span>(vii)</span><span>(a)</span>
+      </section>
+    `
+    expect(validateSectionHtml(markers, [], []).valid).toBe(true)
+
+    const prose = `
+      <section>
+        <span>Salamu</span>
+      </section>
+    `
+    const proseResult = validateSectionHtml(prose, [], [])
+    expect(proseResult.valid).toBe(false)
+    expect(proseResult.errors).toContainEqual(
+      expect.stringContaining("Text node outside any data-id element")
+    )
+  })
+
   it("exempts text inside style tags", () => {
     const html = `
       <section>

@@ -40,6 +40,22 @@ const NON_WRITABLE_INPUT_TYPES = new Set([
   "range",
   "color",
 ])
+/**
+ * Matches a leaf/text whose whole content is just an enumeration marker: a list
+ * number, single letter, or roman numeral, optionally dotted or parenthesized —
+ * "1.", "10.", "a)", "iv.", "(i)", "(vii)", "(a)". The tight shape (delimiter
+ * required for letters/romans) keeps real prose from matching. Activities use
+ * these as option/row markers; matching activities in particular auto-number
+ * their items and drop or render-bare the provided marker labels.
+ */
+const ENUMERATION_MARKER_RE =
+  /^(?:\d{1,3}[.)]?|[a-z][.)]|[ivxlcdm]{1,7}[.)]|\((?:\d{1,3}|[a-z]|[ivxlcdm]{1,7})\))$/i
+
+/** True if `text` is nothing but an enumeration marker (see ENUMERATION_MARKER_RE). */
+export function isEnumerationMarker(text: string): boolean {
+  return ENUMERATION_MARKER_RE.test(text.trim())
+}
+
 /** Matches placeholder sequences used in textbooks for blanks (3+ underscores or 3+ dots) */
 const TEXTBOOK_BLANK_RE = /_{3,}|\.{3,}/g
 /** Matches [placeholder:word] markers added during text classification */
@@ -320,8 +336,11 @@ function walkNode(
       // Allow such text without a data-id since it can't visually pollute
       // the rendered page and improves a11y when the LLM emits it.
       if (hasSrOnlyAncestor(node)) return
-      // Allow single-digit numbers as bare text (used as option markers in activities)
-      if (/^\d$/.test(node.data.trim())) return
+      // Allow bare enumeration markers (list numbers, letters, roman numerals —
+      // "1.", "10", "(i)", "(a)") as text. Activities use them as option/row
+      // markers, and matching activities often render the provided marker label
+      // without wrapping it in its data-id. The tight shape excludes real prose.
+      if (isEnumerationMarker(node.data.trim())) return
       if (!hasAncestorWithDataId(node)) {
         const snippet = node.data.trim().slice(0, 50)
         errors.push(`Text node outside any data-id element: "${snippet}"`)
