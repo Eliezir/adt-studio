@@ -87,6 +87,10 @@ const SECTIONS: Record<string, Pill[]> = {
  * UI), scoped to a section's own brand color and its sub-pages. Reserved for
  * the five first-layer nav pages (Get Started, Convert a PDF, Enhance,
  * Export, Troubleshooting & FAQ) — sub-pages don't get one of these.
+ *
+ * `isolate` is load-bearing for the same reason as in `GetStartedBanner`:
+ * it keeps the inner `z-10` layers from tying with the sticky docs navbar and
+ * painting the pills over it on scroll.
  */
 export function SectionBanner({ slug }: { slug: keyof typeof SECTIONS }) {
   const { i18n } = useLingui();
@@ -98,7 +102,7 @@ export function SectionBanner({ slug }: { slug: keyof typeof SECTIONS }) {
 
   return (
     <div
-      className="not-prose relative my-6 flex flex-col items-center gap-4 overflow-hidden rounded-2xl border border-fd-border px-6 py-9"
+      className="not-prose relative isolate my-6 flex flex-col items-center gap-4 overflow-hidden rounded-2xl border border-fd-border px-6 py-9"
       style={{ "--c": color } as CSSProperties}
     >
       <div
