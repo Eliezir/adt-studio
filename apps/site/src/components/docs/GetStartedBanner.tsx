@@ -8,6 +8,11 @@ import { STAGES } from "@/data/stages";
  * with a subtle glow, the app icon centered above the pipeline stages (each in
  * its own brand color), and the heading/description bottom-left on a shadow
  * scrim. Links to the Quick Start.
+ *
+ * `isolate` is load-bearing: the inner layers use `z-10` to sit above the
+ * gradient/grid/glow, and the sticky docs navbar is also `z-10`. Without a
+ * stacking context here those tie on z-index and DOM order wins, so the stage
+ * pills paint over the navbar as the card scrolls under it.
  */
 export function GetStartedBanner() {
   const { i18n } = useLingui();
@@ -16,7 +21,7 @@ export function GetStartedBanner() {
     <Link
       to="/docs/$"
       params={{ _splat: "get-started" }}
-      className="not-prose group relative mt-8 flex w-full flex-col overflow-hidden rounded-2xl border border-fd-border shadow-sm transition-shadow hover:shadow-lg sm:aspect-[3/2] sm:items-center sm:justify-center"
+      className="not-prose group relative isolate mt-8 flex w-full flex-col overflow-hidden rounded-2xl border border-fd-border shadow-sm transition-shadow hover:shadow-lg sm:aspect-[3/2] sm:items-center sm:justify-center"
     >
       {/* Gradient base */}
       <div className="absolute inset-0 bg-gradient-to-br from-[oklch(0.63_0.19_260)] via-[oklch(0.5_0.18_262)] to-[oklch(0.37_0.15_266)]" />
