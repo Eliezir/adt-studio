@@ -164,7 +164,13 @@ function classify(message) {
 // ── CSV helper ────────────────────────────────────────────────────────────────
 function csvCell(v) {
   const s = v === null || v === undefined ? "" : String(v)
-  return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s
+  // Neutralize spreadsheet formula injection: a cell that opens with = + - @ (or
+  // tab/CR) is executed as a formula by Excel/Sheets. Error-message columns carry
+  // model/validator text derived from book content, so prefix such cells with a
+  // quote to force text. Numeric columns are non-negative, so this never touches
+  // legitimate values.
+  const guarded = /^[=+\-@\t\r]/.test(s) ? `'${s}` : s
+  return /[",\n\r]/.test(guarded) ? `"${guarded.replace(/"/g, '""')}"` : guarded
 }
 function csvRow(cells) {
   return cells.map(csvCell).join(",")
