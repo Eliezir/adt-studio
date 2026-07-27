@@ -10,7 +10,6 @@ import { PNG } from "pngjs";
 import jpeg from "jpeg-js";
 import { decodePng } from "./png-utils.js";
 import type { ExtractedImage } from "./extract.js";
-import type { StreamOp, ImageStreamOp } from "./page-stream-recorder.js";
 
 /**
  * Hash a buffer to a 16-character hex string.
@@ -23,6 +22,9 @@ function hashBuffer(buf: Buffer): string {
 /**
  * Detect if image needs horizontal/vertical flip based on current transformation matrix.
  * Negative X scale (a < 0) = horizontal flip; negative Y scale (d < 0) = vertical flip.
+ * Scope: axis-aligned flips only. This intentionally ignores b/c (rotation/skew)
+ * terms from the CTM; suitable for current storybook inputs, but not a full
+ * affine-orientation solver for arbitrary rotations.
  */
 export interface ImageFlipTransform {
   flipHorizontal: boolean;
@@ -40,6 +42,11 @@ export function detectFlipFromCurrentTransformationMatrix(currentTransformationM
 /**
  * Flip image buffer horizontally (left-right mirror).
  * Handles both JPEG and PNG formats.
+ *
+ * JPEG tradeoff: this path decodes to RGBA, flips pixels, then re-encodes at
+ * quality 90. That is lossy for already-compressed JPEGs (generational loss),
+ * even though geometric flip can be represented losslessly in JPEG.
+ * Chosen intentionally for now to keep a pure JS/TS dependency-light path.
  */
 export function flipImageBufferHorizontal(
   buffer: Buffer,
@@ -95,6 +102,9 @@ export function flipImageBufferHorizontal(
 
 /**
  * Flip image buffer vertically (top-bottom mirror).
+ *
+ * JPEG tradeoff: this path decodes to RGBA, flips pixels, then re-encodes at
+ * quality 90. That is lossy for already-compressed JPEGs (generational loss).
  */
 export function flipImageBufferVertical(
   buffer: Buffer,
@@ -110,12 +120,7 @@ export function flipImageBufferVertical(
       const srcY = height - 1 - y;
       const srcOffset = srcY * width * 4;
       const dstOffset = y * width * 4;
-      Buffer.from(decoded.data.buffer).copy(
-        flipped,
-        dstOffset,
-        srcOffset,
-        srcOffset + width * 4
-      );
+      flipped.set(decoded.data.subarray(srcOffset, srcOffset + width * 4), dstOffset);
     }
 
     const encoded = jpeg.encode(
@@ -145,58 +150,22 @@ export function flipImageBufferVertical(
 }
 
 /**
- * Find the stream operation that matches an extracted image.
- * Uses contentDigest (pixel hash) for precise matching when available,
- * falls back to dimension-based matching for images without digest.
- */
-function findMatchingStreamOp(
-  image: ExtractedImage,
-  streamOps: StreamOp[]
-): ImageStreamOp | undefined {
-  // First, try to match by contentDigest if available (most precise)
-  if (image.hash) {
-    for (const op of streamOps) {
-      if (op.kind !== "image" && op.kind !== "imageMask") continue;
-      if (
-        op.nativeWidth === image.width &&
-        op.nativeHeight === image.height &&
-        (op as ImageStreamOp).contentDigest === image.hash
-      ) {
-        return op as ImageStreamOp;
-      }
-    }
-  }
-
-  // Fallback: match by dimensions only (less precise, used when digest unavailable)
-  for (const op of streamOps) {
-    if (op.kind !== "image" && op.kind !== "imageMask") continue;
-    if (op.nativeWidth === image.width && op.nativeHeight === image.height) {
-      return op as ImageStreamOp;
-    }
-  }
-
-  return undefined;
-}
-
-/**
- * Apply CTM-based flip transforms to raster images based on stream operations.
+ * Apply CTM-based flip transforms to raster images.
  * Updates image buffers and hashes in-place.
- * 
- * Uses precise content-based matching when digests are available (preferred),
- * falls back to dimension matching for images without digests.
+ *
+ * Flip direction is pre-stamped per image by `stampRasterPlacementsFromOps`
+ * during the consuming op->image match pass.
  */
 export function applyFlipsToRasterImages(
-  images: ExtractedImage[],
-  streamOps: StreamOp[]
+  images: ExtractedImage[]
 ): void {
-  if (streamOps.length === 0 || images.length === 0) return;
+  if (images.length === 0) return;
 
   for (const image of images) {
-    const streamOp = findMatchingStreamOp(image, streamOps);
-
-    if (!streamOp || !streamOp.currentTransformationMatrix) continue;
-
-    const { flipHorizontal, flipVertical } = detectFlipFromCurrentTransformationMatrix(streamOp.currentTransformationMatrix);
+    const { flipHorizontal, flipVertical } = image.flipTransform ?? {
+      flipHorizontal: false,
+      flipVertical: false,
+    };
     if (!flipHorizontal && !flipVertical) continue;
 
     let flippedBuf = image.buffer;

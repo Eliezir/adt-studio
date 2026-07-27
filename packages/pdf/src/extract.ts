@@ -39,8 +39,6 @@ import type { DrawItem, PositionedTextOutput } from "@adt/types";
 import { classifyFontCategoryByName } from "@adt/types";
 import {
   detectFlipFromCurrentTransformationMatrix,
-  flipImageBufferHorizontal,
-  flipImageBufferVertical,
   applyFlipsToRasterImages,
   type ImageFlipTransform,
 } from "./flip-utils.js";
@@ -148,6 +146,12 @@ export interface ExtractedImage {
    * Transient: not persisted to the images table.
    */
   pixelDigest?: string;
+  /**
+   * Flip transform derived from the EXACT draw op matched to this image by
+   * `stampRasterPlacementsFromOps`. Transient: used by `applyFlipsToRasterImages`
+   * to avoid re-matching stream ops in a second pass.
+   */
+  flipTransform?: ImageFlipTransform;
   /**
    * Geometry bboxes of this vector figure's constituent SVG shapes, in the
    * same coordinate space as recorder ops (page coords + spread xOffset).
@@ -841,7 +845,7 @@ async function extractPage(doc: MupdfDocument, pageIndex: number, vectorTextGrou
     hasDuplicateDimensions(rasterImages),
   );
   stampRasterPlacementsFromOps(rasterImages, recorder.ops);
-  applyFlipsToRasterImages(rasterImages, recorder.ops);
+  applyFlipsToRasterImages(rasterImages);
 
   // Reuse the StructuredText already built above — no extra pass. Build
   // positioned text at fixed-layout quality (spacing cleanup on) so the data is
@@ -1061,7 +1065,8 @@ function hasDuplicateDimensions(images: ExtractedImage[]): boolean {
 
 /**
  * Match each `fillImage` / `fillImageMask` op to an extracted raster XObject,
- * stamping the matched raster's `streamSeqno` and `bounds` (from the op's CTM).
+ * stamping the matched raster's `streamSeqno`, `bounds`, and `flipTransform`
+ * (derived from the op's CTM).
  *
  * Matching keys on native pixel dimensions. When a dimension bucket holds more
  * than one image the match is ambiguous: a page that can see several same-size
@@ -1110,6 +1115,7 @@ function stampRasterPlacementsFromOps(
     if (!matched) continue;
     matched.streamSeqno = op.seqno;
     matched.bounds = bboxToImageBounds(op.bbox);
+    matched.flipTransform = detectFlipFromCurrentTransformationMatrix(op.currentTransformationMatrix);
     const clipD = selectImageClipPath(op);
     if (clipD) matched.clipPath = clipD;
     if (op.blendMode && op.blendMode !== "Normal") {
@@ -1660,9 +1666,9 @@ async function extractSpreadPage(
   // Rasters: stamp per page so dim-tied images on different pages don't
   // pair across the spread boundary.
   stampRasterPlacementsFromOps(leftRaster, leftRecorder.ops);
-  applyFlipsToRasterImages(leftRaster, leftRecorder.ops);
+  applyFlipsToRasterImages(leftRaster);
   stampRasterPlacementsFromOps(rightRaster, rightRecorder.ops);
-  applyFlipsToRasterImages(rightRaster, rightRecorder.ops);
+  applyFlipsToRasterImages(rightRaster);
 
   // Reuse the per-page StructuredText already built above — no extra pass.
   const paragraphData = parsePageParagraphsSpread(leftPage, rightPage, leftStext, rightStext, 2, true);
@@ -3747,6 +3753,7 @@ export const _testing = {
   isPageLevelClip,
   parseStrokeInkExtent,
   computeGroupInkBbox,
+  stampRasterPlacementsFromOps,
   stampFigureSeqnosFromOps,
   restyleCoincidentVectorText,
 };
