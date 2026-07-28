@@ -589,6 +589,7 @@ export interface LlmLogEntry {
   itemId: string
   data: {
     promptName: string
+    requestedPromptName?: string
     modelId: string
     cacheHit: boolean
     durationMs: number
@@ -646,6 +647,51 @@ export interface BookConfigResponse {
 export interface ActiveConfigResponse {
   merged: Record<string, unknown>
   hasBookOverride: boolean
+}
+
+export interface PromptResponse {
+  name: string
+  resolvedName?: string
+  content: string
+  source?: "book" | "global"
+  modelId?: string | null
+  version?: string
+}
+
+export interface PromptSummary {
+  name: string
+  variants: string[]
+  variantSources?: Record<string, "file" | "version" | "file+version">
+}
+
+export interface PromptListResponse {
+  prompts: PromptSummary[]
+}
+
+export interface PromptModelsResponse {
+  models: string[]
+}
+
+export interface PromptVersionSummary {
+  version: string
+  createdAt: string | null
+  content: string
+  isCurrent: boolean
+}
+
+export interface PromptVersionsResponse {
+  name: string
+  resolvedName: string
+  modelId: string | null
+  fallbackContent: string | null
+  fallbackResolvedName: string | null
+  currentVersion: string | null
+  versions: PromptVersionSummary[]
+}
+
+function promptModelQuery(modelId?: string | null): string {
+  // eslint-disable-next-line lingui/no-unlocalized-strings -- API query string, not user-visible copy.
+  return modelId ? `?model=${encodeURIComponent(modelId)}` : ""
 }
 
 export interface VersionEntry {
@@ -1293,16 +1339,60 @@ export const api = {
       body: JSON.stringify({ config }),
     }),
 
-  getPrompt: (name: string, bookLabel?: string) =>
-    request<{ name: string; content: string; source?: string }>(
-      bookLabel ? `/books/${bookLabel}/prompts/${name}` : `/prompts/${name}`
-    ),
+  listPrompts: () => request<PromptListResponse>("/prompts"),
 
-  updatePrompt: (name: string, content: string, bookLabel?: string) =>
-    request<{ name: string; content: string; source?: string }>(
-      bookLabel ? `/books/${bookLabel}/prompts/${name}` : `/prompts/${name}`,
+  listPromptModels: () => request<PromptModelsResponse>("/prompt-models"),
+
+  updatePromptModels: (models: string[]) =>
+    request<PromptModelsResponse>("/prompt-models", {
+      method: "PUT",
+      body: JSON.stringify({ models }),
+    }),
+
+  getPrompt: (name: string, bookLabel?: string, modelId?: string | null) => {
+    const query = promptModelQuery(modelId)
+    return request<PromptResponse>(
+      bookLabel ? `/books/${bookLabel}/prompts/${name}${query}` : `/prompts/${name}${query}`
+    )
+  },
+
+  updatePrompt: (name: string, content: string, bookLabel?: string, modelId?: string | null) => {
+    const query = promptModelQuery(modelId)
+    return request<PromptResponse>(
+      bookLabel ? `/books/${bookLabel}/prompts/${name}${query}` : `/prompts/${name}${query}`,
       { method: "PUT", body: JSON.stringify({ content }) },
-    ),
+    )
+  },
+
+  listPromptVersions: (name: string, modelId?: string | null, bookLabel?: string) => {
+    const query = promptModelQuery(modelId)
+    return request<PromptVersionsResponse>(
+      bookLabel ? `/books/${bookLabel}/prompts/${name}/versions${query}` : `/prompts/${name}/versions${query}`,
+    )
+  },
+
+  setPromptVersionCurrent: (
+    name: string,
+    version: string,
+    modelId?: string | null,
+    bookLabel?: string,
+  ) => {
+    const query = promptModelQuery(modelId)
+    return request<PromptResponse>(
+      bookLabel
+        ? `/books/${bookLabel}/prompts/${name}/versions/${encodeURIComponent(version)}/current${query}`
+        : `/prompts/${name}/versions/${encodeURIComponent(version)}/current${query}`,
+      { method: "PUT" },
+    )
+  },
+
+  resetPrompt: (name: string, modelId?: string | null, bookLabel?: string) => {
+    const query = promptModelQuery(modelId)
+    return request<PromptResponse>(
+      bookLabel ? `/books/${bookLabel}/prompts/${name}${query}` : `/prompts/${name}${query}`,
+      { method: "DELETE" },
+    )
+  },
 
   getTemplate: (name: string, bookLabel?: string) =>
     request<{ name: string; content: string; source?: string }>(
