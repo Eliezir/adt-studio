@@ -1368,7 +1368,9 @@ async function runStoryboardStep(
         visualRefinement = {
           screenshotRenderer,
           webAssetsDir,
-          llmModel: resolveRenderModel(DEFAULT_VISUAL_REVIEW_MODEL_ID),
+          llmModel: resolveRenderModel(
+            config.default_model ?? DEFAULT_VISUAL_REVIEW_MODEL_ID,
+          ),
           storeScreenshot: (base64: string) => {
             const hash = crypto.createHash("sha256").update(base64).digest("hex").slice(0, 16)
             storage.putDebugImage(hash, Buffer.from(base64, "base64"))
@@ -2590,7 +2592,8 @@ async function runSpeechStep(
     const voiceMaps = loadVoicesConfig(configDir)
     const instructionsMap = loadSpeechInstructions(configDir)
 
-    const speechModel = config.speech?.model
+    const speechModel =
+      config.speech?.model ?? config.default_speech_generation_model
     const defaultProvider = config.speech?.default_provider ?? "openai"
     const providerConfigs = config.speech?.providers ?? {}
     const routing: ProviderRouting = { providers: providerConfigs, defaultProvider }

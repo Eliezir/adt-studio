@@ -61,6 +61,7 @@ export function GlobalPromptsSettings({
   const [treeFilter, setTreeFilter] = useState("");
   const [draft, setDraft] = useState<string | null>(null);
   const [isDiffOpen, setIsDiffOpen] = useState(false);
+  const defaultModelInitializedRef = useRef(false);
   const currentSelectionRef = useRef<{
     promptName: string;
     modelId: string | null;
@@ -83,14 +84,29 @@ export function GlobalPromptsSettings({
     () => promptModelsQuery.data?.models ?? [],
     [promptModelsQuery.data],
   );
+  const defaultModelQuery = useQuery({
+    queryKey: ["default-model"],
+    queryFn: api.getDefaultModel,
+  });
+  const defaultModelId = defaultModelQuery.data?.model ?? DEFAULT_MODEL;
   const modelGroups = useMemo(
-    () => mergePromptModelGroups(LLM_MODEL_GROUPS, promptModels),
-    [promptModels],
+    () => mergePromptModelGroups(
+      LLM_MODEL_GROUPS,
+      [...promptModels, defaultModelId],
+    ),
+    [defaultModelId, promptModels],
   );
   const staticModelIds = useMemo(
     () => new Set(modelIdsFromGroups(LLM_MODEL_GROUPS)),
     [],
   );
+
+  useEffect(() => {
+    if (defaultModelQuery.data?.model && !defaultModelInitializedRef.current) {
+      defaultModelInitializedRef.current = true;
+      if (model === DEFAULT_MODEL) setModel(defaultModelQuery.data.model);
+    }
+  }, [defaultModelQuery.data?.model, model]);
 
   useEffect(() => {
     if (!selectedPrompt && promptSummaries.length > 0) {
@@ -216,10 +232,13 @@ export function GlobalPromptsSettings({
 
   const deletePromptMutation = useMutation({
     mutationFn: ({ promptName, modelId }: DeletePromptVariables) => {
-      if (modelId === DEFAULT_MODEL) {
+      if (isDefaultPromptModelId(modelId)) {
         throw new Error(t`Default prompt files cannot be deleted.`);
       }
-      return api.resetPrompt(promptName, promptModelForSelectedModel(modelId));
+      return api.resetPrompt(
+        promptName,
+        promptModelForSelectedModel(modelId),
+      );
     },
     onSuccess: async (resetPrompt, { promptName, modelId }) => {
       const deletedPromptModelId = promptModelForSelectedModel(modelId);
@@ -247,7 +266,7 @@ export function GlobalPromptsSettings({
 
   const deleteModelMutation = useMutation({
     mutationFn: async ({ modelId, promptNames }: DeleteModelVariables) => {
-      if (modelId === DEFAULT_MODEL) {
+      if (isDefaultPromptModelId(modelId)) {
         throw new Error(t`Default prompt folders cannot be deleted.`);
       }
 
@@ -267,7 +286,7 @@ export function GlobalPromptsSettings({
     },
     onSuccess: async (_, { modelId }) => {
       if (model === modelId) {
-        setModel(DEFAULT_MODEL);
+        setModel(defaultModelId);
         setDraft(null);
       }
       await Promise.all([
@@ -305,9 +324,7 @@ export function GlobalPromptsSettings({
         undefined,
         promptModelForSelectedModel(sourceModelId),
       );
-      const targetPromptModelId = promptModelForSelectedModel(
-        normalizedTargetModel,
-      );
+      const targetPromptModelId = promptModelForSelectedModel(normalizedTargetModel);
       const savedPrompt = await api.updatePrompt(
         promptName,
         sourcePrompt.content,
@@ -373,7 +390,6 @@ export function GlobalPromptsSettings({
     promptListQuery.isLoading || promptModelsQuery.isLoading;
   const isPromptEditorLoading = isPromptFilesLoading || promptQuery.isLoading;
   const isSavingPrompt = saveMutation.isPending || resetMutation.isPending;
-
   useFloatingSave({
     id: "global-prompts",
     dirty: !isPromptEditorLoading && (isDirty || hasResettableVersion),
@@ -394,20 +410,23 @@ export function GlobalPromptsSettings({
       className={
         embedded
           ? "flex h-[72vh] min-h-130 flex-col gap-3 p-4"
-          : "flex h-full min-h-[calc(100vh-2.5rem)] flex-col gap-4 p-4"
+          : "flex h-full min-h-[calc(100vh-2.5rem)] flex-col gap-4 p-5"
       }
     >
-      <div className="shrink-0">
-        <h2 className="text-lg font-semibold tracking-tight text-foreground">
-          <Trans>Global prompts</Trans>
-        </h2>
-        <p className="mt-1 max-w-3xl text-sm leading-6 text-muted-foreground">
-          <Trans>
-            Edit fallback prompts used by every book. Saving creates a global
-            prompt version; reset removes the version and returns to the shipped
-            default file.
-          </Trans>
-        </p>
+      <div className="flex shrink-0 flex-col gap-3">
+        <div>
+          <h2 className="text-lg font-semibold tracking-tight text-foreground">
+            <Trans>Global prompts</Trans>
+          </h2>
+          <p className="mt-1 max-w-3xl text-sm leading-6 text-muted-foreground">
+            <Trans>
+              Edit fallback prompts used by every book. Saving creates a global
+              prompt version; reset removes the version and returns to the shipped
+              default file.
+            </Trans>
+          </p>
+        </div>
+
       </div>
 
       <div
@@ -456,6 +475,7 @@ export function GlobalPromptsSettings({
                   filter={treeFilter}
                   selectedKey={selectedTreeKey}
                   selectedModel={model}
+                  defaultModelId={defaultModelId}
                   deletingKey={deletingTreeKey}
                   deletingModelId={deletingModelId}
                   onSelectPrompt={selectPromptFile}

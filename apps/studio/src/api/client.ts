@@ -644,6 +644,11 @@ export interface BookConfigResponse {
   config: Record<string, unknown>
 }
 
+export interface SpecializedModelDefaultsResponse {
+  imageGeneration: string
+  speechGeneration: string
+}
+
 export interface ActiveConfigResponse {
   merged: Record<string, unknown>
   hasBookOverride: boolean
@@ -1676,6 +1681,31 @@ export const api = {
 
   getGlobalConfig: () =>
     request<{ config: Record<string, unknown> }>(`/config`),
+
+  getDefaultModel: () =>
+    request<{ model: string }>(`/config/default-model`),
+
+  updateDefaultModel: (model: string) =>
+    request<{ model: string }>(`/config/default-model`, {
+      method: "PUT",
+      body: JSON.stringify({ model }),
+    }),
+
+  getSpecializedModelDefaults: () =>
+    request<SpecializedModelDefaultsResponse>(
+      `/config/specialized-model-defaults`,
+    ),
+
+  updateSpecializedModelDefaults: (
+    defaults: SpecializedModelDefaultsResponse,
+  ) =>
+    request<SpecializedModelDefaultsResponse>(
+      `/config/specialized-model-defaults`,
+      {
+        method: "PUT",
+        body: JSON.stringify(defaults),
+      },
+    ),
 
   getSpeechInstructions: () =>
     request<Record<string, string>>("/speech-config/instructions"),

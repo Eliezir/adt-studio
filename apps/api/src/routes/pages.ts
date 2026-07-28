@@ -11,6 +11,7 @@ import {
   WebRenderingOutput,
   ImageCaptioningOutput,
   ImageSegmentRegion,
+  DEFAULT_IMAGE_GENERATION_MODEL_ID,
   DEFAULT_LLM_MAX_RETRIES,
   primaryFontFamily,
   reflowableFontChain,
@@ -208,6 +209,7 @@ interface AiImageGenParams {
   /** "swap" replaces targetImageId, "add" appends to section */
   mode?: "swap" | "add"
   booksDir: string
+  modelId: string
 }
 
 async function executeAiImageGeneration(params: AiImageGenParams): Promise<{
@@ -216,6 +218,7 @@ async function executeAiImageGeneration(params: AiImageGenParams): Promise<{
   const {
     bookDir, dbPath, apiKey, pageId, prompt,
     referenceImageId, targetImageId, style, imageType, styleImageId, promptsDir,
+    modelId,
   } = params
 
   // Choose the correct prompt template: edit vs generate
@@ -304,7 +307,7 @@ async function executeAiImageGeneration(params: AiImageGenParams): Promise<{
   try {
     generated = await generateImageWithCache({
       apiKey,
-      modelId: "openai:gpt-image-2",
+      modelId,
       prompt: finalPrompt,
       size: size as `${number}x${number}`,
       referenceImages,
@@ -2256,7 +2259,7 @@ export function createPageRoutes(
     }
   })
 
-  // POST /books/:label/images/ai-generate — Generate image via gpt-image-2
+  // POST /books/:label/images/ai-generate — Generate or edit an image.
   app.post("/books/:label/images/ai-generate", async (c) => {
     try {
       const { label } = c.req.param()
@@ -2318,6 +2321,10 @@ export function createPageRoutes(
       const desc = referenceImageId
         ? `Editing image ${referenceImageId}`
         : `Generating image for ${pageId}`
+      const modelId = configPath
+        ? loadBookConfig(safeLabel, booksDir, configPath)
+            .default_image_generation_model ?? DEFAULT_IMAGE_GENERATION_MODEL_ID
+        : DEFAULT_IMAGE_GENERATION_MODEL_ID
 
       // Submit as task if TaskService is available
       if (taskService) {
@@ -2331,6 +2338,7 @@ export function createPageRoutes(
               prompt, referenceImageId, targetImageId,
               style, imageType, styleImageId, promptsDir,
               sectionIndex, mode, booksDir,
+              modelId,
             })
           },
           { pageId, url: `/books/${safeLabel}/storyboard/${pageId}` }
@@ -2344,6 +2352,7 @@ export function createPageRoutes(
         prompt, referenceImageId, targetImageId,
         style, imageType, styleImageId, promptsDir,
         sectionIndex, mode, booksDir,
+        modelId,
       })
       return c.json(result)
     } catch (err) {
@@ -2565,7 +2574,10 @@ export function createPageRoutes(
 
       // Build segmentation config — always use default model for manual segmentation
       const config = loadBookConfig(safeLabel, booksDir, configPath)
-      const modelId = config.image_segmentation?.model || "openai:gpt-5.4"
+      const modelId =
+        config.image_segmentation?.model
+        || config.default_model
+        || "openai:gpt-5.4"
       const promptName = config.image_segmentation?.prompt ?? "image_segmentation"
       const maxRetries =
         config.image_segmentation?.max_retries ?? DEFAULT_LLM_MAX_RETRIES
@@ -2781,9 +2793,13 @@ export function createPageRoutes(
 
     try {
       const bookPromptsDir = path.join(bookDir, "prompts")
+      const appConfig = loadBookConfig(safeLabel, booksDir, configPath)
       const promptEngine = createPromptEngine([bookPromptsDir, promptsDir])
       const cacheDir = path.join(bookDir, ".cache")
-      const config = buildStyleguideGenerationConfig()
+      const config = buildStyleguideGenerationConfig(
+        undefined,
+        appConfig.default_model,
+      )
       const llmModel = createLLMModel({
         modelId: config.modelId,
         cacheDir,

@@ -35,7 +35,6 @@ import {
   toCamelLabel,
   type StageGroup,
 } from "../stage-config"
-import { useSettingsDialog } from "@/routes/__root"
 import type { TaskInfoResponse } from "@/api/client"
 import { getStageLabelI18n, getStepLabelI18n, getStageStatusLabelI18n } from "../pipeline-i18n"
 import { ALL_STEP_NAMES, STAGE_ORDER } from "@adt/types"
@@ -82,7 +81,6 @@ export function StageSidebar({
   const { data: signLanguageData } = useSignLanguageVideos(bookLabel)
   const { data: packageStatus } = usePackageAdtStatus(bookLabel)
   const { tasks } = useBookTasks(bookLabel)
-  const { openSettings } = useSettingsDialog()
   const stageMissing = useStageMissingCounts(bookLabel)
   const translateNeedsRerun = stageMissing.translate > 0
   const speechNeedsRerun = stageMissing.speech > 0
@@ -292,7 +290,22 @@ export function StageSidebar({
             </button>
           )}
 
-          {settingsTabs ? (
+          {step.slug === "book" ? (
+            <Link
+              to="/books/$label/$step/settings"
+              params={{ label: bookLabel, step: step.slug }}
+              search={{ tab: "general" }}
+              title={i18n._(msg`API Key Settings`)}
+              className={cn(
+                "shrink-0 inline-flex items-center justify-center w-6 h-6 rounded-full transition-colors",
+                isActive
+                  ? "text-white/60 hover:text-white hover:bg-white/20"
+                  : "opacity-0 group-hover/row:opacity-100 text-muted-foreground/50 group-hover/row:bg-muted hover:text-foreground hover:bg-muted-foreground/20"
+              )}
+            >
+              <Settings className="w-3.5 h-3.5" />
+            </Link>
+          ) : settingsTabs ? (
             <Link
               to="/books/$label/$step/settings"
               params={{ label: bookLabel, step: step.slug }}
@@ -307,20 +320,6 @@ export function StageSidebar({
             >
               <Settings className="w-3.5 h-3.5" />
             </Link>
-          ) : step.slug === "book" ? (
-            <button
-              type="button"
-              onClick={openSettings}
-              title={i18n._(msg`API Key Settings`)}
-              className={cn(
-                "shrink-0 inline-flex items-center justify-center w-6 h-6 rounded-full transition-colors cursor-pointer",
-                isActive
-                  ? "text-white/60 hover:text-white hover:bg-white/20"
-                  : "opacity-0 group-hover/row:opacity-100 text-muted-foreground/50 group-hover/row:bg-muted hover:text-foreground hover:bg-muted-foreground/20"
-              )}
-            >
-              <Settings className="w-3.5 h-3.5" />
-            </button>
           ) : step.slug === "preview" ? (
             <button
               type="button"

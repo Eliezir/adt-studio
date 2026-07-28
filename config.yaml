@@ -1,3 +1,10 @@
+# Fallback LLM for text generation and visual analysis. Image generation and
+# speech use their own task-specific defaults; step-level `model` values still
+# override this one. This can also be changed in Studio under Settings > Models.
+default_model: "openai:gpt-5.4"
+default_image_generation_model: "openai:gpt-image-2"
+default_speech_generation_model: "gpt-4o-mini-tts"
+
 structure_types:
   group: >
     Generic container used to bind sibling text leaves that form one visual
@@ -145,20 +152,16 @@ section_types:
 
 metadata:
   prompt: metadata_extraction
-  model: openai:gpt-5.4
 
 page_sectioning:
   prompt: page_sectioning
-  model: openai:gpt-5.4
   max_refinements: 0
 
 image_meaningfulness:
   prompt: image_meaningfulness
-  model: openai:gpt-5.4
 
 image_cropping:
   prompt: image_cropping
-  model: openai:gpt-5.4
 
 default_render_strategy: two_column
 
@@ -167,7 +170,6 @@ render_strategies:
     render_type: llm
     config:
       prompt: web_generation_html
-      model: openai:gpt-5.4
       max_retries: 5
       timeout: 180
       visual_refinement:
@@ -176,7 +178,6 @@ render_strategies:
     render_type: llm
     config:
       prompt: web_generation_html_overlay
-      model: openai:gpt-5.4
       max_retries: 25
       timeout: 180
       visual_refinement:
@@ -200,7 +201,6 @@ render_strategies:
     config:
       prompt: activity_multiple_choice
       answer_prompt: activity_multiple_choice_answers
-      model: openai:gpt-5.4
       max_retries: 5
       timeout: 180
       visual_refinement:
@@ -210,7 +210,6 @@ render_strategies:
     config:
       prompt: activity_multi_select
       answer_prompt: activity_multi_select_answers
-      model: openai:gpt-5.4
       max_retries: 5
       timeout: 180
       visual_refinement:
@@ -230,7 +229,6 @@ render_strategies:
     config:
       prompt: activity_true_false
       answer_prompt: activity_true_false_answers
-      model: openai:gpt-5.4
       max_retries: 5
       timeout: 180
       visual_refinement:
@@ -240,7 +238,6 @@ render_strategies:
     config:
       prompt: activity_fill_in_the_blank
       answer_prompt: activity_fill_in_the_blank_answers
-      model: openai:gpt-5.4
       max_retries: 5
       timeout: 180
       visual_refinement:
@@ -250,7 +247,6 @@ render_strategies:
     config:
       prompt: activity_fill_in_a_table
       answer_prompt: activity_fill_in_a_table_answers
-      model: openai:gpt-5.4
       max_retries: 5
       timeout: 180
       visual_refinement:
@@ -260,7 +256,6 @@ render_strategies:
     config:
       prompt: activity_matching
       answer_prompt: activity_matching_answers
-      model: openai:gpt-5.4
       max_retries: 5
       timeout: 180
       visual_refinement:
@@ -270,7 +265,6 @@ render_strategies:
     config:
       prompt: activity_sorting
       answer_prompt: activity_sorting_answers
-      model: openai:gpt-5.4
       max_retries: 5
       timeout: 180
       visual_refinement:
@@ -279,7 +273,6 @@ render_strategies:
     render_type: activity
     config:
       prompt: activity_open_ended_answer
-      model: openai:gpt-5.4
       max_retries: 5
       timeout: 180
       visual_refinement:

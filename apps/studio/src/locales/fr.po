@@ -1277,6 +1277,9 @@ msgstr "Clés API"
 msgid "API Keys"
 msgstr "Clés API"
 
+msgid "API keys saved."
+msgstr "Clés API enregistrées."
+
 msgid "API Logs"
 msgstr "Journaux API"
 
@@ -1289,6 +1292,9 @@ msgstr "Apparence"
 #. placeholder {0}: pages.join(", ")
 msgid "Appears on pages {0}"
 msgstr "Apparaît sur les pages {0}"
+
+#~ msgid "Application"
+#~ msgstr "Application"
 
 msgid "Application Programming Interface — a set of rules that allows programs to communicate."
 msgstr "Interface de programmation d'applications — un ensemble de règles permettant aux programmes de communiquer."
@@ -1592,6 +1598,9 @@ msgstr "Métadonnées du livre"
 
 msgid "Book metadata (title, authors, publisher) was taken from this part and now appears in the Extract step, where you can edit it."
 msgstr "Les métadonnées du livre (titre, auteurs, éditeur) ont été reprises de cette partie et apparaissent maintenant dans l'étape d'Extraction, où vous pouvez les modifier."
+
+msgid "Book model overrides updated."
+msgstr "Les remplacements de modèles du livre ont été mis à jour."
 
 msgid "Book order"
 msgstr "Ordre du livre"
@@ -1934,6 +1943,9 @@ msgstr "Choisir des images..."
 msgid "Choose Provider"
 msgstr "Choisir le fournisseur"
 
+#~ msgid "Choose the model used when a pipeline step does not specify its own model."
+#~ msgstr "Choisissez le modèle utilisé lorsqu’une étape du pipeline ne spécifie pas son propre modèle."
+
 msgid "Choose the page to crop from."
 msgstr "Choisissez la page à recadrer."
 
@@ -2137,6 +2149,9 @@ msgstr "Configurer les fonctionnalités à inclure dans l'exportation"
 
 #~ msgid "Configure provider credentials and global prompt fallbacks used by ADT Studio."
 #~ msgstr "Configurez les identifiants des fournisseurs et les prompts de fallback globaux utilisés par ADT Studio."
+
+msgid "Configure provider credentials used by AI pipeline features on this machine."
+msgstr "Configurez les identifiants des fournisseurs utilisés par les fonctionnalités du pipeline d’IA sur cette machine."
 
 msgid "Configure the provider credentials used when ADT Studio runs AI pipeline steps on this machine."
 msgstr "Configurez les identifiants des fournisseurs utilisés quand ADT Studio exécute les étapes du pipeline d'IA sur cette machine."
@@ -2454,14 +2469,23 @@ msgstr "Par défaut (hériter)"
 msgid "Default (no text detected yet)"
 msgstr "Par défaut (aucun texte détecté pour l'instant)"
 
+#~ msgid "Default LLM"
+#~ msgstr "LLM par défaut"
+
+msgid "Default LLM updated."
+msgstr "Le LLM par défaut a été mis à jour."
+
 msgid "Default model"
 msgstr "Par défaut modèle"
 
 msgid "Default model cannot be used as a template target."
 msgstr "Le modèle par défaut ne peut pas être utilisé comme cible de modèle."
 
-msgid "Default model uses the base prompt files and does not need model-specific copies."
-msgstr "Le modèle par défaut utilise les fichiers de prompt de base et n'a pas besoin de copies spécifiques au modèle."
+#~ msgid "Default model updated."
+#~ msgstr "Modèle par défaut mis à jour."
+
+#~ msgid "Default model uses the base prompt files and does not need model-specific copies."
+#~ msgstr "Le modèle par défaut utilise les fichiers de prompt de base et n'a pas besoin de copies spécifiques au modèle."
 
 msgid "Default N/A"
 msgstr "Par défaut N/A"
@@ -2875,6 +2899,9 @@ msgstr "Chaque page de glossaire rassemble les termes utilisés depuis la préc�
 msgid "Each iteration is one LLM call. Lower values are faster and cheaper; higher values give the reviewer more chances to fix problems."
 msgstr "Chaque itération est un appel LLM. Des valeurs plus basses sont plus rapides et moins chères ; des valeurs plus élevées donnent au réviseur plus de chances de corriger les problèmes."
 
+msgid "Each kind of pipeline task uses a compatible model. Image generation and speech use their own task-specific defaults."
+msgstr "Chaque type de tâche du pipeline utilise un modèle compatible. La génération d’images et la synthèse vocale utilisent leurs propres modèles par défaut spécifiques."
+
 msgid "Each polyp secretes a hard calcium carbonate skeleton. Over hundreds of years, millions of these skeletons build up into the massive reef structures we see today."
 msgstr "Chaque polype sécrète un squelette rigide de carbonate de calcium. Au fil de centaines d'années, des millions de ces squelettes s'accumulent pour former les immenses structures récifales que nous voyons aujourd'hui."
 
@@ -3060,6 +3087,9 @@ msgstr "Anglais"
 
 msgid "Enhancements"
 msgstr "Améliorations"
+
+msgid "Enter a model id for each task."
+msgstr "Saisissez un identifiant de modèle pour chaque tâche."
 
 msgid "Enter a model id."
 msgstr "Saisissez un id de modèle."
@@ -3443,6 +3473,9 @@ msgstr "Police"
 msgid "Font Analysis"
 msgstr "Analyse des polices"
 
+msgid "Font assignment, styleguide generation, and visual review also use this default unless overridden."
+msgstr "L’attribution des polices, la génération du guide de style et la révision visuelle utilisent également ce modèle par défaut, sauf remplacement."
+
 msgid "Fonts"
 msgstr "Polices"
 
@@ -3580,6 +3613,9 @@ msgstr "Générez des sous-titres descriptifs pour chaque image du livre. Choisi
 
 msgid "Generate from pages"
 msgstr "Générer à partir des pages"
+
+msgid "Generate global prompts"
+msgstr "Générer des prompts globaux"
 
 msgid "Generate missing Gemini audio"
 msgstr "Générer l'audio Gemini manquant"
@@ -3793,6 +3829,9 @@ msgstr "Masquer"
 msgid "Hide AI edit history"
 msgstr "Masquer l'historique des modifications IA"
 
+msgid "Hide API key"
+msgstr "Masquer la clé API"
+
 msgid "Hide error details"
 msgstr "Masquer les détails de l'erreur"
 
@@ -3940,6 +3979,9 @@ msgstr "Image généré"
 msgid "Image Generation"
 msgstr "Génération d'images"
 
+msgid "Image generation and editing"
+msgstr "Génération et retouche d’images"
+
 msgid "Image Generation Prompt"
 msgstr "Génération d'images Invite"
 
@@ -4073,6 +4115,9 @@ msgstr "Augmenter l'indentation"
 
 msgid "Individual sides"
 msgstr "Côtés individuels"
+
+#~ msgid "Individual steps can still override this model in their own settings."
+#~ msgstr "Les étapes individuelles peuvent toujours remplacer ce modèle dans leurs propres paramètres."
 
 msgid "Infographic"
 msgstr "Infographie"
@@ -4394,6 +4439,9 @@ msgstr "LLM image segmentation"
 
 msgid "LLM meaningfulness filter"
 msgstr "Filtre de pertinence LLM"
+
+msgid "LLM model"
+msgstr "Modèle LLM"
 
 msgid "LLM positions text over background images"
 msgstr "Le LLM positionne le texte sur les images d'arrière-plan"
@@ -4842,6 +4890,9 @@ msgstr "Modèle"
 
 #~ msgid "Model {normalizedTargetModel} added."
 #~ msgstr "Modèle {normalizedTargetModel} ajouté."
+
+msgid "Model overrides"
+msgstr "Remplacements de modèles"
 
 #~ msgid "Model variant"
 #~ msgstr "Variante de modèle"
@@ -5634,6 +5685,12 @@ msgstr "Jetons de sortie"
 msgid "Overall page note"
 msgstr "Note globale de la page"
 
+#~ msgid "Override specialized models for this book. Empty fields inherit the platform defaults."
+#~ msgstr "Remplacez les modèles spécialisés pour ce livre. Les champs vides héritent des valeurs par défaut de la plateforme."
+
+msgid "Override the default LLM and specialized models for this book. Empty fields inherit the platform defaults."
+msgstr "Remplacez le LLM par défaut et les modèles spécialisés pour ce livre. Les champs vides héritent des valeurs par défaut de la plateforme."
+
 msgid "Overview"
 msgstr "Aperçu"
 
@@ -5999,6 +6056,12 @@ msgstr "Pipeline · extraction"
 msgid "Pipeline · storyboard"
 msgstr "Pipeline · storyboard"
 
+#~ msgid "Pipeline default"
+#~ msgstr "Valeur par défaut du pipeline"
+
+msgid "Pipeline fallback model"
+msgstr "Modèle de secours du pipeline"
+
 msgid "Pipeline features"
 msgstr "Fonctionnalités du pipeline"
 
@@ -6008,11 +6071,26 @@ msgstr "Étapes du pipeline"
 msgid "Pipeline Stages"
 msgstr "Étapes du pipeline"
 
+msgid "Pipeline tasks using {savedModel}"
+msgstr "Tâches du pipeline utilisant {savedModel}"
+
 msgid "Pixel Art"
 msgstr "Pixel Art"
 
 msgid "Plants create sugar via <0>photosynthesis</0>, divide by <1>mitosis</1>, and absorb water by <2>osmosis</2>."
 msgstr "Les plantes fabriquent du sucre par <0>photosynthèse</0>, se divisent par <1>mitose</1>, et absorbent l'eau par <2>osmose</2>."
+
+msgid "Platform default"
+msgstr "Valeur par défaut de la plateforme"
+
+msgid "Platform default: {platformImageModel}"
+msgstr "Valeur par défaut de la plateforme : {platformImageModel}"
+
+msgid "Platform default: {platformLlmModel}"
+msgstr "Valeur par défaut de la plateforme : {platformLlmModel}"
+
+msgid "Platform default: {platformSpeechModel}"
+msgstr "Valeur par défaut de la plateforme : {platformSpeechModel}"
 
 msgid "Play"
 msgstr "Lire"
@@ -6153,8 +6231,8 @@ msgstr "Fichier de prompt supprimé."
 msgid "Prompt folder deleted."
 msgstr "Dossier de prompts supprimé."
 
-msgid "Prompt Settings"
-msgstr "Paramètres des prompts"
+#~ msgid "Prompt Settings"
+#~ msgstr "Paramètres des prompts"
 
 msgid "Prompt template"
 msgstr "Modèle d'invite"
@@ -6164,6 +6242,9 @@ msgstr "Invite modèle non trouvé."
 
 msgid "Prompt version selected."
 msgstr "Version du prompt sélectionnée."
+
+msgid "Prompts"
+msgstr "Prompts"
 
 msgid "Provider"
 msgstr "Provider"
@@ -6987,6 +7068,9 @@ msgstr "Enregistrez d'abord votre travail si vous souhaitez conserver ces modifi
 msgid "Saved. Re-package Preview to apply."
 msgstr "Enregistré. Ré-empaquetez l'aperçu pour appliquer."
 
+msgid "Saving..."
+msgstr "Enregistrement..."
+
 msgid "Saving…"
 msgstr "Enregistrement…"
 
@@ -7361,8 +7445,14 @@ msgstr "Paramètres"
 msgid "Settings for this step are not yet available."
 msgstr "Les paramètres pour cette étape ne sont pas encore disponibles."
 
+msgid "Settings navigation"
+msgstr "Navigation des paramètres"
+
 msgid "Shadow"
 msgstr "Ombre"
+
+msgid "Shared prompt versions"
+msgstr "Versions partagées des prompts"
 
 msgid "Ship"
 msgstr "Livrer"
@@ -7391,6 +7481,9 @@ msgstr "Afficher toutes les pages"
 
 msgid "Show all translations"
 msgstr "Afficher toutes les traductions"
+
+msgid "Show API key"
+msgstr "Afficher la clé API"
 
 msgid "Show error details"
 msgstr "Afficher les détails de l'erreur"
@@ -7572,6 +7665,9 @@ msgstr "Pages spécifiques"
 
 msgid "Speech"
 msgstr "Parole"
+
+msgid "Speech generation"
+msgstr "Synthèse vocale"
 
 msgid "Speech Generation"
 msgstr "Parole Génération"
@@ -7906,6 +8002,15 @@ msgstr "Tâche En cours"
 msgid "Task running..."
 msgstr "Tâche en cours..."
 
+msgid "Task-specific defaults"
+msgstr "Modèles par défaut propres à chaque tâche"
+
+#~ msgid "Task-specific model defaults"
+#~ msgstr "Modèles par défaut spécifiques à chaque tâche"
+
+msgid "Task-specific model defaults updated."
+msgstr "Les modèles par défaut propres à chaque tâche ont été mis à jour."
+
 msgid "Tasks Running"
 msgstr "Tâches En cours"
 
@@ -8035,6 +8140,9 @@ msgstr "Le résumé du livre couvre l'ensemble du livre : régénérez-le sur le
 
 msgid "The book's title and metadata arrive with the part that contains page 1 — merge that part to fill them in."
 msgstr "Le titre et les métadonnées du livre arrivent avec la partie qui contient la page 1 — fusionnez cette partie pour les compléter."
+
+msgid "The built-in prompts are optimized for {DEFAULT_MODEL}. You switched the default LLM to <0>{savedModel}</0>, so we recommend generating new global prompt files tuned for it. You can also continue with the existing prompts."
+msgstr "Les prompts intégrés sont optimisés pour {DEFAULT_MODEL}. Vous avez remplacé le LLM par défaut par <0>{savedModel}</0> ; nous vous recommandons donc de générer de nouveaux fichiers de prompts globaux adaptés à ce modèle. Vous pouvez aussi continuer avec les prompts existants."
 
 msgid "The community of living organisms in a place and the way they interact with each other and their environment."
 msgstr "La communauté des organismes vivants dans un lieu et la façon dont ils interagissent entre eux et avec leur environnement."
@@ -8182,6 +8290,12 @@ msgstr "Ces pages ont été extraites une à une. Si une illustration s'étend s
 
 msgid "These stages are optional. They don't depend on each other — run any of them in any order once the core pipeline is complete."
 msgstr "Ces étapes sont facultatives. Elles ne dépendent pas les unes des autres — exécutez-les dans n'importe quel ordre une fois le pipeline principal terminé."
+
+msgid "These tasks inherit the default LLM unless their own settings specify another model."
+msgstr "Ces tâches héritent du LLM par défaut, sauf si leurs propres paramètres indiquent un autre modèle."
+
+msgid "These tasks require specialized models and do not inherit the default LLM above."
+msgstr "Ces tâches nécessitent des modèles spécialisés et n’héritent pas du LLM par défaut ci-dessus."
 
 msgid "These values reflect either the saved book override or the latest packaged defaults."
 msgstr "Ces valeurs reflètent soit le remplacement enregistré du livre, soit les valeurs par défaut du dernier empaquetage."
@@ -8626,6 +8740,18 @@ msgstr "Impossible de supprimer le dossier de prompts."
 msgid "Unable to load reviewer checklist settings."
 msgstr "Impossible de charger les paramètres de la liste de contrôle du réviseur."
 
+msgid "Unable to load the default LLM."
+msgstr "Impossible de charger le LLM par défaut."
+
+#~ msgid "Unable to load the default model."
+#~ msgstr "Impossible de charger le modèle par défaut."
+
+msgid "Unable to load the model settings."
+msgstr "Impossible de charger les paramètres des modèles."
+
+msgid "Unable to load the task-specific model defaults."
+msgstr "Impossible de charger les modèles par défaut propres à chaque tâche."
+
 msgid "Unable to render PDF preview."
 msgstr "Impossible d'afficher l'aperçu du PDF."
 
@@ -8640,6 +8766,18 @@ msgstr "Impossible d'enregistrer le prompt global."
 
 msgid "Unable to select prompt version."
 msgstr "Impossible de sélectionner la version du prompt."
+
+msgid "Unable to update the book model overrides."
+msgstr "Impossible de mettre à jour les remplacements de modèles du livre."
+
+msgid "Unable to update the default LLM."
+msgstr "Impossible de mettre à jour le LLM par défaut."
+
+#~ msgid "Unable to update the default model."
+#~ msgstr "Impossible de mettre à jour le modèle par défaut."
+
+msgid "Unable to update the task-specific model defaults."
+msgstr "Impossible de mettre à jour les modèles par défaut propres à chaque tâche."
 
 msgid "Unassign video"
 msgstr "Désassigner la vidéo"
@@ -8709,6 +8847,9 @@ msgstr "Mise à jour disponible"
 
 #~ msgid "Update downloaded. Restart to install."
 #~ msgstr "Mise à jour téléchargée. Redémarrer pour installer."
+
+#~ msgid "Update model"
+#~ msgstr "Mettre à jour le modèle"
 
 msgid "Update ready to install"
 msgstr "Mise à jour prête à être installée"
@@ -8843,6 +8984,9 @@ msgstr "Utiliser la vidéo"
 msgid "Used for"
 msgstr "Utilisée pour"
 
+msgid "Used for AI image generation, editing, and these pipeline tasks:"
+msgstr "Utilisé pour la génération et la retouche d’images par IA, ainsi que pour ces tâches du pipeline :"
+
 msgid "Used for Azure Speech TTS provider."
 msgstr "Utilisé pour le fournisseur TTS Azure Speech."
 
@@ -8852,8 +8996,20 @@ msgstr "Utilisé pour les modèles Claude (claude-opus-4-6, claude-sonnet-4-6, e
 msgid "Used for Gemini models — both LLM (gemini-2.5-pro, etc.) and TTS (gemini-2.5-pro-preview-tts, etc.)"
 msgstr "Utilisé pour les modèles Gemini — LLM (gemini-2.5-pro, etc.) et TTS (gemini-2.5-pro-preview-tts, etc.)"
 
+#~ msgid "Used for OpenAI text-to-speech in these pipeline tasks:"
+#~ msgstr "Utilisé pour la synthèse vocale OpenAI dans ces tâches du pipeline :"
+
+msgid "Used for OpenAI, Azure, and Gemini text-to-speech in these pipeline tasks:"
+msgstr "Utilisé pour la synthèse vocale OpenAI, Azure et Gemini dans ces tâches du pipeline :"
+
+#~ msgid "Used for text generation and visual analysis when a step does not specify an LLM. Individual steps can still override it."
+#~ msgstr "Utilisé pour la génération de texte et l’analyse visuelle lorsqu’une étape ne précise pas de LLM. Chaque étape peut toujours le remplacer."
+
 msgid "Used for this quiz"
 msgstr "Utilisée pour ce quiz"
+
+#~ msgid "Used when a pipeline step does not specify its own model."
+#~ msgstr "Utilisé lorsqu’une étape du pipeline ne spécifie pas son propre modèle."
 
 msgid "Using fallback"
 msgstr "Fallback utilisé"

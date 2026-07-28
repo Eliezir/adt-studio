@@ -1276,6 +1276,9 @@ msgstr "Çelësat API"
 msgid "API Keys"
 msgstr "Çelësat API"
 
+msgid "API keys saved."
+msgstr "Çelësat API u ruajtën."
+
 msgid "API Logs"
 msgstr "Regjistrat API"
 
@@ -1288,6 +1291,9 @@ msgstr "Pamja"
 #. placeholder {0}: pages.join(", ")
 msgid "Appears on pages {0}"
 msgstr "Shfaqet në faqet {0}"
+
+#~ msgid "Application"
+#~ msgstr "Aplikacioni"
 
 msgid "Application Programming Interface — a set of rules that allows programs to communicate."
 msgstr "Ndërfaqe Programimi Aplikacioni — një grup rregullash që lejon programet të komunikojnë."
@@ -1591,6 +1597,9 @@ msgstr "Të dhënat e librit"
 
 msgid "Book metadata (title, authors, publisher) was taken from this part and now appears in the Extract step, where you can edit it."
 msgstr "Të dhënat e librit (titulli, autorët, botuesi) u morën nga kjo pjesë dhe tani shfaqen në hapin e Nxjerrjes, ku mund t'i modifikoni."
+
+msgid "Book model overrides updated."
+msgstr "Mbivendosjet e modeleve të librit u përditësuan."
 
 msgid "Book order"
 msgstr "Rendi i librit"
@@ -1933,6 +1942,9 @@ msgstr "Zgjidhni imazhe..."
 msgid "Choose Provider"
 msgstr "Zgjidhni Ofruesin"
 
+#~ msgid "Choose the model used when a pipeline step does not specify its own model."
+#~ msgstr "Zgjidhni modelin që përdoret kur një hap i pipeline-it nuk përcakton modelin e vet."
+
 msgid "Choose the page to crop from."
 msgstr "Zgjidh faqen nga e cila do të presësh."
 
@@ -2136,6 +2148,9 @@ msgstr "Konfiguroni funksionet për t'i përfshirë në eksportim"
 
 #~ msgid "Configure provider credentials and global prompt fallbacks used by ADT Studio."
 #~ msgstr "Konfiguro kredencialet e ofruesve dhe promptet globale fallback që përdor ADT Studio."
+
+msgid "Configure provider credentials used by AI pipeline features on this machine."
+msgstr "Konfiguroni kredencialet e ofruesve që përdoren nga veçoritë e pipeline-it të IA-së në këtë pajisje."
 
 msgid "Configure the provider credentials used when ADT Studio runs AI pipeline steps on this machine."
 msgstr "Konfiguro kredencialet e ofruesve që përdoren kur ADT Studio ekzekuton hapat e pipeline-it të IA-së në këtë makinë."
@@ -2453,14 +2468,23 @@ msgstr "Parazgjedhje (trashëgo)"
 msgid "Default (no text detected yet)"
 msgstr "Parazgjedhje (ende nuk u zbulua tekst)"
 
+#~ msgid "Default LLM"
+#~ msgstr "LLM-ja e parazgjedhur"
+
+msgid "Default LLM updated."
+msgstr "LLM-ja e parazgjedhur u përditësua."
+
 msgid "Default model"
 msgstr "Modeli parazgjedhës"
 
 msgid "Default model cannot be used as a template target."
 msgstr "Modeli i parazgjedhur nuk mund të përdoret si destinacion shablloni."
 
-msgid "Default model uses the base prompt files and does not need model-specific copies."
-msgstr "Modeli i parazgjedhur përdor skedarët bazë të promptit dhe nuk ka nevojë për kopje specifike për modelin."
+#~ msgid "Default model updated."
+#~ msgstr "Modeli i parazgjedhur u përditësua."
+
+#~ msgid "Default model uses the base prompt files and does not need model-specific copies."
+#~ msgstr "Modeli i parazgjedhur përdor skedarët bazë të promptit dhe nuk ka nevojë për kopje specifike për modelin."
 
 msgid "Default N/A"
 msgstr "Parazgjedhje N/A"
@@ -2874,6 +2898,9 @@ msgstr "Çdo faqe glosari mbledh termat e përdorur që nga faqja e mëparshme."
 msgid "Each iteration is one LLM call. Lower values are faster and cheaper; higher values give the reviewer more chances to fix problems."
 msgstr "Çdo iteracion është një thirrje LLM. Vlerat e ulëta janë më të shpejta dhe më të lira; vlerat e larta i japin rishikuesit më shumë mundësi për të korrigjuar problemet."
 
+msgid "Each kind of pipeline task uses a compatible model. Image generation and speech use their own task-specific defaults."
+msgstr "Çdo lloj detyre në rrjedhën e punës përdor një model të përshtatshëm. Gjenerimi i imazheve dhe i të folurit përdorin modelet e veta të parazgjedhura sipas detyrës."
+
 msgid "Each polyp secretes a hard calcium carbonate skeleton. Over hundreds of years, millions of these skeletons build up into the massive reef structures we see today."
 msgstr "Çdo polip sekreton një skelet të fortë karbonati kalciumi. Gjatë qindra viteve, miliona prej këtyre skeletve grumbullohen duke formuar strukturat masive të rifeve që shohim sot."
 
@@ -3059,6 +3086,9 @@ msgstr "Anglisht"
 
 msgid "Enhancements"
 msgstr "Përmirësime"
+
+msgid "Enter a model id for each task."
+msgstr "Vendosni një ID modeli për çdo detyrë."
 
 msgid "Enter a model id."
 msgstr "Shkruaj një id modeli."
@@ -3442,6 +3472,9 @@ msgstr "Font"
 msgid "Font Analysis"
 msgstr "Analiza e fonteve"
 
+msgid "Font assignment, styleguide generation, and visual review also use this default unless overridden."
+msgstr "Caktimi i fonteve, gjenerimi i udhëzuesit të stilit dhe shqyrtimi vizual e përdorin gjithashtu këtë model të parazgjedhur, përveç nëse zëvendësohet."
+
 msgid "Fonts"
 msgstr "Fontet"
 
@@ -3579,6 +3612,9 @@ msgstr "Gjenero tituj përshkrues për çdo imazh në libër. Zgjidh një nivel 
 
 msgid "Generate from pages"
 msgstr "Gjenero nga faqet"
+
+msgid "Generate global prompts"
+msgstr "Gjenero prompt-e globale"
 
 msgid "Generate missing Gemini audio"
 msgstr "Gjenero audion Gemini që mungon"
@@ -3792,6 +3828,9 @@ msgstr "Fshih"
 msgid "Hide AI edit history"
 msgstr "Fshih historikun e editimeve të AI"
 
+msgid "Hide API key"
+msgstr "Fshih çelësin API"
+
 msgid "Hide error details"
 msgstr "Fshih detajet e gabimit"
 
@@ -3939,6 +3978,9 @@ msgstr "Imazhi u gjenerua"
 msgid "Image Generation"
 msgstr "Gjenerimi i Imazheve"
 
+msgid "Image generation and editing"
+msgstr "Gjenerimi dhe redaktimi i imazheve"
+
 msgid "Image Generation Prompt"
 msgstr "Prompt i Gjenerimit të Imazheve"
 
@@ -4072,6 +4114,9 @@ msgstr "Rrit dhëmbëzimin"
 
 msgid "Individual sides"
 msgstr "Anë individuale"
+
+#~ msgid "Individual steps can still override this model in their own settings."
+#~ msgstr "Hapat individualë mund ta anashkalojnë këtë model në cilësimet e tyre."
 
 msgid "Infographic"
 msgstr "Infografikë"
@@ -4393,6 +4438,9 @@ msgstr "Segmentim i imazhit me LLM"
 
 msgid "LLM meaningfulness filter"
 msgstr "Filtër kuptimësie LLM"
+
+msgid "LLM model"
+msgstr "Modeli LLM"
 
 msgid "LLM positions text over background images"
 msgstr "LLM pozicionon tekstin mbi imazhet e sfondit"
@@ -4841,6 +4889,9 @@ msgstr "Model"
 
 #~ msgid "Model {normalizedTargetModel} added."
 #~ msgstr "Modeli {normalizedTargetModel} u shtua."
+
+msgid "Model overrides"
+msgstr "Mbivendosjet e modeleve"
 
 #~ msgid "Model variant"
 #~ msgstr "Variant modeli"
@@ -5633,6 +5684,12 @@ msgstr "Tokena dalje"
 msgid "Overall page note"
 msgstr "Shënim i përgjithshëm i faqes"
 
+#~ msgid "Override specialized models for this book. Empty fields inherit the platform defaults."
+#~ msgstr "Mbivendosni modelet e specializuara për këtë libër. Fushat bosh trashëgojnë parazgjedhjet e platformës."
+
+msgid "Override the default LLM and specialized models for this book. Empty fields inherit the platform defaults."
+msgstr "Mbivendosni LLM-në e parazgjedhur dhe modelet e specializuara për këtë libër. Fushat bosh trashëgojnë parazgjedhjet e platformës."
+
 msgid "Overview"
 msgstr "Përmbledhje"
 
@@ -5998,6 +6055,12 @@ msgstr "Pipeline · nxjerrje"
 msgid "Pipeline · storyboard"
 msgstr "Pipeline · storyboard"
 
+#~ msgid "Pipeline default"
+#~ msgstr "Parazgjedhja e pipeline-it"
+
+msgid "Pipeline fallback model"
+msgstr "Modeli rezervë i pipeline-it"
+
 msgid "Pipeline features"
 msgstr "Veçoritë e Pipeline"
 
@@ -6007,11 +6070,26 @@ msgstr "Fazat e procesit"
 msgid "Pipeline Stages"
 msgstr "Fazat e Pipeline"
 
+msgid "Pipeline tasks using {savedModel}"
+msgstr "Detyrat e rrjedhës së punës që përdorin {savedModel}"
+
 msgid "Pixel Art"
 msgstr "Pixel Art"
 
 msgid "Plants create sugar via <0>photosynthesis</0>, divide by <1>mitosis</1>, and absorb water by <2>osmosis</2>."
 msgstr "Bimët krijojnë sheqer nëpërmjet <0>fotosintezës</0>, ndahen me <1>mitozë</1>, dhe thithin ujë me <2>osmozë</2>."
+
+msgid "Platform default"
+msgstr "Parazgjedhja e platformës"
+
+msgid "Platform default: {platformImageModel}"
+msgstr "Parazgjedhja e platformës: {platformImageModel}"
+
+msgid "Platform default: {platformLlmModel}"
+msgstr "Parazgjedhja e platformës: {platformLlmModel}"
+
+msgid "Platform default: {platformSpeechModel}"
+msgstr "Parazgjedhja e platformës: {platformSpeechModel}"
 
 msgid "Play"
 msgstr "Luaj"
@@ -6152,8 +6230,8 @@ msgstr "Skedari i promptit u fshi."
 msgid "Prompt folder deleted."
 msgstr "Dosja e prompteve u fshi."
 
-msgid "Prompt Settings"
-msgstr "Cilësimet e promptit"
+#~ msgid "Prompt Settings"
+#~ msgstr "Cilësimet e promptit"
 
 msgid "Prompt template"
 msgstr "Shabllon prompt"
@@ -6163,6 +6241,9 @@ msgstr "Shablloni i prompt-it nuk u gjet."
 
 msgid "Prompt version selected."
 msgstr "Versioni i promptit u zgjodh."
+
+msgid "Prompts"
+msgstr "Promptet"
 
 msgid "Provider"
 msgstr "Ofruesi"
@@ -6986,6 +7067,9 @@ msgstr "Ruaje punën tënde më parë nëse dëshiron t'i mbash këto ndryshime.
 msgid "Saved. Re-package Preview to apply."
 msgstr "U ruajt. Ri-pako Parapamjen për ta aplikuar."
 
+msgid "Saving..."
+msgstr "Duke ruajtur..."
+
 msgid "Saving…"
 msgstr "Po ruhet…"
 
@@ -7360,8 +7444,14 @@ msgstr "Cilësime"
 msgid "Settings for this step are not yet available."
 msgstr "Cilësimet për këtë hap nuk janë ende të disponueshme."
 
+msgid "Settings navigation"
+msgstr "Navigimi i cilësimeve"
+
 msgid "Shadow"
 msgstr "Hije"
+
+msgid "Shared prompt versions"
+msgstr "Versionet e përbashkëta të prompt-eve"
 
 msgid "Ship"
 msgstr "Dërgo"
@@ -7390,6 +7480,9 @@ msgstr "Shfaq të gjitha faqet"
 
 msgid "Show all translations"
 msgstr "Shfaq të gjitha përkthimet"
+
+msgid "Show API key"
+msgstr "Shfaq çelësin API"
 
 msgid "Show error details"
 msgstr "Shfaq detajet e gabimit"
@@ -7571,6 +7664,9 @@ msgstr "Faqe specifike"
 
 msgid "Speech"
 msgstr "Të folurit"
+
+msgid "Speech generation"
+msgstr "Gjenerimi i të folurit"
 
 msgid "Speech Generation"
 msgstr "Gjenerimi i të Folurit"
@@ -7905,6 +8001,15 @@ msgstr "Detyra po Ekzekutohet"
 msgid "Task running..."
 msgstr "Detyra po ekzekutohet..."
 
+msgid "Task-specific defaults"
+msgstr "Modelet e parazgjedhura sipas detyrës"
+
+#~ msgid "Task-specific model defaults"
+#~ msgstr "Modelet e parazgjedhura sipas detyrës"
+
+msgid "Task-specific model defaults updated."
+msgstr "Parazgjedhjet e modeleve sipas detyrës u përditësuan."
+
 msgid "Tasks Running"
 msgstr "Detyrat po Ekzekutohen"
 
@@ -8034,6 +8139,9 @@ msgstr "Përmbledhja e librit mbulon të gjithë librin — rigjeneroje në libr
 
 msgid "The book's title and metadata arrive with the part that contains page 1 — merge that part to fill them in."
 msgstr "Titulli dhe të dhënat e librit vijnë me pjesën që përmban faqen 1 — bashkoni atë pjesë për t'i plotësuar."
+
+msgid "The built-in prompts are optimized for {DEFAULT_MODEL}. You switched the default LLM to <0>{savedModel}</0>, so we recommend generating new global prompt files tuned for it. You can also continue with the existing prompts."
+msgstr "Prompt-et e integruara janë optimizuar për {DEFAULT_MODEL}. E ndryshuat LLM-në e parazgjedhur në <0>{savedModel}</0>, ndaj rekomandojmë të gjeneroni skedarë të rinj prompt-esh globale të përshtatur për të. Mund të vazhdoni edhe me prompt-et ekzistuese."
 
 msgid "The community of living organisms in a place and the way they interact with each other and their environment."
 msgstr "Bashkësia e organizmave të gjallë në një vend dhe mënyra si ndërveprojnë me njëri-tjetrin dhe mjedisin e tyre."
@@ -8181,6 +8289,12 @@ msgstr "Këto faqe u ekstraktuan një nga një. Nëse një ilustrim shtrihet në
 
 msgid "These stages are optional. They don't depend on each other — run any of them in any order once the core pipeline is complete."
 msgstr "Këto faza janë opsionale. Ato nuk varen nga njëra-tjetra — ekzekuto cilëndo prej tyre në çfarëdo rendi pasi të jetë plotësuar tubi kryesor."
+
+msgid "These tasks inherit the default LLM unless their own settings specify another model."
+msgstr "Këto detyra trashëgojnë LLM-në e parazgjedhur, përveç nëse cilësimet e tyre përcaktojnë një model tjetër."
+
+msgid "These tasks require specialized models and do not inherit the default LLM above."
+msgstr "Këto detyra kërkojnë modele të specializuara dhe nuk e trashëgojnë LLM-në e parazgjedhur më sipër."
 
 msgid "These values reflect either the saved book override or the latest packaged defaults."
 msgstr "Këto vlera pasqyrojnë ose anashkalimin e ruajtur të librit ose parazgjedhjeve më të fundit të paketuara."
@@ -8625,6 +8739,18 @@ msgstr "Nuk u arrit të fshihej dosja e prompteve."
 msgid "Unable to load reviewer checklist settings."
 msgstr "Nuk mund të ngarkohen cilësimet e listës së kontrollit të rishikuesit."
 
+msgid "Unable to load the default LLM."
+msgstr "LLM-ja e parazgjedhur nuk mund të ngarkohej."
+
+#~ msgid "Unable to load the default model."
+#~ msgstr "Nuk mund të ngarkohej modeli i parazgjedhur."
+
+msgid "Unable to load the model settings."
+msgstr "Cilësimet e modeleve nuk mund të ngarkoheshin."
+
+msgid "Unable to load the task-specific model defaults."
+msgstr "Parazgjedhjet e modeleve sipas detyrës nuk mund të ngarkoheshin."
+
 msgid "Unable to render PDF preview."
 msgstr "Pamja paraprake e PDF nuk mund të shfaqet."
 
@@ -8639,6 +8765,18 @@ msgstr "Nuk mund të ruhet prompti global."
 
 msgid "Unable to select prompt version."
 msgstr "Nuk mund të zgjidhet versioni i promptit."
+
+msgid "Unable to update the book model overrides."
+msgstr "Mbivendosjet e modeleve të librit nuk mund të përditësoheshin."
+
+msgid "Unable to update the default LLM."
+msgstr "LLM-ja e parazgjedhur nuk mund të përditësohej."
+
+#~ msgid "Unable to update the default model."
+#~ msgstr "Nuk mund të përditësohej modeli i parazgjedhur."
+
+msgid "Unable to update the task-specific model defaults."
+msgstr "Parazgjedhjet e modeleve sipas detyrës nuk mund të përditësoheshin."
 
 msgid "Unassign video"
 msgstr "Hiq caktimin e videos"
@@ -8708,6 +8846,9 @@ msgstr "Përditësim i disponueshëm"
 
 #~ msgid "Update downloaded. Restart to install."
 #~ msgstr "Përditësimi u shkarkua. Rinisni për të instaluar."
+
+#~ msgid "Update model"
+#~ msgstr "Përditëso modelin"
 
 msgid "Update ready to install"
 msgstr "Përditësimi është gati për instalim"
@@ -8842,6 +8983,9 @@ msgstr "Përdor videon"
 msgid "Used for"
 msgstr "Përdoret për"
 
+msgid "Used for AI image generation, editing, and these pipeline tasks:"
+msgstr "Përdoret për gjenerimin dhe redaktimin e imazheve me IA dhe për këto detyra të rrjedhës së punës:"
+
 msgid "Used for Azure Speech TTS provider."
 msgstr "Përdoret për ofruesin Azure Speech TTS."
 
@@ -8851,8 +8995,20 @@ msgstr "Përdoret për modelet Claude (claude-opus-4-6, claude-sonnet-4-6, etj.)
 msgid "Used for Gemini models — both LLM (gemini-2.5-pro, etc.) and TTS (gemini-2.5-pro-preview-tts, etc.)"
 msgstr "Përdoret për modelet Gemini — si LLM (gemini-2.5-pro, etj.) ashtu edhe TTS (gemini-2.5-pro-preview-tts, etj.)"
 
+#~ msgid "Used for OpenAI text-to-speech in these pipeline tasks:"
+#~ msgstr "Përdoret për shndërrimin e tekstit në të folur nga OpenAI në këto detyra të rrjedhës së punës:"
+
+msgid "Used for OpenAI, Azure, and Gemini text-to-speech in these pipeline tasks:"
+msgstr "Përdoret për shndërrimin e tekstit në të folur nga OpenAI, Azure dhe Gemini në këto detyra të rrjedhës së punës:"
+
+#~ msgid "Used for text generation and visual analysis when a step does not specify an LLM. Individual steps can still override it."
+#~ msgstr "Përdoret për gjenerimin e tekstit dhe analizën vizuale kur një hap nuk përcakton një LLM. Hapat individualë mund ta zëvendësojnë përsëri atë."
+
 msgid "Used for this quiz"
 msgstr "Përdoret për këtë kuiz"
+
+#~ msgid "Used when a pipeline step does not specify its own model."
+#~ msgstr "Përdoret kur një hap i pipeline-it nuk specifikon modelin e vet."
 
 msgid "Using fallback"
 msgstr "Po përdoret fallback"
