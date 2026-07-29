@@ -14,6 +14,9 @@ describe("speech-routing", () => {
       azure: {
         languages: ["es"],
       },
+      elevenlabs: {
+        languages: ["pt-BR"],
+      },
     },
   }
 
@@ -41,6 +44,18 @@ describe("speech-routing", () => {
       true
     )
     expect(languageUsesSpeechProvider("fr", "gemini", speechConfig)).toBe(
+      false
+    )
+  })
+
+  it("resolves ElevenLabs-routed languages", () => {
+    expect(resolveSpeechProviderForLanguage("pt-BR", speechConfig)).toBe(
+      "elevenlabs"
+    )
+    expect(languageUsesSpeechProvider("pt-BR", "elevenlabs", speechConfig)).toBe(
+      true
+    )
+    expect(languageUsesSpeechProvider("fr", "elevenlabs", speechConfig)).toBe(
       false
     )
   })
