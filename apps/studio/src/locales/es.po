@@ -2256,6 +2256,12 @@ msgstr "Control which axe checks run during packaging for this document. Changes
 msgid "Controls how page content is grouped during the sectioning step."
 msgstr "Controla cómo se agrupa el contenido de la página durante el paso de seccionamiento."
 
+msgid "Controls whether ElevenLabs expands abbreviations, numbers, and symbols into spoken words (e.g. \"N.º\" → \"Número\"). \"Auto\" lets ElevenLabs decide per request; \"On\" always normalizes; \"Off\" reads the text as written, which is safer for codes, IDs, or text that shouldn't be expanded."
+msgstr "Controla si ElevenLabs expande abreviaturas, números y símbolos en palabras habladas (p. ej., \"N.º\" → \"Número\"). \"Auto\" deja que ElevenLabs decida en cada solicitud; \"Activado\" siempre normaliza; \"Desactivado\" lee el texto tal como está escrito, lo cual es más seguro para códigos, identificadores o texto que no debe expandirse."
+
+#~ msgid "Controls whether ElevenLabs expands abbreviations, numbers, and symbols into spoken words (e.g. \"N.º\" → \"Número\"). \"Auto\" lets ElevenLabs decide per request; \"On\" always normalizes; \"Off\" reads the text as written, which is safer for codes, IDs, or text that shouldn't be expanded. Only affects languages routed to ElevenLabs."
+#~ msgstr "Controla si ElevenLabs expande abreviaturas, números y símbolos en palabras habladas (p. ej., \"N.º\" → \"Número\"). \"Auto\" deja que ElevenLabs decida en cada solicitud; \"Activado\" siempre normaliza; \"Desactivado\" lee el texto tal como está escrito, lo cual es más seguro para códigos, identificadores o texto que no debe expandirse. Solo afecta a los idiomas enrutados a ElevenLabs."
+
 msgid "Conversion of light into chemical energy."
 msgstr "Conversión de luz en energía química."
 
@@ -3077,6 +3083,9 @@ msgstr "Clave de API de ElevenLabs"
 
 msgid "ElevenLabs Voice"
 msgstr "Voz de ElevenLabs"
+
+msgid "ElevenLabs voice continuity"
+msgstr "Continuidad de voz de ElevenLabs"
 
 msgid "emoji"
 msgstr "emoji"
@@ -7518,6 +7527,12 @@ msgstr "Seleccionar \\\"Ninguno\\\" permite al LLM elegir su propio estilo para 
 msgid "Self-contained ADT web app"
 msgstr "Aplicación web ADT autónoma"
 
+msgid "Send the neighboring sentence's text alongside each request so ElevenLabs can carry intonation across sentence boundaries. Changing this regenerates ElevenLabs audio on the next run."
+msgstr "Envía el texto de la oración vecina junto con cada solicitud para que ElevenLabs pueda mantener la entonación entre los límites de las oraciones. Cambiar esta opción regenera el audio de ElevenLabs en la próxima ejecución."
+
+#~ msgid "Send the neighboring sentence's text alongside each request so ElevenLabs can carry intonation across sentence boundaries. Only affects languages routed to ElevenLabs. Changing this regenerates ElevenLabs audio on the next run."
+#~ msgstr "Envía el texto de la oración vecina junto con cada solicitud para que ElevenLabs pueda mantener la entonación entre los límites de las oraciones. Solo afecta a los idiomas enrutados a ElevenLabs. Cambiar esta opción regenera el audio de ElevenLabs en la próxima ejecución."
+
 msgid "Send this project archive back to the coordinator to merge into the source book."
 msgstr "Envía este archivo de proyecto al coordinador para combinarlo en el libro de origen."
 
@@ -8219,6 +8234,9 @@ msgstr "Color del texto"
 #. placeholder {0}: section.textColor
 msgid "Text color: {0}"
 msgstr "Color del texto: {0}"
+
+msgid "Text Normalization"
+msgstr "Normalización de texto"
 
 msgid "Text Only"
 msgstr "Solo texto"
@@ -9070,6 +9088,9 @@ msgstr "Sube un ZIP o arrastra y suelta"
 
 msgid "Uploading..."
 msgstr "Subiendo..."
+
+msgid "Use adjacent text as context"
+msgstr "Usar texto adyacente como contexto"
 
 msgid "Use an LLM to crop away stray text, artifacts, and excessive whitespace from image edges."
 msgstr "Usa un LLM para recortar texto suelto, artefactos y espacios en blanco excesivos en los bordes de las imágenes."

@@ -471,6 +471,74 @@ describe("generateSpeechFile", () => {
     expect(mockSynthesize).toHaveBeenCalledTimes(1) // Not called again
   })
 
+  it("invalidates the cache when elevenlabs context/normalization options change", async () => {
+    const baseOptions = {
+      textId: "p001_t001",
+      text: "Hello world",
+      language: "en",
+      model: "eleven_multilingual_v2",
+      voice: "21m00Tcm4TlvDq8ikWAM",
+      instructions: "",
+      format: "mp3" as const,
+      bookDir,
+      cacheDir,
+      ttsSynthesizer: mockSynthesizer,
+      provider: "elevenlabs" as const,
+    }
+
+    await generateSpeechFile(baseOptions)
+    expect(mockSynthesize).toHaveBeenCalledTimes(1)
+
+    // Same inputs, still cached.
+    const cachedResult = await generateSpeechFile(baseOptions)
+    expect(cachedResult!.cached).toBe(true)
+    expect(mockSynthesize).toHaveBeenCalledTimes(1)
+
+    // Adding previous/next context text changes the cache key.
+    await generateSpeechFile({
+      ...baseOptions,
+      elevenLabsPreviousText: "Previous sentence.",
+      elevenLabsNextText: "Next sentence.",
+    })
+    expect(mockSynthesize).toHaveBeenCalledTimes(2)
+
+    // Adding text normalization changes the cache key too.
+    await generateSpeechFile({
+      ...baseOptions,
+      elevenLabsApplyTextNormalization: "on",
+    })
+    expect(mockSynthesize).toHaveBeenCalledTimes(3)
+  })
+
+  it("ignores elevenlabs context/normalization options for non-elevenlabs providers", async () => {
+    const baseOptions = {
+      textId: "p001_t001",
+      text: "Hello world",
+      language: "en",
+      model: "gpt-4o-mini-tts",
+      voice: "alloy",
+      instructions: "",
+      format: "mp3" as const,
+      bookDir,
+      cacheDir,
+      ttsSynthesizer: mockSynthesizer,
+    }
+
+    await generateSpeechFile(baseOptions)
+    expect(mockSynthesize).toHaveBeenCalledTimes(1)
+
+    // These fields are ElevenLabs-only — they must not affect the cache key
+    // (and thus not trigger regeneration) for other providers.
+    const result = await generateSpeechFile({
+      ...baseOptions,
+      elevenLabsPreviousText: "Previous sentence.",
+      elevenLabsNextText: "Next sentence.",
+      elevenLabsApplyTextNormalization: "on",
+    })
+    expect(result!.cached).toBe(true)
+    expect(mockSynthesize).toHaveBeenCalledTimes(1)
+  })
+
   it("only acquires the optional rate limiter when a real synth call is needed", async () => {
     const rateLimiter = {
       acquire: vi.fn().mockResolvedValue(undefined),

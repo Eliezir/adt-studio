@@ -2258,6 +2258,12 @@ msgstr "Contrôlez quelles vérifications axe sont exécutées lors de l'empaque
 msgid "Controls how page content is grouped during the sectioning step."
 msgstr "Contrôle la façon dont le contenu des pages est regroupé lors de l'étape de découpage en sections."
 
+msgid "Controls whether ElevenLabs expands abbreviations, numbers, and symbols into spoken words (e.g. \"N.º\" → \"Número\"). \"Auto\" lets ElevenLabs decide per request; \"On\" always normalizes; \"Off\" reads the text as written, which is safer for codes, IDs, or text that shouldn't be expanded."
+msgstr "Détermine si ElevenLabs développe les abréviations, les nombres et les symboles en mots prononcés (par ex. « N.º » → « Número »). « Auto » laisse ElevenLabs décider à chaque requête ; « Activé » normalise toujours ; « Désactivé » lit le texte tel qu'il est écrit, ce qui est plus sûr pour les codes, identifiants ou textes qui ne doivent pas être développés."
+
+#~ msgid "Controls whether ElevenLabs expands abbreviations, numbers, and symbols into spoken words (e.g. \"N.º\" → \"Número\"). \"Auto\" lets ElevenLabs decide per request; \"On\" always normalizes; \"Off\" reads the text as written, which is safer for codes, IDs, or text that shouldn't be expanded. Only affects languages routed to ElevenLabs."
+#~ msgstr "Détermine si ElevenLabs développe les abréviations, les nombres et les symboles en mots prononcés (par ex. « N.º » → « Número »). « Auto » laisse ElevenLabs décider à chaque requête ; « Activé » normalise toujours ; « Désactivé » lit le texte tel qu'il est écrit, ce qui est plus sûr pour les codes, identifiants ou textes qui ne doivent pas être développés. N'affecte que les langues acheminées vers ElevenLabs."
+
 msgid "Conversion of light into chemical energy."
 msgstr "Conversion de la lumière en énergie chimique."
 
@@ -3079,6 +3085,9 @@ msgstr "Clé API ElevenLabs"
 
 msgid "ElevenLabs Voice"
 msgstr "Voix ElevenLabs"
+
+msgid "ElevenLabs voice continuity"
+msgstr "Continuité vocale ElevenLabs"
 
 msgid "emoji"
 msgstr "emoji"
@@ -7520,6 +7529,12 @@ msgstr "Sélectionner \\\"Aucun\\\" laisse le LLM choisir son propre style pour 
 msgid "Self-contained ADT web app"
 msgstr "Application web ADT autonome"
 
+msgid "Send the neighboring sentence's text alongside each request so ElevenLabs can carry intonation across sentence boundaries. Changing this regenerates ElevenLabs audio on the next run."
+msgstr "Envoie le texte de la phrase voisine avec chaque requête afin qu'ElevenLabs puisse conserver l'intonation d'une phrase à l'autre. La modification de ce paramètre régénère l'audio ElevenLabs lors de la prochaine exécution."
+
+#~ msgid "Send the neighboring sentence's text alongside each request so ElevenLabs can carry intonation across sentence boundaries. Only affects languages routed to ElevenLabs. Changing this regenerates ElevenLabs audio on the next run."
+#~ msgstr "Envoie le texte de la phrase voisine avec chaque requête afin qu'ElevenLabs puisse conserver l'intonation d'une phrase à l'autre. N'affecte que les langues acheminées vers ElevenLabs. La modification de ce paramètre régénère l'audio ElevenLabs lors de la prochaine exécution."
+
 msgid "Send this project archive back to the coordinator to merge into the source book."
 msgstr "Renvoyez cette archive de projet au coordinateur pour la fusionner dans le livre source."
 
@@ -8221,6 +8236,9 @@ msgstr "Couleur du texte"
 #. placeholder {0}: section.textColor
 msgid "Text color: {0}"
 msgstr "Texte couleur: {0}"
+
+msgid "Text Normalization"
+msgstr "Normalisation du texte"
 
 msgid "Text Only"
 msgstr "Texte uniquement"
@@ -9072,6 +9090,9 @@ msgstr "Téléchargez le ZIP ou glissez-déposez"
 
 msgid "Uploading..."
 msgstr "Téléversement..."
+
+msgid "Use adjacent text as context"
+msgstr "Utiliser le texte adjacent comme contexte"
 
 msgid "Use an LLM to crop away stray text, artifacts, and excessive whitespace from image edges."
 msgstr "Utilisez un LLM pour recadrer le texte parasite, les artefacts et les espaces blancs excessifs des bords d'image."

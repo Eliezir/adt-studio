@@ -2257,6 +2257,12 @@ msgstr "Kontrolloni cilat kontrolle axe ekzekutohen gjatë paketimit për këtë
 msgid "Controls how page content is grouped during the sectioning step."
 msgstr "Kontrollon si grupohet përmbajtja e faqes gjatë hapit të seksionimit."
 
+msgid "Controls whether ElevenLabs expands abbreviations, numbers, and symbols into spoken words (e.g. \"N.º\" → \"Número\"). \"Auto\" lets ElevenLabs decide per request; \"On\" always normalizes; \"Off\" reads the text as written, which is safer for codes, IDs, or text that shouldn't be expanded."
+msgstr "Kontrollon nëse ElevenLabs zgjeron shkurtimet, numrat dhe simbolet në fjalë të folura (p.sh. \"N.º\" → \"Número\"). \"Auto\" e lë ElevenLabs të vendosë për çdo kërkesë; \"Aktivizuar\" gjithmonë normalizon; \"Çaktivizuar\" e lexon tekstin ashtu siç është shkruar, gjë që është më e sigurt për kode, ID-të ose tekst që nuk duhet zgjeruar."
+
+#~ msgid "Controls whether ElevenLabs expands abbreviations, numbers, and symbols into spoken words (e.g. \"N.º\" → \"Número\"). \"Auto\" lets ElevenLabs decide per request; \"On\" always normalizes; \"Off\" reads the text as written, which is safer for codes, IDs, or text that shouldn't be expanded. Only affects languages routed to ElevenLabs."
+#~ msgstr "Kontrollon nëse ElevenLabs zgjeron shkurtimet, numrat dhe simbolet në fjalë të folura (p.sh. \"N.º\" → \"Número\"). \"Auto\" e lë ElevenLabs të vendosë për çdo kërkesë; \"Aktivizuar\" gjithmonë normalizon; \"Çaktivizuar\" e lexon tekstin ashtu siç është shkruar, gjë që është më e sigurt për kode, ID-të ose tekst që nuk duhet zgjeruar. Prek vetëm gjuhët e drejtuara te ElevenLabs."
+
 msgid "Conversion of light into chemical energy."
 msgstr "Shndërrimi i dritës në energji kimike."
 
@@ -3078,6 +3084,9 @@ msgstr "Çelësi API i ElevenLabs"
 
 msgid "ElevenLabs Voice"
 msgstr "Zëri i ElevenLabs"
+
+msgid "ElevenLabs voice continuity"
+msgstr "Vazhdimësia e zërit të ElevenLabs"
 
 msgid "emoji"
 msgstr "emoji"
@@ -7519,6 +7528,12 @@ msgstr "Zgjedhja e \"Asnjë\" i lejon LLM-it të zgjedhë stilin e tij për çdo
 msgid "Self-contained ADT web app"
 msgstr "Aplikacion web ADT i pavarur"
 
+msgid "Send the neighboring sentence's text alongside each request so ElevenLabs can carry intonation across sentence boundaries. Changing this regenerates ElevenLabs audio on the next run."
+msgstr "Dërgon tekstin e fjalisë fqinje së bashku me çdo kërkesë në mënyrë që ElevenLabs të mund të ruajë intonacionin nëpër kufijtë e fjalive. Ndryshimi i kësaj rikrijon audion e ElevenLabs në ekzekutimin e ardhshëm."
+
+#~ msgid "Send the neighboring sentence's text alongside each request so ElevenLabs can carry intonation across sentence boundaries. Only affects languages routed to ElevenLabs. Changing this regenerates ElevenLabs audio on the next run."
+#~ msgstr "Dërgon tekstin e fjalisë fqinje së bashku me çdo kërkesë në mënyrë që ElevenLabs të mund të ruajë intonacionin nëpër kufijtë e fjalive. Prek vetëm gjuhët e drejtuara te ElevenLabs. Ndryshimi i kësaj rikrijon audion e ElevenLabs në ekzekutimin e ardhshëm."
+
 msgid "Send this project archive back to the coordinator to merge into the source book."
 msgstr "Dërgojeni këtë arkiv projekti te koordinatori për ta bashkuar në librin burim."
 
@@ -8220,6 +8235,9 @@ msgstr "Ngjyra e tekstit"
 #. placeholder {0}: section.textColor
 msgid "Text color: {0}"
 msgstr "Ngjyra e tekstit: {0}"
+
+msgid "Text Normalization"
+msgstr "Normalizimi i tekstit"
 
 msgid "Text Only"
 msgstr "Vetëm Tekst"
@@ -9071,6 +9089,9 @@ msgstr "Ngarko ZIP ose tërhiq dhe lësho"
 
 msgid "Uploading..."
 msgstr "Po ngarkohet..."
+
+msgid "Use adjacent text as context"
+msgstr "Përdor tekstin ngjitur si kontekst"
 
 msgid "Use an LLM to crop away stray text, artifacts, and excessive whitespace from image edges."
 msgstr "Përdor një LLM për të prerë tekstin e rastësishëm, artefaktet dhe hapësirat e tepërta nga skajet e imazhit."

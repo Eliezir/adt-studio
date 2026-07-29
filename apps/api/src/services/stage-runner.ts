@@ -603,6 +603,24 @@ function isBatchableSpeechEntry(textId: string): boolean {
   return !textId.endsWith("_easy_read") && batchPageKeyOf(textId) !== null
 }
 
+/**
+ * Nearest non-excluded neighbor's text in reading order, used to build
+ * ElevenLabs' previous_text/next_text (elevenlabs_use_context). Skips
+ * TTS-excluded entries so context still flows across them instead of citing
+ * text that has no audio of its own.
+ */
+function findAdjacentSpeechText(
+  entries: TextCatalogEntry[],
+  index: number,
+  direction: 1 | -1,
+  speechConfig: Parameters<typeof isTtsExcluded>[1],
+): string | undefined {
+  for (let i = index + direction; i >= 0 && i < entries.length; i += direction) {
+    if (!isTtsExcluded(entries[i].id, speechConfig)) return entries[i].text
+  }
+  return undefined
+}
+
 function canReuseSpeechEntry(
   entry: SpeechFileEntry | undefined,
   options: {
@@ -617,6 +635,9 @@ function canReuseSpeechEntry(
     format: string
     geminiTemperature?: number
     geminiSeed?: number
+    elevenLabsPreviousText?: string
+    elevenLabsNextText?: string
+    elevenLabsApplyTextNormalization?: "auto" | "on" | "off"
   },
 ): entry is SpeechFileEntry {
   if (!entry) return false
@@ -642,6 +663,9 @@ function canReuseSpeechEntry(
     provider: options.provider,
     geminiTemperature: options.geminiTemperature,
     geminiSeed: options.geminiSeed,
+    elevenLabsPreviousText: options.elevenLabsPreviousText,
+    elevenLabsNextText: options.elevenLabsNextText,
+    elevenLabsApplyTextNormalization: options.elevenLabsApplyTextNormalization,
   })
   const cachePath = resolveSpeechCachePath(options.cacheDir, cacheKey, options.format.toLowerCase())
   if (!cachePath || !fs.existsSync(cachePath)) return false
@@ -2649,6 +2673,11 @@ async function runSpeechStep(
       textId: string
       text: string
       language: string
+      /** Adjacent catalog entries' text (ElevenLabs' previous_text/next_text),
+       *  only populated when elevenlabs_use_context is enabled and the entry
+       *  is routed to ElevenLabs. */
+      previousText?: string
+      nextText?: string
     }
     const ttsWorkItems: TTSWorkItem[] = []
     // Page-batched TTS (experimental, Gemini only): a page's entries are
@@ -2707,7 +2736,8 @@ async function runSpeechStep(
       }
 
       const languageTextMap = new Map<string, string>()
-      for (const entry of entries) {
+      for (let entryIndex = 0; entryIndex < entries.length; entryIndex++) {
+        const entry = entries[entryIndex]
         // Excluded entries get no audio at all — not generated, not reused
         // into the new TTS output version.
         if (isTtsExcluded(entry.id, config.speech)) continue
@@ -2747,6 +2777,17 @@ async function runSpeechStep(
           provider === "openai" || provider === "gemini"
             ? resolveInstructions(lang, instructionsMap)
             : ""
+        // ElevenLabs-only: adjacent-entry context, opt-in via
+        // elevenlabs_use_context. Must resolve identically here and below so
+        // the cache key stays in sync with canReuseSpeechEntry.
+        const previousText =
+          provider === "elevenlabs" && config.speech?.elevenlabs_use_context
+            ? findAdjacentSpeechText(entries, entryIndex, -1, config.speech)
+            : undefined
+        const nextText =
+          provider === "elevenlabs" && config.speech?.elevenlabs_use_context
+            ? findAdjacentSpeechText(entries, entryIndex, 1, config.speech)
+            : undefined
         const existingEntry = existingSpeechEntries.get(entry.id)
 
         if (
@@ -2762,6 +2803,9 @@ async function runSpeechStep(
             format: outputFormat,
             geminiTemperature: config.speech?.temperature,
             geminiSeed: config.speech?.seed,
+            elevenLabsPreviousText: previousText,
+            elevenLabsNextText: nextText,
+            elevenLabsApplyTextNormalization: config.speech?.elevenlabs_apply_text_normalization,
           })
         ) {
           ttsResultsByLang.get(lang)?.push(existingEntry)
@@ -2769,7 +2813,13 @@ async function runSpeechStep(
           continue
         }
 
-        ttsWorkItems.push({ textId: entry.id, text: entry.text, language: lang })
+        ttsWorkItems.push({
+          textId: entry.id,
+          text: entry.text,
+          language: lang,
+          previousText,
+          nextText,
+        })
       }
       textByLanguage.set(lang, languageTextMap)
     }
@@ -2965,6 +3015,9 @@ async function runSpeechStep(
                 provider,
                 geminiTemperature: config.speech?.temperature,
                 geminiSeed: config.speech?.seed,
+                elevenLabsPreviousText: item.previousText,
+                elevenLabsNextText: item.nextText,
+                elevenLabsApplyTextNormalization: config.speech?.elevenlabs_apply_text_normalization,
                 signal: options.signal,
               })
               // A real (non-cached) success means the current rate held —

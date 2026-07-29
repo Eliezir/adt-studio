@@ -417,6 +417,59 @@ describe("createElevenLabsTTSSynthesizer", () => {
     })
   })
 
+  it("sends previous_text, next_text, and apply_text_normalization when provided", async () => {
+    const mp3Bytes = new Uint8Array([1, 2, 3, 4])
+    fetchMock.mockResolvedValue(
+      new Response(mp3Bytes, {
+        status: 200,
+        headers: { "Content-Type": "audio/mpeg" },
+      })
+    )
+
+    const synth = createElevenLabsTTSSynthesizer({ apiKey: "el-test" })
+    await synth.synthesize({
+      model: "eleven_multilingual_v2",
+      voice: "21m00Tcm4TlvDq8ikWAM",
+      input: "Hello world",
+      responseFormat: "mp3",
+      elevenLabsPreviousText: "Previous sentence.",
+      elevenLabsNextText: "Next sentence.",
+      elevenLabsApplyTextNormalization: "on",
+    })
+
+    const [, init] = fetchMock.mock.calls[0]
+    expect(JSON.parse(String(init?.body))).toMatchObject({
+      text: "Hello world",
+      previous_text: "Previous sentence.",
+      next_text: "Next sentence.",
+      apply_text_normalization: "on",
+    })
+  })
+
+  it("omits previous_text, next_text, and apply_text_normalization when not provided", async () => {
+    const mp3Bytes = new Uint8Array([1, 2, 3, 4])
+    fetchMock.mockResolvedValue(
+      new Response(mp3Bytes, {
+        status: 200,
+        headers: { "Content-Type": "audio/mpeg" },
+      })
+    )
+
+    const synth = createElevenLabsTTSSynthesizer({ apiKey: "el-test" })
+    await synth.synthesize({
+      model: "eleven_multilingual_v2",
+      voice: "21m00Tcm4TlvDq8ikWAM",
+      input: "Hello world",
+      responseFormat: "mp3",
+    })
+
+    const [, init] = fetchMock.mock.calls[0]
+    const body = JSON.parse(String(init?.body))
+    expect(body.previous_text).toBeUndefined()
+    expect(body.next_text).toBeUndefined()
+    expect(body.apply_text_normalization).toBeUndefined()
+  })
+
   it("requests raw PCM and wraps it as wav when responseFormat is wav", async () => {
     const pcmBytes = new Uint8Array([5, 6, 7, 8])
     fetchMock.mockResolvedValue(

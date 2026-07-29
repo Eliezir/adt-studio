@@ -171,6 +171,8 @@ export function LanguageSettings({ bookLabel, tab = "general", stageSlug = "tran
   const [sampleRate, setSampleRate] = useState("")
   const [geminiTemperature, setGeminiTemperature] = useState("")
   const [geminiSeed, setGeminiSeed] = useState("")
+  const [elevenLabsUseContext, setElevenLabsUseContext] = useState(false)
+  const [elevenLabsApplyTextNormalization, setElevenLabsApplyTextNormalization] = useState("")
   const [batchByPage, setBatchByPage] = useState(false)
   const [wordHighlighting, setWordHighlighting] = useState(false)
   const [easyReadTts, setEasyReadTts] = useState(false)
@@ -268,6 +270,12 @@ export function LanguageSettings({ bookLabel, tab = "general", stageSlug = "tran
     )
     setGeminiSeed(typeof speech?.seed === "number" ? String(speech.seed) : "")
     setBatchByPage(speech?.batch_by_page === true)
+    setElevenLabsUseContext(speech?.elevenlabs_use_context === true)
+    setElevenLabsApplyTextNormalization(
+      typeof speech?.elevenlabs_apply_text_normalization === "string"
+        ? speech.elevenlabs_apply_text_normalization
+        : ""
+    )
     if (speech) {
       const s = speech
       if (s.model) setSpeechModel(String(s.model))
@@ -388,6 +396,11 @@ export function LanguageSettings({ bookLabel, tab = "general", stageSlug = "tran
         batch_by_page: batchByPage || undefined,
         word_highlighting: wordHighlighting,
         excluded_categories: Array.from(excludedCategories),
+        elevenlabs_use_context: elevenLabsUseContext || undefined,
+        elevenlabs_apply_text_normalization:
+          elevenLabsApplyTextNormalization === "auto" || elevenLabsApplyTextNormalization === "on" || elevenLabsApplyTextNormalization === "off"
+            ? elevenLabsApplyTextNormalization
+            : undefined,
       }
     }
     if (shouldWrite("translation_evaluation")) {
@@ -982,6 +995,8 @@ export function LanguageSettings({ bookLabel, tab = "general", stageSlug = "tran
           sampleRate={sampleRate} setSampleRate={setSampleRate}
           geminiTemperature={geminiTemperature} setGeminiTemperature={setGeminiTemperature}
           geminiSeed={geminiSeed} setGeminiSeed={setGeminiSeed}
+          elevenLabsUseContext={elevenLabsUseContext} setElevenLabsUseContext={setElevenLabsUseContext}
+          elevenLabsApplyTextNormalization={elevenLabsApplyTextNormalization} setElevenLabsApplyTextNormalization={setElevenLabsApplyTextNormalization}
           batchByPage={batchByPage} setBatchByPage={setBatchByPage}
           wordHighlighting={wordHighlighting} setWordHighlighting={setWordHighlighting}
           markDirty={markDirty}
@@ -1231,6 +1246,8 @@ function SpeechLanguageCards({
   sampleRate, setSampleRate,
   geminiTemperature, setGeminiTemperature,
   geminiSeed, setGeminiSeed,
+  elevenLabsUseContext, setElevenLabsUseContext,
+  elevenLabsApplyTextNormalization, setElevenLabsApplyTextNormalization,
   batchByPage, setBatchByPage,
   wordHighlighting, setWordHighlighting,
   markDirty,
@@ -1253,6 +1270,8 @@ function SpeechLanguageCards({
   sampleRate: string; setSampleRate: (v: string) => void
   geminiTemperature: string; setGeminiTemperature: (v: string) => void
   geminiSeed: string; setGeminiSeed: (v: string) => void
+  elevenLabsUseContext: boolean; setElevenLabsUseContext: (v: boolean) => void
+  elevenLabsApplyTextNormalization: string; setElevenLabsApplyTextNormalization: (v: string) => void
   batchByPage: boolean; setBatchByPage: (v: boolean) => void
   wordHighlighting: boolean; setWordHighlighting: (v: boolean) => void
   markDirty: (field: string) => void
@@ -1447,18 +1466,18 @@ function SpeechLanguageCards({
           <p className="text-[11px] text-muted-foreground">
             {t`Gemini generates each sentence in its own request, so its tone can drift between sentences. Set a lower temperature (e.g. 0.4) to reduce that variation and a fixed seed to make delivery reproducible; leave both empty to disable them and use Gemini's own defaults. Only affects languages routed to Gemini — OpenAI and Azure ignore these. Changing either value regenerates Gemini audio on the next run.`}
           </p>
-          <div className="flex items-start gap-3 pt-2">
-            <Switch
-              id="batch-by-page"
-              checked={batchByPage}
-              onCheckedChange={(v) => { setBatchByPage(v); markDirty("speech") }}
-            />
-            <div className="space-y-1 flex-1">
-              <Label htmlFor="batch-by-page" className="text-xs">{t`Batch a whole page per request (experimental)`}</Label>
-              <p className="text-[11px] text-muted-foreground">
-                {t`Synthesize each page's text in a single Gemini request so tone flows naturally across sentences, then split the audio back into per-sentence clips. Needs an OpenAI key (used to align the split). Gemini-routed languages only; Chinese and Thai remain per-entry.`}
-              </p>
-            </div>
+        </div>
+        <div className="flex items-start gap-3 pt-2">
+          <Switch
+            id="batch-by-page"
+            checked={batchByPage}
+            onCheckedChange={(v) => { setBatchByPage(v); markDirty("speech") }}
+          />
+          <div className="space-y-1 flex-1">
+            <Label htmlFor="batch-by-page" className="text-xs">{t`Batch a whole page per request (experimental)`}</Label>
+            <p className="text-[11px] text-muted-foreground">
+              {t`Synthesize each page's text in a single Gemini request so tone flows naturally across sentences, then split the audio back into per-sentence clips. Needs an OpenAI key (used to align the split). Gemini-routed languages only; Chinese and Thai remain per-entry.`}
+            </p>
           </div>
         </div>
         <div className="flex items-start gap-3 pt-2">
@@ -1545,6 +1564,46 @@ function SpeechLanguageCards({
                   <p className="text-xs text-muted-foreground bg-muted/30 rounded-md px-3 py-2 whitespace-pre-wrap">
                     {instruction}
                   </p>
+                </div>
+              )}
+
+              {/* ElevenLabs voice continuity & normalization — only shown
+                  when this language is routed to ElevenLabs; other
+                  providers ignore these settings entirely. */}
+              {provider === "elevenlabs" && (
+                <div className="space-y-2 pt-1 border-t">
+                  <Label className="text-[10px] font-medium text-muted-foreground pt-2 block">
+                    {t`ElevenLabs voice continuity`}
+                  </Label>
+                  <div className="flex items-start gap-3">
+                    <Switch
+                      id={`elevenlabs-use-context-${lang}`}
+                      checked={elevenLabsUseContext}
+                      onCheckedChange={(v) => { setElevenLabsUseContext(v); markDirty("speech") }}
+                    />
+                    <div className="space-y-1 flex-1">
+                      <Label htmlFor={`elevenlabs-use-context-${lang}`} className="text-xs">{t`Use adjacent text as context`}</Label>
+                      <p className="text-[11px] text-muted-foreground">
+                        {t`Send the neighboring sentence's text alongside each request so ElevenLabs can carry intonation across sentence boundaries. Changing this regenerates ElevenLabs audio on the next run.`}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="space-y-1.5 pt-1">
+                    <Label className="text-[10px] text-muted-foreground">{t`Text Normalization`}</Label>
+                    <select
+                      value={elevenLabsApplyTextNormalization}
+                      onChange={(e) => { setElevenLabsApplyTextNormalization(e.target.value); markDirty("speech") }}
+                      className="flex h-8 w-40 rounded-md border border-input bg-background px-3 py-1 text-xs shadow-sm"
+                    >
+                      <option value="">{t`Default`}</option>
+                      <option value="auto">{t`Auto`}</option>
+                      <option value="on">{t`On`}</option>
+                      <option value="off">{t`Off`}</option>
+                    </select>
+                    <p className="text-[11px] text-muted-foreground">
+                      {t`Controls whether ElevenLabs expands abbreviations, numbers, and symbols into spoken words (e.g. "N.º" → "Número"). "Auto" lets ElevenLabs decide per request; "On" always normalizes; "Off" reads the text as written, which is safer for codes, IDs, or text that shouldn't be expanded.`}
+                    </p>
+                  </div>
                 </div>
               )}
             </div>

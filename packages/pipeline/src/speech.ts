@@ -264,6 +264,13 @@ export function computeSpeechCacheKey(data: {
    *  isn't sent to Gemini, so it must not change the key. */
   geminiTemperature?: number
   geminiSeed?: number
+  /** ElevenLabs continuity + normalization params for this item (from
+   *  SpeechConfig). Only folded into the key for the elevenlabs provider —
+   *  changing adjacent text or the normalization mode regenerates audio, but
+   *  these must not affect the key for other providers. */
+  elevenLabsPreviousText?: string
+  elevenLabsNextText?: string
+  elevenLabsApplyTextNormalization?: "auto" | "on" | "off"
 }): string {
   // Gemini output also depends on any sampling params it's sent (temperature +
   // seed), so fold in whichever are set — tuning them regenerates Gemini audio,
@@ -272,7 +279,14 @@ export function computeSpeechCacheKey(data: {
   // set hashes identically to a request that sends no sampling params. Both
   // callers (generateSpeechFile and the stage-runner reuse check) pass
   // `provider`, so they stay in sync automatically.
-  const { geminiTemperature, geminiSeed, ...base } = data
+  const {
+    geminiTemperature,
+    geminiSeed,
+    elevenLabsPreviousText,
+    elevenLabsNextText,
+    elevenLabsApplyTextNormalization,
+    ...base
+  } = data
   const gemini =
     base.provider === "gemini"
       ? {
@@ -280,7 +294,19 @@ export function computeSpeechCacheKey(data: {
           ...(geminiSeed !== undefined ? { geminiSeed } : {}),
         }
       : {}
-  const json = JSON.stringify({ ...base, ...gemini })
+  // Same gating for ElevenLabs: adjacent-text context and the normalization
+  // mode are only sent (and thus only affect the audio) for that provider.
+  const elevenlabs =
+    base.provider === "elevenlabs"
+      ? {
+          ...(elevenLabsPreviousText ? { elevenLabsPreviousText } : {}),
+          ...(elevenLabsNextText ? { elevenLabsNextText } : {}),
+          ...(elevenLabsApplyTextNormalization
+            ? { elevenLabsApplyTextNormalization }
+            : {}),
+        }
+      : {}
+  const json = JSON.stringify({ ...base, ...gemini, ...elevenlabs })
   return crypto.createHash("sha256").update(json).digest("hex")
 }
 
@@ -328,6 +354,15 @@ export interface GenerateSpeechFileOptions {
    *  Undefined → not sent; Gemini uses its own defaults (sampling disabled). */
   geminiTemperature?: number
   geminiSeed?: number
+  /** ElevenLabs continuity + normalization params (SpeechConfig
+   *  elevenlabs_use_context/elevenlabs_apply_text_normalization). Passed to
+   *  the synthesizer and folded into the cache key for the elevenlabs
+   *  provider only. `previousText`/`nextText` are the caller-resolved
+   *  adjacent catalog entries' text (only set when elevenlabs_use_context is
+   *  enabled); undefined → not sent, ElevenLabs uses its own defaults. */
+  elevenLabsPreviousText?: string
+  elevenLabsNextText?: string
+  elevenLabsApplyTextNormalization?: "auto" | "on" | "off"
   /** Run cancellation — aborts the rate-limiter wait and the TTS request. */
   signal?: AbortSignal
 }
@@ -355,6 +390,9 @@ export async function generateSpeechFile(
     provider,
     geminiTemperature,
     geminiSeed,
+    elevenLabsPreviousText,
+    elevenLabsNextText,
+    elevenLabsApplyTextNormalization,
     signal,
   } = options
 
@@ -382,6 +420,9 @@ export async function generateSpeechFile(
     provider,
     geminiTemperature,
     geminiSeed,
+    elevenLabsPreviousText,
+    elevenLabsNextText,
+    elevenLabsApplyTextNormalization,
   })
 
   const fileName = `${safeTextId}.${safeFormat}`
@@ -420,6 +461,9 @@ export async function generateSpeechFile(
     instructions: instructions || undefined,
     temperature: geminiTemperature,
     seed: geminiSeed,
+    elevenLabsPreviousText,
+    elevenLabsNextText,
+    elevenLabsApplyTextNormalization,
     signal,
   })
 

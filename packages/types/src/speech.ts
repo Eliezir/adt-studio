@@ -48,6 +48,20 @@ export const SpeechConfig = z.object({
   temperature: z.number().min(0).max(2).optional(),
   seed: z.number().int().optional(),
   /**
+   * ElevenLabs-only TTS tuning. Ignored by OpenAI/Azure/Gemini (their APIs
+   * have no equivalent parameters). `elevenlabs_use_context` sends the
+   * adjacent catalog entry's text as ElevenLabs' `previous_text`/`next_text`
+   * so tone flows across entry boundaries instead of each entry sounding like
+   * an isolated, stateless request. `elevenlabs_apply_text_normalization`
+   * controls whether ElevenLabs expands things like numbers/dates/
+   * abbreviations before synthesis ("auto" lets ElevenLabs decide, "on"
+   * forces it — slower but safer for odd formatting, "off" disables it —
+   * required for some languages/models). When unset, neither is sent and
+   * ElevenLabs uses its own defaults.
+   */
+  elevenlabs_use_context: z.boolean().optional(),
+  elevenlabs_apply_text_normalization: z.enum(["auto", "on", "off"]).optional(),
+  /**
    * Experimental (Gemini only): synthesize a whole page's text in ONE request
    * so tone stays consistent across sentences, then slice the page audio back
    * into per-entry files using a Whisper alignment pass. Requires an OpenAI key

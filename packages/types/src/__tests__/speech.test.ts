@@ -77,6 +77,32 @@ describe("SpeechConfig exclusions", () => {
   })
 })
 
+describe("SpeechConfig ElevenLabs options", () => {
+  it("accepts elevenlabs_use_context and elevenlabs_apply_text_normalization", () => {
+    const result = SpeechConfig.safeParse({
+      elevenlabs_use_context: true,
+      elevenlabs_apply_text_normalization: "on",
+    })
+    expect(result.success).toBe(true)
+  })
+
+  it("defaults both fields to unset when omitted", () => {
+    const result = SpeechConfig.safeParse({})
+    expect(result.success).toBe(true)
+    if (result.success) {
+      expect(result.data.elevenlabs_use_context).toBeUndefined()
+      expect(result.data.elevenlabs_apply_text_normalization).toBeUndefined()
+    }
+  })
+
+  it("rejects an invalid elevenlabs_apply_text_normalization value", () => {
+    const result = SpeechConfig.safeParse({
+      elevenlabs_apply_text_normalization: "always",
+    })
+    expect(result.success).toBe(false)
+  })
+})
+
 describe("TTSOutput", () => {
   const entry = {
     textId: "pg001_t001",

@@ -12,6 +12,17 @@ export interface SynthesizeSpeechOptions {
    */
   temperature?: number
   seed?: number
+  /**
+   * ElevenLabs-only continuity + normalization controls. Ignored by the
+   * OpenAI/Azure/Gemini synthesizers. Each catalog entry is synthesized in
+   * its own request, so without adjacent-text context ElevenLabs has no
+   * knowledge of what came before/after and tone can reset at entry
+   * boundaries. `elevenLabsApplyTextNormalization` mirrors the Gemini
+   * sampling opt-in pattern: omitted → ElevenLabs uses its own default.
+   */
+  elevenLabsPreviousText?: string
+  elevenLabsNextText?: string
+  elevenLabsApplyTextNormalization?: "auto" | "on" | "off"
   /** Aborts the in-flight HTTP request (run cancellation). */
   signal?: AbortSignal
 }
@@ -530,6 +541,15 @@ export function createElevenLabsTTSSynthesizer(
         body: JSON.stringify({
           text: options.input,
           model_id: options.model,
+          ...(options.elevenLabsPreviousText
+            ? { previous_text: options.elevenLabsPreviousText }
+            : {}),
+          ...(options.elevenLabsNextText
+            ? { next_text: options.elevenLabsNextText }
+            : {}),
+          ...(options.elevenLabsApplyTextNormalization
+            ? { apply_text_normalization: options.elevenLabsApplyTextNormalization }
+            : {}),
         }),
         signal: options.signal,
       })
