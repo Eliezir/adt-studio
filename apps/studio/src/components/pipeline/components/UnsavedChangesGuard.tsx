@@ -67,11 +67,8 @@ export function UnsavedChangesGuard() {
 
   const isSettings = dirtyEntries.length > 0
   const primaryStage = dirtyEntries[0]?.stage ?? floatingDirtyEntries.find((e) => e.stage)?.stage
-  const stageDef = primaryStage ? STAGE_BY_SLUG.get(primaryStage) : undefined
-  const HeaderIcon = stageDef?.icon ?? TriangleAlert
-  const headerColor = stageDef?.color ?? "bg-gray-700"
 
-  const changeChips = dirtyEntries.flatMap((entry) => {
+  const liveChangeChips = dirtyEntries.flatMap((entry) => {
     const def = STAGE_BY_SLUG.get(entry.stage)
     return entry.tabs.map((tabKey) => ({
       key: `${entry.stage}:${tabKey}`,
@@ -80,9 +77,45 @@ export function UnsavedChangesGuard() {
     }))
   })
 
-  const editorLabels = isSettings
+  const liveEditorLabels = isSettings
     ? []
     : floatingDirtyEntries.filter((e) => e.label != null)
+
+  // The dialog outlives its dirty entries: each surface clears its entry as soon
+  // as it persists, but the navigation only resumes once every save resolves. So
+  // while the dialog is up we keep rendering the last populated snapshot —
+  // otherwise it visibly degrades mid-save into a generic, button-less
+  // "Heads up" with no pending-edit chips.
+  const snapshot = useRef({
+    isSettings,
+    primaryStage,
+    changeChips: liveChangeChips,
+    editorLabels: liveEditorLabels,
+    canSave,
+    willRerun,
+  })
+  if (hasUnsaved) {
+    snapshot.current = {
+      isSettings,
+      primaryStage,
+      changeChips: liveChangeChips,
+      editorLabels: liveEditorLabels,
+      canSave,
+      willRerun,
+    }
+  }
+  const shown = snapshot.current
+
+  const stageDef = shown.primaryStage ? STAGE_BY_SLUG.get(shown.primaryStage) : undefined
+  const HeaderIcon = stageDef?.icon ?? TriangleAlert
+  const headerColor = stageDef?.color ?? "bg-gray-700"
+  const {
+    isSettings: showSettings,
+    changeChips,
+    editorLabels,
+    canSave: showCanSave,
+    willRerun: showWillRerun,
+  } = shown
 
   const handleSaveAndContinue = async () => {
     setSaving(true)
@@ -106,7 +139,7 @@ export function UnsavedChangesGuard() {
           <div className="min-w-0">
             <p className="truncate text-xs font-semibold uppercase tracking-wide text-white/75">
               {stageDef
-                ? isSettings
+                ? showSettings
                   ? `${getStageLabelI18n(stageDef.slug)} · ${t`Settings`}`
                   : getStageLabelI18n(stageDef.slug)
                 : t`Heads up`}
@@ -119,7 +152,7 @@ export function UnsavedChangesGuard() {
 
         <div className="space-y-4 px-6 py-5">
           <AlertDialogDescription className="text-sm leading-relaxed text-muted-foreground">
-            {willRerun ? (
+            {showWillRerun ? (
               <Trans>
                 These edits haven't been applied yet. Leave and they'll be lost — or save and
                 re-run to apply them. The run continues in the background while you keep working.
@@ -166,7 +199,7 @@ export function UnsavedChangesGuard() {
             <AlertDialogCancel disabled={saving} className="mt-0">
               <Trans>Stay</Trans>
             </AlertDialogCancel>
-            {canSave && (
+            {showCanSave && (
               <Button
                 onClick={handleSaveAndContinue}
                 disabled={saving}
@@ -174,10 +207,10 @@ export function UnsavedChangesGuard() {
               >
                 {saving ? (
                   <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
-                ) : willRerun ? (
+                ) : showWillRerun ? (
                   <Play className="mr-1.5 h-3.5 w-3.5" />
                 ) : null}
-                {willRerun ? t`Save & Re-run` : t`Save & leave`}
+                {showWillRerun ? t`Save & Re-run` : t`Save & leave`}
               </Button>
             )}
           </div>

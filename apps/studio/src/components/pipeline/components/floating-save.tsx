@@ -48,6 +48,13 @@ export interface FloatingSaveEntry {
   stage?: StageName
   onSave?: () => void
   onSaveAndRerun?: () => void
+  /**
+   * Apply the pending changes without navigating. Awaited by
+   * UnsavedChangesGuard's "Save & leave" — MUST reject when the save fails so
+   * the guard keeps the user on the page instead of discarding their edits.
+   * Settings surfaces additionally queue a re-run here, which is why the
+   * dialog's re-run wording keys off `onSaveAndRerun`, not this.
+   */
   onSaveStay?: () => void | Promise<void>
   onReset?: () => void
   onDiscard?: () => void
@@ -254,7 +261,7 @@ export function useFloatingSaveLeaveAction(): FloatingSaveLeaveAction {
   )
   const entries = store ? store.active() : []
   const canSave = entries.length > 0 && entries.every((e) => e.onSaveStay || e.onSave)
-  const willRerun = entries.some((e) => e.onSaveStay)
+  const willRerun = entries.some((e) => e.onSaveAndRerun)
   const saveAndStay = async () => {
     if (!store) return
     await Promise.all(
