@@ -21,6 +21,8 @@ import {
   splitNodesBefore,
   IMAGE_SET_CHANGE_CLEAR_NODE_TYPES,
   IMAGE_SET_CHANGE_CLEAR_STEPS,
+  PIPELINE,
+  getStageClearOrder,
 } from "@adt/types"
 import type { ContentNodeData, ExtractionWarning } from "@adt/types"
 import { classifyExtractionWarning, flattenVisibleSectioningText } from "../services/extraction-warning.js"
@@ -429,6 +431,26 @@ function clearCaptionData(storage: Storage): void {
 }
 
 /**
+ * Mark the storyboard and everything after it as needing a re-run, without
+ * deleting any node data.
+ *
+ * A sectioning edit invalidates the storyboard's rendered HTML, and every later
+ * output (text catalog, translations, audio, the packaged book) is re-derived
+ * from that HTML — so leaving those stages marked "done" would silently ship the
+ * old text. We clear only `step_runs`: the renderings and their version history
+ * survive (so manual storyboard edits elsewhere in the book are not destroyed)
+ * and are overwritten only when the user actually re-runs.
+ */
+function markStoryboardChainStale(storage: Storage): void {
+  const stages = new Set<string>(getStageClearOrder("storyboard"))
+  storage.clearStepRuns(
+    PIPELINE.filter((stage) => stages.has(stage.name)).flatMap((stage) =>
+      stage.steps.map((step) => step.name)
+    )
+  )
+}
+
+/**
  * Save storyboard (web-rendering) node data and clear stale downstream data.
  * Use for all user-initiated storyboard saves (NOT pipeline stage runs).
  */
@@ -440,6 +462,12 @@ function saveStoryboardNode(
 ): number {
   const version = storage.putNodeData(node, itemId, data)
   clearCaptionData(storage)
+  // A sectioning change invalidates the storyboard's rendered HTML — and the
+  // structural ops go further: a split drops both halves' HTML and a cross-page
+  // merge empties both pages, so those sections would silently vanish from the
+  // packaged book while the stage still read "done". A `web-rendering` save is
+  // itself the storyboard's output, so it must NOT mark storyboard stale.
+  if (node === "page-sectioning") markStoryboardChainStale(storage)
   return version
 }
 
@@ -1187,9 +1215,8 @@ export function createPageRoutes(
         throw new HTTPException(404, { message: `Page not found: ${pageId}` })
       }
 
-      const version = storage.putNodeData("page-sectioning", pageId, parsed.data)
-      // Sectioning change cascades to everything downstream
-      clearCaptionData(storage)
+      // Sectioning change cascades to everything downstream.
+      const version = saveStoryboardNode(storage, "page-sectioning", pageId, parsed.data)
       return c.json({ version })
     } finally {
       storage.close()
