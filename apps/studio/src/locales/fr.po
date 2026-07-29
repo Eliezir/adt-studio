@@ -2890,6 +2890,9 @@ msgstr "Mode dynamique"
 msgid "Dynamic Overlay"
 msgstr "Superposition dynamique"
 
+msgid "e.g. 21m00Tcm4TlvDq8ikWAM"
+msgstr "p. ex. 21m00Tcm4TlvDq8ikWAM"
+
 msgid "e.g. alloy"
 msgstr "e.g. alloy"
 
@@ -3064,6 +3067,18 @@ msgstr "Éditeur de style d'élément"
 
 msgid "Elements"
 msgstr "Éléments"
+
+msgid "ElevenLabs"
+msgstr "ElevenLabs"
+
+msgid "ElevenLabs API key"
+msgstr "Clé API ElevenLabs"
+
+msgid "ElevenLabs API Key"
+msgstr "Clé API ElevenLabs"
+
+msgid "ElevenLabs Voice"
+msgstr "Voix ElevenLabs"
 
 msgid "emoji"
 msgstr "emoji"
@@ -3906,6 +3921,9 @@ msgstr "Masquer les détails de l'erreur"
 
 msgid "High"
 msgstr "Élevé"
+
+msgid "High-fidelity, expressive voices with fine-grained cloning support."
+msgstr "Voix expressives haute fidélité avec prise en charge du clonage vocal précis."
 
 msgid "Higher values filter out simple or blank images."
 msgstr "Les valeurs plus élevées filtrent les images simples ou vides."
@@ -9125,11 +9143,17 @@ msgstr "Utilisé pour les modèles Gemini — LLM (gemini-2.5-pro, etc.) et TTS 
 #~ msgid "Used for OpenAI text-to-speech in these pipeline tasks:"
 #~ msgstr "Utilisé pour la synthèse vocale OpenAI dans ces tâches du pipeline :"
 
-msgid "Used for OpenAI, Azure, and Gemini text-to-speech in these pipeline tasks:"
-msgstr "Utilisé pour la synthèse vocale OpenAI, Azure et Gemini dans ces tâches du pipeline :"
+#~ msgid "Used for OpenAI, Azure, and Gemini text-to-speech in these pipeline tasks:"
+#~ msgstr "Utilisé pour la synthèse vocale OpenAI, Azure et Gemini dans ces tâches du pipeline :"
+
+msgid "Used for OpenAI, Azure, Gemini, and ElevenLabs text-to-speech in these pipeline tasks:"
+msgstr "Utilisé pour la synthèse vocale OpenAI, Azure, Gemini et ElevenLabs dans ces tâches du pipeline :"
 
 #~ msgid "Used for text generation and visual analysis when a step does not specify an LLM. Individual steps can still override it."
 #~ msgstr "Utilisé pour la génération de texte et l’analyse visuelle lorsqu’une étape ne précise pas de LLM. Chaque étape peut toujours le remplacer."
+
+msgid "Used for the ElevenLabs TTS provider."
+msgstr "Utilisé pour le fournisseur TTS ElevenLabs."
 
 msgid "Used for this quiz"
 msgstr "Utilisée pour ce quiz"

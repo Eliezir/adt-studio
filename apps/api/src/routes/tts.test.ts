@@ -460,6 +460,73 @@ describe("POST /books/:label/tts/generate-one", () => {
     expect(JSON.parse(String(thirdInit?.body))).toMatchObject({ model: "tts-1-hd" })
   })
 
+  it("falls back to ElevenLabs when Gemini has no audio and no OpenAI/Azure keys are configured", async () => {
+    const label = "gemini-audio-elevenlabs-fallback"
+    seedBook(label)
+
+    fetchMock
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            candidates: [
+              {
+                content: {
+                  parts: [{ text: "No audio returned for this request." }],
+                },
+              },
+            ],
+          }),
+          {
+            status: 200,
+            headers: { "Content-Type": "application/json" },
+          }
+        )
+      )
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            candidates: [
+              {
+                content: {
+                  parts: [{ text: "Still no audio returned for this request." }],
+                },
+              },
+            ],
+          }),
+          {
+            status: 200,
+            headers: { "Content-Type": "application/json" },
+          }
+        )
+      )
+      .mockResolvedValueOnce(
+        new Response(new Uint8Array([21, 22, 23, 24]), {
+          status: 200,
+          headers: { "Content-Type": "audio/mpeg" },
+        })
+      )
+
+    const app = createTTSRoutes(tmpDir, configPath)
+    const res = await app.request(`/books/${label}/tts/generate-one`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Gemini-API-Key": "gm-test",
+        "X-ElevenLabs-API-Key": "el-test",
+      },
+      body: JSON.stringify({ textId: "pg001_t001", language: "en" }),
+    })
+
+    expect(res.status).toBe(200)
+    const body = await res.json()
+    expect(body.entry.provider).toBe("elevenlabs")
+    expect(fetchMock).toHaveBeenCalledTimes(3)
+
+    const [thirdUrl, thirdInit] = fetchMock.mock.calls[2]
+    expect(String(thirdUrl)).toContain("https://api.elevenlabs.io/v1/text-to-speech/")
+    expect(thirdInit?.headers).toMatchObject({ "xi-api-key": "el-test" })
+  })
+
   it("rejects single-item generation when the language is not routed to Gemini", async () => {
     writeConfig("openai")
     const label = "openai-audio"

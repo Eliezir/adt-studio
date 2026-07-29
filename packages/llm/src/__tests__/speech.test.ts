@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
-import { createGeminiTTSSynthesizer, transcribeWithWhisper } from "../speech.js"
+import { createElevenLabsTTSSynthesizer, createGeminiTTSSynthesizer, transcribeWithWhisper } from "../speech.js"
 
 describe("createGeminiTTSSynthesizer", () => {
   const fetchMock = vi.fn<typeof fetch>()
@@ -369,6 +369,127 @@ describe("createGeminiTTSSynthesizer", () => {
     expect(
       JSON.parse(String(fetchMock.mock.calls[1]?.[1]?.body)).contents[0].parts[0].text
     ).toBe("### PERFORMANCE\nKosovo accent.\n\n#### TRANSCRIPT\nPo.")
+  })
+})
+
+describe("createElevenLabsTTSSynthesizer", () => {
+  const fetchMock = vi.fn<typeof fetch>()
+
+  beforeEach(() => {
+    fetchMock.mockReset()
+    vi.stubGlobal("fetch", fetchMock)
+  })
+
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
+  it("calls the ElevenLabs text-to-speech endpoint and returns raw bytes for mp3", async () => {
+    const mp3Bytes = new Uint8Array([1, 2, 3, 4])
+    fetchMock.mockResolvedValue(
+      new Response(mp3Bytes, {
+        status: 200,
+        headers: { "Content-Type": "audio/mpeg" },
+      })
+    )
+
+    const synth = createElevenLabsTTSSynthesizer({ apiKey: "el-test" })
+    const result = await synth.synthesize({
+      model: "eleven_multilingual_v2",
+      voice: "21m00Tcm4TlvDq8ikWAM",
+      input: "Hello world",
+      responseFormat: "mp3",
+    })
+
+    expect(Array.from(result)).toEqual(Array.from(mp3Bytes))
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+    const [url, init] = fetchMock.mock.calls[0]
+    expect(url).toBe(
+      "https://api.elevenlabs.io/v1/text-to-speech/21m00Tcm4TlvDq8ikWAM?output_format=mp3_44100_128"
+    )
+    expect(init?.headers).toMatchObject({
+      "xi-api-key": "el-test",
+      "Content-Type": "application/json",
+    })
+    expect(JSON.parse(String(init?.body))).toMatchObject({
+      text: "Hello world",
+      model_id: "eleven_multilingual_v2",
+    })
+  })
+
+  it("requests raw PCM and wraps it as wav when responseFormat is wav", async () => {
+    const pcmBytes = new Uint8Array([5, 6, 7, 8])
+    fetchMock.mockResolvedValue(
+      new Response(pcmBytes, { status: 200, headers: { "Content-Type": "application/octet-stream" } })
+    )
+
+    const synth = createElevenLabsTTSSynthesizer({ apiKey: "el-test" })
+    const result = await synth.synthesize({
+      model: "eleven_multilingual_v2",
+      voice: "21m00Tcm4TlvDq8ikWAM",
+      input: "Hello world",
+      responseFormat: "wav",
+    })
+
+    expect(Buffer.from(result.subarray(0, 4)).toString("ascii")).toBe("RIFF")
+    expect(result.byteLength).toBe(44 + pcmBytes.byteLength)
+    const [url] = fetchMock.mock.calls[0]
+    expect(url).toBe(
+      "https://api.elevenlabs.io/v1/text-to-speech/21m00Tcm4TlvDq8ikWAM?output_format=pcm_24000"
+    )
+  })
+
+  it("maps opus responseFormat to the ElevenLabs opus output format", async () => {
+    fetchMock.mockResolvedValue(
+      new Response(new Uint8Array([1]), { status: 200 })
+    )
+
+    const synth = createElevenLabsTTSSynthesizer({ apiKey: "el-test" })
+    await synth.synthesize({
+      model: "eleven_multilingual_v2",
+      voice: "21m00Tcm4TlvDq8ikWAM",
+      input: "Hello world",
+      responseFormat: "opus",
+    })
+
+    const [url] = fetchMock.mock.calls[0]
+    expect(url).toContain("output_format=opus_48000_128")
+  })
+
+  it("throws when no API key is available", async () => {
+    const originalEnv = process.env.ELEVENLABS_API_KEY
+    delete process.env.ELEVENLABS_API_KEY
+
+    const synth = createElevenLabsTTSSynthesizer()
+
+    await expect(
+      synth.synthesize({
+        model: "eleven_multilingual_v2",
+        voice: "21m00Tcm4TlvDq8ikWAM",
+        input: "Hello world",
+        responseFormat: "mp3",
+      })
+    ).rejects.toThrow(/ELEVENLABS_API_KEY is required/)
+    expect(fetchMock).not.toHaveBeenCalled()
+
+    if (originalEnv !== undefined) process.env.ELEVENLABS_API_KEY = originalEnv
+  })
+
+  it("surfaces the ElevenLabs error message on a failed request", async () => {
+    fetchMock.mockResolvedValue(
+      new Response("invalid_api_key", { status: 401, statusText: "Unauthorized" })
+    )
+
+    const synth = createElevenLabsTTSSynthesizer({ apiKey: "el-bad" })
+
+    await expect(
+      synth.synthesize({
+        model: "eleven_multilingual_v2",
+        voice: "21m00Tcm4TlvDq8ikWAM",
+        input: "Hello world",
+        responseFormat: "mp3",
+      })
+    ).rejects.toThrow(/ElevenLabs TTS request failed \(401\)/)
   })
 })
 

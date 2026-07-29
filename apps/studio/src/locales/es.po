@@ -2888,6 +2888,9 @@ msgstr "Modo Dinámico"
 msgid "Dynamic Overlay"
 msgstr "Superposición Dinámica"
 
+msgid "e.g. 21m00Tcm4TlvDq8ikWAM"
+msgstr "p. ej. 21m00Tcm4TlvDq8ikWAM"
+
 msgid "e.g. alloy"
 msgstr "p. ej. alloy"
 
@@ -3062,6 +3065,18 @@ msgstr "Editor de estilo de elemento"
 
 msgid "Elements"
 msgstr "Elementos"
+
+msgid "ElevenLabs"
+msgstr "ElevenLabs"
+
+msgid "ElevenLabs API key"
+msgstr "Clave de API de ElevenLabs"
+
+msgid "ElevenLabs API Key"
+msgstr "Clave de API de ElevenLabs"
+
+msgid "ElevenLabs Voice"
+msgstr "Voz de ElevenLabs"
 
 msgid "emoji"
 msgstr "emoji"
@@ -3904,6 +3919,9 @@ msgstr "Ocultar detalles del error"
 
 msgid "High"
 msgstr "Alto"
+
+msgid "High-fidelity, expressive voices with fine-grained cloning support."
+msgstr "Voces expresivas de alta fidelidad con soporte de clonación de voz detallado."
 
 msgid "Higher values filter out simple or blank images."
 msgstr "Valores más altos filtran imágenes simples o en blanco."
@@ -9123,11 +9141,17 @@ msgstr "Utilizada para modelos Gemini — tanto LLM (gemini-2.5-pro, etc.) como 
 #~ msgid "Used for OpenAI text-to-speech in these pipeline tasks:"
 #~ msgstr "Se utiliza para la conversión de texto a voz de OpenAI en estas tareas del flujo de trabajo:"
 
-msgid "Used for OpenAI, Azure, and Gemini text-to-speech in these pipeline tasks:"
-msgstr "Se utiliza para la conversión de texto a voz de OpenAI, Azure y Gemini en estas tareas del flujo de trabajo:"
+#~ msgid "Used for OpenAI, Azure, and Gemini text-to-speech in these pipeline tasks:"
+#~ msgstr "Se utiliza para la conversión de texto a voz de OpenAI, Azure y Gemini en estas tareas del flujo de trabajo:"
+
+msgid "Used for OpenAI, Azure, Gemini, and ElevenLabs text-to-speech in these pipeline tasks:"
+msgstr "Se utiliza para texto a voz de OpenAI, Azure, Gemini y ElevenLabs en estas tareas del proceso:"
 
 #~ msgid "Used for text generation and visual analysis when a step does not specify an LLM. Individual steps can still override it."
 #~ msgstr "Se utiliza para la generación de texto y el análisis visual cuando un paso no especifica un LLM. Los pasos individuales aún pueden reemplazarlo."
+
+msgid "Used for the ElevenLabs TTS provider."
+msgstr "Se utiliza para el proveedor de TTS ElevenLabs."
 
 msgid "Used for this quiz"
 msgstr "Se usa en este cuestionario"

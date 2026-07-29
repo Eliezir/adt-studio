@@ -4,6 +4,7 @@ import crypto from "node:crypto"
 import yaml from "js-yaml"
 import {
   DEFAULT_OPENAI_TTS_MODEL_ID,
+  DEFAULT_ELEVENLABS_TTS_MODEL_ID,
   type SpeechFileEntry,
   type TTSProviderConfig,
   type TTSRateLimitConfig,
@@ -25,6 +26,9 @@ const SAFE_FORMAT_RE = /^[a-z0-9]+$/
 const DEFAULT_OPENAI_VOICE = "alloy"
 const DEFAULT_GEMINI_VOICE = "Kore"
 const DEFAULT_AZURE_MODEL = "azure-tts"
+// Rachel — a stable ElevenLabs premade voice ID, used when no voice is
+// configured for the elevenlabs provider (mirrors the Gemini default below).
+const DEFAULT_ELEVENLABS_VOICE = "21m00Tcm4TlvDq8ikWAM"
 // Flash is the default: lower latency and higher documented throughput than Pro.
 // Users can switch to Pro (or any model) via `speech.providers.gemini.model`.
 const DEFAULT_GEMINI_MODEL = "gemini-2.5-flash-preview-tts"
@@ -72,11 +76,13 @@ export function resolveVoice(
   defaultVoice?: string
 ): string {
   const normalizedDefaultVoice = defaultVoice?.trim()
+  const usesGenericDefault = !normalizedDefaultVoice || normalizedDefaultVoice === DEFAULT_OPENAI_VOICE
   const fallback =
-    provider === "gemini" &&
-      (!normalizedDefaultVoice || normalizedDefaultVoice === DEFAULT_OPENAI_VOICE)
+    provider === "gemini" && usesGenericDefault
       ? DEFAULT_GEMINI_VOICE
-      : normalizedDefaultVoice || DEFAULT_OPENAI_VOICE
+      : provider === "elevenlabs" && usesGenericDefault
+        ? DEFAULT_ELEVENLABS_VOICE
+        : normalizedDefaultVoice || DEFAULT_OPENAI_VOICE
   const providerConfig = voiceMaps[provider]
   if (!providerConfig) return fallback
 
@@ -166,6 +172,7 @@ export function resolveSpeechModel(
 
   if (provider === "azure") return DEFAULT_AZURE_MODEL
   if (provider === "gemini") return DEFAULT_GEMINI_MODEL
+  if (provider === "elevenlabs") return DEFAULT_ELEVENLABS_TTS_MODEL_ID
   return defaultModel?.trim() || DEFAULT_OPENAI_TTS_MODEL_ID
 }
 

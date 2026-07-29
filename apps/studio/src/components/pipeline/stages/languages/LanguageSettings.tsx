@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
-import { ModelSelect, OPENAI_TTS_MODELS, AZURE_TTS_MODELS, GEMINI_TTS_MODELS, IMAGE_MODEL_GROUPS, LLM_MODEL_GROUPS } from "@/components/pipeline/components/ModelSelect"
+import { ModelSelect, OPENAI_TTS_MODELS, AZURE_TTS_MODELS, GEMINI_TTS_MODELS, ELEVENLABS_TTS_MODELS, IMAGE_MODEL_GROUPS, LLM_MODEL_GROUPS } from "@/components/pipeline/components/ModelSelect"
 import { useBookConfig, useUpdateBookConfig } from "@/hooks/use-book-config"
 import { useActiveConfig } from "@/hooks/use-debug"
 import { api } from "@/api/client"
@@ -165,6 +165,8 @@ export function LanguageSettings({ bookLabel, tab = "general", stageSlug = "tran
   const [azureLanguages, setAzureLanguages] = useState("")
   const [geminiModel, setGeminiModel] = useState("")
   const [geminiLanguages, setGeminiLanguages] = useState("")
+  const [elevenLabsModel, setElevenLabsModel] = useState("")
+  const [elevenLabsLanguages, setElevenLabsLanguages] = useState("")
   const [bitRate, setBitRate] = useState("")
   const [sampleRate, setSampleRate] = useState("")
   const [geminiTemperature, setGeminiTemperature] = useState("")
@@ -291,6 +293,10 @@ export function LanguageSettings({ bookLabel, tab = "general", stageSlug = "tran
           if (providers.gemini.model) setGeminiModel(String(providers.gemini.model))
           if (Array.isArray(providers.gemini.languages)) setGeminiLanguages((providers.gemini.languages as string[]).join(", "))
         }
+        if (providers.elevenlabs) {
+          if (providers.elevenlabs.model) setElevenLabsModel(String(providers.elevenlabs.model))
+          if (Array.isArray(providers.elevenlabs.languages)) setElevenLabsLanguages((providers.elevenlabs.languages as string[]).join(", "))
+        }
       }
     }
   }, [activeConfigData])
@@ -336,6 +342,7 @@ export function LanguageSettings({ bookLabel, tab = "general", stageSlug = "tran
       const openaiLangs = openaiLanguages.split(",").map((s) => s.trim()).filter(Boolean)
       const azureLangs = azureLanguages.split(",").map((s) => s.trim()).filter(Boolean)
       const geminiLangs = geminiLanguages.split(",").map((s) => s.trim()).filter(Boolean)
+      const elevenLabsLangs = elevenLabsLanguages.split(",").map((s) => s.trim()).filter(Boolean)
       const providers: Record<string, unknown> = {}
       if (openaiModel.trim() || openaiLangs.length > 0) {
         providers.openai = {
@@ -353,6 +360,12 @@ export function LanguageSettings({ bookLabel, tab = "general", stageSlug = "tran
         providers.gemini = {
           model: geminiModel.trim() || undefined,
           languages: geminiLangs.length > 0 ? geminiLangs : undefined,
+        }
+      }
+      if (elevenLabsModel.trim() || elevenLabsLangs.length > 0) {
+        providers.elevenlabs = {
+          model: elevenLabsModel.trim() || undefined,
+          languages: elevenLabsLangs.length > 0 ? elevenLabsLangs : undefined,
         }
       }
       // Guard the Gemini sampling inputs against values the SpeechConfig schema
@@ -963,6 +976,8 @@ export function LanguageSettings({ bookLabel, tab = "general", stageSlug = "tran
           azureLanguages={azureLanguages} setAzureLanguages={setAzureLanguages}
           geminiModel={geminiModel} setGeminiModel={setGeminiModel}
           geminiLanguages={geminiLanguages} setGeminiLanguages={setGeminiLanguages}
+          elevenLabsModel={elevenLabsModel} setElevenLabsModel={setElevenLabsModel}
+          elevenLabsLanguages={elevenLabsLanguages} setElevenLabsLanguages={setElevenLabsLanguages}
           bitRate={bitRate} setBitRate={setBitRate}
           sampleRate={sampleRate} setSampleRate={setSampleRate}
           geminiTemperature={geminiTemperature} setGeminiTemperature={setGeminiTemperature}
@@ -1188,12 +1203,13 @@ function ReadAloudContentSection({
 /* ---------- Speech per-language cards ---------- */
 
 // eslint-disable-next-line lingui/no-unlocalized-strings -- brand names
-const PROVIDER_LABELS: Record<string, string> = { openai: "OpenAI", azure: "Azure", gemini: "Gemini" }
+const PROVIDER_LABELS: Record<string, string> = { openai: "OpenAI", azure: "Azure", gemini: "Gemini", elevenlabs: "ElevenLabs" }
 
 const MODEL_GROUPS_BY_PROVIDER: Record<string, typeof OPENAI_TTS_MODELS> = {
   openai: OPENAI_TTS_MODELS,
   azure: AZURE_TTS_MODELS,
   gemini: GEMINI_TTS_MODELS,
+  elevenlabs: ELEVENLABS_TTS_MODELS,
 }
 
 function SpeechLanguageCards({
@@ -1209,6 +1225,8 @@ function SpeechLanguageCards({
   azureLanguages, setAzureLanguages,
   geminiModel, setGeminiModel,
   geminiLanguages, setGeminiLanguages,
+  elevenLabsModel, setElevenLabsModel,
+  elevenLabsLanguages, setElevenLabsLanguages,
   bitRate, setBitRate,
   sampleRate, setSampleRate,
   geminiTemperature, setGeminiTemperature,
@@ -1229,6 +1247,8 @@ function SpeechLanguageCards({
   azureLanguages: string; setAzureLanguages: (v: string) => void
   geminiModel: string; setGeminiModel: (v: string) => void
   geminiLanguages: string; setGeminiLanguages: (v: string) => void
+  elevenLabsModel: string; setElevenLabsModel: (v: string) => void
+  elevenLabsLanguages: string; setElevenLabsLanguages: (v: string) => void
   bitRate: string; setBitRate: (v: string) => void
   sampleRate: string; setSampleRate: (v: string) => void
   geminiTemperature: string; setGeminiTemperature: (v: string) => void
@@ -1272,6 +1292,12 @@ function SpeechLanguageCards({
           languages: geminiLanguages.split(",").map((s) => s.trim()).filter(Boolean),
         },
       } : {}),
+      ...(elevenLabsModel || elevenLabsLanguages ? {
+        elevenlabs: {
+          model: elevenLabsModel || undefined,
+          languages: elevenLabsLanguages.split(",").map((s) => s.trim()).filter(Boolean),
+        },
+      } : {}),
     },
   }
 
@@ -1281,6 +1307,7 @@ function SpeechLanguageCards({
     if (provider === "openai") return openaiModel
     if (provider === "azure") return azureModel
     if (provider === "gemini") return geminiModel
+    if (provider === "elevenlabs") return elevenLabsModel
     return ""
   }
 
@@ -1288,6 +1315,7 @@ function SpeechLanguageCards({
     if (provider === "openai") setOpenaiModel(value)
     else if (provider === "azure") setAzureModel(value)
     else if (provider === "gemini") setGeminiModel(value)
+    else if (provider === "elevenlabs") setElevenLabsModel(value)
     markDirty("speech")
   }
 
@@ -1295,6 +1323,7 @@ function SpeechLanguageCards({
     if (provider === "openai") return openaiLanguages
     if (provider === "azure") return azureLanguages
     if (provider === "gemini") return geminiLanguages
+    if (provider === "elevenlabs") return elevenLabsLanguages
     return ""
   }
 
@@ -1302,6 +1331,7 @@ function SpeechLanguageCards({
     if (provider === "openai") setOpenaiLanguages(value)
     else if (provider === "azure") setAzureLanguages(value)
     else if (provider === "gemini") setGeminiLanguages(value)
+    else if (provider === "elevenlabs") setElevenLabsLanguages(value)
     markDirty("speech")
   }
 
@@ -1319,7 +1349,7 @@ function SpeechLanguageCards({
   // Route a language to a different provider
   const routeLanguageTo = (lang: string, newProvider: string) => {
     // Remove from all providers' language lists
-    for (const p of ["openai", "azure", "gemini"]) {
+    for (const p of ["openai", "azure", "gemini", "elevenlabs"]) {
       const current = getProviderLanguages(p)
       const langs = current.split(",").map((s) => s.trim()).filter(Boolean)
       const filtered = langs.filter((l) => normalizeLocale(l) !== normalizeLocale(lang))
@@ -1355,6 +1385,7 @@ function SpeechLanguageCards({
               <option value="openai">{t`OpenAI`}</option>
               <option value="azure">{t`Azure`}</option>
               <option value="gemini">{t`Gemini`}</option>
+              <option value="elevenlabs">{t`ElevenLabs`}</option>
             </select>
           </div>
           <div className="space-y-1.5">
@@ -1478,7 +1509,7 @@ function SpeechLanguageCards({
                     onChange={(e) => routeLanguageTo(lang, e.target.value)}
                     className="flex h-8 w-36 rounded-md border border-input bg-background px-2 py-1 text-xs shadow-sm"
                   >
-                    {["openai", "azure", "gemini"].map((p) => (
+                    {["openai", "azure", "gemini", "elevenlabs"].map((p) => (
                       <option key={p} value={p}>
                         {PROVIDER_LABELS[p]}{p === defaultProvider ? ` (${t`default`})` : ""}
                       </option>

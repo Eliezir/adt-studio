@@ -2888,6 +2888,9 @@ msgstr "Dynamic Mode"
 msgid "Dynamic Overlay"
 msgstr "Dynamic Overlay"
 
+msgid "e.g. 21m00Tcm4TlvDq8ikWAM"
+msgstr "e.g. 21m00Tcm4TlvDq8ikWAM"
+
 msgid "e.g. alloy"
 msgstr "e.g. alloy"
 
@@ -3062,6 +3065,18 @@ msgstr "Element style editor"
 
 msgid "Elements"
 msgstr "Elements"
+
+msgid "ElevenLabs"
+msgstr "ElevenLabs"
+
+msgid "ElevenLabs API key"
+msgstr "ElevenLabs API key"
+
+msgid "ElevenLabs API Key"
+msgstr "ElevenLabs API Key"
+
+msgid "ElevenLabs Voice"
+msgstr "ElevenLabs Voice"
 
 msgid "emoji"
 msgstr "emoji"
@@ -3904,6 +3919,9 @@ msgstr "Hide error details"
 
 msgid "High"
 msgstr "High"
+
+msgid "High-fidelity, expressive voices with fine-grained cloning support."
+msgstr "High-fidelity, expressive voices with fine-grained cloning support."
 
 msgid "Higher values filter out simple or blank images."
 msgstr "Higher values filter out simple or blank images."
@@ -9123,11 +9141,17 @@ msgstr "Used for Gemini models — both LLM (gemini-2.5-pro, etc.) and TTS (gemi
 #~ msgid "Used for OpenAI text-to-speech in these pipeline tasks:"
 #~ msgstr "Used for OpenAI text-to-speech in these pipeline tasks:"
 
-msgid "Used for OpenAI, Azure, and Gemini text-to-speech in these pipeline tasks:"
-msgstr "Used for OpenAI, Azure, and Gemini text-to-speech in these pipeline tasks:"
+#~ msgid "Used for OpenAI, Azure, and Gemini text-to-speech in these pipeline tasks:"
+#~ msgstr "Used for OpenAI, Azure, and Gemini text-to-speech in these pipeline tasks:"
+
+msgid "Used for OpenAI, Azure, Gemini, and ElevenLabs text-to-speech in these pipeline tasks:"
+msgstr "Used for OpenAI, Azure, Gemini, and ElevenLabs text-to-speech in these pipeline tasks:"
 
 #~ msgid "Used for text generation and visual analysis when a step does not specify an LLM. Individual steps can still override it."
 #~ msgstr "Used for text generation and visual analysis when a step does not specify an LLM. Individual steps can still override it."
+
+msgid "Used for the ElevenLabs TTS provider."
+msgstr "Used for the ElevenLabs TTS provider."
 
 msgid "Used for this quiz"
 msgstr "Used for this quiz"

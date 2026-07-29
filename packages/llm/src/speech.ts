@@ -130,6 +130,10 @@ export interface GeminiTTSConfig {
   apiKey?: string
 }
 
+export interface ElevenLabsTTSConfig {
+  apiKey?: string
+}
+
 interface GeminiInlineData {
   data?: string
   mimeType?: string
@@ -150,6 +154,11 @@ interface GeminiGenerateContentPayload {
 const GEMINI_PCM_SAMPLE_RATE = 24_000
 const GEMINI_PCM_CHANNELS = 1
 const GEMINI_PCM_BITS_PER_SAMPLE = 16
+
+// ElevenLabs returns raw PCM (16-bit signed, mono) at this rate when the
+// `pcm_24000` output format is requested; we wrap it as WAV ourselves (mirrors
+// the Gemini PCM handling) since ElevenLabs has no native "wav" output format.
+const ELEVENLABS_PCM_SAMPLE_RATE = 24_000
 
 function buildAzureOutputFormat(
   format: string,
@@ -474,6 +483,68 @@ export function createGeminiTTSSynthesizer(
 
       const pcmBytes = new Uint8Array(Buffer.from(audioData, "base64"))
       return outputFormat === "pcm" ? pcmBytes : wrapPcmAsWave(pcmBytes)
+    },
+  }
+}
+
+/**
+ * Map our generic `responseFormat` to an ElevenLabs `output_format` query
+ * value. ElevenLabs has no native "wav" format, so wav/pcm requests ask for
+ * raw 24kHz PCM and get wrapped as WAV locally (mirrors the Gemini handling).
+ */
+function buildElevenLabsOutputFormat(format: string): string {
+  const normalized = format.toLowerCase()
+  if (normalized === "opus") return "opus_48000_128"
+  if (normalized === "wav" || normalized === "pcm") {
+    return `pcm_${ELEVENLABS_PCM_SAMPLE_RATE}`
+  }
+  return "mp3_44100_128"
+}
+
+/**
+ * Create a TTS client using the ElevenLabs text-to-speech REST API.
+ * API key defaults to ELEVENLABS_API_KEY if omitted. `voice` must be an
+ * ElevenLabs voice ID (not a human-readable voice name) — resolved the same
+ * way as the other providers via `voices.yaml` / `speech.voice`.
+ */
+export function createElevenLabsTTSSynthesizer(
+  config?: ElevenLabsTTSConfig
+): TTSSynthesizer {
+  return {
+    async synthesize(options: SynthesizeSpeechOptions): Promise<Uint8Array> {
+      const resolvedApiKey = config?.apiKey ?? process.env.ELEVENLABS_API_KEY
+      if (!resolvedApiKey) {
+        throw new Error("ELEVENLABS_API_KEY is required for ElevenLabs TTS synthesis")
+      }
+
+      const normalizedFormat = options.responseFormat.toLowerCase()
+      const outputFormat = buildElevenLabsOutputFormat(normalizedFormat)
+      const url = `https://api.elevenlabs.io/v1/text-to-speech/${encodeURIComponent(options.voice)}?output_format=${outputFormat}`
+
+      const response = await fetch(url, {
+        method: "POST",
+        headers: {
+          "xi-api-key": resolvedApiKey,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          text: options.input,
+          model_id: options.model,
+        }),
+        signal: options.signal,
+      })
+      if (!response.ok) {
+        const message = await response.text()
+        throw new Error(
+          `ElevenLabs TTS request failed (${response.status}): ${message || response.statusText}`
+        )
+      }
+
+      const arrayBuffer = await response.arrayBuffer()
+      const bytes = new Uint8Array(arrayBuffer)
+      return normalizedFormat === "wav"
+        ? wrapPcmAsWave(bytes, ELEVENLABS_PCM_SAMPLE_RATE)
+        : bytes
     },
   }
 }

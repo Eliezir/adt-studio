@@ -2889,6 +2889,9 @@ msgstr "Modaliteti dinamik"
 msgid "Dynamic Overlay"
 msgstr "Mbulesë dinamike"
 
+msgid "e.g. 21m00Tcm4TlvDq8ikWAM"
+msgstr "p.sh. 21m00Tcm4TlvDq8ikWAM"
+
 msgid "e.g. alloy"
 msgstr "p.sh. alloy"
 
@@ -3063,6 +3066,18 @@ msgstr "Redaktues i stilit të elementit"
 
 msgid "Elements"
 msgstr "Elementet"
+
+msgid "ElevenLabs"
+msgstr "ElevenLabs"
+
+msgid "ElevenLabs API key"
+msgstr "Çelësi API i ElevenLabs"
+
+msgid "ElevenLabs API Key"
+msgstr "Çelësi API i ElevenLabs"
+
+msgid "ElevenLabs Voice"
+msgstr "Zëri i ElevenLabs"
 
 msgid "emoji"
 msgstr "emoji"
@@ -3905,6 +3920,9 @@ msgstr "Fshih detajet e gabimit"
 
 msgid "High"
 msgstr "I lartë"
+
+msgid "High-fidelity, expressive voices with fine-grained cloning support."
+msgstr "Zèra shprehës me cilësi të lartë me mbështetje për klonim zëri të detajuar."
 
 msgid "Higher values filter out simple or blank images."
 msgstr "Vlerat më të larta filtrojnë imazhet e thjeshta ose bosh."
@@ -9124,11 +9142,17 @@ msgstr "Përdoret për modelet Gemini — si LLM (gemini-2.5-pro, etj.) ashtu ed
 #~ msgid "Used for OpenAI text-to-speech in these pipeline tasks:"
 #~ msgstr "Përdoret për shndërrimin e tekstit në të folur nga OpenAI në këto detyra të rrjedhës së punës:"
 
-msgid "Used for OpenAI, Azure, and Gemini text-to-speech in these pipeline tasks:"
-msgstr "Përdoret për shndërrimin e tekstit në të folur nga OpenAI, Azure dhe Gemini në këto detyra të rrjedhës së punës:"
+#~ msgid "Used for OpenAI, Azure, and Gemini text-to-speech in these pipeline tasks:"
+#~ msgstr "Përdoret për shndërrimin e tekstit në të folur nga OpenAI, Azure dhe Gemini në këto detyra të rrjedhës së punës:"
+
+msgid "Used for OpenAI, Azure, Gemini, and ElevenLabs text-to-speech in these pipeline tasks:"
+msgstr "Përdoret për tekst-në-zë të OpenAI, Azure, Gemini dhe ElevenLabs në këto detyra të pipeline-it:"
 
 #~ msgid "Used for text generation and visual analysis when a step does not specify an LLM. Individual steps can still override it."
 #~ msgstr "Përdoret për gjenerimin e tekstit dhe analizën vizuale kur një hap nuk përcakton një LLM. Hapat individualë mund ta zëvendësojnë përsëri atë."
+
+msgid "Used for the ElevenLabs TTS provider."
+msgstr "Përdoret për ofruesin TTS ElevenLabs."
 
 msgid "Used for this quiz"
 msgstr "Përdoret për këtë kuiz"

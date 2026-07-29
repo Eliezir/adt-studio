@@ -9,6 +9,7 @@ import {
   createTTSSynthesizer,
   createAzureTTSSynthesizer,
   createGeminiTTSSynthesizer,
+  createElevenLabsTTSSynthesizer,
 } from "@adt/llm"
 import type { LLMModel, LlmLogEntry, LogLevel, TTSSynthesizer } from "@adt/llm"
 import type {
@@ -110,6 +111,7 @@ export interface FullPipelineOptions {
   azureSpeechKey?: string
   azureSpeechRegion?: string
   geminiApiKey?: string
+  elevenLabsApiKey?: string
 }
 
 /**
@@ -889,6 +891,9 @@ export async function runFullPipeline(
       const geminiConfig = options.geminiApiKey
         ? { apiKey: options.geminiApiKey }
         : undefined
+      const elevenLabsConfig = options.elevenLabsApiKey
+        ? { apiKey: options.elevenLabsApiKey }
+        : undefined
       const voiceMaps = loadVoicesConfig(configDir)
       const instructionsMap = loadSpeechInstructions(configDir)
       const speechModel =
@@ -912,6 +917,14 @@ export async function runFullPipeline(
           }
           const synth = createGeminiTTSSynthesizer(geminiConfig)
           synthesizers.set("gemini", synth)
+          return synth
+        }
+        if (providerName === "elevenlabs") {
+          if (!elevenLabsConfig && !process.env.ELEVENLABS_API_KEY) {
+            throw new Error("ELEVENLABS_API_KEY is required for ElevenLabs TTS provider")
+          }
+          const synth = createElevenLabsTTSSynthesizer(elevenLabsConfig)
+          synthesizers.set("elevenlabs", synth)
           return synth
         }
         const synth = createTTSSynthesizer()

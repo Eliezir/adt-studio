@@ -87,7 +87,7 @@ import {
 } from "@adt/pipeline"
 import type { PageSectioningConfig, TranslationConfig, QuizPageInput, ProviderRouting, MeaningfulnessConfig, CroppingConfig, SegmentationConfig, VisualRefinementDeps } from "@adt/pipeline"
 import { loadStyleguideContent } from "./styleguide.js"
-import { createTTSSynthesizer, createAzureTTSSynthesizer, createGeminiTTSSynthesizer } from "@adt/llm"
+import { createTTSSynthesizer, createAzureTTSSynthesizer, createGeminiTTSSynthesizer, createElevenLabsTTSSynthesizer } from "@adt/llm"
 import type { TTSSynthesizer } from "@adt/llm"
 import { STAGE_ORDER, isTtsExcluded } from "@adt/types"
 import type { PageErrorPolicy, PageErrorAction } from "@adt/types"
@@ -2601,7 +2601,7 @@ async function runSpeechStep(
     console.log(`[stage-run] ${label}: TTS configDir=${configDir} voiceMaps=${Object.keys(voiceMaps).join(",")||"(empty)"}`)
     console.log(`[stage-run] ${label}: TTS config — defaultProvider=${defaultProvider} model=${speechModel ?? "(provider default)"} format=${config.speech?.format ?? "(provider default)"}`)
     console.log(`[stage-run] ${label}: TTS providers=${JSON.stringify(providerConfigs)}`)
-    console.log(`[stage-run] ${label}: TTS azureKey=${options.azureSpeechKey ? "set" : "NOT SET"} azureRegion=${options.azureSpeechRegion ?? "NOT SET"} geminiKey=${options.geminiApiKey ? "set" : "NOT SET"}`)
+    console.log(`[stage-run] ${label}: TTS azureKey=${options.azureSpeechKey ? "set" : "NOT SET"} azureRegion=${options.azureSpeechRegion ?? "NOT SET"} geminiKey=${options.geminiApiKey ? "set" : "NOT SET"} elevenLabsKey=${options.elevenLabsApiKey ? "set" : "NOT SET"}`)
 
     const synthesizers = new Map<string, TTSSynthesizer>()
     function getSynthesizer(providerName: string): TTSSynthesizer {
@@ -2626,6 +2626,16 @@ async function runSpeechStep(
           options.geminiApiKey ? { apiKey: options.geminiApiKey } : undefined
         )
         synthesizers.set("gemini", synth)
+        return synth
+      }
+      if (providerName === "elevenlabs") {
+        if (!options.elevenLabsApiKey && !process.env.ELEVENLABS_API_KEY) {
+          throw new Error("ElevenLabs API key is required for ElevenLabs TTS provider. Set it in the API Keys dialog (gear icon).")
+        }
+        const synth = createElevenLabsTTSSynthesizer(
+          options.elevenLabsApiKey ? { apiKey: options.elevenLabsApiKey } : undefined
+        )
+        synthesizers.set("elevenlabs", synth)
         return synth
       }
       const synth = createTTSSynthesizer(options.apiKey)

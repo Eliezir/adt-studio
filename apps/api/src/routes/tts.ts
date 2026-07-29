@@ -20,6 +20,7 @@ import { openBookDb, createBookStorage } from "@adt/storage"
 import {
   createAzureTTSSynthesizer,
   createGeminiTTSSynthesizer,
+  createElevenLabsTTSSynthesizer,
   createTTSSynthesizer,
   type LlmLogEntry,
 } from "@adt/llm"
@@ -71,7 +72,7 @@ const AUDIO_UPLOAD_FORMAT_BY_MIME: Record<string, "mp3" | "wav" | "ogg"> = {
 const AUDIO_UPLOAD_EXTENSIONS = new Set([".mp3", ".wav", ".ogg"])
 
 interface SingleItemFallbackAttempt {
-  provider: "openai" | "azure"
+  provider: "openai" | "azure" | "elevenlabs"
   model: string
   voice: string
 }
@@ -264,6 +265,7 @@ function getSingleItemFallbackAttempts(options: {
   openaiApiKey?: string
   azureSpeechKey?: string
   azureSpeechRegion?: string
+  elevenLabsApiKey?: string
   language: string
   providerConfigs: Record<string, TTSProviderConfig>
   voiceMaps: ReturnType<typeof loadVoicesConfig>
@@ -288,6 +290,14 @@ function getSingleItemFallbackAttempts(options: {
       provider: "azure",
       model: resolveSpeechModel("azure", options.providerConfigs),
       voice: resolveVoice("azure", options.language, options.voiceMaps),
+    })
+  }
+
+  if (options.elevenLabsApiKey) {
+    attempts.push({
+      provider: "elevenlabs",
+      model: resolveSpeechModel("elevenlabs", options.providerConfigs),
+      voice: resolveVoice("elevenlabs", options.language, options.voiceMaps),
     })
   }
 
@@ -698,6 +708,7 @@ export function createTTSRoutes(booksDir: string, configPath?: string, taskServi
     const openaiApiKey = c.req.header("X-OpenAI-Key")?.trim()
     const azureSpeechKey = c.req.header("X-Azure-Speech-Key")?.trim()
     const azureSpeechRegion = c.req.header("X-Azure-Speech-Region")?.trim()
+    const elevenLabsApiKey = c.req.header("X-ElevenLabs-API-Key")?.trim()
     if (!geminiApiKey) {
       throw new HTTPException(400, {
         message: "Gemini API key required. Set X-Gemini-API-Key header.",
@@ -770,6 +781,7 @@ export function createTTSRoutes(booksDir: string, configPath?: string, taskServi
         openaiApiKey,
         azureSpeechKey,
         azureSpeechRegion,
+        elevenLabsApiKey,
         language: normalizedLanguage,
         providerConfigs,
         voiceMaps,
@@ -809,7 +821,9 @@ export function createTTSRoutes(booksDir: string, configPath?: string, taskServi
                     subscriptionKey: azureSpeechKey!,
                     region: azureSpeechRegion!,
                   })
-                : createTTSSynthesizer(openaiApiKey),
+                : options.targetProvider === "elevenlabs"
+                  ? createElevenLabsTTSSynthesizer({ apiKey: elevenLabsApiKey! })
+                  : createTTSSynthesizer(openaiApiKey),
           provider: options.targetProvider,
           geminiTemperature: config.speech?.temperature,
           geminiSeed: config.speech?.seed,

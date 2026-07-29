@@ -144,6 +144,14 @@ describe("resolveVoice", () => {
   it("does not reuse the OpenAI alloy fallback for Gemini voices", () => {
     expect(resolveVoice("gemini", "en", {}, "alloy")).toBe("Kore")
   })
+
+  it("falls back to the ElevenLabs default voice ID when no mapping exists", () => {
+    expect(resolveVoice("elevenlabs", "en", {})).toBe("21m00Tcm4TlvDq8ikWAM")
+  })
+
+  it("does not reuse the OpenAI alloy fallback for ElevenLabs voices", () => {
+    expect(resolveVoice("elevenlabs", "en", {}, "alloy")).toBe("21m00Tcm4TlvDq8ikWAM")
+  })
 })
 
 // ---------------------------------------------------------------------------
@@ -163,6 +171,7 @@ describe("resolveSpeechModel", () => {
     expect(resolveSpeechModel("gemini", {})).toBe("gemini-2.5-flash-preview-tts")
     expect(resolveSpeechModel("azure", {})).toBe("azure-tts")
     expect(resolveSpeechModel("openai", {})).toBe("gpt-4o-mini-tts")
+    expect(resolveSpeechModel("elevenlabs", {})).toBe("eleven_multilingual_v2")
   })
 
   it("uses the shared default model for non-provider-specific fallbacks", () => {

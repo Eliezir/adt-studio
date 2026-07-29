@@ -20,7 +20,7 @@ interface VoiceMappingsEditorProps {
   headerTarget?: HTMLDivElement | null
 }
 
-const PROVIDER_ORDER = ["openai", "azure", "gemini"] as const
+const PROVIDER_ORDER = ["openai", "azure", "gemini", "elevenlabs"] as const
 
 type VoiceProviderKey = (typeof PROVIDER_ORDER)[number]
 
@@ -29,6 +29,7 @@ interface VoiceRow {
   openai: string
   azure: string
   gemini: string
+  elevenlabs: string
 }
 
 export function VoiceMappingsEditor({ bookLabel }: VoiceMappingsEditorProps) {
@@ -59,10 +60,12 @@ export function VoiceMappingsEditor({ bookLabel }: VoiceMappingsEditorProps) {
     const openai = data.openai ?? {}
     const azure = data.azure ?? {}
     const gemini = data.gemini ?? {}
+    const elevenlabs = data.elevenlabs ?? {}
     const allLangs = new Set([
       ...Object.keys(openai),
       ...Object.keys(azure),
       ...Object.keys(gemini),
+      ...Object.keys(elevenlabs),
     ])
     const built: VoiceRow[] = []
     for (const lang of allLangs) {
@@ -71,6 +74,7 @@ export function VoiceMappingsEditor({ bookLabel }: VoiceMappingsEditorProps) {
         openai: openai[lang] ?? "",
         azure: azure[lang] ?? "",
         gemini: gemini[lang] ?? "",
+        elevenlabs: elevenlabs[lang] ?? "",
       })
     }
     // Sort with "default" first, then alphabetical
@@ -107,7 +111,7 @@ export function VoiceMappingsEditor({ bookLabel }: VoiceMappingsEditorProps) {
   const addLanguage = () => {
     const key = newLangKey.trim().toLowerCase()
     if (!key || rows.some((r) => r.lang === key)) return
-    setRows((prev) => [...prev, { lang: key, openai: "", azure: "", gemini: "" }])
+    setRows((prev) => [...prev, { lang: key, openai: "", azure: "", gemini: "", elevenlabs: "" }])
     setNewLangKey("")
     setShowAddLang(false)
     setDirtyMappings(true)
@@ -275,7 +279,9 @@ export function VoiceMappingsEditor({ bookLabel }: VoiceMappingsEditorProps) {
                     ? t`OpenAI Voice`
                     : key === "azure"
                       ? t`Azure Voice`
-                      : t`Gemini Voice`}
+                      : key === "gemini"
+                        ? t`Gemini Voice`
+                        : t`ElevenLabs Voice`}
                 </th>
               ))}
               <th className="w-10 px-2 py-2" />
@@ -298,7 +304,9 @@ export function VoiceMappingsEditor({ bookLabel }: VoiceMappingsEditorProps) {
                           ? t`e.g. alloy`
                           : key === "azure"
                             ? t`e.g. en-US-JennyNeural`
-                            : t`e.g. Kore`
+                            : key === "gemini"
+                              ? t`e.g. Kore`
+                              : t`e.g. 21m00Tcm4TlvDq8ikWAM`
                       }
                     />
                   </td>
