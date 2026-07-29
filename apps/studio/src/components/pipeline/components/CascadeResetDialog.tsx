@@ -1,9 +1,15 @@
-import type { ReactNode } from "react"
+import type { ComponentType, ReactNode } from "react"
 import { Play } from "lucide-react"
 import { Trans } from "@lingui/react/macro"
 import type { StageName } from "@adt/types"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 import {
   Dialog,
   DialogContent,
@@ -32,6 +38,8 @@ export function CascadeResetDialog({
   description,
   confirmLabel,
   confirmColorClass,
+  confirmDisabledReason,
+  confirmIcon: ConfirmIcon = Play,
   onConfirm,
 }: {
   open: boolean
@@ -42,6 +50,17 @@ export function CascadeResetDialog({
   description: ReactNode
   confirmLabel: ReactNode
   confirmColorClass: string
+  /**
+   * When set, the confirm button is disabled and this text explains why (shown
+   * as a tooltip). Use for prerequisites the dialog can't satisfy itself — e.g.
+   * a re-run that needs an API key.
+   */
+  confirmDisabledReason?: string
+  /**
+   * Icon on the confirm button. Defaults to `Play` for the re-run flows; pass a
+   * fitting one for other actions (e.g. `Trash2` for a delete).
+   */
+  confirmIcon?: ComponentType<{ className?: string }>
   onConfirm: () => void
 }) {
   const stages = affectedStages
@@ -50,6 +69,20 @@ export function CascadeResetDialog({
   const headerStage = headerStageSlug
     ? STAGES.find((s) => s.slug === headerStageSlug)
     : undefined
+
+  const confirmButton = (
+    <Button
+      onClick={onConfirm}
+      disabled={!!confirmDisabledReason}
+      className={cn(
+        "h-10 px-5 font-medium text-white border-0 shadow-sm disabled:opacity-50",
+        confirmColorClass,
+      )}
+    >
+      <ConfirmIcon className="w-4 h-4 mr-2" />
+      {confirmLabel}
+    </Button>
+  )
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -76,6 +109,9 @@ export function CascadeResetDialog({
           </div>
         </DialogHeader>
 
+        {/* Nothing completed downstream — the dialog is then a plain
+            confirmation, with no misleading empty "Will be reset · 0" block. */}
+        {stages.length > 0 && (
         <div className="flex flex-col gap-2">
           <p className="text-[10.5px] font-semibold uppercase tracking-[0.14em] text-[#a3a3a3]">
             <Trans>Will be reset</Trans>
@@ -110,6 +146,7 @@ export function CascadeResetDialog({
             })}
           </ul>
         </div>
+        )}
 
         <div className="-mx-6 border-t border-[#f1f1f1]" aria-hidden />
         <DialogFooter className="-mt-1 gap-2">
@@ -120,16 +157,19 @@ export function CascadeResetDialog({
           >
             <Trans>Cancel</Trans>
           </Button>
-          <Button
-            onClick={onConfirm}
-            className={cn(
-              "h-10 px-5 font-medium text-white border-0 shadow-sm",
-              confirmColorClass,
-            )}
-          >
-            <Play className="w-4 h-4 mr-2" />
-            {confirmLabel}
-          </Button>
+          {confirmDisabledReason ? (
+            <TooltipProvider>
+              <Tooltip>
+                {/* Disabled buttons swallow pointer events, so the trigger wraps it. */}
+                <TooltipTrigger asChild>
+                  <span>{confirmButton}</span>
+                </TooltipTrigger>
+                <TooltipContent>{confirmDisabledReason}</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          ) : (
+            confirmButton
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>
