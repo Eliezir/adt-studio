@@ -32,7 +32,6 @@ import { usePendingChanges } from "../../components/change-summary"
 import { useFloatingSave } from "../../components/floating-save"
 import { CascadeResetDialog } from "../../components/CascadeResetDialog"
 import { useDownstreamWithOutput } from "@/hooks/use-downstream-with-output"
-import { useIsFixedLayout } from "@/hooks/use-fixed-layout"
 
 export function SectioningPageDetail({
   bookLabel,
@@ -116,7 +115,6 @@ export function SectioningPageDetail({
   const downstreamAffected = useDownstreamWithOutput("sectioning")
   const downstreamRef = useRef(downstreamAffected)
   downstreamRef.current = downstreamAffected
-  const isFixedLayout = useIsFixedLayout(bookLabel)
 
   // Reset pending edits when navigating to a different page. Done during render
   // (React's "adjust state when a prop changes" pattern) rather than in an
@@ -193,12 +191,14 @@ export function SectioningPageDetail({
    * Explicit Save from the floating bar. Saving resets the storyboard chain, so
    * when there are completed downstream stages to lose we confirm first —
    * cancelling leaves the edits pending rather than saving them into an
-   * inconsistent state. Fixed-layout books are exempt: their rendering is built
-   * from positioned-text, not page-sectioning, so nothing downstream changes.
+   * inconsistent state. This applies to fixed-layout books too: the API clears
+   * the chain for every `page-sectioning` save regardless of render mode, and
+   * quiz generation reads the semantic sectioning even in fixed-layout, so
+   * exempting them would silently discard completed audio and packaged output.
    */
   const requestSave = useCallback(() => {
     if (!dirty || saving) return
-    if (downstreamRef.current.length > 0 && !isFixedLayout) {
+    if (downstreamRef.current.length > 0) {
       setPendingOp({
         title: t`Save section changes?`,
         confirmLabel: t`Save changes`,
@@ -209,7 +209,7 @@ export function SectioningPageDetail({
       return
     }
     void performSave().catch(() => {})
-  }, [dirty, saving, isFixedLayout, performSave, t])
+  }, [dirty, saving, performSave, t])
 
   /**
    * Gate for the server-side structural ops (split / duplicate / merge /
