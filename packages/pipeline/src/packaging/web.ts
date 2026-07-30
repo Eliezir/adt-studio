@@ -37,7 +37,14 @@ import {
   resolveFontsCacheDir,
 } from "../fonts-bundle.js"
 import { resolveTypographyCss } from "../typography.js"
-import { resolveQuizPalette, type QuizPalette } from "../quiz-palette.js"
+import { resolveQuizPalette, DEFAULT_QUIZ_PALETTE, type QuizPalette } from "../quiz-palette.js"
+import {
+  readEditableActivities,
+  enabledEditableActivity,
+  resolveEditableActivityImages,
+  renderEditableActivityHtml,
+  maskStepperPayloads,
+} from "../render-editable-activity.js"
 import type { Progress } from "../progress.js"
 import { nullProgress } from "../progress.js"
 import { getGlossaryItemTextId } from "../glossary.js"
@@ -266,6 +273,9 @@ export async function packageAdtWeb(
   // the book has a detectable accent color; otherwise keep the clean white default.
   const quizPalette = (quizMatchBookStyle ?? true) ? resolveQuizPalette(storage) : null
   const quizStyle = quizPalette ? { palette: quizPalette } : null
+  // Step-by-step activities always need a palette (their UI is deterministic,
+  // not LLM-styled) — fall back to the neutral default when the book has none.
+  const stepperBasePalette = quizPalette ?? DEFAULT_QUIZ_PALETTE
 
   const step = "package-web" as const
   progress.emit({ type: "step-start", step })
@@ -347,6 +357,7 @@ export async function packageAdtWeb(
     const decorativeImageIds = buildDecorativeImageIdSet(storage, page.pageId)
 
     const renderRow = storage.getLatestNodeData("web-rendering", page.pageId)
+    const editableActivities = readEditableActivities(storage, page.pageId)
     if (renderRow) {
       const parsed = WebRenderingOutputSchema.safeParse(renderRow.data)
       if (parsed.success) {
@@ -363,15 +374,36 @@ export async function packageAdtWeb(
             hasActivitySections = true
           }
 
+          // Step-by-step override: an enabled editable activity replaces the
+          // stored LLM HTML with the stepper shell (structured JSON + palette).
+          const stepperActivity = enabledEditableActivity(
+            editableActivities,
+            rs.sectionIndex,
+            rs.sectionType,
+          )
+
           // Rewrite image URLs and copy referenced images
           const preferredImageAltMap = buildPreferredImageAltMap(storage, page.pageId, sectionMeta)
-          let { html: rewrittenHtml, referencedImages } = rewriteImageUrls(
-            rs.html,
-            label,
-            imageMap,
-            preferredImageAltMap,
-            decorativeImageIds,
-          )
+          let rewrittenHtml: string
+          let referencedImages: string[]
+          if (stepperActivity) {
+            const resolved = resolveEditableActivityImages(stepperActivity, imageMap, {
+              preferredAltMap: preferredImageAltMap,
+              decorativeImageIds,
+            })
+            rewrittenHtml = renderEditableActivityHtml(resolved.activity, {
+              palette: stepperBasePalette,
+            })
+            referencedImages = resolved.referencedImages
+          } else {
+            ;({ html: rewrittenHtml, referencedImages } = rewriteImageUrls(
+              rs.html,
+              label,
+              imageMap,
+              preferredImageAltMap,
+              decorativeImageIds,
+            ))
+          }
 
           for (const imageId of referencedImages) {
             if (!copiedImages.has(imageId)) {
@@ -386,8 +418,8 @@ export async function packageAdtWeb(
             }
           }
 
-          // Convert LaTeX math to MathML
-          const sectionHasMath = containsMathContent(rewrittenHtml)
+          // Convert LaTeX math to MathML (stepper shells are JSON — leave untouched)
+          const sectionHasMath = !stepperActivity && containsMathContent(rewrittenHtml)
           if (sectionHasMath) {
             hasMath = true
             rewrittenHtml = convertLatexToMathml(rewrittenHtml)
@@ -416,7 +448,8 @@ export async function packageAdtWeb(
             pageTitle: title,
             pageHeading: headingText?.text ?? title,
             pageIndex: pageList.length + 1,
-            activityAnswers: rs.activityAnswers,
+            // Stepper answers travel inside the embedded JSON payload.
+            activityAnswers: stepperActivity ? undefined : rs.activityAnswers,
             hasMath: sectionHasMath,
             bundleVersion,
             applyBodyBackground,
@@ -1161,7 +1194,6 @@ function injectOpacityClass(html: string): string {
   )
 }
 
-
 export function stripContentEditable(html: string): string {
   return html.replace(
     /\s+contenteditable(?:\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+))?/gi,
@@ -1200,7 +1232,12 @@ export function renderPageHtml(opts: RenderPageOptions): string {
       ? `\n    <script type="text/javascript">\n        window.correctAnswers = JSON.parse('${escapeInlineScriptJson(JSON.stringify(opts.activityAnswers))}');\n    </script>`
       : ""
 
-  const normalizedContent = stripContentEditable(promoteFirstHeadingToH1(opts.content))
+  // Stepper JSON payloads are masked for the whole assembly below — the
+  // regex passes over the page HTML (contenteditable strip, background-color
+  // scan, heading probes) must not match inside the embedded activity JSON.
+  const { masked: maskedContent, restore: restoreStepperPayloads } =
+    maskStepperPayloads(opts.content)
+  const normalizedContent = stripContentEditable(promoteFirstHeadingToH1(maskedContent))
 
   // Custom activities (`activity_custom_*`) ship an inline <script> that calls
   // window.adtRegisterCustomActivity(section, {validate, reset}) during parse —
@@ -1300,7 +1337,7 @@ ${fallbackHeadingHtml}${contentBlock}
   // 96 is the first-paint dock-band fallback; 0 in embed mode (dock hidden).
   const flFit = opts.fixedViewport ? fixedLayoutWebFit(opts.embed ? 0 : 96) : null
 
-  return `<!DOCTYPE html>
+  return restoreStepperPayloads(`<!DOCTYPE html>
 <html lang="${escapeAttr(opts.language)}">
 
 <head>
@@ -1327,7 +1364,7 @@ ${opts.embed
 </body>
 
 </html>
-`
+`)
 }
 
 // ---------------------------------------------------------------------------
@@ -1603,7 +1640,6 @@ export function buildImageMap(imagesDir: string): Map<string, string> {
   return map
 }
 
-
 function loadImageCaptionMap(storage: Storage, pageId: string): Map<string, string> {
   const row = storage.getLatestNodeData("image-captioning", pageId)
   if (!row) return new Map<string, string>()
@@ -1715,7 +1751,6 @@ export function buildPreferredImageAltMap(
   }
   return section ? applyDuplicateImageAltPolicy(section, preferredImageAltMap) : preferredImageAltMap
 }
-
 
 /** Rewrite image URLs from /api/books/{label}/images/{id} to images/{filename} */
 export function rewriteImageUrls(
