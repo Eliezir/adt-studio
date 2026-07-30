@@ -46,7 +46,7 @@ export interface FloatingSaveEntry {
   saving: boolean
   label?: ReactNode
   stage?: StageName
-  onSave?: () => void
+  onSave?: () => void | Promise<void>
   onSaveAndRerun?: () => void
   /**
    * Apply the pending changes without navigating. Awaited by
@@ -173,7 +173,11 @@ function FloatingSaveHost({ store }: { store: FloatingSaveStore }) {
     barProps = {
       label: e.label,
       saving: e.saving,
-      onSave: e.onSave ? () => store.get(e.id)?.onSave?.() : undefined,
+      onSave: e.onSave
+        ? () => {
+            void Promise.resolve(store.get(e.id)?.onSave?.()).catch(() => {})
+          }
+        : undefined,
       onSaveAndRerun: e.onSaveAndRerun ? () => store.get(e.id)?.onSaveAndRerun?.() : undefined,
       onReset: e.onReset ? () => store.get(e.id)?.onReset?.() : undefined,
       onDiscard: e.onDiscard ? () => store.get(e.id)?.onDiscard?.() : undefined,
@@ -190,7 +194,11 @@ function FloatingSaveHost({ store }: { store: FloatingSaveStore }) {
       ),
       saving: entries.some((e) => e.saving),
       onSave: entries.some((e) => e.onSave)
-        ? () => store.active().forEach((e) => e.onSave?.())
+        ? () => {
+            void Promise.all(
+              store.active().map((e) => Promise.resolve(e.onSave?.())),
+            ).catch(() => {})
+          }
         : undefined,
       onDiscard: entries.some((e) => e.onDiscard)
         ? () => store.active().forEach((e) => e.onDiscard?.())
