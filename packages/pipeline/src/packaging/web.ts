@@ -1920,7 +1920,12 @@ const MATH_INDICATORS = [
  * identifiers like `variable_name` — the base letter must not be preceded by
  * another letter, and the subscript char must not be followed by another letter.
  */
-const UNDELIMITED_LATEX_RE = /\\(?:text|mbox|hat|frac|sqrt|vec|bar|overline|underline|mathbf|mathrm|mathit|mathcal|mathbb|mathfrak|mathscr|circ|times|div|pm|mp|leq|geq|neq|approx|equiv|sim|in|notin|subset|supset|cup|cap|leftarrow|rightarrow|Leftarrow|Rightarrow|alpha|beta|gamma|delta|epsilon|theta|lambda|mu|pi|sigma|omega|phi|psi|infty|partial|nabla|sum|prod|int|lim|log|ln|sin|cos|tan|sec|csc|cot|left|right|cdot|ldots|cdots|quad|qquad|binom|tag)\b|[_^]\{|(?<![A-Za-z])[A-Za-z][_^][A-Za-z0-9](?![A-Za-z])/
+// NOTE: longer alternatives must precede their prefixes (dfrac/tfrac before frac),
+// otherwise `\dfrac` never matches — the alternation is anchored right after the
+// backslash, so `frac` cannot match the `d`. `begin`/`end` are needed for bare
+// `\begin{array}` blocks (columnar sums, long division), which MATH_INDICATORS
+// recognises for gating but this pass must also match to actually convert them.
+const UNDELIMITED_LATEX_RE = /\\(?:begin|end|dfrac|tfrac|text|mbox|hat|frac|sqrt|vec|bar|overline|underline|mathbf|mathrm|mathit|mathcal|mathbb|mathfrak|mathscr|circ|times|div|pm|mp|leq|geq|neq|approx|equiv|sim|in|notin|subset|supset|cup|cap|leftarrow|rightarrow|Leftarrow|Rightarrow|alpha|beta|gamma|delta|epsilon|theta|lambda|mu|pi|sigma|omega|phi|psi|infty|partial|nabla|sum|prod|int|lim|log|ln|sin|cos|tan|sec|csc|cot|left|right|cdot|ldots|cdots|quad|qquad|binom|tag)\b|[_^]\{|(?<![A-Za-z])[A-Za-z][_^][A-Za-z0-9](?![A-Za-z])/
 
 export function containsMathContent(html: string): boolean {
   // Scan markup only: a `$` or `\(` inside an inline grading script is JS, not
@@ -2096,6 +2101,13 @@ function convertDelimitedLatex(text: string): string {
  * Replace LaTeX math in HTML content with MathML rendered by Temml.
  * Handles delimited math ($, $$, \(, \[) and undelimited LaTeX in text nodes.
  *
+ * Both passes only touch text-node content (between > and <), never tag
+ * attributes. Generated activity HTML sometimes echoes the expression into an
+ * attribute (e.g. `<input aria-label="c. $5(2x)$" class="…">`); converting it
+ * there injects MathML whose own quoted attributes (`fence="true"`) terminate
+ * the attribute value early and split the tag open — the input disappears and
+ * its attribute tail renders as page text.
+ *
  * `<script>`/`<style>` bodies are left untouched — custom-activity sections
  * (`activity_custom_*`) ship an inline grading script, and JS routinely
  * contains `$` (template literals) and `\(`…`\)` (regex literals) that this
@@ -2109,8 +2121,11 @@ export function convertLatexToMathml(html: string): string {
 function convertLatexInFragment(html: string): string {
   html = decodeDollarEntities(html)
 
-  // First pass: convert delimited math anywhere in the string
-  html = convertDelimitedLatex(html)
+  // First pass: convert delimited math in text nodes
+  html = html.replace(/(>)([^<]+)(<)/g, (_match, open: string, text: string, close: string) => {
+    const converted = convertDelimitedLatex(text)
+    return converted !== text ? `${open}${converted}${close}` : _match
+  })
 
   // Second pass: convert undelimited LaTeX in text nodes (content between > and <).
   // For pure math nodes, render the entire text as a single expression.
