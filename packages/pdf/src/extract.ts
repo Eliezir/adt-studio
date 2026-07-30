@@ -144,6 +144,10 @@ export interface ExtractedImage {
    * lists every full-page layer). Computed from the same `toPixmap()` samples
    * as the recorder's `ImageStreamOp.contentDigest` so the two compare equal.
    * Transient: not persisted to the images table.
+   *
+   * STALE AFTER FLIP: hashes the pre-flip pixels. Only read during the
+   * placement-matching pass, which runs before `applyFlipsToRasterImages` —
+   * do not reuse it downstream to reason about the image's current pixels.
    */
   pixelDigest?: string;
   /**

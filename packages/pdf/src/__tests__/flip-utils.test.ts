@@ -150,6 +150,25 @@ describe("applyFlipsToRasterImages", () => {
     expect(imageB.buffer.equals(sourceB)).toBe(true);
   });
 
+  it("clears flipTransform after applying, so an accidental second call is a no-op", () => {
+    const source = createTwoPixelPng([255, 0, 0], [0, 0, 255]);
+    const image = makeRasterImage("im001", source);
+    image.flipTransform = { flipHorizontal: true, flipVertical: false };
+
+    applyFlipsToRasterImages([image]);
+    const afterFirstCall = Buffer.from(image.buffer);
+    expect(image.flipTransform).toBeUndefined();
+    expect(afterFirstCall.equals(source)).toBe(false);
+
+    // A caller re-invoking on the same array (without re-stamping
+    // flipTransform) must be a no-op, not a silent double-flip (which for
+    // H+H would revert to the original, and for any other combination would
+    // corrupt the image).
+    applyFlipsToRasterImages([image]);
+
+    expect(image.buffer.equals(afterFirstCall)).toBe(true);
+  });
+
   it("does nothing when no flip transform was stamped", () => {
     const source = createTwoPixelPng([255, 0, 0], [0, 0, 255]);
     const image = makeRasterImage("im001", source);
@@ -157,5 +176,54 @@ describe("applyFlipsToRasterImages", () => {
     applyFlipsToRasterImages([image]);
 
     expect(image.buffer.equals(source)).toBe(true);
+  });
+
+  it("decodes and encodes a JPEG exactly once for a 180° placement (both axes flipped)", () => {
+    const decodeSpy = vi.spyOn(jpeg, "decode").mockReturnValue({
+      width: 2,
+      height: 1,
+      data: new Uint8Array([255, 0, 0, 255, 0, 0, 255, 255]),
+    } as unknown as ReturnType<typeof jpeg.decode>);
+    const encodeSpy = vi.spyOn(jpeg, "encode").mockImplementation(({ data }) => ({
+      data: Buffer.from(data as Uint8Array),
+    }));
+
+    const image = makeRasterImage("im001", Buffer.from([0xff, 0xd8]));
+    image.format = "jpeg";
+    image.flipTransform = { flipHorizontal: true, flipVertical: true };
+
+    applyFlipsToRasterImages([image]);
+
+    expect(decodeSpy).toHaveBeenCalledTimes(1);
+    expect(encodeSpy).toHaveBeenCalledTimes(1);
+
+    decodeSpy.mockRestore();
+    encodeSpy.mockRestore();
+  });
+
+  it("degrades to unflipped and keeps processing when jpeg.decode throws on a malformed image", () => {
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    const malformedJpeg = Buffer.from([0xff, 0xd8, 0xff, 0x00]); // truncated/invalid JPEG
+    const badImage = makeRasterImage("im001", malformedJpeg);
+    badImage.format = "jpeg";
+    badImage.flipTransform = { flipHorizontal: true, flipVertical: false };
+
+    const goodSource = createTwoPixelPng([255, 0, 0], [0, 0, 255]);
+    const goodImage = makeRasterImage("im002", goodSource);
+    goodImage.flipTransform = { flipHorizontal: true, flipVertical: false };
+
+    expect(() => applyFlipsToRasterImages([badImage, goodImage])).not.toThrow();
+
+    // Malformed image is left exactly as-is (original orientation kept).
+    expect(badImage.buffer.equals(malformedJpeg)).toBe(true);
+    // The next image in the batch is still processed normally.
+    expect(goodImage.buffer.equals(goodSource)).toBe(false);
+    expect(warnSpy).toHaveBeenCalledWith(
+      expect.stringContaining("im001"),
+      expect.anything()
+    );
+
+    warnSpy.mockRestore();
   });
 });
