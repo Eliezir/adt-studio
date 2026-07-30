@@ -112,40 +112,40 @@ export function CascadeResetDialog({
         {/* Nothing completed downstream — the dialog is then a plain
             confirmation, with no misleading empty "Will be reset · 0" block. */}
         {stages.length > 0 && (
-        <div className="flex flex-col gap-2">
-          <p className="text-[10.5px] font-semibold uppercase tracking-[0.14em] text-[#a3a3a3]">
-            <Trans>Will be reset</Trans>
-            <span className="mx-1.5 text-[#d4d4d4]">·</span>
-            <span className="tabular-nums">{stages.length}</span>
-          </p>
-          <ul className="flex flex-col gap-1.5">
-            {stages.map((stage) => {
-              const Icon = stage.icon
-              return (
-                <li
-                  key={stage.slug}
-                  className={cn(
-                    "flex items-center gap-3 rounded-lg border px-3 py-2.5 transition-colors",
-                    stage.borderColor,
-                    stage.bgLight,
-                  )}
-                >
-                  <span
+          <div className="flex flex-col gap-2">
+            <p className="text-[10.5px] font-semibold uppercase tracking-[0.14em] text-[#a3a3a3]">
+              <Trans>Will be reset</Trans>
+              <span className="mx-1.5 text-[#d4d4d4]">·</span>
+              <span className="tabular-nums">{stages.length}</span>
+            </p>
+            <ul className="flex flex-col gap-1.5">
+              {stages.map((stage) => {
+                const Icon = stage.icon
+                return (
+                  <li
+                    key={stage.slug}
                     className={cn(
-                      "flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-white",
-                      stage.color,
+                      "flex items-center gap-3 rounded-lg border px-3 py-2.5 transition-colors",
+                      stage.borderColor,
+                      stage.bgLight,
                     )}
                   >
-                    <Icon className="h-3.5 w-3.5" strokeWidth={2} aria-hidden />
-                  </span>
-                  <span className={cn("text-[13px] font-medium", stage.textColor)}>
-                    {getStageLabelI18n(stage.slug)}
-                  </span>
-                </li>
-              )
-            })}
-          </ul>
-        </div>
+                    <span
+                      className={cn(
+                        "flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-white",
+                        stage.color,
+                      )}
+                    >
+                      <Icon className="h-3.5 w-3.5" strokeWidth={2} aria-hidden />
+                    </span>
+                    <span className={cn("text-[13px] font-medium", stage.textColor)}>
+                      {getStageLabelI18n(stage.slug)}
+                    </span>
+                  </li>
+                )
+              })}
+            </ul>
+          </div>
         )}
 
         <div className="-mx-6 border-t border-[#f1f1f1]" aria-hidden />
