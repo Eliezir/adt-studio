@@ -3,6 +3,7 @@ import fs from "node:fs"
 import path from "node:path"
 import os from "node:os"
 import { createBookStorage } from "@adt/storage"
+import { DEFAULT_LLM_MODEL_ID } from "@adt/types"
 
 const llmMocks = vi.hoisted(() => ({
   generateObject: vi.fn(),
@@ -315,10 +316,32 @@ describe("page-edit-service", () => {
       expect(result.html).toContain("img-dup")
     })
 
-    // Regression: `page_sectioning` present without a `model` key used to yield
-    // `modelId: undefined`, which blew up inside resolveModel with
-    // "Cannot read properties of undefined (reading 'indexOf')".
-    it("falls back to default_model when page_sectioning has no model", async () => {
+    it.each([
+      {
+        name: "uses page_sectioning.model when configured",
+        defaultModelId: "openai:gpt-4.1",
+        pageSectioningModelId: "openai:gpt-4o",
+        expectedModelId: "openai:gpt-4o",
+      },
+      {
+        // Regression: `page_sectioning` present without a `model` key used to
+        // yield `modelId: undefined`, which blew up inside resolveModel.
+        name: "falls back to default_model when page_sectioning has no model",
+        defaultModelId: "openai:gpt-4.1",
+        pageSectioningModelId: undefined,
+        expectedModelId: "openai:gpt-4.1",
+      },
+      {
+        name: "falls back to DEFAULT_LLM_MODEL_ID when no model is configured",
+        defaultModelId: undefined,
+        pageSectioningModelId: undefined,
+        expectedModelId: DEFAULT_LLM_MODEL_ID,
+      },
+    ])("$name", async ({
+      defaultModelId,
+      pageSectioningModelId,
+      expectedModelId,
+    }) => {
       const pageId = `${label}_p1`
       const storage = createBookStorage(label, tmpDir)
       try {
@@ -340,12 +363,15 @@ describe("page-edit-service", () => {
       fs.writeFileSync(
         configPath,
         [
-          'default_model: "openai:gpt-5.4"',
+          ...(defaultModelId ? [`default_model: "${defaultModelId}"`] : []),
           "structure_types: {}",
           "role_types: {}",
           "page_sectioning:",
           "  prompt: page_sectioning",
           "  max_refinements: 0",
+          ...(pageSectioningModelId
+            ? [`  model: "${pageSectioningModelId}"`]
+            : []),
         ].join("\n")
       )
 
@@ -368,7 +394,7 @@ describe("page-edit-service", () => {
       })
 
       expect(llmMocks.createLLMModel).toHaveBeenCalledWith(
-        expect.objectContaining({ modelId: "openai:gpt-5.4" })
+        expect.objectContaining({ modelId: expectedModelId })
       )
     })
   })
