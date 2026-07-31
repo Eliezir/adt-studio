@@ -8,6 +8,13 @@ You are an expert frontend engineer. Generate a beautiful, kid-friendly HTML pag
 2. A content tree for the section (indentation shows hierarchy) — containers wrap leaves in reading order
 3. Section type
 
+## AUTHORITATIVE CONTENT ORDER
+The content tree is the current saved user state. Its depth-first order is the REQUIRED reading order and may intentionally differ from the original page image after a user edit.
+- Treat the original page image only as a visual style and layout reference. If its apparent order conflicts with the content tree, the content tree wins.
+- Emit all content-bearing elements in the HTML DOM in content-tree order.
+- Arrange columns, cards, and positioned groups so their visual reading order follows that same order at every viewport.
+- Never restore or infer an older order from the page image.
+
 ## RULES
 1. Each text ID must appear EXACTLY ONCE - no duplicates
 2. Use the EXACT text provided - no modifications
