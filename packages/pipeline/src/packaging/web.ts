@@ -207,16 +207,23 @@ export function computePackagingInputHash(options: ComputePackagingInputHashOpti
   // 3. Book config (affects rendering, accessibility, etc.)
   hash.update(JSON.stringify(options.config))
 
-  // 4. Web assets directory fingerprint (file names + sizes + mtimes)
+  // 4. Sign-language metadata. Assigning or reassigning a video only updates
+  // SQLite, so the videos directory fingerprint below does not detect it.
+  const signLanguageVideos = options.storage.getSignLanguageVideos()
+    .map(({ videoId, sectionId, mimeType }) => ({ videoId, sectionId, mimeType }))
+    .sort((a, b) => a.videoId.localeCompare(b.videoId))
+  hash.update(JSON.stringify(signLanguageVideos))
+
+  // 5. Web assets directory fingerprint (file names + sizes + mtimes)
   const assetEntries = collectDirectoryFingerprint(options.webAssetsDir).sort((a, b) => a[0].localeCompare(b[0]))
   hash.update(JSON.stringify(assetEntries))
 
-  // 5. Images directory fingerprint
+  // 6. Images directory fingerprint
   const imagesDir = path.join(options.bookDir, "images")
   const imageEntries = collectDirectoryFingerprint(imagesDir).sort((a, b) => a[0].localeCompare(b[0]))
   hash.update(JSON.stringify(imageEntries))
 
-  // 6. Videos directory fingerprint
+  // 7. Videos directory fingerprint
   const videosDir = path.join(options.bookDir, "videos")
   const videoEntries = collectDirectoryFingerprint(videosDir).sort((a, b) => a[0].localeCompare(b[0]))
   hash.update(JSON.stringify(videoEntries))
