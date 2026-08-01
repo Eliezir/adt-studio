@@ -47,7 +47,20 @@ structure_types:
     code samples, ASCII layouts). Children are the text leaves, one per line.
 
 role_types:
-  heading: A heading-level leaf (chapter, section, or subheading text).
+  chapter_title: >
+    The highest heading level in the content hierarchy (H1): a chapter number,
+    chapter title, unit title, or other top-level display heading. Use the same
+    role for visually equivalent top-level headings throughout the book.
+  section_heading: >
+    The second heading level (H2): a major section within the current chapter
+    or unit. Use the same role for headings with the same visual and structural
+    rank throughout the book.
+  subheading: >
+    The third heading level (H3): a subsection, minor heading, callout heading,
+    or activity title nested under a section.
+  heading: >
+    A heading whose hierarchy genuinely cannot be resolved as chapter_title,
+    section_heading, or subheading. Use only as a last resort.
   text: Ordinary prose or narrative text.
   math: A mathematical expression (use LaTeX notation).
   image: >

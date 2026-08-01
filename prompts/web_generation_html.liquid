@@ -73,7 +73,9 @@ This book uses a fixed, accessible type scale. Font SIZE is applied automaticall
 {% for s in typography %}- `{{ s.className }}` — {{ s.label }} ({{ s.mobilePx }}px mobile → {{ s.desktopPx }}px desktop)
 {% endfor %}
 Rules:
-- Put the right class directly on each text element: main chapter/display title → `adt-h1`; section headings → `adt-h2`; minor or callout/sidebar headings → `adt-h3`; paragraphs, running text, list items → `adt-body`; captions and image labels → `adt-caption`.
+- Heading roles are authoritative: `chapter_title` → semantic `<h1 class="adt-h1">`; `section_heading` → `<h2 class="adt-h2">`; `subheading` → `<h3 class="adt-h3">`. Put the provided `data-id` on that heading or a descendant inside it. Never render an H1 role with `adt-h2`, an H2 role with `adt-h1`, or otherwise mix heading tags and typography classes.
+- For the legacy generic `heading` role, infer H1/H2/H3 from the original page and surrounding hierarchy, then keep its semantic heading tag and `adt-h1`/`adt-h2`/`adt-h3` class aligned.
+- Paragraphs, running text, and list items use `adt-body`; captions and image labels use `adt-caption`.
 - Do NOT set any font-size utility (`text-sm` … `text-6xl`, `text-[..]`) or inline `font-size` — sizing comes only from the `adt-*` class, scales fluidly between mobile and desktop, and cannot be overridden. Handle responsiveness with LAYOUT (stack columns with `max-lg:flex-col`, adjust spacing), not font size.
 - Keep using Tailwind for everything else (font weight, color, spacing, alignment).
 {% endif %}

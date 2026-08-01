@@ -29,6 +29,14 @@ Do NOT set both `structure` and `role` on the same node. Do NOT nest containers 
 
 {% for t in role_types %}- `{{ t.key }}`: {{ t.description }}
 {% endfor %}
+
+## HEADING HIERARCHY (BOOK-WIDE CONSISTENCY)
+
+- Classify every visible heading by its semantic rank, not merely by being bold: top-level chapter/unit/display heading → `chapter_title` (H1); major section within it → `section_heading` (H2); nested subsection/minor/callout/activity heading → `subheading` (H3).
+- Use visual evidence from the original page—font size, weight, colour, spacing, numbering, indentation, banner treatment—and the surrounding content structure together. A heading's wording alone does not determine its level.
+- Equivalent publisher styles must receive the same role throughout the book. For example, all chapter names use `chapter_title`, all peer topic headings use `section_heading`, and repeated "Prevention methods"-style children use `subheading`.
+- A chapter number and its adjacent chapter name may both be `chapter_title`; the renderer may compose them visually, but their hierarchy remains H1. Do not demote a long chapter title merely because it wraps.
+- Use the generic `heading` role only when the source provides insufficient evidence to choose H1/H2/H3. Never use ordinary `text` for a heading.
 ## SECTION TYPES
 
 {% for t in section_types %}- `{{ t.key }}`: {{ t.description }}
