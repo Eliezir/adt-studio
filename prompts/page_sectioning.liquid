@@ -34,6 +34,13 @@ Do NOT set both `structure` and `role` on the same node. Do NOT nest containers 
 {% for t in section_types %}- `{{ t.key }}`: {{ t.description }}
 {% endfor %}
 
+## Table-of-contents continuation detection
+
+- A table of contents may span multiple consecutive pages. Only its first page may show a heading such as "Table of Contents" or "Contents"; continuation pages often begin directly with the next chapter or unit.
+- Classify a page as `table_of_contents` when it predominantly contains repeated navigation-entry rows: a chapter/section/subsection title on the left, dot leaders or a wide alignment gap in the middle, and an Arabic or Roman page number at the right edge. This repeated row pattern is sufficient even when the TOC heading is absent.
+- Preserve every entry in reading order and preserve hierarchy containers/indentation visible in the page image. A continued TOC page remains one `table_of_contents` section; never downgrade it to `text_only`, `list`, or `other` merely because the heading is not repeated.
+- Dot leaders between TOC titles and terminal page numbers are navigation formatting, NOT writable response lines. TOC continuation detection takes precedence over WRITABLE-PAGE PRECEDENCE below.
+
 ## Activity classification rules
 
 Use these to disambiguate activity types:
