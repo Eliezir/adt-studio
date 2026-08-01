@@ -24,6 +24,7 @@ function makeCtx(overrides?: {
   roleKeys?: string[]
   sectionTypeKeys?: string[]
   availableImageIds?: string[]
+  mode?: "page" | "dynamic"
 }) {
   return {
     structureKeys: new Set(
@@ -40,6 +41,7 @@ function makeCtx(overrides?: {
       overrides?.sectionTypeKeys ?? ["text_only", "images_only"]
     ),
     availableImageIds: new Set(overrides?.availableImageIds ?? []),
+    mode: overrides?.mode,
   }
 }
 
@@ -220,6 +222,36 @@ describe("buildPageSectioningConfig", () => {
 // ── runValidator ────────────────────────────────────────────────
 
 describe("runValidator", () => {
+  it("requires exactly one section in page mode", () => {
+    const result = runValidator(
+      {
+        reasoning: "Split the page",
+        sections: [
+          {
+            section_type: "text_only",
+            background_color: "#fff",
+            text_color: "#000",
+            page_number: 1,
+            nodes: [{ role: "text", text: "First" }],
+          },
+          {
+            section_type: "text_only",
+            background_color: "#fff",
+            text_color: "#000",
+            page_number: 1,
+            nodes: [{ role: "text", text: "Second" }],
+          },
+        ],
+      },
+      makeCtx({ mode: "page" }),
+    )
+
+    expect(result.valid).toBe(false)
+    expect(result.errors).toContain(
+      "Page mode requires exactly one section, but the response contains 2. Merge all page content into one section."
+    )
+  })
+
   it("accepts a simple section with a leaf-only node", () => {
     const result = runValidator(
       {
