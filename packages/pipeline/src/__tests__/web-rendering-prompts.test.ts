@@ -81,4 +81,42 @@ describe("web rendering reading-order prompts", () => {
       prompt.indexOf('heading id=sense_heading "Sense"'),
     )
   })
+
+  it("requires right-aligned page numbers and dotted leaders for TOC pages", async () => {
+    const messages = await promptEngine.renderPrompt("web_generation_html", {
+      ...generationContext(),
+      section_type: "table_of_contents",
+      nodes: [{ node_id: "toc_1", role: "text", text: "Digestive system1" }],
+    })
+    const prompt = messages.map(messageText).join("\n")
+
+    expect(prompt).toContain("page number flush right")
+    expect(prompt).toContain("dotted leader filling the space between")
+    expect(prompt).toContain("Never put the leader after the page number")
+    expect(prompt).toContain('text id=toc_1 "Digestive system1"')
+  })
+
+  it("does not add TOC-only layout rules to normal content pages", async () => {
+    const messages = await promptEngine.renderPrompt(
+      "web_generation_html",
+      generationContext(),
+    )
+    const prompt = messages.map(messageText).join("\n")
+
+    expect(prompt).not.toContain("TABLE OF CONTENTS LAYOUT")
+  })
+
+  it("requires visual review to preserve corrected TOC rows", async () => {
+    const messages = await promptEngine.renderPrompt("visual_review", {
+      nodes: [{ node_id: "toc_1", role: "text", text: "Digestive system1" }],
+      section_type: "table_of_contents",
+      has_merged_content: false,
+      viewports: [{ label: "Desktop", width: 1280, tailwind_prefix: "" }],
+    })
+    const prompt = messages.map(messageText).join("\n")
+
+    expect(prompt).toContain("TABLE OF CONTENTS REVIEW")
+    expect(prompt).toContain("page number at the far right")
+    expect(prompt).toContain("Do not remove a correct dotted-leader row")
+  })
 })

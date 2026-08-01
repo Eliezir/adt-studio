@@ -7,6 +7,7 @@ import { getViewportBreakpoints, type ScreenshotRenderer } from "./screenshot.js
 import type { RenderConfig, RenderExecutionOptions, RenderNode, RenderSectionInput } from "./web-rendering.js"
 import { runVisualReviewLoop } from "./visual-review.js"
 import { buildTypographyCss, typographyPreservationErrors } from "./typography.js"
+import { repairTableOfContentsLayout } from "./toc-layout.js"
 import { DEFAULT_TYPOGRAPHY } from "@adt/types"
 
 /** Dependencies for the optional visual refinement loop. */
@@ -150,6 +151,9 @@ export async function renderSectionLlm(
   // underline-text sections can validate against repaired HTML while the saved
   // web-rendering node still contains the unrepaired LLM output.
   generatedHtml = autoRepairUnderlineActivityHtml(generatedHtml, section.sectionType)
+  if (section.sectionType === "table_of_contents") {
+    generatedHtml = repairTableOfContentsLayout(generatedHtml, renderContext.leaf_texts)
+  }
 
   // Optional: generate activity answers via a second LLM call
   let activityReasoning: string | undefined
