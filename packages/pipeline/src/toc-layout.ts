@@ -46,7 +46,7 @@ export function repairTableOfContentsLayout(html: string, leafTexts: LeafText[])
     )
     repaired = repaired.replace(element, (_match, opening: string, _tag: string, _quote: string, _content: string, closing: string) => {
       const leader = parts.leader
-        ? `<span aria-hidden="true" class="mx-2 flex-1 min-w-4 overflow-hidden whitespace-nowrap text-current">${escapeHtml(parts.leader)}</span>`
+        ? `<span aria-hidden="true" class="mx-2 flex-1 min-w-4 border-b border-dotted border-current"><span class="sr-only">${escapeHtml(parts.leader)}</span></span>`
         : `<span aria-hidden="true" class="mx-2 flex-1 min-w-4 border-b border-dotted border-current"></span>`
       return `${addRowClasses(opening)}<span class="min-w-0">${escapeHtml(parts.title)}</span>${leader}<span class="shrink-0 text-right tabular-nums">${escapeHtml(parts.separator + parts.pageNumber)}</span>${closing}`
     })

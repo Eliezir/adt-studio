@@ -9,7 +9,8 @@ describe("repairTableOfContentsLayout", () => {
     )
     expect(repaired).toContain("flex items-baseline w-full")
     expect(repaired).toContain(">Digestive system</span>")
-    expect(repaired).toContain(">........</span>")
+    expect(repaired).toContain('class="mx-2 flex-1 min-w-4 border-b border-dotted border-current"')
+    expect(repaired).toContain('<span class="sr-only">........</span>')
     expect(repaired).toContain('class="shrink-0 text-right tabular-nums">1</span>')
   })
 
