@@ -120,13 +120,28 @@ The goal is not merely to pass automated checks. The digital book should preserv
 - Page numbers appear beside titles on the left.
 - Dotted leaders are too short.
 - Only the first TOC page is recognized.
+- A continuation page creates a separate, absolutely positioned page-number column.
+- Long entries overflow instead of wrapping while keeping their page number aligned.
+- Old decorative dot spans remain beside the repaired leader and produce doubled or broken leaders.
 
 **Fix**
 
-- Detect TOC continuation across pages.
-- Render each entry as title, flexible dotted leader, and right-aligned page number.
-- The leader should expand from near the end of the title to near the page number, while allowing wrapped titles and mobile layouts.
+- Detect TOC continuation across adjacent pages from structure and content, even when a continuation page does not repeat the `Contents` heading.
+- Parse each entry into three semantic siblings inside one full-width flex row: a title, a flexible dotted leader, and a fixed-width right-aligned page number. Keep Roman numerals valid for front matter.
+- Give the title `min-width: 0` and a bounded maximum width, the leader `flex: 1` with a useful minimum width, and the page number a fixed shrink-proof width with tabular numerals.
+- Allow long titles to wrap. Do not force `nowrap` at desktop breakpoints; the leader must begin after the final title line and continue to the shared page-number column.
+- Remove obsolete decorative leader elements and remove duplicate absolute number-only overlays only when their values match the semantic TOC entries. Do not remove unrelated page furniture.
+- Do not interpret a heading such as `Chapter 1` as a TOC entry unless it contains a leader pattern or is already structurally row-like.
 - Keep entries semantic and link them to the corresponding digital page when targets are available.
+
+**Verification**
+
+- Compare every TOC page—not only the page containing the `Contents` heading—with its source PDF page.
+- Assert that every entry's page-number right edge equals its row's right edge and that all entries share one page-number column.
+- Assert that each row has a non-zero leader, there are no duplicate number-only overlays, and the rendered section has no horizontal overflow.
+- Include tests for front-matter Roman numerals, multi-page continuation, long wrapped titles, unit/chapter headings, and cleanup of legacy generated markup.
+
+This repair was verified on both TOC pages of **English Standard 3**: 43 entries aligned to one page-number column, with continuous leaders, correct wrapping, no duplicate overlays, and no horizontal overflow.
 
 ### Accessibility validation findings
 
@@ -190,9 +205,8 @@ The following existing issues and pull requests cover the general code changes d
 | --- | --- | --- |
 | Full-page visual fidelity | [#668](https://github.com/unicef/adt-studio/issues/668) | [#669](https://github.com/unicef/adt-studio/pull/669) |
 | Page preservation in By Page mode | — | [#667](https://github.com/unicef/adt-studio/pull/667) |
-| TOC leaders and response spacing | [#670](https://github.com/unicef/adt-studio/issues/670) | [#671](https://github.com/unicef/adt-studio/pull/671) |
+| TOC leaders and response spacing | [#670](https://github.com/unicef/adt-studio/issues/670) | [#671](https://github.com/unicef/adt-studio/pull/671), [#690](https://github.com/unicef/adt-studio/pull/690) |
 | Accessible labelled diagrams | — | [#672](https://github.com/unicef/adt-studio/pull/672) |
 | Heading hierarchy and font consistency | [#673](https://github.com/unicef/adt-studio/issues/673) | [#674](https://github.com/unicef/adt-studio/pull/674) |
 | Validation fix routing | [#618](https://github.com/unicef/adt-studio/issues/618) | — |
 | Embedded accessibility QA | [#678](https://github.com/unicef/adt-studio/issues/678) | — |
-
