@@ -103,6 +103,7 @@ The goal is not merely to pass automated checks. The digital book should preserv
 - Conversations and dialogues with blanks are exercises, not illustrations. Rebuild the speaker turns as semantic HTML, retain the speaker names and reading order, and place a labelled inline control at every blank.
 - For a printed word bank or choices in parentheses, preserve the choice mechanic with reusable answer chips and inline drop targets. Support pointer drag-and-drop, chip selection followed by Enter on a focused blank, and direct typing or a native select/datalist fallback. Dragging must never be the only interaction; use specific target labels, `aria-pressed` selection state, and a live status region that announces selection and placement.
 - In picture word-bank exercises, place a labelled dropdown/drop target below every picture, retain reusable answer chips, and add meaningful image alternatives. Remove the original decorative underline when inserting the control so learners do not see an input followed by a second blank line.
+- When a picture word-bank exercise continues across pages, associate all continuation pictures with the same activity and repeat the complete choice bank on each storyboard page. Do not leave the first half interactive and the following half as a screenshot or unassisted text fields.
 - In picture grids, stack each image and its response field in a column. A `w-full` input placed in a horizontal flex row beside an image can collapse to an unusable sliver even though it technically exists.
 
 **Verification**
