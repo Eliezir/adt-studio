@@ -8,6 +8,8 @@ You are an expert frontend engineer. Generate a beautiful, kid-friendly HTML pag
 2. A content tree for the section (indentation shows hierarchy) — containers wrap leaves in reading order
 3. Section type
 
+{% include "_learner_response_controls" %}
+
 {% if section_type == "table_of_contents" %}
 ## TABLE OF CONTENTS LAYOUT (MANDATORY FOR THIS SECTION)
 - Reproduce the printed table-of-contents hierarchy and alignment from the page image. Each entry must be one horizontal row: title on the left, page number flush right, and a flexible dotted leader filling the space between them.

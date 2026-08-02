@@ -217,6 +217,7 @@ function validateWebRendering(
   const expectedTexts = new Map(leaf_texts.map((t) => [t.text_id, t.text]))
   const optionalTextIds = collectOptionalTextIds(leaf_texts)
   const candidateHtml = autoRepairUnderlineActivityHtml(r.content, sectionType)
+  const minimumEditableElements = minimumLearnerResponseCount(nodes)
 
   const check = validateSectionHtml(
     candidateHtml,
@@ -231,6 +232,7 @@ function validateWebRendering(
       expectedSectionId: sectionId,
       optionalTextIds,
       expectedContentIdOrder: collectLeafDataIdOrder(nodes),
+      minimumEditableElements,
     }
   )
   if (check.valid && check.sectionHtml) {
@@ -242,6 +244,28 @@ function validateWebRendering(
   }
 
   return { valid: check.valid, errors: check.errors }
+}
+
+const RESPONSE_ROLES = new Set(["activity_question", "activity_fill_in_the_blank"])
+const ACTIONABLE_INSTRUCTION_RE = /\b(?:answer|write|fill|complete|choose|name|identify|describe|match|draw|say)\b/i
+
+/** Require one response per explicit question/blank. If the tree only contains
+ * an actionable activity instruction (common on mixed page-mode pages), require
+ * at least one control so a static screenshot cannot pass validation. */
+function minimumLearnerResponseCount(nodes: RenderNode[]): number {
+  let explicit = 0
+  let actionableInstructions = 0
+  function walk(node: RenderNode): void {
+    if (node.role && RESPONSE_ROLES.has(node.role)) explicit += 1
+    if (
+      node.role === "activity_instruction" &&
+      typeof node.text === "string" &&
+      ACTIONABLE_INSTRUCTION_RE.test(node.text)
+    ) actionableInstructions += 1
+    for (const child of node.children ?? []) walk(child)
+  }
+  for (const node of nodes) walk(node)
+  return explicit > 0 ? explicit : actionableInstructions
 }
 
 function collectLeafDataIdOrder(nodes: RenderNode[]): string[] {

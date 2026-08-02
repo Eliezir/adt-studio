@@ -16,6 +16,10 @@ The content tree below is the current saved user state. Its depth-first order is
 Content tree (authoritative reading order):
 {% include "_render_node", nodes: nodes, depth: 0 %}
 
+{% include "_learner_response_controls" %}
+
+During review, reject any exercise with a missing response control, a control detached from its question or picture, a picture input collapsed beside the image, an inaccessible/unlabelled control, or a field clipped at mobile width. Never remove valid learner controls while correcting visual layout.
+
 {% if section_type == "table_of_contents" %}
 ## TABLE OF CONTENTS REVIEW (MANDATORY)
 - Every TOC entry must show its title at the left, its terminal Arabic or Roman page number at the far right, and a dotted leader filling the middle. Reject any rendering where the number remains appended to the title, appears in a left-hand column, or the dots occur after the number.

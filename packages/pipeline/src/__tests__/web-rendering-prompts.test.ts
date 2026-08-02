@@ -119,4 +119,33 @@ describe("web rendering reading-order prompts", () => {
     expect(prompt).toContain("page number at the far right")
     expect(prompt).toContain("Do not remove a correct dotted-leader row")
   })
+
+  for (const promptName of ["web_generation_html", "web_generation_html_overlay"]) {
+    it(`${promptName} requires accessible controls for mixed-page exercises`, async () => {
+      const messages = await promptEngine.renderPrompt(promptName, {
+        ...generationContext(),
+        nodes: [{ node_id: "q1", role: "activity_question", text: "Name the animal." }],
+      })
+      const prompt = messages.map(messageText).join("\n")
+
+      expect(prompt).toContain("one text input below EACH picture")
+      expect(prompt).toContain('data-activity-item="item-N"')
+      expect(prompt).toContain("at least 44px high")
+      expect(prompt).toContain("provide an optional response field")
+    })
+  }
+
+  it("requires visual review to preserve usable exercise controls", async () => {
+    const messages = await promptEngine.renderPrompt("visual_review", {
+      nodes: [{ node_id: "q1", role: "activity_question", text: "Name the animal." }],
+      section_type: "text_and_images",
+      has_merged_content: false,
+      viewports: [{ label: "Desktop", width: 1280, tailwind_prefix: "" }],
+    })
+    const prompt = messages.map(messageText).join("\n")
+
+    expect(prompt).toContain("reject any exercise with a missing response control")
+    expect(prompt).toContain("picture input collapsed beside the image")
+    expect(prompt).toContain("clipped at mobile width")
+  })
 })

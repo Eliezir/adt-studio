@@ -97,6 +97,18 @@ The goal is not merely to pass automated checks. The digital book should preserv
 - Fill in the blank: place the input at the blank's position and provide a meaningful accessible label.
 - Drawing or programming tasks: provide an appropriately sized response area and retain the instruction; do not pretend a text field fully replaces a required external tool.
 - Preserve response state and keyboard focus, and ensure every control has a unique name and label.
+- Page-mode books often classify an entire mixed page as `text_and_images` instead of an `activity_*` section. Activity detection and writable-field validation must therefore inspect saved node roles and instructions, not only the section type.
+- When activity text is baked into an image, keep the image for fidelity but reconstruct each answerable prompt as semantic text plus a nearby field in normal flow. Absolutely positioned OCR fields can land outside the visible canvas.
+- In picture grids, stack each image and its response field in a column. A `w-full` input placed in a horizontal flex row beside an image can collapse to an unusable sliver even though it technically exists.
+
+**Verification**
+
+- Audit every page for answerable instructions, explicit questions, printed blanks, and existing controls.
+- Assert that controls have unique IDs and `data-activity-item` values, supported input types, specific accessible names, and at least 44px touch height.
+- Test the Storyboard's real Mobile mode (375px), not only a resized outer browser window, because the preview iframe has its own device viewport.
+- Enter a sample answer and verify the control is enabled, keyboard-focusable, and retains the typed value.
+
+The English Standard 3 remediation produced **202 labelled response controls across 35 exercise pages**. The structural audit found no missing labels, duplicate IDs, duplicate activity-item IDs, or unsupported control types; the live desktop and 375px mobile checks found no clipped controls after repairing the image-passage and picture-grid edge cases.
 
 ### Tables and table continuations
 
@@ -210,3 +222,4 @@ The following existing issues and pull requests cover the general code changes d
 | Heading hierarchy and font consistency | [#673](https://github.com/unicef/adt-studio/issues/673) | [#674](https://github.com/unicef/adt-studio/pull/674) |
 | Validation fix routing | [#618](https://github.com/unicef/adt-studio/issues/618) | — |
 | Embedded accessibility QA | [#678](https://github.com/unicef/adt-studio/issues/678) | — |
+| AI-assisted image cleaning and image-level version history | [#695](https://github.com/unicef/adt-studio/issues/695) | — |

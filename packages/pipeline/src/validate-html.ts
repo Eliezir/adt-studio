@@ -40,6 +40,22 @@ const NON_WRITABLE_INPUT_TYPES = new Set([
   "range",
   "color",
 ])
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function countEditableElements(section: any): number {
+  let count = 0
+  const nodes = DomUtils.findAll(
+    (el) => el.type === "tag" && (el.name === "textarea" || el.name === "input"),
+    section.children ?? [],
+  )
+  for (const node of nodes) {
+    if (node.name === "textarea") count += 1
+    else if (!NON_WRITABLE_INPUT_TYPES.has((node.attribs?.type ?? "text").toLowerCase())) count += 1
+  }
+  const markerText = DomUtils.textContent(section)
+  count += markerText.match(BLANK_MARKER_RE)?.length ?? 0
+  return count
+}
 /**
  * Matches a leaf/text whose whole content is just an enumeration marker: a list
  * number, single letter, or roman numeral, optionally dotted or parenthesized —
@@ -135,6 +151,8 @@ export interface HtmlValidationOptions {
    * that are present must keep their relative order.
    */
   expectedContentIdOrder?: string[]
+  /** Minimum native/marker response controls required by the source activity tree. */
+  minimumEditableElements?: number
 }
 
 export function validateSectionHtml(
@@ -177,6 +195,16 @@ export function validateSectionHtml(
     errors.push(
       `Section type "${sectionType}" requires at least one editable element (<textarea>, <input>, or [[blank:item-N]] marker), but none were found. The learner cannot type into this page.`
     )
+  }
+
+  if ((options?.minimumEditableElements ?? 0) > 0) {
+    const actual = countEditableElements(section)
+    const minimum = options!.minimumEditableElements!
+    if (actual < minimum) {
+      errors.push(
+        `The source contains at least ${minimum} learner response prompt(s), but the rendering has only ${actual} editable element(s). Add a labelled input or textarea next to every answerable prompt.`
+      )
+    }
   }
 
   // Activity-specific structural checks. These catch failure modes the visual

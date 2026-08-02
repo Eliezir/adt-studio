@@ -1390,6 +1390,40 @@ describe("writable section types require editable inputs", () => {
     const result = validateSectionHtml(html, ["pg001_gp001"], [])
     expect(result.valid).toBe(true)
   })
+
+  it("enforces source-derived response counts on mixed page-mode sections", () => {
+    const html = `
+      <section data-section-type="text_and_images" data-section-id="pg001_section">
+        <p data-id="q1">Name the first animal.</p>
+        <input aria-label="First animal" data-activity-item="item-1" />
+        <p data-id="q2">Name the second animal.</p>
+      </section>
+    `
+    const result = validateSectionHtml(html, ["q1", "q2"], [], undefined, {
+      minimumEditableElements: 2,
+    })
+
+    expect(result.valid).toBe(false)
+    expect(result.errors).toContainEqual(
+      expect.stringContaining("at least 2 learner response prompt(s)")
+    )
+  })
+
+  it("accepts one labelled response per source prompt", () => {
+    const html = `
+      <section data-section-type="text_and_images" data-section-id="pg001_section">
+        <p data-id="q1">Name the first animal.</p>
+        <input aria-label="First animal" data-activity-item="item-1" />
+        <p data-id="q2">Name the second animal.</p>
+        <input aria-label="Second animal" data-activity-item="item-2" />
+      </section>
+    `
+    const result = validateSectionHtml(html, ["q1", "q2"], [], undefined, {
+      minimumEditableElements: 2,
+    })
+
+    expect(result.valid).toBe(true)
+  })
 })
 
 describe("textbook blank placeholders may be omitted when editable element is provided", () => {
