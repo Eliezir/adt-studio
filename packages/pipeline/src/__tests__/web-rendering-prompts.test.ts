@@ -140,6 +140,9 @@ describe("web rendering reading-order prompts", () => {
       expect(prompt).toContain("selectable answer chips and usable drop targets")
       expect(prompt).toContain("focus a blank, then press Enter")
       expect(prompt).toContain("live status region")
+      expect(prompt).toContain("remove the decorative underline/dash")
+      expect(prompt).toContain("text-only tables and timetables as semantic HTML tables")
+      expect(prompt).toContain("meaningful alt text")
     })
   }
 
