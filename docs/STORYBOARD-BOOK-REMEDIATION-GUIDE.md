@@ -100,6 +100,8 @@ The goal is not merely to pass automated checks. The digital book should preserv
 - Page-mode books often classify an entire mixed page as `text_and_images` instead of an `activity_*` section. Activity detection and writable-field validation must therefore inspect saved node roles and instructions, not only the section type.
 - When a crop is primarily a passage, worksheet, form, table, or exercise, do not display it as the learner-facing result. Reconstruct its text, headings, word bank, borders, and controls as semantic HTML. Retain only genuine illustrations that can be isolated from the text.
 - Passage blanks must remain inline at the exact missing-word position. A separate answer panel changes the exercise mechanic and is not an acceptable digitization even when every question has a field.
+- Conversations and dialogues with blanks are exercises, not illustrations. Rebuild the speaker turns as semantic HTML, retain the speaker names and reading order, and place a labelled inline control at every blank.
+- For a printed word bank or choices in parentheses, use an inline input with suggestions or a native select so the learner can type or choose with a keyboard. Drag-and-drop may be an enhancement, but never the only interaction; provide an equivalent focusable control and announce instructions and results to assistive technology.
 - In picture grids, stack each image and its response field in a column. A `w-full` input placed in a horizontal flex row beside an image can collapse to an unusable sliver even though it technically exists.
 
 **Verification**
@@ -109,7 +111,7 @@ The goal is not merely to pass automated checks. The digital book should preserv
 - Test the Storyboard's real Mobile mode (375px), not only a resized outer browser window, because the preview iframe has its own device viewport.
 - Enter a sample answer and verify the control is enabled, keyboard-focusable, and retains the typed value.
 
-The English Standard 3 remediation produced **202 labelled response controls across 35 exercise pages**. The structural audit found no missing labels, duplicate IDs, duplicate activity-item IDs, or unsupported control types; the live desktop and 375px mobile checks found no clipped controls after repairing the image-passage and picture-grid edge cases.
+The English Standard 3 remediation produced **202 labelled response controls across 35 exercise pages**. The structural audit found no missing labels, duplicate IDs, duplicate activity-item IDs, unsupported control types, or controls hidden behind screenshot fallbacks. The live desktop and 375px mobile checks found no clipped controls after repairing the image-passage, dialogue, and picture-grid edge cases. Remaining activity images were verified as genuine illustration prompts rather than text-bearing exercise screenshots.
 
 ### Tables and table continuations
 
