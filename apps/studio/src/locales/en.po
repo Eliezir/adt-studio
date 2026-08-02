@@ -1701,6 +1701,9 @@ msgstr "Branch"
 msgid "Branch out"
 msgstr "Branch out"
 
+msgid "Brazilian PNLD digital work (.zip) with HTML5 content, content.opf and toc.ncx metadata, for submission to the FNDE VALIDE reader."
+msgstr "Brazilian PNLD digital work (.zip) with HTML5 content, content.opf and toc.ncx metadata, for submission to the FNDE VALIDE reader."
+
 msgid "Breakpoint override"
 msgstr "Breakpoint override"
 
@@ -3542,6 +3545,9 @@ msgstr "Flexible"
 msgid "Fluency"
 msgstr "Fluency"
 
+msgid "FNDE-ready HTML5 package (.zip)"
+msgstr "FNDE-ready HTML5 package (.zip)"
+
 msgid "Folder actions"
 msgstr "Folder actions"
 
@@ -4014,6 +4020,9 @@ msgstr "How to add quizzes"
 
 msgid "HTML"
 msgstr "HTML"
+
+msgid "HTML5 + EPUB"
+msgstr "HTML5 + EPUB"
 
 msgid "I understand the part was processed with different prompts/models and want to merge it anyway."
 msgstr "I understand the part was processed with different prompts/models and want to merge it anyway."
@@ -5866,6 +5875,9 @@ msgstr "Package and preview the final ADT web application."
 msgid "Package preview to generate results"
 msgstr "Package preview to generate results"
 
+msgid "Package structure"
+msgstr "Package structure"
+
 msgid "Package the book for distribution. Pick a format, choose what content goes in, and we'll bundle everything into a downloadable archive."
 msgstr "Package the book for distribution. Pick a format, choose what content goes in, and we'll bundle everything into a downloadable archive."
 
@@ -6241,6 +6253,18 @@ msgstr "Play video"
 
 msgid "Please wait for the current operation to finish"
 msgstr "Please wait for the current operation to finish"
+
+msgid "PNLD Digital · FNDE"
+msgstr "PNLD Digital · FNDE"
+
+msgid "PNLD Digital Work"
+msgstr "PNLD Digital Work"
+
+msgid "PNLD Export"
+msgstr "PNLD Export"
+
+msgid "PNLD Package"
+msgstr "PNLD Package"
 
 msgid "Polishing paragraphs to perfection..."
 msgstr "Polishing paragraphs to perfection..."
@@ -8097,6 +8121,9 @@ msgstr "Subheading"
 msgid "Submit"
 msgstr "Submit"
 
+msgid "Submit to the FNDE PNLD Digital platform and validate with VALIDE."
+msgstr "Submit to the FNDE PNLD Digital platform and validate with VALIDE."
+
 msgid "Success"
 msgstr "Success"
 
@@ -9196,6 +9223,9 @@ msgstr "Using fallback"
 
 msgid "Validated"
 msgstr "Validated"
+
+msgid "Validates in VALIDE Desktop — the official PNLD reader"
+msgstr "Validates in VALIDE Desktop — the official PNLD reader"
 
 msgid "Validation"
 msgstr "Validation"
