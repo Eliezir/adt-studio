@@ -132,6 +132,9 @@ describe("web rendering reading-order prompts", () => {
       expect(prompt).toContain('data-activity-item="item-N"')
       expect(prompt).toContain("at least 44px high")
       expect(prompt).toContain("provide an optional response field")
+      expect(prompt).toContain("NOT acceptable visible output")
+      expect(prompt).toContain("exact sentence position with an inline input")
+      expect(prompt).toContain("Never move passage blanks into a separate questionnaire")
     })
   }
 
@@ -147,5 +150,6 @@ describe("web rendering reading-order prompts", () => {
     expect(prompt).toContain("reject any exercise with a missing response control")
     expect(prompt).toContain("picture input collapsed beside the image")
     expect(prompt).toContain("clipped at mobile width")
+    expect(prompt).toContain("a visible screenshot/crop used instead of semantic exercise HTML")
   })
 })

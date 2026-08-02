@@ -98,7 +98,8 @@ The goal is not merely to pass automated checks. The digital book should preserv
 - Drawing or programming tasks: provide an appropriately sized response area and retain the instruction; do not pretend a text field fully replaces a required external tool.
 - Preserve response state and keyboard focus, and ensure every control has a unique name and label.
 - Page-mode books often classify an entire mixed page as `text_and_images` instead of an `activity_*` section. Activity detection and writable-field validation must therefore inspect saved node roles and instructions, not only the section type.
-- When activity text is baked into an image, keep the image for fidelity but reconstruct each answerable prompt as semantic text plus a nearby field in normal flow. Absolutely positioned OCR fields can land outside the visible canvas.
+- When a crop is primarily a passage, worksheet, form, table, or exercise, do not display it as the learner-facing result. Reconstruct its text, headings, word bank, borders, and controls as semantic HTML. Retain only genuine illustrations that can be isolated from the text.
+- Passage blanks must remain inline at the exact missing-word position. A separate answer panel changes the exercise mechanic and is not an acceptable digitization even when every question has a field.
 - In picture grids, stack each image and its response field in a column. A `w-full` input placed in a horizontal flex row beside an image can collapse to an unusable sliver even though it technically exists.
 
 **Verification**
