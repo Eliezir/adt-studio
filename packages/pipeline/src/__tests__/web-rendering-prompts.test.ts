@@ -137,7 +137,9 @@ describe("web rendering reading-order prompts", () => {
       expect(prompt).toContain("Never move passage blanks into a separate questionnaire")
       expect(prompt).toContain("conversations and dialogues containing blanks as exercises")
       expect(prompt).toContain("MUST NOT be the only way to answer")
-      expect(prompt).toContain("input with a datalist or a select")
+      expect(prompt).toContain("selectable answer chips and usable drop targets")
+      expect(prompt).toContain("focus a blank, then press Enter")
+      expect(prompt).toContain("live status region")
     })
   }
 
