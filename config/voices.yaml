@@ -108,8 +108,4 @@ gemini:
   sq: Kore
   ur: Kore
 elevenlabs:
-  # Rachel — a stable ElevenLabs premade voice ID. Keep this in sync with
-  # DEFAULT_ELEVENLABS_VOICE (packages/pipeline/src/speech.ts) and
-  # DEFAULT_TTS_VOICE.elevenlabs (LanguageView.tsx) so the voice shown in the UI
-  # always matches the one actually used at generation.
-  default: 21m00Tcm4TlvDq8ikWAM
+  default: QK4xDwo9ESPHA4JNUpX3

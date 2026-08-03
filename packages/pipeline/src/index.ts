@@ -189,6 +189,7 @@ export {
   loadVoicesConfig,
   loadSpeechInstructions,
   computeSpeechCacheKey,
+  findAdjacentSpeechText,
   generateSpeechFile,
   generatePageSpeechFiles,
   generateWordTimestamps,

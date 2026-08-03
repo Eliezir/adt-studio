@@ -3,7 +3,7 @@ import { createPortal } from "react-dom"
 import { Link } from "@tanstack/react-router"
 import { AudioLines, Check, ChevronDown, ChevronRight, ChevronUp, CircleStop, Languages, Loader2, Play, Pause, Plus, RotateCcw, Save, Settings, Trash2, TriangleAlert, Type, Upload, Volume2, VolumeX, WandSparkles, X } from "lucide-react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { DEFAULT_OPENAI_TTS_MODEL_ID, DEFAULT_ELEVENLABS_TTS_MODEL_ID } from "@adt/types"
+import { DEFAULT_OPENAI_TTS_MODEL_ID, DEFAULT_ELEVENLABS_TTS_MODEL_ID, DEFAULT_ELEVENLABS_VOICE_ID } from "@adt/types"
 import { api, getAudioUrl, BASE_URL } from "@/api/client"
 import type { TextCatalogEntry, TranslationEvaluationStatusResponse, WordTimestamp, WordTimestampEntry } from "@/api/client"
 import { VersionPicker } from "@/components/pipeline/components/VersionPicker"
@@ -37,6 +37,7 @@ import {
   isImageEntry,
 } from "./lib/catalog-entries";
 import { displayLang } from "./lib/display-lang";
+import { PROVIDER_LABELS } from "./lib/provider-labels"
 import { ImageLightbox } from "./components/ImageLightbox";
 import { WordHighlightPreview } from "./components/WordHighlightPreview";
 import { usePendingChanges } from "../../components/change-summary";
@@ -252,7 +253,7 @@ function TranslationReviewInline({
 // config/voices.yaml) so we never show an OpenAI voice/model for a Gemini/Azure provider.
 // Values are voice/model identifiers, not user-facing copy — display only.
 // eslint-disable-next-line lingui/no-unlocalized-strings -- voice identifiers
-const DEFAULT_TTS_VOICE: Record<string, string> = { openai: "alloy", azure: "en-US-JennyNeural", gemini: "Kore", elevenlabs: "21m00Tcm4TlvDq8ikWAM" }
+const DEFAULT_TTS_VOICE: Record<string, string> = { openai: "alloy", azure: "en-US-JennyNeural", gemini: "Kore", elevenlabs: DEFAULT_ELEVENLABS_VOICE_ID }
 const DEFAULT_TTS_MODEL: Record<string, string> = { openai: DEFAULT_OPENAI_TTS_MODEL_ID, azure: "azure-tts", gemini: "gemini-2.5-pro-preview-tts", elevenlabs: DEFAULT_ELEVENLABS_TTS_MODEL_ID }
 
 export function LanguageView({
@@ -1575,7 +1576,7 @@ export function LanguageView({
                 <div>
                   <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">{t`Voice`}</p>
                   <p className="text-sm mt-0.5">
-                    <span className="capitalize">{speechSummary.provider}</span>
+                    <span>{PROVIDER_LABELS[speechSummary.provider] ?? speechSummary.provider}</span>
                     {" · "}
                     {speechSummary.voice}
                     {" · "}

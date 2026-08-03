@@ -37,6 +37,7 @@ import {
   resolveVoice,
   generateSpeechFile,
   generateWordTimestamps,
+  findAdjacentSpeechText,
   type ProviderRouting,
 } from "@adt/pipeline"
 import { getLiveSpeechRun } from "../services/speech-progress.js"
@@ -751,9 +752,10 @@ export function createTTSRoutes(booksDir: string, configPath?: string, taskServi
         sourceLanguage,
         normalizedLanguage
       )
-      const textEntry = languageEntries.find(
+      const entryIndex = languageEntries.findIndex(
         (entry) => entry.id === parsed.data.textId
       )
+      const textEntry = entryIndex === -1 ? undefined : languageEntries[entryIndex]
       if (!textEntry) {
         throw new HTTPException(404, {
           message: `Text entry not found for ${parsed.data.textId} (${normalizedLanguage})`,
@@ -803,8 +805,8 @@ export function createTTSRoutes(booksDir: string, configPath?: string, taskServi
           model: options.targetModel,
           voice: options.targetVoice,
           // Gemini embeds these in the prompt text; OpenAI uses its instructions
-          // field. Azure has no instruction channel. Mirrors stage-runner.ts so the
-          // single-item cache key matches the batch path.
+          // field. Azure has no instruction channel. Mirrors stage-runner.ts and
+          // pipeline-dag.ts so the single-item cache key matches the batch path.
           instructions:
             options.targetProvider === "openai" ||
             options.targetProvider === "gemini"
@@ -827,6 +829,18 @@ export function createTTSRoutes(booksDir: string, configPath?: string, taskServi
           provider: options.targetProvider,
           geminiTemperature: config.speech?.temperature,
           geminiSeed: config.speech?.seed,
+          // ElevenLabs-only: adjacent-entry context, opt-in via
+          // elevenlabs_use_context. Must resolve identically to stage-runner.ts
+          // and pipeline-dag.ts so the cache key stays in sync across paths.
+          elevenLabsPreviousText:
+            options.targetProvider === "elevenlabs" && config.speech?.elevenlabs_use_context
+              ? findAdjacentSpeechText(languageEntries, entryIndex, -1, config.speech)
+              : undefined,
+          elevenLabsNextText:
+            options.targetProvider === "elevenlabs" && config.speech?.elevenlabs_use_context
+              ? findAdjacentSpeechText(languageEntries, entryIndex, 1, config.speech)
+              : undefined,
+          elevenLabsApplyTextNormalization: config.speech?.elevenlabs_apply_text_normalization,
         })
 
       try {

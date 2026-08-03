@@ -21,6 +21,15 @@ export type TTSRateLimitConfig = z.infer<typeof TTSRateLimitConfig>
 export const TTSProviderConfig = z.object({
   model: z.string().optional(),
   languages: z.array(z.string()).optional(),
+  /**
+   * Adaptive RPM limiter config — currently only read for the `gemini`
+   * provider (see `resolveGeminiTtsRateLimit`/`stage-runner.ts`). It parses
+   * fine under `providers.elevenlabs`/`providers.azure`/`providers.openai`
+   * too but is silently ignored there: ElevenLabs is throttled by a fixed
+   * internal concurrency cap instead (its plans limit concurrent
+   * connections, not requests/minute), and Azure/OpenAI have no adaptive
+   * limiter at all.
+   */
   rate_limit: TTSRateLimitConfig.optional(),
 })
 export type TTSProviderConfig = z.infer<typeof TTSProviderConfig>

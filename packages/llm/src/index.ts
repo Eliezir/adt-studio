@@ -62,6 +62,7 @@ export {
   type AzureAudioOptions,
   type GeminiTTSConfig,
   type ElevenLabsTTSConfig,
+  type ElevenLabsAudioOptions,
   type WhisperWordTimestamp,
   type WhisperTranscriptionResult,
 } from "./speech.js"

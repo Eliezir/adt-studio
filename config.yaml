@@ -335,6 +335,12 @@ image_filters:
 #     (still backs off on 429s).
 #   - min_/max_requests_per_minute → override the adaptive floor/ceiling.
 #
+# NOTE: `rate_limit` is currently only honored under `providers.gemini`. It
+# parses under `providers.elevenlabs`/`providers.azure`/`providers.openai` too
+# but is silently ignored there — ElevenLabs is throttled by a fixed internal
+# concurrent-request cap instead (its plans limit concurrency, not
+# requests/minute), and Azure/OpenAI have no adaptive limiter.
+#
 # speech:
 #   default_provider: gemini
 #   providers:

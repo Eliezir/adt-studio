@@ -145,6 +145,16 @@ export interface ElevenLabsTTSConfig {
   apiKey?: string
 }
 
+/** Mirrors `AzureAudioOptions`: generic `speech.sample_rate`/`bit_rate` config
+ *  applied to the ElevenLabs synthesizer. Unlike Azure/OpenAI, ElevenLabs only
+ *  accepts a fixed set of (sample rate, bitrate) combinations per output
+ *  format, so these are snapped to the nearest supported value rather than
+ *  passed through verbatim. */
+export interface ElevenLabsAudioOptions {
+  sampleRate?: number
+  bitRate?: string
+}
+
 interface GeminiInlineData {
   data?: string
   mimeType?: string
@@ -170,6 +180,41 @@ const GEMINI_PCM_BITS_PER_SAMPLE = 16
 // `pcm_24000` output format is requested; we wrap it as WAV ourselves (mirrors
 // the Gemini PCM handling) since ElevenLabs has no native "wav" output format.
 const ELEVENLABS_PCM_SAMPLE_RATE = 24_000
+
+// ElevenLabs' valid `output_format` combinations (per their TTS API docs).
+// Each container constrains sample rate — and, for mp3/opus, bitrate — to a
+// fixed set of values, so arbitrary `speech.sample_rate`/`bit_rate` config
+// must be snapped to the nearest supported combination rather than passed
+// through as-is (contrast with Azure, whose REST API accepts free-form values).
+const ELEVENLABS_MP3_SAMPLE_RATES = [22050, 44100]
+const ELEVENLABS_MP3_BITRATES_BY_SAMPLE_RATE: Record<number, number[]> = {
+  22050: [32],
+  44100: [32, 64, 96, 128, 192],
+}
+const ELEVENLABS_PCM_SAMPLE_RATES = [8000, 16000, 22050, 24000, 44100]
+const ELEVENLABS_OPUS_SAMPLE_RATE = 48_000
+const ELEVENLABS_OPUS_BITRATES = [32, 64, 96, 128, 192]
+
+function nearestValue(candidates: number[], target: number): number {
+  return candidates.reduce((best, candidate) =>
+    Math.abs(candidate - target) < Math.abs(best - target) ? candidate : best
+  )
+}
+
+/** Extracts a kbps number from a generic `bit_rate` config string (e.g. "128",
+ *  "128k", or Azure's own "128kbitrate" token) so the same config value can
+ *  drive both providers. Returns undefined when no digits are present. */
+function parseKbps(bitRate?: string): number | undefined {
+  if (!bitRate) return undefined
+  const match = /\d+/.exec(bitRate)
+  return match ? Number(match[0]) : undefined
+}
+
+function resolveElevenLabsPcmSampleRate(sampleRate?: number): number {
+  return sampleRate !== undefined
+    ? nearestValue(ELEVENLABS_PCM_SAMPLE_RATES, sampleRate)
+    : ELEVENLABS_PCM_SAMPLE_RATE
+}
 
 function buildAzureOutputFormat(
   format: string,
@@ -499,17 +544,38 @@ export function createGeminiTTSSynthesizer(
 }
 
 /**
- * Map our generic `responseFormat` to an ElevenLabs `output_format` query
- * value. ElevenLabs has no native "wav" format, so wav/pcm requests ask for
- * raw 24kHz PCM and get wrapped as WAV locally (mirrors the Gemini handling).
+ * Map our generic `responseFormat` (plus optional `speech.sample_rate`/
+ * `bit_rate` config) to an ElevenLabs `output_format` query value. ElevenLabs
+ * has no native "wav" format, so wav/pcm requests ask for raw PCM at the
+ * resolved sample rate and get wrapped as WAV locally (mirrors the Gemini
+ * handling). Unset `audioOptions` reproduce the previous hardcoded defaults.
  */
-function buildElevenLabsOutputFormat(format: string): string {
+function buildElevenLabsOutputFormat(
+  format: string,
+  audioOptions?: ElevenLabsAudioOptions
+): string {
   const normalized = format.toLowerCase()
-  if (normalized === "opus") return "opus_48000_128"
-  if (normalized === "wav" || normalized === "pcm") {
-    return `pcm_${ELEVENLABS_PCM_SAMPLE_RATE}`
+  const requestedKbps = parseKbps(audioOptions?.bitRate)
+
+  if (normalized === "opus") {
+    const bitrate = requestedKbps !== undefined
+      ? nearestValue(ELEVENLABS_OPUS_BITRATES, requestedKbps)
+      : 128
+    return `opus_${ELEVENLABS_OPUS_SAMPLE_RATE}_${bitrate}`
   }
-  return "mp3_44100_128"
+  if (normalized === "wav" || normalized === "pcm") {
+    return `pcm_${resolveElevenLabsPcmSampleRate(audioOptions?.sampleRate)}`
+  }
+
+  const sampleRate = audioOptions?.sampleRate !== undefined
+    ? nearestValue(ELEVENLABS_MP3_SAMPLE_RATES, audioOptions.sampleRate)
+    : 44100
+  const allowedBitrates = ELEVENLABS_MP3_BITRATES_BY_SAMPLE_RATE[sampleRate]
+  const defaultBitrate = sampleRate === 44100 ? 128 : 32
+  const bitrate = requestedKbps !== undefined
+    ? nearestValue(allowedBitrates, requestedKbps)
+    : defaultBitrate
+  return `mp3_${sampleRate}_${bitrate}`
 }
 
 /**
@@ -519,7 +585,8 @@ function buildElevenLabsOutputFormat(format: string): string {
  * way as the other providers via `voices.yaml` / `speech.voice`.
  */
 export function createElevenLabsTTSSynthesizer(
-  config?: ElevenLabsTTSConfig
+  config?: ElevenLabsTTSConfig,
+  audioOptions?: ElevenLabsAudioOptions
 ): TTSSynthesizer {
   return {
     async synthesize(options: SynthesizeSpeechOptions): Promise<Uint8Array> {
@@ -529,7 +596,7 @@ export function createElevenLabsTTSSynthesizer(
       }
 
       const normalizedFormat = options.responseFormat.toLowerCase()
-      const outputFormat = buildElevenLabsOutputFormat(normalizedFormat)
+      const outputFormat = buildElevenLabsOutputFormat(normalizedFormat, audioOptions)
       const url = `https://api.elevenlabs.io/v1/text-to-speech/${encodeURIComponent(options.voice)}?output_format=${outputFormat}`
 
       const response = await fetch(url, {
@@ -563,7 +630,7 @@ export function createElevenLabsTTSSynthesizer(
       const arrayBuffer = await response.arrayBuffer()
       const bytes = new Uint8Array(arrayBuffer)
       return normalizedFormat === "wav"
-        ? wrapPcmAsWave(bytes, ELEVENLABS_PCM_SAMPLE_RATE)
+        ? wrapPcmAsWave(bytes, resolveElevenLabsPcmSampleRate(audioOptions?.sampleRate))
         : bytes
     },
   }

@@ -5,9 +5,12 @@ import yaml from "js-yaml"
 import {
   DEFAULT_OPENAI_TTS_MODEL_ID,
   DEFAULT_ELEVENLABS_TTS_MODEL_ID,
+  DEFAULT_ELEVENLABS_VOICE_ID,
+  isTtsExcluded,
   type SpeechFileEntry,
   type TTSProviderConfig,
   type TTSRateLimitConfig,
+  type TextCatalogEntry,
 } from "@adt/types"
 import type { RateLimiter, TTSSynthesizer, WhisperTranscriptionResult } from "@adt/llm"
 import { transcribeWithWhisper } from "@adt/llm"
@@ -26,9 +29,6 @@ const SAFE_FORMAT_RE = /^[a-z0-9]+$/
 const DEFAULT_OPENAI_VOICE = "alloy"
 const DEFAULT_GEMINI_VOICE = "Kore"
 const DEFAULT_AZURE_MODEL = "azure-tts"
-// Rachel — a stable ElevenLabs premade voice ID, used when no voice is
-// configured for the elevenlabs provider (mirrors the Gemini default below).
-const DEFAULT_ELEVENLABS_VOICE = "21m00Tcm4TlvDq8ikWAM"
 // Flash is the default: lower latency and higher documented throughput than Pro.
 // Users can switch to Pro (or any model) via `speech.providers.gemini.model`.
 const DEFAULT_GEMINI_MODEL = "gemini-2.5-flash-preview-tts"
@@ -81,7 +81,7 @@ export function resolveVoice(
     provider === "gemini" && usesGenericDefault
       ? DEFAULT_GEMINI_VOICE
       : provider === "elevenlabs" && usesGenericDefault
-        ? DEFAULT_ELEVENLABS_VOICE
+        ? DEFAULT_ELEVENLABS_VOICE_ID
         : normalizedDefaultVoice || DEFAULT_OPENAI_VOICE
   const providerConfig = voiceMaps[provider]
   if (!providerConfig) return fallback
@@ -308,6 +308,26 @@ export function computeSpeechCacheKey(data: {
       : {}
   const json = JSON.stringify({ ...base, ...gemini, ...elevenlabs })
   return crypto.createHash("sha256").update(json).digest("hex")
+}
+
+/**
+ * Nearest non-excluded neighbor's text in reading order, used to build
+ * ElevenLabs' previous_text/next_text (elevenlabs_use_context). Skips
+ * TTS-excluded entries so context still flows across them instead of citing
+ * text that has no audio of its own. Shared by the API's stage-runner and the
+ * CLI/`runFullPipeline` DAG executor so both resolve identical adjacent text
+ * for the same entry — keeping `computeSpeechCacheKey` in sync across paths.
+ */
+export function findAdjacentSpeechText(
+  entries: TextCatalogEntry[],
+  index: number,
+  direction: 1 | -1,
+  speechConfig: Parameters<typeof isTtsExcluded>[1],
+): string | undefined {
+  for (let i = index + direction; i >= 0 && i < entries.length; i += direction) {
+    if (!isTtsExcluded(entries[i].id, speechConfig)) return entries[i].text
+  }
+  return undefined
 }
 
 function assertSafeSegment(

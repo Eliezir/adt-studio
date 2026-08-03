@@ -62,6 +62,7 @@ import {
   resolveGeminiTtsRateLimit,
   resolveSpeechFormat,
   computeSpeechCacheKey,
+  findAdjacentSpeechText,
   generateSpeechFile,
   generatePageSpeechFiles,
   supportsPageBatchedSpeech,
@@ -623,24 +624,6 @@ function batchPageKeyOf(textId: string): string | null {
  *  easy-read alternate (easy-read tracks stay per-entry). */
 function isBatchableSpeechEntry(textId: string): boolean {
   return !textId.endsWith("_easy_read") && batchPageKeyOf(textId) !== null
-}
-
-/**
- * Nearest non-excluded neighbor's text in reading order, used to build
- * ElevenLabs' previous_text/next_text (elevenlabs_use_context). Skips
- * TTS-excluded entries so context still flows across them instead of citing
- * text that has no audio of its own.
- */
-function findAdjacentSpeechText(
-  entries: TextCatalogEntry[],
-  index: number,
-  direction: 1 | -1,
-  speechConfig: Parameters<typeof isTtsExcluded>[1],
-): string | undefined {
-  for (let i = index + direction; i >= 0 && i < entries.length; i += direction) {
-    if (!isTtsExcluded(entries[i].id, speechConfig)) return entries[i].text
-  }
-  return undefined
 }
 
 function canReuseSpeechEntry(
@@ -2679,7 +2662,8 @@ async function runSpeechStep(
           throw new Error("ElevenLabs API key is required for ElevenLabs TTS provider. Set it in the API Keys dialog (gear icon).")
         }
         const synth = createElevenLabsTTSSynthesizer(
-          options.elevenLabsApiKey ? { apiKey: options.elevenLabsApiKey } : undefined
+          options.elevenLabsApiKey ? { apiKey: options.elevenLabsApiKey } : undefined,
+          { sampleRate: config.speech?.sample_rate, bitRate: config.speech?.bit_rate }
         )
         synthesizers.set("elevenlabs", synth)
         return synth
@@ -2859,9 +2843,6 @@ async function runSpeechStep(
     const hasGeminiTts = outputLanguages.some(
       (lang) => resolveProviderForLanguage(lang, routing) === "gemini"
     )
-    const hasElevenLabsTts = outputLanguages.some(
-      (lang) => resolveProviderForLanguage(lang, routing) === "elevenlabs"
-    )
     // Adaptive limiter: start at the documented ceiling for the selected model
     // (or a user-pinned value) and back off on 429s, so a generous quota runs
     // fast while a smaller tier self-throttles instead of erroring out.
@@ -2999,132 +2980,96 @@ async function runSpeechStep(
       )
     }
 
-    // ElevenLabs' concurrent-request ceiling is low and plan-dependent, so cap
-    // parallelism when any language routes to it. Combined with the 429 retry
-    // below this keeps a throttled ElevenLabs run from failing entries outright
-    // instead of firing up to `effectiveConcurrency` (default 32) at once.
-    const ttsConcurrency = hasElevenLabsTts
-      ? Math.min(effectiveConcurrency, ELEVENLABS_TTS_MAX_CONCURRENCY)
-      : effectiveConcurrency
+    // ElevenLabs' concurrent-request ceiling is low and plan-dependent, so its
+    // items run in a dedicated, capped pass. Partitioning by provider (instead
+    // of capping the whole `ttsWorkItems` list whenever *any* language routes
+    // to ElevenLabs) keeps OpenAI/Azure/Gemini languages in the same book at
+    // `effectiveConcurrency` instead of being dragged down to ElevenLabs'
+    // ceiling — a mixed-provider book no longer loses ~8x TTS throughput just
+    // because one of its languages uses ElevenLabs. Combined with the 429
+    // retry below this still keeps a throttled ElevenLabs run from failing
+    // entries outright.
+    const elevenLabsWorkItems: TTSWorkItem[] = []
+    const otherWorkItems: TTSWorkItem[] = []
+    for (const item of ttsWorkItems) {
+      if (resolveProviderForLanguage(item.language, routing) === "elevenlabs") {
+        elevenLabsWorkItems.push(item)
+      } else {
+        otherWorkItems.push(item)
+      }
+    }
+    const elevenLabsConcurrency = Math.min(effectiveConcurrency, ELEVENLABS_TTS_MAX_CONCURRENCY)
 
-    await processWithConcurrency(
-      ttsWorkItems,
-      ttsConcurrency,
-      async (item: TTSWorkItem) => {
-        const startMs = Date.now()
-        const provider = resolveProviderForLanguage(item.language, routing)
-        const providerModel = resolveSpeechModel(provider, providerConfigs, speechModel)
-        const outputFormat = resolveSpeechFormat(provider, config.speech?.format)
-        const voice = resolveVoice(provider, item.language, voiceMaps, config.speech?.voice)
-        // Must mirror the reuse-check above: OpenAI + Gemini both receive resolved
-        // instructions (Gemini embeds them in the prompt text), Azure does not.
-        const instructions =
-          provider === "openai" || provider === "gemini"
-            ? resolveInstructions(item.language, instructionsMap)
-            : ""
-        let attemptCount = 0
+    const processTtsWorkItem = async (item: TTSWorkItem) => {
+      const startMs = Date.now()
+      const provider = resolveProviderForLanguage(item.language, routing)
+      const providerModel = resolveSpeechModel(provider, providerConfigs, speechModel)
+      const outputFormat = resolveSpeechFormat(provider, config.speech?.format)
+      const voice = resolveVoice(provider, item.language, voiceMaps, config.speech?.voice)
+      // Must mirror the reuse-check above: OpenAI + Gemini both receive resolved
+      // instructions (Gemini embeds them in the prompt text), Azure does not.
+      const instructions =
+        provider === "openai" || provider === "gemini"
+          ? resolveInstructions(item.language, instructionsMap)
+          : ""
+      let attemptCount = 0
 
-        console.log(`[stage-run] ${label}: TTS ${item.textId} → provider=${provider} voice=${voice} model=${providerModel} format=${outputFormat}`)
+      console.log(`[stage-run] ${label}: TTS ${item.textId} → provider=${provider} voice=${voice} model=${providerModel} format=${outputFormat}`)
 
-        try {
-          const ttsSynthesizer = getSynthesizer(provider)
-          let entry: SpeechFileEntry | null
+      try {
+        const ttsSynthesizer = getSynthesizer(provider)
+        let entry: SpeechFileEntry | null
 
-          while (true) {
-            attemptCount++
-            try {
-              entry = await generateSpeechFile({
-                textId: item.textId,
-                text: item.text,
-                language: item.language,
-                model: providerModel,
-                voice,
-                instructions,
-                format: outputFormat,
-                bookDir,
-                cacheDir,
-                ttsSynthesizer,
-                rateLimiter: provider === "gemini" ? geminiTtsRateLimiter : undefined,
-                provider,
-                geminiTemperature: config.speech?.temperature,
-                geminiSeed: config.speech?.seed,
-                elevenLabsPreviousText: item.previousText,
-                elevenLabsNextText: item.nextText,
-                elevenLabsApplyTextNormalization: config.speech?.elevenlabs_apply_text_normalization,
-                signal: options.signal,
-              })
-              // A real (non-cached) success means the current rate held —
-              // let the limiter probe back toward the ceiling.
-              if (provider === "gemini" && entry && !entry.cached) {
-                geminiTtsRateLimiter?.reward()
-              }
-              break
-            } catch (err) {
-              const msg = toErrorMessage(err)
+        while (true) {
+          attemptCount++
+          try {
+            entry = await generateSpeechFile({
+              textId: item.textId,
+              text: item.text,
+              language: item.language,
+              model: providerModel,
+              voice,
+              instructions,
+              format: outputFormat,
+              bookDir,
+              cacheDir,
+              ttsSynthesizer,
+              rateLimiter: provider === "gemini" ? geminiTtsRateLimiter : undefined,
+              provider,
+              geminiTemperature: config.speech?.temperature,
+              geminiSeed: config.speech?.seed,
+              elevenLabsPreviousText: item.previousText,
+              elevenLabsNextText: item.nextText,
+              elevenLabsApplyTextNormalization: config.speech?.elevenlabs_apply_text_normalization,
+              signal: options.signal,
+            })
+            // A real (non-cached) success means the current rate held —
+            // let the limiter probe back toward the ceiling.
+            if (provider === "gemini" && entry && !entry.cached) {
+              geminiTtsRateLimiter?.reward()
+            }
+            break
+          } catch (err) {
+            const msg = toErrorMessage(err)
 
-              // ElevenLabs: no adaptive limiter, but 429 (concurrency/quota)
-              // and 5xx are retryable with exponential backoff so a transient
-              // throttle doesn't permanently fail the entry. The per-item
-              // concurrency cap above already bounds how many can be in flight.
-              if (provider === "elevenlabs") {
-                const elevenLabsRetryable =
-                  isElevenLabsRateLimitMessage(msg) || isElevenLabsTransientError(msg)
-                if (
-                  elevenLabsRetryable &&
-                  !options.signal?.aborted &&
-                  attemptCount <= ELEVENLABS_TTS_MAX_RATE_LIMIT_RETRIES
-                ) {
-                  const retryDelayMs = Math.min(
-                    ELEVENLABS_TTS_BASE_RETRY_DELAY_MS * 2 ** (attemptCount - 1),
-                    ELEVENLABS_TTS_MAX_RETRY_DELAY_MS
-                  )
-                  console.warn(
-                    `[stage-run] ${label}: ElevenLabs TTS ${isElevenLabsRateLimitMessage(msg) ? "rate limited" : "transient error"} for ${item.textId} (${item.language}); retrying ${attemptCount + 1}/${ELEVENLABS_TTS_MAX_RATE_LIMIT_RETRIES + 1} in ${retryDelayMs}ms: ${msg}`
-                  )
-                  await sleep(retryDelayMs, options.signal)
-                  if (options.signal?.aborted) throw new RunCancelledError()
-                  continue
-                }
-                throw err
-              }
-
-              const rateLimited =
-                provider === "gemini" && isGeminiTtsRateLimitMessage(msg)
-              const transient =
-                provider === "gemini" &&
-                !rateLimited &&
-                isGeminiTtsTransientError(msg)
+            // ElevenLabs: no adaptive limiter, but 429 (concurrency/quota)
+            // and 5xx are retryable with exponential backoff so a transient
+            // throttle doesn't permanently fail the entry. The per-item
+            // concurrency cap above already bounds how many can be in flight.
+            if (provider === "elevenlabs") {
+              const elevenLabsRetryable =
+                isElevenLabsRateLimitMessage(msg) || isElevenLabsTransientError(msg)
               if (
-                (rateLimited || transient) &&
+                elevenLabsRetryable &&
                 !options.signal?.aborted &&
-                attemptCount <= GEMINI_TTS_MAX_RATE_LIMIT_RETRIES
+                attemptCount <= ELEVENLABS_TTS_MAX_RATE_LIMIT_RETRIES
               ) {
-                if (rateLimited) {
-                  const retryDelayMs =
-                    parseGeminiRetryDelayMs(msg) ??
-                    Math.min(
-                      GEMINI_TTS_DEFAULT_RETRY_DELAY_MS * attemptCount,
-                      GEMINI_TTS_MAX_RETRY_DELAY_MS
-                    )
-                  // Halve the shared rate and pause all workers for the retry
-                  // window, so one 429 throttles the whole batch instead of every
-                  // item discovering the limit independently.
-                  geminiTtsRateLimiter?.penalize(retryDelayMs)
-                  console.warn(
-                    `[stage-run] ${label}: Gemini TTS rate limited for ${item.textId} (${item.language}); backing off to ${geminiTtsRateLimiter?.currentRpm() ?? "?"} req/min, retrying ${attemptCount + 1}/${GEMINI_TTS_MAX_RATE_LIMIT_RETRIES + 1} in ${retryDelayMs}ms`
-                  )
-                  await sleep(retryDelayMs, options.signal)
-                  if (options.signal?.aborted) throw new RunCancelledError()
-                  continue
-                }
-                // Transient server error (500/empty audio): retry without
-                // penalizing the limiter — it's a Gemini hiccup, not a rate issue.
                 const retryDelayMs = Math.min(
-                  GEMINI_TTS_TRANSIENT_RETRY_DELAY_MS * attemptCount,
-                  GEMINI_TTS_MAX_RETRY_DELAY_MS
+                  ELEVENLABS_TTS_BASE_RETRY_DELAY_MS * 2 ** (attemptCount - 1),
+                  ELEVENLABS_TTS_MAX_RETRY_DELAY_MS
                 )
                 console.warn(
-                  `[stage-run] ${label}: Gemini TTS transient error for ${item.textId} (${item.language}); retrying ${attemptCount + 1}/${GEMINI_TTS_MAX_RATE_LIMIT_RETRIES + 1} in ${retryDelayMs}ms: ${msg}`
+                  `[stage-run] ${label}: ElevenLabs TTS ${isElevenLabsRateLimitMessage(msg) ? "rate limited" : "transient error"} for ${item.textId} (${item.language}); retrying ${attemptCount + 1}/${ELEVENLABS_TTS_MAX_RATE_LIMIT_RETRIES + 1} in ${retryDelayMs}ms: ${msg}`
                 )
                 await sleep(retryDelayMs, options.signal)
                 if (options.signal?.aborted) throw new RunCancelledError()
@@ -3132,98 +3077,150 @@ async function runSpeechStep(
               }
               throw err
             }
-          }
 
-          const durationMs = Date.now() - startMs
-          const cached = entry?.cached ?? false
-
-          const logEntry: LlmLogEntry = {
-            requestId: crypto.randomUUID(),
-            timestamp: new Date().toISOString(),
-            taskType: "tts",
-            pageId: item.textId,
-            promptName: `tts-${provider}`,
-            modelId: `${provider}/${providerModel}`,
-            cacheHit: cached,
-            success: true,
-            errorCount: 0,
-            attempt: attemptCount,
-            durationMs,
-            messages: [{
-              role: "user",
-              content: [{ type: "text" as const, text: `[${item.language}] voice=${voice}\n${item.text.slice(0, 300)}` }],
-            }],
-          }
-          storage.appendLlmLog(logEntry)
-          progress.emit({
-            type: "llm-log",
-            step: "tts",
-            itemId: item.textId,
-            promptName: logEntry.promptName,
-            modelId: logEntry.modelId,
-            cacheHit: cached,
-            durationMs,
-          })
-
-          if (entry) {
-            ttsResultsByLang.get(item.language)?.push(entry)
-          }
-        } catch (err) {
-          // Run cancel — re-throw so processWithConcurrency unwinds; an aborted
-          // item is not a failure (it re-runs cheaply via the TTS cache).
-          if (isCancellation(err, [options.signal])) {
-            throw err instanceof RunCancelledError ? err : new RunCancelledError()
-          }
-          const msg = toErrorMessage(err)
-          const durationMs = Date.now() - startMs
-          console.error(`[stage-run] ${label}: TTS failed for ${item.textId} (${item.language}): ${msg}`)
-          failedItems.push(`${item.textId}: ${msg}`)
-          failedByLang.get(item.language)?.push({ textId: item.textId, error: msg })
-          if (provider === "gemini") {
-            geminiFailedItems.push(`${item.textId}: ${msg}`)
-          }
-
-          const logEntry: LlmLogEntry = {
-            requestId: crypto.randomUUID(),
-            timestamp: new Date().toISOString(),
-            taskType: "tts",
-            pageId: item.textId,
-            promptName: `tts-${provider}`,
-            modelId: `${provider}/${providerModel}`,
-            cacheHit: false,
-            success: false,
-            errorCount: 1,
-            attempt: Math.max(attemptCount, 1),
-            durationMs,
-            messages: [{
-              role: "user",
-              content: [{ type: "text" as const, text: `[${item.language}] voice=${voice}\nERROR: ${msg}\n\n${item.text.slice(0, 300)}` }],
-            }],
-          }
-          storage.appendLlmLog(logEntry)
-          progress.emit({
-            type: "llm-log",
-            step: "tts",
-            itemId: item.textId,
-            promptName: logEntry.promptName,
-            modelId: logEntry.modelId,
-            cacheHit: false,
-            durationMs,
-          })
-          if (provider !== "gemini") {
-            progress.emit({
-              type: "step-error",
-              step: "tts",
-              error: `${item.textId} failed: ${msg}`,
-            })
+            const rateLimited =
+              provider === "gemini" && isGeminiTtsRateLimitMessage(msg)
+            const transient =
+              provider === "gemini" &&
+              !rateLimited &&
+              isGeminiTtsTransientError(msg)
+            if (
+              (rateLimited || transient) &&
+              !options.signal?.aborted &&
+              attemptCount <= GEMINI_TTS_MAX_RATE_LIMIT_RETRIES
+            ) {
+              if (rateLimited) {
+                const retryDelayMs =
+                  parseGeminiRetryDelayMs(msg) ??
+                  Math.min(
+                    GEMINI_TTS_DEFAULT_RETRY_DELAY_MS * attemptCount,
+                    GEMINI_TTS_MAX_RETRY_DELAY_MS
+                  )
+                // Halve the shared rate and pause all workers for the retry
+                // window, so one 429 throttles the whole batch instead of every
+                // item discovering the limit independently.
+                geminiTtsRateLimiter?.penalize(retryDelayMs)
+                console.warn(
+                  `[stage-run] ${label}: Gemini TTS rate limited for ${item.textId} (${item.language}); backing off to ${geminiTtsRateLimiter?.currentRpm() ?? "?"} req/min, retrying ${attemptCount + 1}/${GEMINI_TTS_MAX_RATE_LIMIT_RETRIES + 1} in ${retryDelayMs}ms`
+                )
+                await sleep(retryDelayMs, options.signal)
+                if (options.signal?.aborted) throw new RunCancelledError()
+                continue
+              }
+              // Transient server error (500/empty audio): retry without
+              // penalizing the limiter — it's a Gemini hiccup, not a rate issue.
+              const retryDelayMs = Math.min(
+                GEMINI_TTS_TRANSIENT_RETRY_DELAY_MS * attemptCount,
+                GEMINI_TTS_MAX_RETRY_DELAY_MS
+              )
+              console.warn(
+                `[stage-run] ${label}: Gemini TTS transient error for ${item.textId} (${item.language}); retrying ${attemptCount + 1}/${GEMINI_TTS_MAX_RATE_LIMIT_RETRIES + 1} in ${retryDelayMs}ms: ${msg}`
+              )
+              await sleep(retryDelayMs, options.signal)
+              if (options.signal?.aborted) throw new RunCancelledError()
+              continue
+            }
+            throw err
           }
         }
 
-        completedItems++
-        emitSpeechStepProgress(progress, completedItems, totalItems, failedItems.length, reusedItems)
-      },
-      { runSignal: options.signal }
-    )
+        const durationMs = Date.now() - startMs
+        const cached = entry?.cached ?? false
+
+        const logEntry: LlmLogEntry = {
+          requestId: crypto.randomUUID(),
+          timestamp: new Date().toISOString(),
+          taskType: "tts",
+          pageId: item.textId,
+          promptName: `tts-${provider}`,
+          modelId: `${provider}/${providerModel}`,
+          cacheHit: cached,
+          success: true,
+          errorCount: 0,
+          attempt: attemptCount,
+          durationMs,
+          messages: [{
+            role: "user",
+            content: [{ type: "text" as const, text: `[${item.language}] voice=${voice}\n${item.text.slice(0, 300)}` }],
+          }],
+        }
+        storage.appendLlmLog(logEntry)
+        progress.emit({
+          type: "llm-log",
+          step: "tts",
+          itemId: item.textId,
+          promptName: logEntry.promptName,
+          modelId: logEntry.modelId,
+          cacheHit: cached,
+          durationMs,
+        })
+
+        if (entry) {
+          ttsResultsByLang.get(item.language)?.push(entry)
+        }
+      } catch (err) {
+        // Run cancel — re-throw so processWithConcurrency unwinds; an aborted
+        // item is not a failure (it re-runs cheaply via the TTS cache).
+        if (isCancellation(err, [options.signal])) {
+          throw err instanceof RunCancelledError ? err : new RunCancelledError()
+        }
+        const msg = toErrorMessage(err)
+        const durationMs = Date.now() - startMs
+        console.error(`[stage-run] ${label}: TTS failed for ${item.textId} (${item.language}): ${msg}`)
+        failedItems.push(`${item.textId}: ${msg}`)
+        failedByLang.get(item.language)?.push({ textId: item.textId, error: msg })
+        if (provider === "gemini") {
+          geminiFailedItems.push(`${item.textId}: ${msg}`)
+        }
+
+        const logEntry: LlmLogEntry = {
+          requestId: crypto.randomUUID(),
+          timestamp: new Date().toISOString(),
+          taskType: "tts",
+          pageId: item.textId,
+          promptName: `tts-${provider}`,
+          modelId: `${provider}/${providerModel}`,
+          cacheHit: false,
+          success: false,
+          errorCount: 1,
+          attempt: Math.max(attemptCount, 1),
+          durationMs,
+          messages: [{
+            role: "user",
+            content: [{ type: "text" as const, text: `[${item.language}] voice=${voice}\nERROR: ${msg}\n\n${item.text.slice(0, 300)}` }],
+          }],
+        }
+        storage.appendLlmLog(logEntry)
+        progress.emit({
+          type: "llm-log",
+          step: "tts",
+          itemId: item.textId,
+          promptName: logEntry.promptName,
+          modelId: logEntry.modelId,
+          cacheHit: false,
+          durationMs,
+        })
+        if (provider !== "gemini") {
+          progress.emit({
+            type: "step-error",
+            step: "tts",
+            error: `${item.textId} failed: ${msg}`,
+          })
+        }
+      }
+
+      completedItems++
+      emitSpeechStepProgress(progress, completedItems, totalItems, failedItems.length, reusedItems)
+    }
+
+    await Promise.all([
+      processWithConcurrency(elevenLabsWorkItems, elevenLabsConcurrency, processTtsWorkItem, {
+        runSignal: options.signal,
+      }),
+      processWithConcurrency(otherWorkItems, effectiveConcurrency, processTtsWorkItem, {
+        runSignal: options.signal,
+      }),
+    ])
 
     if (failedItems.length > 0) {
       console.error(`[stage-run] ${label}: ${failedItems.length} TTS item(s) failed:\n${failedItems.join("\n")}`)

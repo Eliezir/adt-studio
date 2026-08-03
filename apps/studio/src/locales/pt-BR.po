@@ -2272,6 +2272,7 @@ msgstr "Controla se o ElevenLabs expande abreviações, números e símbolos em 
 
 #~ msgid "Controls whether ElevenLabs expands abbreviations, numbers, and symbols into spoken words (e.g. \"N.º\" → \"Número\"). \"Auto\" lets ElevenLabs decide per request; \"On\" always normalizes; \"Off\" reads the text as written, which is safer for codes, IDs, or text that shouldn't be expanded. Only affects languages routed to ElevenLabs."
 #~ msgstr "Controla se o ElevenLabs expande abreviações, números e símbolos em palavras faladas (ex.: \"N.º\" → \"Número\"). \"Auto\" deixa o ElevenLabs decidir a cada solicitação; \"Ativado\" sempre normaliza; \"Desativado\" lê o texto como está escrito, o que é mais seguro para códigos, IDs ou textos que não devem ser expandidos. Afeta apenas os idiomas roteados para o ElevenLabs."
+
 msgid "Conversion failed"
 msgstr "Falha na conversão"
 
@@ -3672,6 +3673,9 @@ msgstr "É necessária uma chave de API do Gemini para gerar áudio."
 
 msgid "Gemini generates each sentence in its own request, so its tone can drift between sentences. Set a lower temperature (e.g. 0.4) to reduce that variation and a fixed seed to make delivery reproducible; leave both empty to disable them and use Gemini's own defaults. Only affects languages routed to Gemini — OpenAI and Azure ignore these. Changing either value regenerates Gemini audio on the next run."
 msgstr "O Gemini gera cada frase em sua própria requisição, então o tom pode variar entre as frases. Defina uma temperatura mais baixa (ex.: 0,4) para reduzir essa variação e uma semente fixa para tornar a leitura reproduzível; deixe ambos vazios para desativá-los e usar os valores padrão do Gemini. Afeta apenas os idiomas roteados para o Gemini — o OpenAI e o Azure ignoram esses valores. Alterar qualquer um deles regenera o áudio do Gemini na próxima execução."
+
+msgid "Gemini page batching"
+msgstr "Agrupamento de páginas do Gemini"
 
 msgid "Gemini Voice"
 msgstr "Voz do Gemini"

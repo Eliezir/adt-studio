@@ -64,6 +64,7 @@ import {
   resolveSpeechModel,
   resolveSpeechFormat,
   generateSpeechFile,
+  findAdjacentSpeechText,
   type ProviderRouting,
 } from "./speech.js"
 import { packageAdtWeb } from "./packaging/web.js"
@@ -923,7 +924,10 @@ export async function runFullPipeline(
           if (!elevenLabsConfig && !process.env.ELEVENLABS_API_KEY) {
             throw new Error("ELEVENLABS_API_KEY is required for ElevenLabs TTS provider")
           }
-          const synth = createElevenLabsTTSSynthesizer(elevenLabsConfig)
+          const synth = createElevenLabsTTSSynthesizer(elevenLabsConfig, {
+            sampleRate: config.speech?.sample_rate,
+            bitRate: config.speech?.bit_rate,
+          })
           synthesizers.set("elevenlabs", synth)
           return synth
         }
@@ -932,7 +936,7 @@ export async function runFullPipeline(
         return synth
       }
 
-      interface TTSWorkItem { textId: string; text: string; language: string }
+      interface TTSWorkItem { textId: string; text: string; language: string; previousText?: string; nextText?: string }
       const workItems: TTSWorkItem[] = []
       for (const lang of outputLanguages) {
         const baseSource = getBaseLanguage(language)
@@ -948,9 +952,22 @@ export async function runFullPipeline(
           if (!translatedRow) throw new Error(`Missing translated catalog for output language: ${lang}`)
           entries = (translatedRow.data as TextCatalogOutput).entries
         }
-        for (const entry of entries) {
+        const provider = resolveProviderForLanguage(lang, routing)
+        for (let entryIndex = 0; entryIndex < entries.length; entryIndex++) {
+          const entry = entries[entryIndex]
           if (isTtsExcluded(entry.id, config.speech)) continue
-          workItems.push({ textId: entry.id, text: entry.text, language: lang })
+          // ElevenLabs-only: adjacent-entry context, opt-in via
+          // elevenlabs_use_context. Must resolve identically to stage-runner.ts
+          // so the shared cache key (computeSpeechCacheKey) stays in sync.
+          const previousText =
+            provider === "elevenlabs" && config.speech?.elevenlabs_use_context
+              ? findAdjacentSpeechText(entries, entryIndex, -1, config.speech)
+              : undefined
+          const nextText =
+            provider === "elevenlabs" && config.speech?.elevenlabs_use_context
+              ? findAdjacentSpeechText(entries, entryIndex, 1, config.speech)
+              : undefined
+          workItems.push({ textId: entry.id, text: entry.text, language: lang, previousText, nextText })
         }
       }
 
@@ -986,6 +1003,9 @@ export async function runFullPipeline(
           provider,
           geminiTemperature: config.speech?.temperature,
           geminiSeed: config.speech?.seed,
+          elevenLabsPreviousText: item.previousText,
+          elevenLabsNextText: item.nextText,
+          elevenLabsApplyTextNormalization: config.speech?.elevenlabs_apply_text_normalization,
         })
         if (entry) resultsByLang.get(item.language)!.push(entry)
         completedItems++

@@ -28,6 +28,7 @@ import { SelectImagesDialog } from "./components/SelectImagesDialog"
 import { WordHighlightPreview } from "./components/WordHighlightPreview"
 import { useLingui } from "@lingui/react/macro"
 import { displayLang } from "./lib/display-lang"
+import { PROVIDER_LABELS } from "./lib/provider-labels"
 
 const PROMPT_TABS = ["prompt", "image-translation"]
 
@@ -1217,9 +1218,6 @@ function ReadAloudContentSection({
 
 /* ---------- Speech per-language cards ---------- */
 
-// eslint-disable-next-line lingui/no-unlocalized-strings -- brand names
-const PROVIDER_LABELS: Record<string, string> = { openai: "OpenAI", azure: "Azure", gemini: "Gemini", elevenlabs: "ElevenLabs" }
-
 const MODEL_GROUPS_BY_PROVIDER: Record<string, typeof OPENAI_TTS_MODELS> = {
   openai: OPENAI_TTS_MODELS,
   azure: AZURE_TTS_MODELS,
@@ -1469,19 +1467,6 @@ function SpeechLanguageCards({
         </div>
         <div className="flex items-start gap-3 pt-2">
           <Switch
-            id="batch-by-page"
-            checked={batchByPage}
-            onCheckedChange={(v) => { setBatchByPage(v); markDirty("speech") }}
-          />
-          <div className="space-y-1 flex-1">
-            <Label htmlFor="batch-by-page" className="text-xs">{t`Batch a whole page per request (experimental)`}</Label>
-            <p className="text-[11px] text-muted-foreground">
-              {t`Synthesize each page's text in a single Gemini request so tone flows naturally across sentences, then split the audio back into per-sentence clips. Needs an OpenAI key (used to align the split). Gemini-routed languages only; Chinese and Thai remain per-entry.`}
-            </p>
-          </div>
-        </div>
-        <div className="flex items-start gap-3 pt-2">
-          <Switch
             id="word-highlighting"
             checked={wordHighlighting}
             onCheckedChange={(v) => { setWordHighlighting(v); markDirty("speech") }}
@@ -1564,6 +1549,30 @@ function SpeechLanguageCards({
                   <p className="text-xs text-muted-foreground bg-muted/30 rounded-md px-3 py-2 whitespace-pre-wrap">
                     {instruction}
                   </p>
+                </div>
+              )}
+
+              {/* Gemini page batching — only shown when this language is
+                  routed to Gemini; other providers ignore this setting
+                  entirely. */}
+              {provider === "gemini" && (
+                <div className="space-y-2 pt-1 border-t">
+                  <Label className="text-[10px] font-medium text-muted-foreground pt-2 block">
+                    {t`Gemini page batching`}
+                  </Label>
+                  <div className="flex items-start gap-3">
+                    <Switch
+                      id={`batch-by-page-${lang}`}
+                      checked={batchByPage}
+                      onCheckedChange={(v) => { setBatchByPage(v); markDirty("speech") }}
+                    />
+                    <div className="space-y-1 flex-1">
+                      <Label htmlFor={`batch-by-page-${lang}`} className="text-xs">{t`Batch a whole page per request (experimental)`}</Label>
+                      <p className="text-[11px] text-muted-foreground">
+                        {t`Synthesize each page's text in a single Gemini request so tone flows naturally across sentences, then split the audio back into per-sentence clips. Needs an OpenAI key (used to align the split). Gemini-routed languages only; Chinese and Thai remain per-entry.`}
+                      </p>
+                    </div>
+                  </div>
                 </div>
               )}
 

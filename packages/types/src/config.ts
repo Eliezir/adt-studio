@@ -10,6 +10,9 @@ export const DEFAULT_LLM_MODEL_ID = "openai:gpt-5.4"
 export const DEFAULT_IMAGE_GENERATION_MODEL_ID = "openai:gpt-image-2"
 export const DEFAULT_OPENAI_TTS_MODEL_ID = "gpt-4o-mini-tts"
 export const DEFAULT_ELEVENLABS_TTS_MODEL_ID = "eleven_multilingual_v2"
+// Rachel — a stable ElevenLabs premade voice ID, used when no voice is
+// configured for the elevenlabs provider.
+export const DEFAULT_ELEVENLABS_VOICE_ID = "21m00Tcm4TlvDq8ikWAM"
 
 export const LLMModelId = z
   .string()
