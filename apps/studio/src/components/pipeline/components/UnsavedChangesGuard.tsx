@@ -38,7 +38,7 @@ export function UnsavedChangesGuard() {
   const dirtyEntries = useDirtyTabEntries()
   const floatingDirtyEntries = useFloatingSaveDirtyEntries()
   const ephemeralDirtyTabs = useEphemeralDirtyTabs()
-  const { canSave, willRerun, saveAndStay } = useFloatingSaveLeaveAction()
+  const { canSave, willRerun, resetStages, saveAndStay } = useFloatingSaveLeaveAction()
   const [saving, setSaving] = useState(false)
 
   const hasUnsavedRef = useRef(hasUnsaved)
@@ -93,6 +93,7 @@ export function UnsavedChangesGuard() {
     editorLabels: liveEditorLabels,
     canSave,
     willRerun,
+    resetStages,
   })
   if (hasUnsaved) {
     snapshot.current = {
@@ -102,6 +103,7 @@ export function UnsavedChangesGuard() {
       editorLabels: liveEditorLabels,
       canSave,
       willRerun,
+      resetStages,
     }
   }
   const shown = snapshot.current
@@ -115,7 +117,11 @@ export function UnsavedChangesGuard() {
     editorLabels,
     canSave: showCanSave,
     willRerun: showWillRerun,
+    resetStages: showResetStages,
   } = shown
+  const resetStageDefs = showResetStages
+    .map((stage) => STAGE_BY_SLUG.get(stage))
+    .filter((stage): stage is (typeof STAGES)[number] => Boolean(stage))
 
   const handleSaveAndContinue = async () => {
     setSaving(true)
@@ -181,6 +187,41 @@ export function UnsavedChangesGuard() {
                   : editorLabels.map((entry) => (
                       <Fragment key={entry.id}>{entry.label}</Fragment>
                     ))}
+              </div>
+            </div>
+          )}
+
+          {resetStageDefs.length > 0 && (
+            <div className="rounded-lg border border-amber-200 bg-amber-50/70 px-3.5 py-3">
+              <p className="text-xs leading-relaxed text-amber-900">
+                <Trans>
+                  The completed stages below will be reset and need to run again before final
+                  outputs are available.
+                </Trans>
+              </p>
+              <p className="mb-2 mt-3 text-[11px] font-semibold uppercase tracking-wide text-amber-700">
+                <Trans>Will be reset</Trans>
+              </p>
+              <div className="flex flex-wrap gap-1.5">
+                {resetStageDefs.map((stage) => {
+                  const Icon = stage.icon
+                  return (
+                    <span
+                      key={stage.slug}
+                      className="inline-flex items-center gap-1.5 rounded-md border bg-background px-2 py-1 text-xs font-medium text-foreground"
+                    >
+                      <span
+                        className={cn(
+                          "flex h-4 w-4 items-center justify-center rounded text-white",
+                          stage.color,
+                        )}
+                      >
+                        <Icon className="h-2.5 w-2.5" aria-hidden />
+                      </span>
+                      {getStageLabelI18n(stage.slug)}
+                    </span>
+                  )
+                })}
               </div>
             </div>
           )}

@@ -46,9 +46,9 @@ vi.mock("../../components/change-summary", () => ({
 
 // Capture the entry the component registers with the shared floating save bar,
 // so the test can trigger the bar's Save exactly as the real bar would.
-let savedEntry: { onSave?: () => void } = {}
+let savedEntry: { onSave?: () => void; resetStages?: string[] } = {}
 vi.mock("../../components/floating-save", () => ({
-  useFloatingSave: (entry: { onSave?: () => void }) => {
+  useFloatingSave: (entry: { onSave?: () => void; resetStages?: string[] }) => {
     savedEntry = entry
   },
 }))
@@ -142,6 +142,7 @@ describe("SectioningPageDetail — save confirmation", () => {
 
   it("confirms before saving when completed downstream stages would be reset", () => {
     renderDetail()
+    expect(savedEntry.resetStages).toEqual(["storyboard", "package"])
     editAndSave()
 
     expect(screen.getByTestId("cascade-dialog")).toBeTruthy()

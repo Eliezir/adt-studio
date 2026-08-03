@@ -8,7 +8,7 @@ import {
   type ReactNode,
 } from "react"
 import type { LucideIcon } from "lucide-react"
-import type { StageName } from "@adt/types"
+import { STAGE_ORDER, type StageName } from "@adt/types"
 import { useLingui } from "@lingui/react/macro"
 import { FloatingSaveBar } from "./FloatingSaveBar"
 
@@ -46,6 +46,8 @@ export interface FloatingSaveEntry {
   saving: boolean
   label?: ReactNode
   stage?: StageName
+  /** Completed downstream stages that this save will invalidate. */
+  resetStages?: StageName[]
   onSave?: () => void | Promise<void>
   onSaveAndRerun?: () => void
   /**
@@ -83,6 +85,7 @@ function signature(e: FloatingSaveEntry): string {
     e.resetDisabledReason ?? "",
     e.labelKey ?? "",
     e.stage ?? "",
+    e.resetStages?.join(",") ?? "",
   ].join("|")
 }
 
@@ -257,6 +260,7 @@ export function useFloatingSaveDirtyEntries(): FloatingSaveDirtyEntry[] {
 export interface FloatingSaveLeaveAction {
   canSave: boolean
   willRerun: boolean
+  resetStages: StageName[]
   saveAndStay: () => Promise<void>
 }
 
@@ -270,13 +274,15 @@ export function useFloatingSaveLeaveAction(): FloatingSaveLeaveAction {
   const entries = store ? store.active() : []
   const canSave = entries.length > 0 && entries.every((e) => e.onSaveStay || e.onSave)
   const willRerun = entries.some((e) => e.onSaveAndRerun)
+  const resetStageSet = new Set(entries.flatMap((e) => e.resetStages ?? []))
+  const resetStages = STAGE_ORDER.filter((stage) => resetStageSet.has(stage))
   const saveAndStay = async () => {
     if (!store) return
     await Promise.all(
       store.active().map((e) => Promise.resolve((e.onSaveStay ?? e.onSave)?.())),
     )
   }
-  return { canSave, willRerun, saveAndStay }
+  return { canSave, willRerun, resetStages, saveAndStay }
 }
 
 /**

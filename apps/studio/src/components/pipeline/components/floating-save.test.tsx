@@ -88,6 +88,27 @@ describe("useFloatingSaveLeaveAction", () => {
     expect(leave.current?.willRerun).toBe(true)
   })
 
+  it("reports unique downstream resets in pipeline order", () => {
+    const leave = renderLeaveAction([
+      {
+        id: "sectioning:p1",
+        dirty: true,
+        saving: false,
+        onSaveStay: vi.fn(),
+        resetStages: ["package", "storyboard"],
+      },
+      {
+        id: "sectioning:p2",
+        dirty: true,
+        saving: false,
+        onSaveStay: vi.fn(),
+        resetStages: ["quizzes", "storyboard"],
+      },
+    ])
+
+    expect(leave.current?.resetStages).toEqual(["storyboard", "quizzes", "package"])
+  })
+
   it("ignores entries that are not dirty", () => {
     const leave = renderLeaveAction([
       { id: "sectioning:p1", dirty: false, saving: false, onSaveStay: vi.fn() },

@@ -252,6 +252,7 @@ export function SectioningPageDetail({
   useFloatingSave({
     id: `sectioning:${pageId}`,
     stage: "sectioning",
+    resetStages: downstreamAffected,
     dirty,
     saving,
     label: pendingLabel,
