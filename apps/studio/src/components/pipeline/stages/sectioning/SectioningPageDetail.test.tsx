@@ -46,9 +46,17 @@ vi.mock("../../components/change-summary", () => ({
 
 // Capture the entry the component registers with the shared floating save bar,
 // so the test can trigger the bar's Save exactly as the real bar would.
-let savedEntry: { onSave?: () => void; resetStages?: string[] } = {}
+let savedEntry: {
+  onSave?: () => void
+  onSaveStay?: () => Promise<void>
+  resetStages?: string[]
+} = {}
 vi.mock("../../components/floating-save", () => ({
-  useFloatingSave: (entry: { onSave?: () => void; resetStages?: string[] }) => {
+  useFloatingSave: (entry: {
+    onSave?: () => void
+    onSaveStay?: () => Promise<void>
+    resetStages?: string[]
+  }) => {
     savedEntry = entry
   },
 }))
@@ -161,5 +169,30 @@ describe("SectioningPageDetail — save confirmation", () => {
 
     expect(screen.getByTestId("cascade-dialog")).toBeTruthy()
     expect(updateSectioning).not.toHaveBeenCalled()
+  })
+
+  it("returns the in-flight save so navigation waits for the existing PUT", async () => {
+    let resolveUpdate!: (value: { version: number }) => void
+    const updateResult = new Promise<{ version: number }>((resolve) => {
+      resolveUpdate = resolve
+    })
+    updateSectioning.mockImplementationOnce(() => updateResult)
+    renderDetail()
+    fireEvent.click(screen.getByText("edit"))
+
+    let first!: Promise<void>
+    let second!: Promise<void>
+    act(() => {
+      first = savedEntry.onSaveStay?.() as Promise<void>
+      second = savedEntry.onSaveStay?.() as Promise<void>
+    })
+
+    expect(first).toBe(second)
+    expect(updateSectioning).toHaveBeenCalledTimes(1)
+
+    await act(async () => {
+      resolveUpdate({ version: 2 })
+      await first
+    })
   })
 })

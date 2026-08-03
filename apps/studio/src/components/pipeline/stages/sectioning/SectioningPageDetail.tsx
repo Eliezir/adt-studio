@@ -87,6 +87,7 @@ export function SectioningPageDetail({
     Record<string, PageSectioningSection>
   >({})
   const [saving, setSaving] = useState(false)
+  const savePromiseRef = useRef<Promise<void> | null>(null)
   const [saveError, setSaveError] = useState<string | null>(null)
   const [structuralBusy, setStructuralBusy] = useState(false)
 
@@ -146,39 +147,53 @@ export function SectioningPageDetail({
     setSaveError(null)
   }, [])
 
-  const performSave = useCallback(async () => {
-    if (!dirty || saving) return
-    setSaving(true)
-    setSaveError(null)
-    try {
-      const payload: PageSectioningOutput = {
-        reasoning: page.sectioningTree?.reasoning ?? "",
-        sections: mergedSections,
+  const performSave = useCallback((): Promise<void> => {
+    if (!dirty) return Promise.resolve()
+    if (savePromiseRef.current) return savePromiseRef.current
+
+    const savePromise = (async () => {
+      setSaving(true)
+      setSaveError(null)
+      try {
+        const payload: PageSectioningOutput = {
+          reasoning: page.sectioningTree?.reasoning ?? "",
+          sections: mergedSections,
+        }
+        await api.updateSectioning(bookLabel, pageId, payload)
+        setPendingBySectionId({})
+        // Refresh in the background. The unsaved-changes guard awaits this
+        // function before resuming a blocked navigation, and `invalidateQueries`
+        // only settles once the refetches finish — awaiting it would hold the
+        // guard's dialog open for seconds after the edits are already safe.
+        void queryClient.invalidateQueries({
+          queryKey: ["books", bookLabel, "pages", pageId],
+        })
+        void queryClient.invalidateQueries({
+          queryKey: ["books", bookLabel, "pages"],
+        })
+        invalidateStoryboardDependents(queryClient, bookLabel)
+      } catch (err) {
+        setSaveError(err instanceof Error ? err.message : t`Save failed`)
+        // Rethrow so UnsavedChangesGuard's "Save & leave" does NOT navigate away
+        // (dropping the edits) when the save failed.
+        throw err
+      } finally {
+        setSaving(false)
       }
-      await api.updateSectioning(bookLabel, pageId, payload)
-      setPendingBySectionId({})
-      // Refresh in the background. The unsaved-changes guard awaits this
-      // function before resuming a blocked navigation, and `invalidateQueries`
-      // only settles once the refetches finish — awaiting it would hold the
-      // guard's dialog open for seconds after the edits are already safe.
-      void queryClient.invalidateQueries({
-        queryKey: ["books", bookLabel, "pages", pageId],
-      })
-      void queryClient.invalidateQueries({
-        queryKey: ["books", bookLabel, "pages"],
-      })
-      invalidateStoryboardDependents(queryClient, bookLabel)
-    } catch (err) {
-      setSaveError(err instanceof Error ? err.message : t`Save failed`)
-      // Rethrow so UnsavedChangesGuard's "Save & leave" does NOT navigate away
-      // (dropping the edits) when the save failed.
-      throw err
-    } finally {
-      setSaving(false)
-    }
+    })()
+
+    savePromiseRef.current = savePromise
+    void savePromise.then(
+      () => {
+        if (savePromiseRef.current === savePromise) savePromiseRef.current = null
+      },
+      () => {
+        if (savePromiseRef.current === savePromise) savePromiseRef.current = null
+      },
+    )
+    return savePromise
   }, [
     dirty,
-    saving,
     page.sectioningTree?.reasoning,
     mergedSections,
     bookLabel,
