@@ -2899,6 +2899,12 @@ msgstr "Dropdown"
 msgid "Duplicate"
 msgstr "Duplicate"
 
+msgid "Duplicate section"
+msgstr "Duplicate section"
+
+msgid "duplicate this section"
+msgstr "duplicate this section"
+
 msgid "Duration"
 msgstr "Duration"
 
@@ -7249,14 +7255,14 @@ msgstr "Save checklist"
 msgid "Save failed"
 msgstr "Save failed"
 
-msgid "Save or discard your edits before splitting"
-msgstr "Save or discard your edits before splitting"
-
 msgid "Save or discard your edits first"
 msgstr "Save or discard your edits first"
 
 msgid "Save page review"
 msgstr "Save page review"
+
+msgid "Save section changes?"
+msgstr "Save section changes?"
 
 msgid "Save selection"
 msgstr "Save selection"
@@ -7924,11 +7930,17 @@ msgstr "Split into two sections at this point"
 msgid "Split preview"
 msgstr "Split preview"
 
+msgid "Split section"
+msgstr "Split section"
+
 msgid "Split segments"
 msgstr "Split segments"
 
 msgid "Split spread {left}–{right} back into single pages"
 msgstr "Split spread {left}–{right} back into single pages"
+
+msgid "split this section"
+msgstr "split this section"
 
 msgid "Spread"
 msgstr "Spread"
