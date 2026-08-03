@@ -109,6 +109,71 @@ describe("UnsavedChangesGuard", () => {
     expect(screen.getByRole("button", { name: /save & leave/i })).toBeTruthy()
   })
 
+  it("freezes attribution and actions while a multi-entry save settles", async () => {
+    function PendingEditor({
+      id,
+      stage,
+      dirty,
+      label,
+      reruns,
+    }: {
+      id: string
+      stage: "extract" | "sectioning"
+      dirty: boolean
+      label: string
+      reruns?: boolean
+    }) {
+      useFloatingSave({
+        id,
+        stage,
+        dirty,
+        saving: false,
+        label: <span>{label}</span>,
+        labelKey: label,
+        onSaveStay: async () => {},
+        onSaveAndRerun: reruns ? () => {} : undefined,
+      })
+      return null
+    }
+
+    const content = (firstDirty: boolean) => (
+      <FloatingSaveProvider>
+        <SettingsDirtyTabsProvider>
+          <PendingEditor
+            id="extract-settings"
+            stage="extract"
+            dirty={firstDirty}
+            label="Extract settings"
+            reruns
+          />
+          <PendingEditor
+            id="sectioning:pg002"
+            stage="sectioning"
+            dirty
+            label="Sectioning edit"
+          />
+          <UnsavedChangesGuard />
+        </SettingsDirtyTabsProvider>
+      </FloatingSaveProvider>
+    )
+
+    const { rerender } = render(content(true))
+    expect(screen.getByText("extract")).toBeTruthy()
+    expect(screen.getByText("Extract settings")).toBeTruthy()
+    expect(screen.getByText("Sectioning edit")).toBeTruthy()
+    expect(screen.getByRole("button", { name: /save & re-run/i })).toBeTruthy()
+
+    await act(async () => {
+      rerender(content(false))
+    })
+
+    expect(screen.getByText("extract")).toBeTruthy()
+    expect(screen.getByText("Extract settings")).toBeTruthy()
+    expect(screen.getByText("Sectioning edit")).toBeTruthy()
+    expect(screen.getByRole("button", { name: /save & re-run/i })).toBeTruthy()
+    expect(screen.queryByRole("button", { name: /save & leave/i })).toBeNull()
+  })
+
   it("offers Save & Re-run only for surfaces that actually queue a re-run", () => {
     function RerunEditor() {
       useFloatingSave({

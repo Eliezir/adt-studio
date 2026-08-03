@@ -86,7 +86,7 @@ export function UnsavedChangesGuard() {
   // while the dialog is up we keep rendering the last populated snapshot —
   // otherwise it visibly degrades mid-save into a generic, button-less
   // "Heads up" with no pending-edit chips.
-  const snapshot = useRef({
+  const liveSnapshot = {
     isSettings,
     primaryStage,
     changeChips: liveChangeChips,
@@ -94,17 +94,18 @@ export function UnsavedChangesGuard() {
     canSave,
     willRerun,
     resetStages,
-  })
-  if (hasUnsaved) {
-    snapshot.current = {
-      isSettings,
-      primaryStage,
-      changeChips: liveChangeChips,
-      editorLabels: liveEditorLabels,
-      canSave,
-      willRerun,
-      resetStages,
-    }
+  }
+  const snapshot = useRef(liveSnapshot)
+  const snapshotLocked = useRef(false)
+  if (status !== "blocked") {
+    snapshot.current = liveSnapshot
+    snapshotLocked.current = false
+  } else if (!snapshotLocked.current && hasUnsaved) {
+    // Capture once when navigation first blocks. Multi-entry saves settle at
+    // different times, so continuing to refresh while blocked would change the
+    // stage attribution, pending chips, and Save & Re-run wording mid-save.
+    snapshot.current = liveSnapshot
+    snapshotLocked.current = true
   }
   const shown = snapshot.current
 
