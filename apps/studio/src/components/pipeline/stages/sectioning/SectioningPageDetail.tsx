@@ -474,7 +474,7 @@ export function SectioningPageDetail({
                     onValueChange={(value) =>
                       handleSectionChange({ ...section, sectionType: value })
                     }
-                    disabled={saving}
+                    disabled={saving || structuralBusy}
                   >
                     <SelectTrigger className="h-6 text-[10px] font-medium px-1.5 py-0 w-auto min-w-[80px] border-0 bg-muted/50">
                       <SelectValue>
@@ -545,7 +545,7 @@ export function SectioningPageDetail({
                   bookLabel={bookLabel}
                   textRoles={textTypes}
                   containerStructures={groupTypes}
-                  disabled={saving}
+                  disabled={saving || structuralBusy}
                   // A split is a server-side op that rewrites sectionIds, so it
                   // can't run over unsaved local edits. Disable it visibly
                   // rather than failing with an easily-missed inline error.

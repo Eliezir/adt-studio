@@ -17,16 +17,36 @@ vi.mock("@lingui/react/macro", () => ({
 }))
 
 const updateSectioning = vi.fn(async () => ({ version: 2 }))
+const cloneSection = vi.fn(async () => ({ version: 2 }))
 vi.mock("@/api/client", () => ({
   api: {
     updateSectioning: (...args: unknown[]) => updateSectioning(...args),
+    cloneSection: (...args: unknown[]) => cloneSection(...args),
     getActiveConfig: async () => ({ merged: {} }),
   },
 }))
 
 vi.mock("@tanstack/react-query", () => ({
-  useQuery: () => ({ data: { merged: {} } }),
+  useQuery: () => ({ data: { merged: { section_types: { text: "Text" } } } }),
   useQueryClient: () => ({ invalidateQueries: vi.fn(async () => {}) }),
+}))
+
+vi.mock("@/components/ui/select", () => ({
+  Select: ({
+    children,
+    disabled,
+  }: {
+    children: React.ReactNode
+    disabled?: boolean
+  }) => (
+    <div data-testid="section-type-select" data-disabled={disabled ? "true" : "false"}>
+      {children}
+    </div>
+  ),
+  SelectContent: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+  SelectItem: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+  SelectTrigger: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+  SelectValue: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }))
 
 // Module-level `msg` macros need the lingui compiler, which isn't in play here.
@@ -78,8 +98,17 @@ vi.mock("@/hooks/use-fixed-layout", () => ({
 // The confirmation dialog is stubbed down to a marker: this suite is about
 // WHETHER it is raised, not how it renders (covered by CascadeResetDialog.test).
 vi.mock("../../components/CascadeResetDialog", () => ({
-  CascadeResetDialog: ({ title }: { title: React.ReactNode }) => (
-    <div data-testid="cascade-dialog">{title}</div>
+  CascadeResetDialog: ({
+    title,
+    onConfirm,
+  }: {
+    title: React.ReactNode
+    onConfirm: () => void
+  }) => (
+    <div data-testid="cascade-dialog">
+      {title}
+      <button type="button" onClick={onConfirm}>confirm operation</button>
+    </div>
   ),
 }))
 
@@ -89,18 +118,26 @@ vi.mock("@/components/section-tree-editor/SectionTreeEditor", () => ({
   SectionTreeEditor: ({
     section,
     onChange,
+    disabled,
   }: {
     section: { sectionId: string }
     onChange: (next: unknown) => void
+    disabled?: boolean
   }) => (
-    <button type="button" onClick={() => onChange({ ...section, sectionType: "edited" })}>
+    <button
+      type="button"
+      disabled={disabled}
+      onClick={() => onChange({ ...section, sectionType: "edited" })}
+    >
       edit
     </button>
   ),
 }))
 
 vi.mock("@/components/pipeline/stages/storyboard/components/SectionActionsDropdown", () => ({
-  SectionActionsDropdown: () => null,
+  SectionActionsDropdown: ({ onClone }: { onClone: () => void }) => (
+    <button type="button" onClick={onClone}>duplicate section</button>
+  ),
 }))
 
 import { SectioningPageDetail } from "./SectioningPageDetail"
@@ -144,6 +181,7 @@ describe("SectioningPageDetail — save confirmation", () => {
   beforeEach(() => {
     savedEntry = {}
     updateSectioning.mockClear()
+    cloneSection.mockClear()
     isFixedLayout.mockReturnValue(false)
   })
   afterEach(cleanup)
@@ -194,5 +232,34 @@ describe("SectioningPageDetail — save confirmation", () => {
       resolveUpdate({ version: 2 })
       await first
     })
+  })
+
+  it("disables every editor while a structural operation is in flight", async () => {
+    let resolveClone!: (value: { version: number }) => void
+    const cloneResult = new Promise<{ version: number }>((resolve) => {
+      resolveClone = resolve
+    })
+    cloneSection.mockImplementationOnce(() => cloneResult)
+    renderDetail()
+
+    const editButton = screen.getByRole("button", { name: "edit" }) as HTMLButtonElement
+    const typeSelect = screen.getByTestId("section-type-select")
+    expect(editButton.disabled).toBe(false)
+    expect(typeSelect.getAttribute("data-disabled")).toBe("false")
+
+    fireEvent.click(screen.getByRole("button", { name: "duplicate section" }))
+    fireEvent.click(screen.getByRole("button", { name: "confirm operation" }))
+
+    expect(cloneSection).toHaveBeenCalledTimes(1)
+    expect(editButton.disabled).toBe(true)
+    expect(typeSelect.getAttribute("data-disabled")).toBe("true")
+
+    await act(async () => {
+      resolveClone({ version: 2 })
+      await cloneResult
+    })
+
+    expect(editButton.disabled).toBe(false)
+    expect(typeSelect.getAttribute("data-disabled")).toBe("false")
   })
 })
