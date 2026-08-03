@@ -298,6 +298,37 @@ describe("Page routes", () => {
       }
     })
 
+    it("rejects sectioning changes while a pipeline step is running", async () => {
+      const seed = createBookStorage(label, tmpDir)
+      try {
+        seed.markStepStarted("web-rendering")
+      } finally {
+        seed.close()
+      }
+
+      const res = await app.request(
+        `/api/books/${label}/pages/${label}_p1/sectioning`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ reasoning: "r", sections: [] }),
+        }
+      )
+      expect(res.status).toBe(409)
+
+      const after = createBookStorage(label, tmpDir)
+      try {
+        expect(
+          after.getLatestNodeData("page-sectioning", `${label}_p1`)?.version
+        ).toBe(1)
+        expect(after.getStepRuns()).toContainEqual(
+          expect.objectContaining({ step: "web-rendering", status: "running" })
+        )
+      } finally {
+        after.close()
+      }
+    })
+
     it("does not mark storyboard stale when only the rendering is saved", async () => {
       const seed = createBookStorage(label, tmpDir)
       try {
@@ -666,6 +697,38 @@ describe("Page routes", () => {
         const steps = after.getStepRuns().map((r) => r.step)
         expect(steps).not.toContain("web-rendering")
         expect(steps).not.toContain("package-web")
+      } finally {
+        after.close()
+      }
+    })
+
+    it("does not split while a pipeline step is running", async () => {
+      seedThreeNodeSection({ rendering: true })
+      const seed = createBookStorage(label, tmpDir)
+      try {
+        seed.markStepStarted("web-rendering")
+      } finally {
+        seed.close()
+      }
+
+      const res = await app.request(
+        `/api/books/${label}/pages/${label}_p1/sections/0/split`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ beforeNodeIndex: 1 }),
+        }
+      )
+      expect(res.status).toBe(409)
+
+      const after = createBookStorage(label, tmpDir)
+      try {
+        const sectioning = after.getLatestNodeData("page-sectioning", `${label}_p1`)
+          ?.data as { sections: unknown[] }
+        expect(sectioning.sections).toHaveLength(2)
+        expect(after.getStepRuns()).toContainEqual(
+          expect.objectContaining({ step: "web-rendering", status: "running" })
+        )
       } finally {
         after.close()
       }

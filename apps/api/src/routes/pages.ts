@@ -459,6 +459,23 @@ function markStoryboardChainStale(storage: Storage): void {
 }
 
 /**
+ * A running pipeline step can commit node data and mark itself complete after a
+ * manual Sectioning mutation. Refuse the mutation instead of letting that stale
+ * completion resurrect the downstream chain as "done".
+ */
+function assertNoActivePipelineRun(storage: Storage): void {
+  const runningSteps = storage
+    .getStepRuns()
+    .filter((run) => run.status === "running")
+    .map((run) => run.step)
+  if (runningSteps.length === 0) return
+
+  throw new HTTPException(409, {
+    message: `Cannot change sectioning while pipeline steps are running: ${runningSteps.join(", ")}. Wait for the run to finish or cancel it first.`,
+  })
+}
+
+/**
  * Save storyboard (web-rendering) node data and clear stale downstream data.
  * Use for all user-initiated storyboard saves (NOT pipeline stage runs).
  */
@@ -468,6 +485,7 @@ function saveStoryboardNode(
   itemId: string,
   data: unknown
 ): number {
+  if (node === "page-sectioning") assertNoActivePipelineRun(storage)
   const version = storage.putNodeData(node, itemId, data)
   clearCaptionData(storage)
   // A sectioning change invalidates the storyboard's rendered HTML — and the
