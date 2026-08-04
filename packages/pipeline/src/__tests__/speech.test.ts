@@ -14,6 +14,11 @@ import {
   generateSpeechFile,
   loadVoicesConfig,
   loadSpeechInstructions,
+  findAdjacentSpeechText,
+  elevenLabsVoiceSettingsFromConfig,
+  classifyElevenLabsTtsError,
+  elevenLabsTtsRetryDelayMs,
+  parseElevenLabsErrorStatus,
   type VoiceMaps,
   type InstructionsMap,
 } from "../speech.js"
@@ -539,6 +544,74 @@ describe("generateSpeechFile", () => {
     expect(mockSynthesize).toHaveBeenCalledTimes(1)
   })
 
+  it("invalidates the cache when elevenlabs voice_settings change", async () => {
+    const baseOptions = {
+      textId: "p001_t001",
+      text: "Hello world",
+      language: "en",
+      model: "eleven_multilingual_v2",
+      voice: "21m00Tcm4TlvDq8ikWAM",
+      instructions: "",
+      format: "mp3" as const,
+      bookDir,
+      cacheDir,
+      ttsSynthesizer: mockSynthesizer,
+      provider: "elevenlabs" as const,
+    }
+
+    await generateSpeechFile(baseOptions)
+    expect(mockSynthesize).toHaveBeenCalledTimes(1)
+
+    // Explicitly passing the defaults must hash identically to passing nothing
+    // — the request body is the same either way.
+    const stillCached = await generateSpeechFile({
+      ...baseOptions,
+      elevenLabsStability: 0.7,
+      elevenLabsSimilarityBoost: 0.5,
+      elevenLabsStyle: 0,
+      elevenLabsUseSpeakerBoost: true,
+    })
+    expect(stillCached!.cached).toBe(true)
+    expect(mockSynthesize).toHaveBeenCalledTimes(1)
+
+    // Tuning stability changes the audio, so it must regenerate.
+    await generateSpeechFile({ ...baseOptions, elevenLabsStability: 0.2 })
+    expect(mockSynthesize).toHaveBeenCalledTimes(2)
+
+    // So does style, and setting a speed where there was none.
+    await generateSpeechFile({ ...baseOptions, elevenLabsStyle: 0.5 })
+    expect(mockSynthesize).toHaveBeenCalledTimes(3)
+    await generateSpeechFile({ ...baseOptions, elevenLabsSpeed: 0.9 })
+    expect(mockSynthesize).toHaveBeenCalledTimes(4)
+  })
+
+  it("ignores elevenlabs voice_settings for non-elevenlabs providers", async () => {
+    const baseOptions = {
+      textId: "p001_t001",
+      text: "Hello world",
+      language: "en",
+      model: "gpt-4o-mini-tts",
+      voice: "alloy",
+      instructions: "",
+      format: "mp3" as const,
+      bookDir,
+      cacheDir,
+      ttsSynthesizer: mockSynthesizer,
+    }
+
+    await generateSpeechFile(baseOptions)
+    expect(mockSynthesize).toHaveBeenCalledTimes(1)
+
+    const result = await generateSpeechFile({
+      ...baseOptions,
+      elevenLabsStability: 0.1,
+      elevenLabsStyle: 0.9,
+      elevenLabsSpeed: 1.2,
+    })
+    expect(result!.cached).toBe(true)
+    expect(mockSynthesize).toHaveBeenCalledTimes(1)
+  })
+
   it("only acquires the optional rate limiter when a real synth call is needed", async () => {
     const rateLimiter = {
       acquire: vi.fn().mockResolvedValue(undefined),
@@ -668,5 +741,183 @@ describe("generateSpeechFile", () => {
         ttsSynthesizer: mockSynthesizer,
       })
     ).rejects.toThrow(/Invalid text id/)
+  })
+})
+
+// ---------------------------------------------------------------------------
+// findAdjacentSpeechText
+// ---------------------------------------------------------------------------
+
+describe("findAdjacentSpeechText", () => {
+  const entry = (id: string, text: string) => ({ id, text }) as never
+
+  it("returns the neighbouring entry's text in both directions", () => {
+    const entries = [
+      entry("p001_t001", "First."),
+      entry("p001_t002", "Second."),
+      entry("p001_t003", "Third."),
+    ]
+
+    expect(findAdjacentSpeechText(entries, 1, -1, undefined)).toBe("First.")
+    expect(findAdjacentSpeechText(entries, 1, 1, undefined)).toBe("Third.")
+  })
+
+  it("returns undefined at the array boundaries", () => {
+    const entries = [entry("p001_t001", "Only.")]
+
+    expect(findAdjacentSpeechText(entries, 0, -1, undefined)).toBeUndefined()
+    expect(findAdjacentSpeechText(entries, 0, 1, undefined)).toBeUndefined()
+  })
+
+  it("skips TTS-excluded neighbours so context flows across them", () => {
+    const entries = [
+      entry("p001_t001", "First."),
+      entry("p001_t002", "Muted."),
+      entry("p001_t003", "Third."),
+    ]
+
+    expect(
+      findAdjacentSpeechText(entries, 2, -1, { excluded_text_ids: ["p001_t002"] })
+    ).toBe("First.")
+  })
+
+  // The entry's own `text` is emoji-stripped before synthesis, so the context
+  // fields must be too — otherwise ElevenLabs sees characters it never speaks.
+  it("strips emojis from the returned context text", () => {
+    const entries = [entry("p001_t001", "Hello 😀 there."), entry("p001_t002", "Next.")]
+
+    expect(findAdjacentSpeechText(entries, 1, -1, undefined)).toBe("Hello  there.")
+  })
+
+  it("skips neighbours that are empty once emoji-stripped", () => {
+    const entries = [
+      entry("p001_t001", "Real text."),
+      entry("p001_t002", "😀"),
+      entry("p001_t003", "Third."),
+    ]
+
+    expect(findAdjacentSpeechText(entries, 2, -1, undefined)).toBe("Real text.")
+  })
+
+  // The stage-runner appends Easy Read variants to the source-language array,
+  // so an unconstrained scan makes the last main entry's next_text an Easy Read
+  // rewrite of much earlier content.
+  it("does not cross the easy-read variant boundary", () => {
+    const entries = [
+      entry("p001_t001", "Main one."),
+      entry("p001_t002", "Main two."),
+      entry("p001_t001_easy_read", "Easy one."),
+      entry("p001_t002_easy_read", "Easy two."),
+    ]
+
+    // Last main entry: no main-catalog entry follows it.
+    expect(findAdjacentSpeechText(entries, 1, 1, undefined)).toBeUndefined()
+    // First easy-read entry: no easy-read entry precedes it.
+    expect(findAdjacentSpeechText(entries, 2, -1, undefined)).toBeUndefined()
+    // Within a variant group, neighbours still resolve.
+    expect(findAdjacentSpeechText(entries, 2, 1, undefined)).toBe("Easy two.")
+    expect(findAdjacentSpeechText(entries, 1, -1, undefined)).toBe("Main one.")
+  })
+})
+
+// ---------------------------------------------------------------------------
+// elevenLabsVoiceSettingsFromConfig
+// ---------------------------------------------------------------------------
+
+describe("elevenLabsVoiceSettingsFromConfig", () => {
+  it("maps the snake_case config fields onto camelCase option names", () => {
+    expect(
+      elevenLabsVoiceSettingsFromConfig({
+        elevenlabs_stability: 0.4,
+        elevenlabs_similarity_boost: 0.6,
+        elevenlabs_style: 0.1,
+        elevenlabs_use_speaker_boost: false,
+        elevenlabs_speed: 1.1,
+      })
+    ).toEqual({
+      elevenLabsStability: 0.4,
+      elevenLabsSimilarityBoost: 0.6,
+      elevenLabsStyle: 0.1,
+      elevenLabsUseSpeakerBoost: false,
+      elevenLabsSpeed: 1.1,
+    })
+  })
+
+  it("leaves every field undefined for missing config so the defaults apply", () => {
+    for (const speech of [undefined, null, {}]) {
+      expect(elevenLabsVoiceSettingsFromConfig(speech)).toEqual({
+        elevenLabsStability: undefined,
+        elevenLabsSimilarityBoost: undefined,
+        elevenLabsStyle: undefined,
+        elevenLabsUseSpeakerBoost: undefined,
+        elevenLabsSpeed: undefined,
+      })
+    }
+  })
+})
+
+// ---------------------------------------------------------------------------
+// ElevenLabs retry classification
+// ---------------------------------------------------------------------------
+
+describe("classifyElevenLabsTtsError", () => {
+  const failure = (status: number, body: string) =>
+    `ElevenLabs TTS request failed (${status}): ${body}`
+
+  it("treats 429 as a rate limit", () => {
+    expect(classifyElevenLabsTtsError(failure(429, "too many concurrent requests"))).toBe(
+      "rate-limit"
+    )
+  })
+
+  it("treats 5xx as transient", () => {
+    expect(classifyElevenLabsTtsError(failure(500, "internal error"))).toBe("transient")
+    expect(classifyElevenLabsTtsError(failure(503, "unavailable"))).toBe("transient")
+  })
+
+  it("treats other 4xx as permanent", () => {
+    expect(classifyElevenLabsTtsError(failure(401, "invalid_api_key"))).toBe("permanent")
+    expect(classifyElevenLabsTtsError(failure(404, "voice_not_found"))).toBe("permanent")
+  })
+
+  // The previous classifier matched /try again/i against the response body, so
+  // a permanent 4xx whose body happened to say "try again" burned five backoff
+  // waits (~60s) on a request that could never succeed.
+  it("does not retry a permanent 4xx whose body says 'try again'", () => {
+    expect(
+      classifyElevenLabsTtsError(failure(400, "Invalid voice_id — fix it and try again"))
+    ).toBe("permanent")
+    expect(classifyElevenLabsTtsError(failure(422, "unprocessable; please try again"))).toBe(
+      "permanent"
+    )
+  })
+
+  it("retries genuine transport errors that never reached the API", () => {
+    expect(classifyElevenLabsTtsError("fetch failed")).toBe("transient")
+    expect(classifyElevenLabsTtsError("read ECONNRESET")).toBe("transient")
+    expect(classifyElevenLabsTtsError("socket hang up")).toBe("transient")
+  })
+
+  it("treats an unrecognised statusless error as permanent", () => {
+    expect(classifyElevenLabsTtsError("ELEVENLABS_API_KEY is required")).toBe("permanent")
+  })
+})
+
+describe("parseElevenLabsErrorStatus", () => {
+  it("extracts the status the synthesizer formats into the message", () => {
+    expect(parseElevenLabsErrorStatus("ElevenLabs TTS request failed (429): x")).toBe(429)
+  })
+
+  it("returns null when there is no status", () => {
+    expect(parseElevenLabsErrorStatus("fetch failed")).toBeNull()
+  })
+})
+
+describe("elevenLabsTtsRetryDelayMs", () => {
+  it("backs off exponentially and caps at the maximum", () => {
+    expect(elevenLabsTtsRetryDelayMs(1)).toBe(2_000)
+    expect(elevenLabsTtsRetryDelayMs(2)).toBe(4_000)
+    expect(elevenLabsTtsRetryDelayMs(3)).toBe(8_000)
+    expect(elevenLabsTtsRetryDelayMs(10)).toBe(30_000)
   })
 })

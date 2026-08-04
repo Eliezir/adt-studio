@@ -7,13 +7,19 @@ import {
   DEFAULT_ELEVENLABS_TTS_MODEL_ID,
   DEFAULT_ELEVENLABS_VOICE_ID,
   isTtsExcluded,
+  type SpeechConfig,
   type SpeechFileEntry,
   type TTSProviderConfig,
   type TTSRateLimitConfig,
   type TextCatalogEntry,
 } from "@adt/types"
-import type { RateLimiter, TTSSynthesizer, WhisperTranscriptionResult } from "@adt/llm"
-import { transcribeWithWhisper } from "@adt/llm"
+import type {
+  ElevenLabsVoiceSettingsOverrides,
+  RateLimiter,
+  TTSSynthesizer,
+  WhisperTranscriptionResult,
+} from "@adt/llm"
+import { resolveElevenLabsVoiceSettings, transcribeWithWhisper } from "@adt/llm"
 import { getBaseLanguage, normalizeLocale } from "./language-context.js"
 import { computeEntryTimeRanges, buildPageTranscript, type BatchEntry } from "./speech-batch.js"
 import { sliceWav, wavDurationSeconds, findQuietCutSeconds } from "./audio-wav.js"
@@ -250,6 +256,63 @@ export function resolveGeminiTtsRateLimit(args: {
 }
 
 // ---------------------------------------------------------------------------
+// ElevenLabs throttling + retry policy
+// ---------------------------------------------------------------------------
+
+// ElevenLabs has no adaptive limiter (its throttling is concurrency-based, not
+// RPM-based) so we bound pressure two ways: cap how many entries synthesize in
+// parallel, and retry 429/5xx with exponential backoff so a transient
+// concurrency-limit hit doesn't fail the entry outright. The cap matches the
+// low, plan-dependent concurrent-request ceilings (Free ~4, Starter ~5).
+//
+// Lives here rather than in the API service so the CLI/`runFullPipeline` DAG
+// executor gets the same protection — its default concurrency is 32, far above
+// any ElevenLabs plan ceiling.
+export const ELEVENLABS_TTS_MAX_CONCURRENCY = 4
+export const ELEVENLABS_TTS_MAX_RATE_LIMIT_RETRIES = 5
+export const ELEVENLABS_TTS_BASE_RETRY_DELAY_MS = 2_000
+export const ELEVENLABS_TTS_MAX_RETRY_DELAY_MS = 30_000
+
+/** HTTP status embedded in a `createElevenLabsTTSSynthesizer` error message,
+ *  which always formats failures as `... failed (<status>): <body>`. */
+export function parseElevenLabsErrorStatus(message: string): number | null {
+  const match = /\((\d{3})\)/.exec(message)
+  return match ? Number(match[1]) : null
+}
+
+// Transport-level failures never reach an HTTP status, so they're matched by
+// name. Kept deliberately narrow: these are node/undici network errors, not
+// free-text from an upstream response body.
+const ELEVENLABS_NETWORK_ERROR_RE =
+  /fetch failed|ECONNRESET|ECONNREFUSED|ETIMEDOUT|EAI_AGAIN|ENOTFOUND|socket hang up|network|aborted due to timeout/i
+
+export type ElevenLabsTtsErrorKind = "rate-limit" | "transient" | "permanent"
+
+/**
+ * Whether an ElevenLabs TTS failure is worth retrying.
+ *
+ * Keyed on the HTTP status rather than the response body. Matching free text
+ * (e.g. `/try again/i`) misclassifies permanent 4xx responses whose body
+ * happens to contain those words, burning five backoff waits — up to ~60s —
+ * per entry on a request that will never succeed.
+ */
+export function classifyElevenLabsTtsError(message: string): ElevenLabsTtsErrorKind {
+  const status = parseElevenLabsErrorStatus(message)
+  if (status === 429) return "rate-limit"
+  if (status !== null) return status >= 500 && status <= 599 ? "transient" : "permanent"
+  // No status → never reached the API. Retry genuine transport errors only.
+  return ELEVENLABS_NETWORK_ERROR_RE.test(message) ? "transient" : "permanent"
+}
+
+/** Exponential backoff for retry attempt `attemptCount` (1-based). */
+export function elevenLabsTtsRetryDelayMs(attemptCount: number): number {
+  return Math.min(
+    ELEVENLABS_TTS_BASE_RETRY_DELAY_MS * 2 ** (attemptCount - 1),
+    ELEVENLABS_TTS_MAX_RETRY_DELAY_MS
+  )
+}
+
+// ---------------------------------------------------------------------------
 // Cache helpers
 // ---------------------------------------------------------------------------
 
@@ -271,7 +334,7 @@ export function computeSpeechCacheKey(data: {
   elevenLabsPreviousText?: string
   elevenLabsNextText?: string
   elevenLabsApplyTextNormalization?: "auto" | "on" | "off"
-}): string {
+} & ElevenLabsVoiceSettingsOverrides): string {
   // Gemini output also depends on any sampling params it's sent (temperature +
   // seed), so fold in whichever are set — tuning them regenerates Gemini audio,
   // and clearing them (disabling) also produces a distinct key. Gated on
@@ -285,6 +348,11 @@ export function computeSpeechCacheKey(data: {
     elevenLabsPreviousText,
     elevenLabsNextText,
     elevenLabsApplyTextNormalization,
+    elevenLabsStability,
+    elevenLabsSimilarityBoost,
+    elevenLabsStyle,
+    elevenLabsUseSpeakerBoost,
+    elevenLabsSpeed,
     ...base
   } = data
   const gemini =
@@ -296,6 +364,14 @@ export function computeSpeechCacheKey(data: {
       : {}
   // Same gating for ElevenLabs: adjacent-text context and the normalization
   // mode are only sent (and thus only affect the audio) for that provider.
+  //
+  // `voice_settings` is different from every other field here: the request
+  // ALWAYS carries a resolved block, so the key must hash the *effective*
+  // values rather than only the user's overrides. Hashing just the overrides
+  // would make a future change to DEFAULT_ELEVENLABS_VOICE_SETTINGS reuse
+  // audio generated under the old defaults. `resolveElevenLabsVoiceSettings`
+  // is the same function the synthesizer uses to build the body, so the two
+  // cannot drift.
   const elevenlabs =
     base.provider === "elevenlabs"
       ? {
@@ -304,11 +380,50 @@ export function computeSpeechCacheKey(data: {
           ...(elevenLabsApplyTextNormalization
             ? { elevenLabsApplyTextNormalization }
             : {}),
+          elevenLabsVoiceSettings: resolveElevenLabsVoiceSettings({
+            elevenLabsStability,
+            elevenLabsSimilarityBoost,
+            elevenLabsStyle,
+            elevenLabsUseSpeakerBoost,
+            elevenLabsSpeed,
+          }),
         }
       : {}
   const json = JSON.stringify({ ...base, ...gemini, ...elevenlabs })
   return crypto.createHash("sha256").update(json).digest("hex")
 }
+
+/**
+ * Map the `elevenlabs_*` voice-tuning fields of a book's `SpeechConfig` onto
+ * the camelCase option names used by `generateSpeechFile` and
+ * `computeSpeechCacheKey`.
+ *
+ * Exists so the three execution paths (API stage-runner, CLI/`runFullPipeline`
+ * DAG, single-item regeneration route) each spread one call instead of
+ * restating five fields — the previous per-field duplication is exactly how
+ * those paths drifted out of sync before, producing different cache keys for
+ * the same audio.
+ */
+export function elevenLabsVoiceSettingsFromConfig(
+  speech?: Pick<
+    SpeechConfig,
+    | "elevenlabs_stability"
+    | "elevenlabs_similarity_boost"
+    | "elevenlabs_style"
+    | "elevenlabs_use_speaker_boost"
+    | "elevenlabs_speed"
+  > | null,
+): ElevenLabsVoiceSettingsOverrides {
+  return {
+    elevenLabsStability: speech?.elevenlabs_stability,
+    elevenLabsSimilarityBoost: speech?.elevenlabs_similarity_boost,
+    elevenLabsStyle: speech?.elevenlabs_style,
+    elevenLabsUseSpeakerBoost: speech?.elevenlabs_use_speaker_boost,
+    elevenLabsSpeed: speech?.elevenlabs_speed,
+  }
+}
+
+const EASY_READ_ID_RE = /_easy_read$/
 
 /**
  * Nearest non-excluded neighbor's text in reading order, used to build
@@ -317,6 +432,17 @@ export function computeSpeechCacheKey(data: {
  * text that has no audio of its own. Shared by the API's stage-runner and the
  * CLI/`runFullPipeline` DAG executor so both resolve identical adjacent text
  * for the same entry — keeping `computeSpeechCacheKey` in sync across paths.
+ *
+ * Two constraints beyond "pick the neighbour":
+ *
+ * 1. The text is emoji-stripped, exactly like the entry's own `text` is before
+ *    synthesis. Sending emoji only in the context fields would ask ElevenLabs
+ *    to reason about characters it never has to speak.
+ * 2. The search stays inside the current entry's variant group. For the source
+ *    language the stage-runner appends the Easy Read variants to the entry
+ *    array (`[...catalog.entries, ...sourceEasyReadEntries]`), so a plain
+ *    neighbour scan makes the last main-catalog entry's `next_text` an Easy
+ *    Read rewrite of much earlier content — worse than no context at all.
  */
 export function findAdjacentSpeechText(
   entries: TextCatalogEntry[],
@@ -324,8 +450,13 @@ export function findAdjacentSpeechText(
   direction: 1 | -1,
   speechConfig: Parameters<typeof isTtsExcluded>[1],
 ): string | undefined {
+  const wantEasyRead = EASY_READ_ID_RE.test(entries[index]?.id ?? "")
   for (let i = index + direction; i >= 0 && i < entries.length; i += direction) {
-    if (!isTtsExcluded(entries[i].id, speechConfig)) return entries[i].text
+    const entry = entries[i]
+    if (EASY_READ_ID_RE.test(entry.id) !== wantEasyRead) continue
+    if (isTtsExcluded(entry.id, speechConfig)) continue
+    const text = stripEmojis(entry.text).trim()
+    if (text) return text
   }
   return undefined
 }
@@ -356,7 +487,7 @@ function assertWithinBase(base: string, target: string, name: string): void {
 // Speech file generation
 // ---------------------------------------------------------------------------
 
-export interface GenerateSpeechFileOptions {
+export interface GenerateSpeechFileOptions extends ElevenLabsVoiceSettingsOverrides {
   textId: string
   text: string
   language: string
@@ -383,6 +514,10 @@ export interface GenerateSpeechFileOptions {
   elevenLabsPreviousText?: string
   elevenLabsNextText?: string
   elevenLabsApplyTextNormalization?: "auto" | "on" | "off"
+  /** ElevenLabs `voice_settings` overrides, via
+   *  {@link ElevenLabsVoiceSettingsOverrides}. Build these with
+   *  {@link elevenLabsVoiceSettingsFromConfig} so every execution path derives
+   *  the same values — and therefore the same cache key. */
   /** Run cancellation — aborts the rate-limiter wait and the TTS request. */
   signal?: AbortSignal
 }
@@ -413,8 +548,23 @@ export async function generateSpeechFile(
     elevenLabsPreviousText,
     elevenLabsNextText,
     elevenLabsApplyTextNormalization,
+    elevenLabsStability,
+    elevenLabsSimilarityBoost,
+    elevenLabsStyle,
+    elevenLabsUseSpeakerBoost,
+    elevenLabsSpeed,
     signal,
   } = options
+
+  // One object shared by the cache key and the synthesize() call below, so the
+  // hashed settings can never diverge from the settings actually sent.
+  const elevenLabsVoiceSettings: ElevenLabsVoiceSettingsOverrides = {
+    elevenLabsStability,
+    elevenLabsSimilarityBoost,
+    elevenLabsStyle,
+    elevenLabsUseSpeakerBoost,
+    elevenLabsSpeed,
+  }
 
   // Strip emojis and validate
   const sanitized = stripEmojis(text).trim()
@@ -443,6 +593,7 @@ export async function generateSpeechFile(
     elevenLabsPreviousText,
     elevenLabsNextText,
     elevenLabsApplyTextNormalization,
+    ...elevenLabsVoiceSettings,
   })
 
   const fileName = `${safeTextId}.${safeFormat}`
@@ -484,6 +635,7 @@ export async function generateSpeechFile(
     elevenLabsPreviousText,
     elevenLabsNextText,
     elevenLabsApplyTextNormalization,
+    ...elevenLabsVoiceSettings,
     signal,
   })
 

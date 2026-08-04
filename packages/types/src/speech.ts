@@ -71,6 +71,24 @@ export const SpeechConfig = z.object({
   elevenlabs_use_context: z.boolean().optional(),
   elevenlabs_apply_text_normalization: z.enum(["auto", "on", "off"]).optional(),
   /**
+   * ElevenLabs `voice_settings` overrides. ElevenLabs applies the *voice's own
+   * stored dashboard settings* whenever `voice_settings` is omitted from the
+   * request, which for community/cloned voices can mean a low `stability` or a
+   * non-zero `style` — and ElevenLabs documents that those cause "inconsistent
+   * speed, mispronunciation and the addition of extra sounds", i.e. filler
+   * sounds like "ehm" that aren't in the source text. So we always send a
+   * resolved `voice_settings` block (see `DEFAULT_ELEVENLABS_VOICE_SETTINGS`)
+   * and these fields override individual values.
+   *
+   * `elevenlabs_speed` has no default: it is only sent when explicitly set, so
+   * an unset value leaves ElevenLabs' own pacing untouched.
+   */
+  elevenlabs_stability: z.number().min(0).max(1).optional(),
+  elevenlabs_similarity_boost: z.number().min(0).max(1).optional(),
+  elevenlabs_style: z.number().min(0).max(1).optional(),
+  elevenlabs_use_speaker_boost: z.boolean().optional(),
+  elevenlabs_speed: z.number().min(0.7).max(1.2).optional(),
+  /**
    * Experimental (Gemini only): synthesize a whole page's text in ONE request
    * so tone stays consistent across sentences, then slice the page audio back
    * into per-entry files using a Whisper alignment pass. Requires an OpenAI key

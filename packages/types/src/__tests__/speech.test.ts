@@ -101,6 +101,40 @@ describe("SpeechConfig ElevenLabs options", () => {
     })
     expect(result.success).toBe(false)
   })
+
+  it("accepts the voice_settings tuning fields", () => {
+    const result = SpeechConfig.safeParse({
+      elevenlabs_stability: 0.7,
+      elevenlabs_similarity_boost: 0.5,
+      elevenlabs_style: 0,
+      elevenlabs_use_speaker_boost: true,
+      elevenlabs_speed: 1,
+    })
+    expect(result.success).toBe(true)
+  })
+
+  it("leaves the voice_settings tuning fields unset when omitted", () => {
+    const result = SpeechConfig.safeParse({})
+    expect(result.success).toBe(true)
+    if (result.success) {
+      expect(result.data.elevenlabs_stability).toBeUndefined()
+      expect(result.data.elevenlabs_style).toBeUndefined()
+      expect(result.data.elevenlabs_speed).toBeUndefined()
+    }
+  })
+
+  // An out-of-range value written to config.yaml would make AppConfig.parse
+  // throw on the next load, breaking the whole book.
+  it.each([
+    ["elevenlabs_stability", 1.5],
+    ["elevenlabs_stability", -0.1],
+    ["elevenlabs_similarity_boost", 2],
+    ["elevenlabs_style", 1.1],
+    ["elevenlabs_speed", 0.5],
+    ["elevenlabs_speed", 1.5],
+  ])("rejects out-of-range %s = %s", (field, value) => {
+    expect(SpeechConfig.safeParse({ [field]: value }).success).toBe(false)
+  })
 })
 
 describe("TTSOutput", () => {
