@@ -276,7 +276,6 @@ render_strategies:
     render_type: activity
     config:
       prompt: activity_ordering
-      answer_prompt: activity_ordering_answers
       max_retries: 5
       timeout: 180
       visual_refinement:

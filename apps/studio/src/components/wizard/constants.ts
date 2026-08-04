@@ -311,7 +311,6 @@ export const PRESETS: PresetConfig[] = [
           render_type: "activity",
           config: {
             prompt: "activity_ordering",
-            answer_prompt: "activity_ordering_answers",
             max_retries: 5,
             timeout: 180,
             temperature: 0.3,

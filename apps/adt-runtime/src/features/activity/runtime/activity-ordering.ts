@@ -39,21 +39,31 @@ function findNextPageHref(): string | null {
 }
 
 function readCorrectOrder(section: HTMLElement, itemIds: string[]): string[] {
+  const answers = window.correctAnswers
+  if (answers && Object.keys(answers).length > 0) {
+    const ranked = itemIds.map((itemId) => ({ itemId, rank: Number(answers[itemId]) }))
+    const ranks = ranked.map(({ rank }) => rank)
+    const validRanks =
+      ranks.every((rank) => Number.isInteger(rank) && rank >= 1 && rank <= itemIds.length) &&
+      new Set(ranks).size === itemIds.length
+    return validRanks
+      ? ranked.sort((a, b) => a.rank - b.rank).map(({ itemId }) => itemId)
+      : []
+  }
+
   const encoded = section.getAttribute("data-correct-order")
   if (encoded) {
     const values = encoded.trim().startsWith("[")
       ? safelyParseOrder(encoded)
       : encoded.split(",").map((value) => value.trim()).filter(Boolean)
-    if (values.length > 0) return values
+    const itemSet = new Set(itemIds)
+    const exactPermutation =
+      values.length === itemIds.length &&
+      new Set(values).size === itemSet.size &&
+      values.every((itemId) => itemSet.has(itemId))
+    if (exactPermutation) return values
   }
-
-  const answers = window.correctAnswers ?? {}
-  const ranked = itemIds
-    .map((itemId) => ({ itemId, rank: Number(answers[itemId]) }))
-    .filter((entry) => Number.isFinite(entry.rank))
-    .sort((a, b) => a.rank - b.rank)
-    .map((entry) => entry.itemId)
-  return ranked.length === itemIds.length ? ranked : []
+  return []
 }
 
 function safelyParseOrder(value: string): string[] {

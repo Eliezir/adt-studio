@@ -165,4 +165,47 @@ describe("initializeOrderingActivity", () => {
     }
     expect(initializeOrderingActivity()).not.toBeNull()
   })
+
+  it("uses edited ranked answers instead of a stale HTML order", () => {
+    setup()
+    window.correctAnswers = {
+      "item-1": "1",
+      "item-2": "2",
+      "item-3": "3",
+      "item-4": "4",
+    }
+    initializeOrderingActivity()
+
+    store.get(validateHandlerAtom)?.()
+
+    expect(store.get(submitStateAtom)).toBe("next")
+  })
+
+  it("refuses incomplete or duplicate ranked answers", () => {
+    setup()
+    window.correctAnswers = {
+      "item-1": "1",
+      "item-2": "2",
+      "item-3": "3",
+    }
+    expect(initializeOrderingActivity()).toBeNull()
+
+    setup()
+    window.correctAnswers = {
+      "item-1": "1",
+      "item-2": "1",
+      "item-3": "3",
+      "item-4": "4",
+    }
+    expect(initializeOrderingActivity()).toBeNull()
+  })
+
+  it("rejects an HTML order that is not an exact item permutation", () => {
+    setup()
+    document
+      .querySelector("section")
+      ?.setAttribute("data-correct-order", "item-2,item-1,item-4,item-99")
+
+    expect(initializeOrderingActivity()).toBeNull()
+  })
 })
