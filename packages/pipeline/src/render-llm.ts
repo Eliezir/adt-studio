@@ -12,6 +12,7 @@ import {
   tableOfContentsLayoutErrors,
 } from "./toc-layout.js"
 import { DEFAULT_TYPOGRAPHY } from "@adt/types"
+import { inspectOrderingActivityHtml } from "./ordering-contract.js"
 
 /** Dependencies for the optional visual refinement loop. */
 export interface VisualRefinementDeps {
@@ -29,7 +30,8 @@ export interface VisualRefinementDeps {
  *
  * For activity sections (config.renderType === "activity"):
  * - Validation allows activity_gen_* prefixed data-ids
- * - If config.answerPromptName is set, a second LLM call generates correct answers
+ * - Ordering answers are derived deterministically from validated HTML
+ * - Other activities use a second LLM call when config.answerPromptName is set
  */
 export async function renderSectionLlm(
   input: RenderSectionInput,
@@ -158,11 +160,22 @@ export async function renderSectionLlm(
     generatedHtml = repairTableOfContentsLayout(generatedHtml, renderContext.leaf_texts)
   }
 
-  // Optional: generate activity answers via a second LLM call
+  // Ordering has one inspectable source of truth in the validated HTML. Derive
+  // its rank map deterministically so initial render, rerender, Studio editing,
+  // preview, and export cannot disagree because of a second LLM response.
   let activityReasoning: string | undefined
   let activityAnswers: Record<string, string | boolean | number> | undefined
 
-  if (isActivity && config.answerPromptName) {
+  if (section.sectionType === "activity_ordering") {
+    const inspection = inspectOrderingActivityHtml(generatedHtml)
+    if (!inspection.contract) {
+      throw new Error(
+        `Validated activity_ordering HTML has no usable ordering contract: ${inspection.errors.join(" ")}`,
+      )
+    }
+    activityReasoning = "Derived deterministically from the validated correct item order."
+    activityAnswers = inspection.contract.answers
+  } else if (isActivity && config.answerPromptName) {
     const answersResult = await llmModel.generateObject<{
       reasoning: string
       answers: Array<{ id: string; value: string | boolean | number }>

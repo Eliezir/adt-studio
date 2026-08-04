@@ -1204,7 +1204,13 @@ export const api = {
     apiKey: string,
     currentHtml?: string,
   ) =>
-    request<{ taskId?: string; status?: string; html?: string; reasoning?: string }>(
+    request<{
+      taskId?: string
+      status?: string
+      html?: string
+      reasoning?: string
+      activityAnswers?: Record<string, string>
+    }>(
       `/books/${label}/pages/${pageId}/sections/${sectionIndex}/ai-edit`,
       {
         method: "POST",
