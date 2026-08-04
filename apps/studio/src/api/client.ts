@@ -196,6 +196,16 @@ export interface AzureCredentials {
   region: string
 }
 
+/** An ElevenLabs voice as surfaced by `GET /speech-config/elevenlabs-voices`
+ *  (a trimmed projection of ElevenLabs' own `/v2/voices` payload). */
+export interface ElevenLabsVoice {
+  voice_id: string
+  name?: string
+  category?: string
+  labels?: Record<string, string>
+  verified_languages?: Array<{ language?: string; accent?: string }>
+}
+
 export interface StageRunProviderCredentials {
   anthropicApiKey?: string
   googleApiKey?: string
@@ -203,6 +213,7 @@ export interface StageRunProviderCredentials {
   customApiKey?: string
   azure?: AzureCredentials
   geminiApiKey?: string
+  elevenLabsApiKey?: string
 }
 
 export interface RunStagesOptions {
@@ -240,6 +251,9 @@ function buildApiHeaders(
   }
   if (providerCredentials?.geminiApiKey) {
     headers["X-Gemini-API-Key"] = providerCredentials.geminiApiKey
+  }
+  if (providerCredentials?.elevenLabsApiKey) {
+    headers["X-ElevenLabs-API-Key"] = providerCredentials.elevenLabsApiKey
   }
   return headers
 }
@@ -597,6 +611,9 @@ export interface LlmLogEntry {
     durationMs: number
     usage?: { inputTokens: number; outputTokens: number }
     validationErrors?: string[]
+    /** Resolved provider request parameters, when the call recorded them.
+     *  Free-form: keys and value types vary by call type. */
+    params?: Record<string, unknown>
     system?: string
     messages: Array<{
       role: string
@@ -1676,6 +1693,7 @@ export const api = {
       geminiApiKey: string
       openaiApiKey?: string
       azure?: AzureCredentials
+      elevenLabsApiKey?: string
     }
   ) =>
     request<GenerateSingleTTSResponse>(`/books/${label}/tts/generate-one`, {
@@ -1685,6 +1703,7 @@ export const api = {
         ...(credentials.openaiApiKey ? { "X-OpenAI-Key": credentials.openaiApiKey } : {}),
         ...(credentials.azure?.key ? { "X-Azure-Speech-Key": credentials.azure.key } : {}),
         ...(credentials.azure?.region ? { "X-Azure-Speech-Region": credentials.azure.region } : {}),
+        ...(credentials.elevenLabsApiKey ? { "X-ElevenLabs-API-Key": credentials.elevenLabsApiKey } : {}),
       },
       body: JSON.stringify({ textId, language }),
     }),
@@ -1842,6 +1861,14 @@ export const api = {
     request<Record<string, Record<string, string>>>("/speech-config/voices", {
       method: "PUT",
       body: JSON.stringify(data),
+    }),
+
+  /** Human-readable names for the opaque ElevenLabs voice IDs in voices.yaml.
+   *  Returns an empty list (not an error) when no ElevenLabs key is set, so the
+   *  voice picker can fall back to a free-text input. */
+  getElevenLabsVoices: (elevenLabsApiKey?: string) =>
+    request<{ voices: ElevenLabsVoice[] }>("/speech-config/elevenlabs-voices", {
+      headers: elevenLabsApiKey ? { "X-ElevenLabs-API-Key": elevenLabsApiKey } : {},
     }),
 
   prepareExport: (
