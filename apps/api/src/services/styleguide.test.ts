@@ -1,83 +1,130 @@
-import { describe, it, expect, beforeEach, afterEach } from "vitest"
 import fs from "node:fs"
 import os from "node:os"
 import path from "node:path"
+import { afterEach, beforeEach, describe, expect, it } from "vitest"
 import {
-  loadStyleguideContent,
-  resolveStyleguidePath,
-  getWritableStyleguidesDir,
+  getBookStyleguidesDir,
   getBundledStyleguidesDir,
+  getWritableStyleguidesDir,
+  loadStyleguideContent,
+  resolveStyleguideSource,
+  StyleguideWriteError,
+  writeStyleguideFiles,
 } from "./styleguide.js"
 
 let tmpDir: string
 let booksDir: string
-let projectRoot: string
 let configPath: string
 let bundledDir: string
 let writableDir: string
-const prevEnv = process.env.STYLEGUIDES_DIR
+let bookDir: string
+const previousStyleguidesDir = process.env.STYLEGUIDES_DIR
 
 beforeEach(() => {
   tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "adt-styleguide-"))
   booksDir = path.join(tmpDir, "books")
-  projectRoot = path.join(tmpDir, "resources")
-  configPath = path.join(projectRoot, "config.yaml")
-  bundledDir = getBundledStyleguidesDir(configPath) // <projectRoot>/assets/styleguides
+  configPath = path.join(tmpDir, "resources", "config.yaml")
+  bundledDir = getBundledStyleguidesDir(configPath)
   delete process.env.STYLEGUIDES_DIR
-  writableDir = getWritableStyleguidesDir(booksDir) // <booksDir>/.styleguides
+  writableDir = getWritableStyleguidesDir(booksDir)
+  bookDir = getBookStyleguidesDir(booksDir, "my-book")
   fs.mkdirSync(bundledDir, { recursive: true })
   fs.mkdirSync(writableDir, { recursive: true })
+  fs.mkdirSync(bookDir, { recursive: true })
 })
 
 afterEach(() => {
   fs.rmSync(tmpDir, { recursive: true, force: true })
-  if (prevEnv === undefined) delete process.env.STYLEGUIDES_DIR
-  else process.env.STYLEGUIDES_DIR = prevEnv
+  if (previousStyleguidesDir === undefined) delete process.env.STYLEGUIDES_DIR
+  else process.env.STYLEGUIDES_DIR = previousStyleguidesDir
 })
 
-describe("getWritableStyleguidesDir", () => {
-  it("defaults to a hidden dir inside the books volume", () => {
-    expect(getWritableStyleguidesDir(booksDir)).toBe(
-      path.join(path.resolve(booksDir), ".styleguides")
-    )
+describe("styleguide directories", () => {
+  it("keeps generated guides inside the book and uploads at application level", () => {
+    expect(bookDir).toBe(path.join(path.resolve(booksDir), "my-book", "styleguides"))
+    expect(writableDir).toBe(path.join(path.resolve(booksDir), ".styleguides"))
   })
 
-  it("honors the STYLEGUIDES_DIR env override", () => {
-    const custom = path.join(tmpDir, "custom-sg")
+  it("honors the STYLEGUIDES_DIR upload override", () => {
+    const custom = path.join(tmpDir, "custom-styleguides")
     process.env.STYLEGUIDES_DIR = custom
     expect(getWritableStyleguidesDir(booksDir)).toBe(path.resolve(custom))
   })
+
+  it("rejects traversal in a book label", () => {
+    expect(() => getBookStyleguidesDir(booksDir, "../outside")).toThrow()
+  })
 })
 
-describe("loadStyleguideContent", () => {
-  it("returns undefined when no name is given", () => {
-    expect(loadStyleguideContent(undefined, configPath, booksDir)).toBeUndefined()
+describe("styleguide source resolution", () => {
+  it("loads book-local content before uploaded and bundled content", () => {
+    fs.writeFileSync(path.join(bookDir, "default.md"), "book content")
+    fs.writeFileSync(path.join(writableDir, "default.md"), "uploaded content")
+    fs.writeFileSync(path.join(bundledDir, "default.md"), "bundled content")
+    expect(loadStyleguideContent("default", configPath, booksDir, "my-book")).toBe(
+      "book content",
+    )
   })
 
-  it("loads a style guide present only in the writable dir (generated/uploaded)", () => {
-    fs.writeFileSync(path.join(writableDir, "my-book-generated.md"), "writable content", "utf-8")
-    expect(loadStyleguideContent("my-book-generated", configPath, booksDir)).toBe("writable content")
+  it("falls back from uploaded content to bundled presets", () => {
+    fs.writeFileSync(path.join(writableDir, "uploaded.md"), "uploaded content")
+    fs.writeFileSync(path.join(bundledDir, "default.md"), "bundled content")
+    expect(loadStyleguideContent("uploaded", configPath, booksDir, "my-book")).toBe(
+      "uploaded content",
+    )
+    expect(loadStyleguideContent("default", configPath, booksDir, "my-book")).toBe(
+      "bundled content",
+    )
   })
 
-  it("falls back to the bundled presets dir", () => {
-    fs.writeFileSync(path.join(bundledDir, "default.md"), "bundled content", "utf-8")
-    expect(loadStyleguideContent("default", configPath, booksDir)).toBe("bundled content")
+  it("keeps a preview in the same source directory as its markdown", () => {
+    fs.writeFileSync(path.join(writableDir, "default.md"), "uploaded content")
+    fs.writeFileSync(path.join(bundledDir, "default.md"), "bundled content")
+    fs.writeFileSync(path.join(bundledDir, "default-preview.html"), "bundled preview")
+    const source = resolveStyleguideSource("default", configPath, booksDir)
+    expect(source?.kind).toBe("uploaded")
+    expect(source?.previewPath).toBeUndefined()
   })
 
-  it("prefers the writable dir when a name exists in both", () => {
-    fs.writeFileSync(path.join(writableDir, "default.md"), "writable wins", "utf-8")
-    fs.writeFileSync(path.join(bundledDir, "default.md"), "bundled loses", "utf-8")
-    expect(loadStyleguideContent("default", configPath, booksDir)).toBe("writable wins")
+  it("returns undefined for missing and traversing names", () => {
+    expect(loadStyleguideContent(undefined, configPath, booksDir, "my-book")).toBeUndefined()
+    expect(loadStyleguideContent("missing", configPath, booksDir, "my-book")).toBeUndefined()
+    expect(resolveStyleguideSource("../../secret", configPath, booksDir, "my-book")).toBeUndefined()
+  })
+})
+
+describe("writeStyleguideFiles", () => {
+  it("writes markdown and preview together", () => {
+    writeStyleguideFiles({
+      dir: bookDir,
+      name: "my-book-generated",
+      content: "generated markdown",
+      previewHtml: "generated preview",
+    })
+    expect(fs.readFileSync(path.join(bookDir, "my-book-generated.md"), "utf-8")).toBe(
+      "generated markdown",
+    )
+    expect(
+      fs.readFileSync(path.join(bookDir, "my-book-generated-preview.html"), "utf-8"),
+    ).toBe("generated preview")
   })
 
-  it("returns undefined for a missing style guide", () => {
-    expect(loadStyleguideContent("does-not-exist", configPath, booksDir)).toBeUndefined()
+  it("removes a stale preview when uploading markdown only", () => {
+    const previewPath = path.join(writableDir, "custom-preview.html")
+    fs.writeFileSync(previewPath, "stale")
+    writeStyleguideFiles({ dir: writableDir, name: "custom", content: "fresh" })
+    expect(fs.existsSync(previewPath)).toBe(false)
   })
 
-  it("guards against path traversal", () => {
-    const secret = path.join(tmpDir, "secret.md")
-    fs.writeFileSync(secret, "top secret", "utf-8")
-    expect(loadStyleguideContent("../../secret", configPath, booksDir)).toBeUndefined()
-    expect(resolveStyleguidePath("../../secret", ".md", configPath, booksDir)).toBeUndefined()
+  it("maps invalid target failures to a clear error", () => {
+    const invalidTarget = path.join(tmpDir, "not-a-directory")
+    fs.writeFileSync(invalidTarget, "blocked")
+    expect(() =>
+      writeStyleguideFiles({ dir: invalidTarget, name: "custom", content: "content" }),
+    ).toThrowError(
+      new StyleguideWriteError(
+        "Could not save the style guide because the configured target is not a directory.",
+      ),
+    )
   })
 })

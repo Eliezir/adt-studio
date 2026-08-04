@@ -94,6 +94,11 @@ export interface Storage {
 
   putNodeData(node: string, itemId: string, data: unknown): number
   getLatestNodeData(node: string, itemId: string): NodeDataRow | null
+  /** Point (node, itemId) at an existing version without creating a new one
+   *  (rollback). Returns false if that version doesn't exist. */
+  setCurrentNodeVersion(node: string, itemId: string, version: number): boolean
+  /** The active version pointer, or null when unset (current == MAX). */
+  getCurrentNodeVersion(node: string, itemId: string): number | null
 
   /** Mark a pipeline step as started (running). */
   markStepStarted(step: string): void
@@ -132,8 +137,6 @@ export interface Storage {
   assignSignLanguageVideo(videoId: string, sectionId: string | null): void
   /** Delete a sign language video. */
   deleteSignLanguageVideo(videoId: string): void
-  /** Delete all sign language videos. */
-  deleteAllSignLanguageVideos(): void
   /** Get the file path for a sign language video (for serving). */
   getSignLanguageVideoPath(videoId: string): string | null
 

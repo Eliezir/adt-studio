@@ -84,6 +84,12 @@ export {
 } from "./web-rendering.js"
 export { renderSectionLlm, type VisualRefinementDeps } from "./render-llm.js"
 export {
+  inspectOrderingActivityHtml,
+  inspectOrderingSection,
+  type OrderingContract,
+  type OrderingInspection,
+} from "./ordering-contract.js"
+export {
   DEFAULT_VISUAL_REVIEW_MODEL_ID,
   runVisualReviewLoop,
   type VisualReviewDeps,
@@ -120,6 +126,8 @@ export {
 export {
   captionPageImages,
   buildCaptionConfig,
+  collectCaptionImageIds,
+  groupGlossaryImageIdsByPage,
   extractImageIds,
   type CaptionConfig,
   type CaptionPageInput,
@@ -188,14 +196,24 @@ export {
   loadSpeechInstructions,
   computeSpeechCacheKey,
   generateSpeechFile,
+  generatePageSpeechFiles,
   generateWordTimestamps,
   type VoiceMaps,
   type InstructionsMap,
   type GenerateSpeechFileOptions,
+  type GeneratePageSpeechFilesOptions,
   type GenerateWordTimestampsOptions,
   type GenerateWordTimestampsResult,
   type ProviderRouting,
 } from "./speech.js"
+export {
+  parseWavHeader,
+  wavDurationSeconds,
+  sliceWav,
+  findQuietCutSeconds,
+  type WavInfo,
+} from "./audio-wav.js"
+export { supportsPageBatchedSpeech } from "./speech-batch.js"
 export {
   translateCatalogBatch,
   buildCatalogTranslationConfig,
@@ -262,6 +280,7 @@ export {
   type PackageEpubOptions,
 } from "./packaging/epub.js"
 export { packageWebpub } from "./packaging/webpub.js"
+export { packagePnld, type PackagePnldOptions } from "./packaging/pnld.js"
 export { buildPreviewTailwindCss } from "./tailwind.js"
 export { htmlToXhtml } from "./html-semantics.js"
 export {
@@ -287,6 +306,7 @@ export {
 export {
   resolveQuizPalette,
   deriveQuizPalette,
+  paletteWithAccent,
   DEFAULT_QUIZ_PALETTE,
   type QuizPalette,
 } from "./quiz-palette.js"
@@ -324,6 +344,31 @@ export { processFixedLayoutPages, isFixedLayoutBook } from "./fixed-layout-rende
 export {
   getRenderSectioning,
   getRenderSectioningRow,
+  getSemanticSectioning,
   FIXED_LAYOUT_SECTIONING_NODE,
   PAGE_SECTIONING_NODE,
 } from "./render-sectioning.js"
+export {
+  extractEditableActivity,
+  supportsEditableActivity,
+  type ExtractResult,
+} from "./extract-editable-activity.js"
+export { buildActivityOutline, applyActivityHeader } from "./activity-outline.js"
+export {
+  readEditableActivities,
+  enabledEditableActivity,
+  remapEditableActivities,
+  maskStepperPayloads,
+  resolveEditableActivityImages,
+  renderEditableActivityHtml,
+  renderEditableActivityStaticHtml,
+  replaceStepperShellsWithStaticHtml,
+  STEPPER_VARIANT,
+  type EditableActivitiesRow,
+  type ResolveEditableActivityImageOptions,
+  type StepperPayload,
+} from "./render-editable-activity.js"
+export {
+  generateActivityFeedback,
+  type ActivityFeedbackConfig,
+} from "./activity-feedback.js"
