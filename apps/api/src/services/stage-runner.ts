@@ -62,6 +62,11 @@ import {
   resolveGeminiTtsRateLimit,
   resolveSpeechFormat,
   computeSpeechCacheKey,
+  elevenLabsVoiceSettingsFromConfig,
+  classifyElevenLabsTtsError,
+  elevenLabsTtsRetryDelayMs,
+  ELEVENLABS_TTS_MAX_CONCURRENCY,
+  ELEVENLABS_TTS_MAX_RATE_LIMIT_RETRIES,
   findAdjacentSpeechText,
   generateSpeechFile,
   generatePageSpeechFiles,
@@ -87,6 +92,7 @@ import {
   isFixedLayoutBook,
 } from "@adt/pipeline"
 import type { PageSectioningConfig, TranslationConfig, QuizPageInput, ProviderRouting, MeaningfulnessConfig, CroppingConfig, SegmentationConfig, VisualRefinementDeps } from "@adt/pipeline"
+import type { ElevenLabsVoiceSettingsOverrides } from "@adt/llm"
 import { loadStyleguideContent } from "./styleguide.js"
 import { createTTSSynthesizer, createAzureTTSSynthesizer, createGeminiTTSSynthesizer, createElevenLabsTTSSynthesizer } from "@adt/llm"
 import type { TTSSynthesizer } from "@adt/llm"
@@ -132,15 +138,9 @@ const GEMINI_TTS_MAX_RETRY_DELAY_MS = 20_000
 // throttle the shared limiter.
 const GEMINI_TTS_TRANSIENT_RETRY_DELAY_MS = 1_500
 
-// ElevenLabs has no adaptive limiter (its throttling is concurrency-based, not
-// RPM-based) so we bound pressure two ways: cap how many entries synthesize in
-// parallel, and retry 429/5xx with exponential backoff so a transient
-// concurrency-limit hit doesn't fail the entry outright. The cap matches the
-// low, plan-dependent concurrent-request ceilings (Free ~4, Starter ~5).
-const ELEVENLABS_TTS_MAX_CONCURRENCY = 4
-const ELEVENLABS_TTS_MAX_RATE_LIMIT_RETRIES = 5
-const ELEVENLABS_TTS_BASE_RETRY_DELAY_MS = 2_000
-const ELEVENLABS_TTS_MAX_RETRY_DELAY_MS = 30_000
+// ElevenLabs concurrency cap and retry policy live in @adt/pipeline
+// (ELEVENLABS_TTS_MAX_CONCURRENCY, classifyElevenLabsTtsError, …) so the
+// CLI/`runFullPipeline` DAG executor applies exactly the same limits.
 
 class StepError extends Error {
   readonly step: StepName
@@ -377,18 +377,6 @@ function isGeminiTtsTransientError(message: string): boolean {
   return /\(50\d\)|internal error|did not include audio|overloaded|unavailable|try again/i.test(
     message
   )
-}
-
-// ElevenLabs 429s (concurrency/quota) are retryable; its throttling is
-// concurrency-based, so the message may cite concurrent requests rather than a
-// classic rate limit.
-function isElevenLabsRateLimitMessage(message: string): boolean {
-  return /\(429\)|rate limit|too many requests|concurrent request/i.test(message)
-}
-
-// Transient ElevenLabs server-side failures that typically clear on a retry.
-function isElevenLabsTransientError(message: string): boolean {
-  return /\(50\d\)|internal error|overloaded|unavailable|try again/i.test(message)
 }
 
 function parseGeminiRetryDelayMs(message: string): number | null {
@@ -643,7 +631,7 @@ function canReuseSpeechEntry(
     elevenLabsPreviousText?: string
     elevenLabsNextText?: string
     elevenLabsApplyTextNormalization?: "auto" | "on" | "off"
-  },
+  } & ElevenLabsVoiceSettingsOverrides,
 ): entry is SpeechFileEntry {
   if (!entry) return false
 
@@ -671,6 +659,11 @@ function canReuseSpeechEntry(
     elevenLabsPreviousText: options.elevenLabsPreviousText,
     elevenLabsNextText: options.elevenLabsNextText,
     elevenLabsApplyTextNormalization: options.elevenLabsApplyTextNormalization,
+    elevenLabsStability: options.elevenLabsStability,
+    elevenLabsSimilarityBoost: options.elevenLabsSimilarityBoost,
+    elevenLabsStyle: options.elevenLabsStyle,
+    elevenLabsUseSpeakerBoost: options.elevenLabsUseSpeakerBoost,
+    elevenLabsSpeed: options.elevenLabsSpeed,
   })
   const cachePath = resolveSpeechCachePath(options.cacheDir, cacheKey, options.format.toLowerCase())
   if (!cachePath || !fs.existsSync(cachePath)) return false
@@ -2626,6 +2619,10 @@ async function runSpeechStep(
     const defaultProvider = config.speech?.default_provider ?? "openai"
     const providerConfigs = config.speech?.providers ?? {}
     const routing: ProviderRouting = { providers: providerConfigs, defaultProvider }
+    // ElevenLabs voice_settings overrides, resolved once for the whole step.
+    // Shared helper so the reuse check, the generation call, and the other two
+    // execution paths all hash the same cache key.
+    const elevenLabsVoiceSettings = elevenLabsVoiceSettingsFromConfig(config.speech)
 
     console.log(`[stage-run] ${label}: TTS configDir=${configDir} voiceMaps=${Object.keys(voiceMaps).join(",")||"(empty)"}`)
     console.log(`[stage-run] ${label}: TTS config — defaultProvider=${defaultProvider} model=${speechModel ?? "(provider default)"} format=${config.speech?.format ?? "(provider default)"}`)
@@ -2812,6 +2809,7 @@ async function runSpeechStep(
             elevenLabsPreviousText: previousText,
             elevenLabsNextText: nextText,
             elevenLabsApplyTextNormalization: config.speech?.elevenlabs_apply_text_normalization,
+            ...elevenLabsVoiceSettings,
           })
         ) {
           ttsResultsByLang.get(lang)?.push(existingEntry)
@@ -3041,6 +3039,7 @@ async function runSpeechStep(
               elevenLabsPreviousText: item.previousText,
               elevenLabsNextText: item.nextText,
               elevenLabsApplyTextNormalization: config.speech?.elevenlabs_apply_text_normalization,
+              ...elevenLabsVoiceSettings,
               signal: options.signal,
             })
             // A real (non-cached) success means the current rate held —
@@ -3057,19 +3056,15 @@ async function runSpeechStep(
             // throttle doesn't permanently fail the entry. The per-item
             // concurrency cap above already bounds how many can be in flight.
             if (provider === "elevenlabs") {
-              const elevenLabsRetryable =
-                isElevenLabsRateLimitMessage(msg) || isElevenLabsTransientError(msg)
+              const kind = classifyElevenLabsTtsError(msg)
               if (
-                elevenLabsRetryable &&
+                kind !== "permanent" &&
                 !options.signal?.aborted &&
                 attemptCount <= ELEVENLABS_TTS_MAX_RATE_LIMIT_RETRIES
               ) {
-                const retryDelayMs = Math.min(
-                  ELEVENLABS_TTS_BASE_RETRY_DELAY_MS * 2 ** (attemptCount - 1),
-                  ELEVENLABS_TTS_MAX_RETRY_DELAY_MS
-                )
+                const retryDelayMs = elevenLabsTtsRetryDelayMs(attemptCount)
                 console.warn(
-                  `[stage-run] ${label}: ElevenLabs TTS ${isElevenLabsRateLimitMessage(msg) ? "rate limited" : "transient error"} for ${item.textId} (${item.language}); retrying ${attemptCount + 1}/${ELEVENLABS_TTS_MAX_RATE_LIMIT_RETRIES + 1} in ${retryDelayMs}ms: ${msg}`
+                  `[stage-run] ${label}: ElevenLabs TTS ${kind === "rate-limit" ? "rate limited" : "transient error"} for ${item.textId} (${item.language}); retrying ${attemptCount + 1}/${ELEVENLABS_TTS_MAX_RATE_LIMIT_RETRIES + 1} in ${retryDelayMs}ms: ${msg}`
                 )
                 await sleep(retryDelayMs, options.signal)
                 if (options.signal?.aborted) throw new RunCancelledError()
