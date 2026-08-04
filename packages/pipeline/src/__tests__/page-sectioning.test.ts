@@ -860,6 +860,63 @@ describe("sectionPage", () => {
     expect(output.sections[0].nodes[0].children?.[0].text).toBe("Hello")
   })
 
+  it("wires page mode into the initial generation validator", async () => {
+    const invalidTree = {
+      reasoning: "Split the page",
+      sections: [
+        {
+          section_type: "text_only",
+          background_color: "#fff",
+          text_color: "#000",
+          page_number: 1,
+          nodes: [{ role: "text", text: "First" }],
+        },
+        {
+          section_type: "text_only",
+          background_color: "#fff",
+          text_color: "#000",
+          page_number: 1,
+          nodes: [{ role: "text", text: "Second" }],
+        },
+      ],
+    }
+    const validTree = {
+      ...invalidTree,
+      reasoning: "Merged the page",
+      sections: invalidTree.sections.slice(0, 1),
+    }
+
+    const fakeLlm: LLMModel = {
+      generateObject: async <T>(opts: GenerateObjectOptions) => {
+        if (opts.prompt === "page_sectioning") {
+          expect(opts.validate?.(invalidTree, opts.context ?? {})).toEqual({
+            valid: false,
+            errors: [
+              "Page mode requires exactly one section, but the response contains 2. Merge all page content into one section.",
+            ],
+          })
+          return { object: validTree as T }
+        }
+        return {
+          object: {
+            approved: true,
+            reasoning: "Looks good.",
+            nodes_and_sections: null,
+          } as T,
+        }
+      },
+    }
+
+    const output = await sectionPage(
+      makeInput(),
+      makeConfig({ mode: "page" }),
+      fakeLlm,
+    )
+
+    expect(output.reasoning).toBe("Merged the page")
+    expect(output.sections).toHaveLength(1)
+  })
+
   it("adopts reviewer's replacement tree when reviewer rejects then proposes valid replacement", async () => {
     const initialTree = {
       reasoning: "Initial draft",
