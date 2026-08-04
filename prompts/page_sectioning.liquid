@@ -34,6 +34,13 @@ Do NOT set both `structure` and `role` on the same node. Do NOT nest containers 
 {% for t in section_types %}- `{{ t.key }}`: {{ t.description }}
 {% endfor %}
 
+## Table-of-contents continuation detection
+
+- A table of contents may span multiple consecutive pages. Only its first page may show a heading such as "Table of Contents" or "Contents"; continuation pages often begin directly with the next chapter or unit.
+- Classify a page as `table_of_contents` when it predominantly contains repeated navigation-entry rows: a chapter/section/subsection title on the left, dot leaders or a wide alignment gap in the middle, and an Arabic or Roman page number at the right edge. This repeated row pattern is sufficient even when the TOC heading is absent.
+- Preserve every entry in reading order and preserve hierarchy containers/indentation visible in the page image. A continued TOC page remains one `table_of_contents` section; never downgrade it to `text_only`, `list`, or `other` merely because the heading is not repeated.
+- Dot leaders between TOC titles and terminal page numbers are navigation formatting, NOT writable response lines. TOC continuation detection takes precedence over WRITABLE-PAGE PRECEDENCE below.
+
 ## Activity classification rules
 
 Use these to disambiguate activity types:
@@ -76,9 +83,10 @@ Use these to disambiguate activity types:
 - Classify by the COGNITIVE TASK the learner must perform, not the physical action (circling, coloring, underlining, drawing lines). Look at what the learner must DECIDE or PRODUCE, not how they mark their answer.
 - For EVERY activity section, your "reasoning" field MUST include:
   1. What the instructions ask the learner to do
-  2. What the visual layout shows on the page image (call out any response lines or empty fields explicitly)
+  2. What the visual layout shows on the page image: count every distinct response field and state whether each one is inline within a question, beside it, or below it; call out response lines, dotted blanks, and empty fields explicitly
   3. For sorting/matching activities: an explicit count (e.g., "X total items, Y categories")
   Then choose the activity type based on all of the above.
+- RESPONSE-SPACE PRESERVATION: A writable area's position and size are semantic evidence, not decoration. Preserve that evidence in the tree: keep an inline blank in the same question leaf at the exact missing-word position; keep a separate answer field immediately after the question it belongs to; and retain enough placeholder/answer structure for every visible field. Never associate all writable areas with only the first or last question on a multi-question page.
 - MULTIPLE CHOICE vs SORTING vs MATCHING — Gather all evidence before deciding:
   • What do the instructions ask? (e.g., "choose the best", "connect with", "sort into", "circle by color")
   • What does the visual layout show? (e.g., options listed per question, a shared pool with categories, two columns)
