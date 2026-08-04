@@ -108,11 +108,5 @@ gemini:
   sq: Kore
   ur: Kore
 elevenlabs:
-  # Rachel — a premade voice, kept in sync with DEFAULT_ELEVENLABS_VOICE_ID in
-  # @adt/types. Premade voices are preferred as the global default: community
-  # clones reproduce whatever is in their training audio, including filler
-  # sounds ("ehm", "uh") that the source text never contained.
   default: 21m00Tcm4TlvDq8ikWAM
-  # Tomás — a Río de la Plata community voice, kept for the locale it was
-  # chosen for rather than left as the global default.
   es-uy: QK4xDwo9ESPHA4JNUpX3

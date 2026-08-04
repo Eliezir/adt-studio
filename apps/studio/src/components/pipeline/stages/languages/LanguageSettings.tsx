@@ -21,7 +21,7 @@ import { LanguagePicker } from "@/components/LanguagePicker"
 import { useBook } from "@/hooks/use-books"
 import { useStepConfig } from "@/hooks/use-step-config"
 import { getBaseLanguage, normalizeLocale } from "@/lib/languages"
-import { resolveSpeechProviderForLanguage } from "@/lib/speech-routing"
+import { resolveLocaleMapping, resolveSpeechProviderForLanguage } from "@/lib/speech-routing"
 import { SpeechPromptsEditor } from "./components/SpeechPromptsEditor"
 import { VoiceMappingsEditor } from "./components/VoiceMappingsEditor"
 import { SelectImagesDialog } from "./components/SelectImagesDialog"
@@ -1441,27 +1441,27 @@ function SpeechLanguageCards({
     markDirty("speech")
   }
 
-  const resolveVoice = (lang: string, provider: string): string => {
-    if (!voiceMappings) return ""
-    const providerMap = voiceMappings[provider] as Record<string, string> | undefined
-    return providerMap?.[lang] ?? providerMap?.["default"] ?? ""
-  }
+  // Both of these mirror the pipeline's own resolution (exact locale → base
+  // language → `default`) via resolveLocaleMapping. Doing it by hand here used to
+  // miss every regional mapping, because voices.yaml and speech_instructions.yaml
+  // key on lowercase locales (`es-uy`) while these codes carry an uppercase
+  // region (`es-UY`) — so the screen showed the global default voice and prompt
+  // for a language the pipeline would narrate with its own.
+  const resolveVoice = (lang: string, provider: string): string =>
+    resolveLocaleMapping(voiceMappings?.[provider], lang).value
+
+  const resolveInstruction = (lang: string): string =>
+    resolveLocaleMapping(speechInstructions, lang).value
 
   // ADT ships only a global `default` for ElevenLabs (an English voice) plus a
   // single `es-uy` mapping, where azure/gemini carry per-locale maps. So a
   // non-English language routed to ElevenLabs silently narrates in an English
-  // voice — audible, but nothing in the UI said so. Only flagged for ElevenLabs
-  // and only when the language has no mapping of its own.
+  // voice — audible, but nothing in the UI said so. Only flagged for ElevenLabs,
+  // and only when the voice genuinely came from `default` rather than from a
+  // mapping for this locale or its base language.
   const usesEnglishDefaultVoice = (lang: string, provider: string): boolean => {
     if (provider !== "elevenlabs" || getBaseLanguage(normalizeLocale(lang)) === "en") return false
-    const providerMap = voiceMappings?.[provider] as Record<string, string> | undefined
-    if (!providerMap) return false
-    return providerMap[lang] === undefined && providerMap["default"] !== undefined
-  }
-
-  const resolveInstruction = (lang: string): string => {
-    if (!speechInstructions) return ""
-    return speechInstructions[lang] ?? speechInstructions["default"] ?? ""
+    return resolveLocaleMapping(voiceMappings?.[provider], lang).source === "default"
   }
 
   // Route a language to a different provider
