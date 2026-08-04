@@ -19,7 +19,11 @@ import type {
   TTSSynthesizer,
   WhisperTranscriptionResult,
 } from "@adt/llm"
-import { resolveElevenLabsVoiceSettings, transcribeWithWhisper } from "@adt/llm"
+import {
+  buildElevenLabsOutputFormat,
+  resolveElevenLabsVoiceSettings,
+  transcribeWithWhisper,
+} from "@adt/llm"
 import { getBaseLanguage, normalizeLocale } from "./language-context.js"
 import { computeEntryTimeRanges, buildPageTranscript, type BatchEntry } from "./speech-batch.js"
 import { sliceWav, wavDurationSeconds, findQuietCutSeconds } from "./audio-wav.js"
@@ -420,6 +424,92 @@ export function elevenLabsVoiceSettingsFromConfig(
     elevenLabsStyle: speech?.elevenlabs_style,
     elevenLabsUseSpeakerBoost: speech?.elevenlabs_use_speaker_boost,
     elevenLabsSpeed: speech?.elevenlabs_speed,
+  }
+}
+
+/**
+ * The ElevenLabs `output_format` for a logged request.
+ *
+ * `buildElevenLabsOutputFormat` throws for a format ElevenLabs cannot produce.
+ * On the success path that can't happen (synthesis would have thrown first), but
+ * the failure path logs the request that just failed — and an unsupported format
+ * is one reason it may have failed. Falling back to the generic format keeps the
+ * log write from throwing inside an error handler and losing the entry.
+ */
+function resolveElevenLabsLoggedOutputFormat(input: {
+  format: string
+  sampleRate?: number
+  bitRate?: string
+}): string {
+  try {
+    return buildElevenLabsOutputFormat(input.format, {
+      sampleRate: input.sampleRate,
+      bitRate: input.bitRate,
+    })
+  } catch {
+    return input.format
+  }
+}
+
+/**
+ * The ElevenLabs request parameters to record on a TTS debug log entry, so a
+ * user can answer "which settings produced this audio file?".
+ *
+ * Two deliberate choices:
+ *
+ * 1. The `voice_settings` reported are the *effective* ones — defaults merged
+ *    with the book's overrides via `resolveElevenLabsVoiceSettings`, the same
+ *    function that builds the request body. A book that configures nothing still
+ *    shows stability 0.7, and the log cannot drift from what was actually sent.
+ * 2. Adjacent-text context is reported as presence + length, not the text
+ *    itself. Whether context was sent is the useful fact; the neighbouring
+ *    sentences would only bloat every log row.
+ * 3. `outputFormat` is the ElevenLabs *wire* value (`mp3_44100_128`), not the
+ *    generic `speech.format` (`mp3`). ElevenLabs only accepts a fixed set of
+ *    (sample rate, bitrate) combinations, so a configured `sample_rate` /
+ *    `bit_rate` gets snapped to the nearest supported one — and this log line is
+ *    the only place that snapping is visible. Reporting the generic format
+ *    instead would just echo the config back.
+ *
+ * Key order is meaningful: the debug panel renders these in insertion order, so
+ * related settings stay adjacent.
+ */
+export function buildElevenLabsTtsLogParams(
+  input: {
+    model: string
+    voice: string
+    language: string
+    /** Generic `speech.format` (mp3/wav/pcm/opus), snapped to a wire value below. */
+    format: string
+    sampleRate?: number
+    bitRate?: string
+    applyTextNormalization?: "auto" | "on" | "off"
+    previousText?: string
+    nextText?: string
+  } & ElevenLabsVoiceSettingsOverrides,
+): Record<string, unknown> {
+  const voiceSettings = resolveElevenLabsVoiceSettings(input)
+  return {
+    voice: input.voice,
+    model: input.model,
+    language: input.language,
+    outputFormat: resolveElevenLabsLoggedOutputFormat(input),
+    stability: voiceSettings.stability,
+    similarityBoost: voiceSettings.similarity_boost,
+    style: voiceSettings.style,
+    useSpeakerBoost: voiceSettings.use_speaker_boost,
+    // Absent unless the book pinned a speed — matches the request body, where
+    // an unset speed leaves ElevenLabs' own pacing alone.
+    ...(voiceSettings.speed !== undefined ? { speed: voiceSettings.speed } : {}),
+    // Absent when unset, mirroring the request: ElevenLabs applies its own
+    // default rather than a value we chose.
+    ...(input.applyTextNormalization
+      ? { applyTextNormalization: input.applyTextNormalization }
+      : {}),
+    contextBefore: Boolean(input.previousText),
+    contextAfter: Boolean(input.nextText),
+    ...(input.previousText ? { contextBeforeChars: input.previousText.length } : {}),
+    ...(input.nextText ? { contextAfterChars: input.nextText.length } : {}),
   }
 }
 

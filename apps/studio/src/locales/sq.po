@@ -7157,6 +7157,9 @@ msgstr "Zëvendëso kuizet"
 msgid "Replace this audio file"
 msgstr "Zëvendëso këtë skedar audio"
 
+msgid "Request settings"
+msgstr "Cilësimet e kërkesës"
+
 msgid "Require comment on failure"
 msgstr "Kërko koment në rast dështimi"
 

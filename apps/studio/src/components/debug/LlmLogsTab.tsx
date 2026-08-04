@@ -44,6 +44,71 @@ function getStatus(entry: LlmLogEntry): RowStatus {
   return "success"
 }
 
+/** Human-readable labels for the request-parameter keys a call may record.
+ *  Keys not listed here fall back to the raw key, so a new param still shows up
+ *  rather than being silently dropped. */
+function paramLabels(t: ReturnType<typeof useLingui>["t"]): Record<string, string> {
+  return {
+    voice: t`Voice`,
+    model: t`Model`,
+    language: t`Language`,
+    outputFormat: t`Format`,
+    stability: t`Stability`,
+    similarityBoost: t`Similarity`,
+    style: t`Style`,
+    useSpeakerBoost: t`Speaker boost`,
+    speed: t`Speed`,
+    applyTextNormalization: t`Normalization`,
+    contextBefore: t`Context before`,
+    contextAfter: t`Context after`,
+    contextBeforeChars: t`Context before (chars)`,
+    contextAfterChars: t`Context after (chars)`,
+  }
+}
+
+/**
+ * Render one request parameter's value. Values arrive as `unknown` because the
+ * `params` record is free-form per call type, so this handles the scalar cases
+ * and falls back to JSON rather than rendering "[object Object]".
+ */
+function formatParamValue(value: unknown, t: ReturnType<typeof useLingui>["t"]): string {
+  if (typeof value === "boolean") return value ? t`Yes` : t`No`
+  if (typeof value === "number") return value.toLocaleString()
+  if (typeof value === "string") return value
+  if (value === null || value === undefined) return "—"
+  return JSON.stringify(value)
+}
+
+/**
+ * Request parameters as a compact label/value grid.
+ *
+ * Reuses the header grid's cell markup rather than adding cells to the header
+ * itself — ~10 more cells there would swamp Prompt/Model/Duration/Cache. Keys
+ * render in insertion order (the order the producer chose), so related settings
+ * stay adjacent instead of being alphabetised apart.
+ */
+export function ParamGrid({ title, data }: { title: string; data: Record<string, unknown> }) {
+  const { t } = useLingui()
+  const labels = paramLabels(t)
+  const entries = Object.entries(data)
+  if (entries.length === 0) return null
+
+  return (
+    <div>
+      <div className="font-medium text-muted-foreground mb-1">{title}</div>
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 bg-muted p-3 rounded">
+        {entries.map(([key, value]) => (
+          <div key={key}>
+            <div className="text-muted-foreground mb-0.5">{labels[key] ?? key}</div>
+            {/* Values are provider identifiers and numbers — never translated. */}
+            <div className="font-medium break-words">{formatParamValue(value, t)}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 function LogDetail({ data, label }: { data: LlmLogEntry["data"]; label: string }) {
   const { t } = useLingui()
 
@@ -96,6 +161,10 @@ function LogDetail({ data, label }: { data: LlmLogEntry["data"]; label: string }
             </>
           )}
         </div>
+
+        {/* What was actually sent to the provider. Only present for call types
+            that record it — currently ElevenLabs TTS. */}
+        {data.params && <ParamGrid title={t`Request settings`} data={data.params} />}
 
         {data.system && (
           <div>

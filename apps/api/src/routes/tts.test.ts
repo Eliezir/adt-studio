@@ -2,7 +2,7 @@ import fs from "node:fs"
 import os from "node:os"
 import path from "node:path"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
-import { createBookStorage } from "@adt/storage"
+import { createBookStorage, openBookDb } from "@adt/storage"
 const { transcribeWithWhisperMock } = vi.hoisted(() => ({
   transcribeWithWhisperMock: vi.fn(),
 }))
@@ -33,6 +33,22 @@ speech:
         - en
 `
   )
+}
+
+/** The `params` recorded on the newest llm_log row, or undefined if none.
+ *  Read straight from the DB the way the debug route does — storage exposes a
+ *  writer for log rows but no reader. */
+function readLatestLogParams(label: string): Record<string, unknown> | undefined {
+  const db = openBookDb(path.join(tmpDir, label, `${label}.db`))
+  try {
+    const rows = db.all(
+      "SELECT data FROM llm_log ORDER BY id DESC LIMIT 1"
+    ) as Array<{ data: string }>
+    if (rows.length === 0) return undefined
+    return (JSON.parse(rows[0].data) as { params?: Record<string, unknown> }).params
+  } finally {
+    db.close()
+  }
 }
 
 function seedBook(
@@ -601,6 +617,74 @@ describe("POST /books/:label/tts/generate-one", () => {
 
     expect(res.status).toBe(400)
     await expect(res.text()).resolves.toContain("Set X-OpenAI-Key header.")
+  })
+
+  // The debug panel's Log tab could previously only show provider/model/voice,
+  // so there was no way to tell which voice_settings produced a given audio file.
+  it("records the ElevenLabs request settings on the debug log entry", async () => {
+    writeConfig("elevenlabs")
+    const label = "elevenlabs-log-params"
+    seedBook(label)
+
+    fetchMock.mockResolvedValueOnce(
+      new Response(new Uint8Array([41, 42]), {
+        status: 200,
+        headers: { "Content-Type": "audio/mpeg" },
+      })
+    )
+
+    const app = createTTSRoutes(tmpDir, configPath)
+    const res = await app.request(`/books/${label}/tts/generate-one`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-ElevenLabs-API-Key": "el-test",
+      },
+      body: JSON.stringify({ textId: "pg001_t001", language: "en" }),
+    })
+    expect(res.status).toBe(200)
+
+    const params = readLatestLogParams(label)
+    // Effective settings, not just overrides — the book configures none here.
+    expect(params).toMatchObject({
+      stability: 0.7,
+      similarityBoost: 0.5,
+      style: 0,
+      useSpeakerBoost: true,
+      outputFormat: "mp3_44100_128",
+      contextBefore: false,
+      contextAfter: false,
+    })
+  })
+
+  it("does not record ElevenLabs settings for a Gemini-routed language", async () => {
+    writeConfig("gemini")
+    const label = "gemini-log-params"
+    seedBook(label)
+
+    fetchMock.mockResolvedValueOnce(
+      new Response(
+        JSON.stringify({
+          candidates: [
+            { content: { parts: [{ inlineData: { data: Buffer.from([1, 2]).toString("base64") } }] } },
+          ],
+        }),
+        { status: 200, headers: { "Content-Type": "application/json" } }
+      )
+    )
+
+    const app = createTTSRoutes(tmpDir, configPath)
+    const res = await app.request(`/books/${label}/tts/generate-one`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Gemini-API-Key": "gm-test",
+      },
+      body: JSON.stringify({ textId: "pg001_t001", language: "en" }),
+    })
+    expect(res.status).toBe(200)
+
+    expect(readLatestLogParams(label)).toBeUndefined()
   })
 
   it("still requires a Gemini key for a Gemini-routed language", async () => {

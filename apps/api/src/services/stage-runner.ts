@@ -63,6 +63,7 @@ import {
   resolveSpeechFormat,
   computeSpeechCacheKey,
   elevenLabsVoiceSettingsFromConfig,
+  buildElevenLabsTtsLogParams,
   classifyElevenLabsTtsError,
   elevenLabsTtsRetryDelayMs,
   ELEVENLABS_TTS_MAX_CONCURRENCY,
@@ -3010,6 +3011,24 @@ async function runSpeechStep(
         provider === "openai" || provider === "gemini"
           ? resolveInstructions(item.language, instructionsMap)
           : ""
+      // Request parameters recorded on the debug log entry so the settings that
+      // produced this audio are inspectable. ElevenLabs only for now — the other
+      // providers' params are a separate change.
+      const logParams =
+        provider === "elevenlabs"
+          ? buildElevenLabsTtsLogParams({
+              model: providerModel,
+              voice,
+              language: item.language,
+              format: outputFormat,
+              sampleRate: config.speech?.sample_rate,
+              bitRate: config.speech?.bit_rate,
+              applyTextNormalization: config.speech?.elevenlabs_apply_text_normalization,
+              previousText: item.previousText,
+              nextText: item.nextText,
+              ...elevenLabsVoiceSettings,
+            })
+          : undefined
       let attemptCount = 0
 
       console.log(`[stage-run] ${label}: TTS ${item.textId} → provider=${provider} voice=${voice} model=${providerModel} format=${outputFormat}`)
@@ -3134,6 +3153,7 @@ async function runSpeechStep(
           errorCount: 0,
           attempt: attemptCount,
           durationMs,
+          ...(logParams ? { params: logParams } : {}),
           messages: [{
             role: "user",
             content: [{ type: "text" as const, text: `[${item.language}] voice=${voice}\n${item.text.slice(0, 300)}` }],
@@ -3180,6 +3200,7 @@ async function runSpeechStep(
           errorCount: 1,
           attempt: Math.max(attemptCount, 1),
           durationMs,
+          ...(logParams ? { params: logParams } : {}),
           messages: [{
             role: "user",
             content: [{ type: "text" as const, text: `[${item.language}] voice=${voice}\nERROR: ${msg}\n\n${item.text.slice(0, 300)}` }],

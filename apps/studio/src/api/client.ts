@@ -611,6 +611,9 @@ export interface LlmLogEntry {
     durationMs: number
     usage?: { inputTokens: number; outputTokens: number }
     validationErrors?: string[]
+    /** Resolved provider request parameters, when the call recorded them.
+     *  Free-form: keys and value types vary by call type. */
+    params?: Record<string, unknown>
     system?: string
     messages: Array<{
       role: string

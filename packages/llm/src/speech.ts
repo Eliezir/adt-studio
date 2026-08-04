@@ -607,7 +607,7 @@ export function createGeminiTTSSynthesizer(
  * unvalidated for every non-Gemini provider, so this is the only place that
  * knows the supported set.
  */
-function buildElevenLabsOutputFormat(
+export function buildElevenLabsOutputFormat(
   format: string,
   audioOptions?: ElevenLabsAudioOptions
 ): string {

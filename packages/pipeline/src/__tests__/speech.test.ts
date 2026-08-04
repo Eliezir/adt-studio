@@ -16,6 +16,7 @@ import {
   loadSpeechInstructions,
   findAdjacentSpeechText,
   elevenLabsVoiceSettingsFromConfig,
+  buildElevenLabsTtsLogParams,
   classifyElevenLabsTtsError,
   elevenLabsTtsRetryDelayMs,
   parseElevenLabsErrorStatus,
@@ -853,6 +854,125 @@ describe("elevenLabsVoiceSettingsFromConfig", () => {
         elevenLabsSpeed: undefined,
       })
     }
+  })
+})
+
+// ---------------------------------------------------------------------------
+// buildElevenLabsTtsLogParams
+// ---------------------------------------------------------------------------
+
+describe("buildElevenLabsTtsLogParams", () => {
+  const base = {
+    model: "eleven_multilingual_v2",
+    voice: "21m00Tcm4TlvDq8ikWAM",
+    language: "es-UY",
+    format: "mp3",
+  }
+
+  // The whole point of the field: a book that configures nothing must still show
+  // the settings that were actually sent, not a blank.
+  it("reports the effective voice settings when the book configures none", () => {
+    expect(buildElevenLabsTtsLogParams(base)).toEqual({
+      voice: "21m00Tcm4TlvDq8ikWAM",
+      model: "eleven_multilingual_v2",
+      language: "es-UY",
+      outputFormat: "mp3_44100_128",
+      stability: 0.7,
+      similarityBoost: 0.5,
+      style: 0,
+      useSpeakerBoost: true,
+      contextBefore: false,
+      contextAfter: false,
+    })
+  })
+
+  it("reports overrides when the book sets them", () => {
+    const params = buildElevenLabsTtsLogParams({
+      ...base,
+      elevenLabsStability: 0.2,
+      elevenLabsStyle: 0.6,
+      elevenLabsSpeed: 0.9,
+      elevenLabsUseSpeakerBoost: false,
+    })
+    expect(params).toMatchObject({
+      stability: 0.2,
+      style: 0.6,
+      speed: 0.9,
+      useSpeakerBoost: false,
+    })
+  })
+
+  // Mirrors the request body: an unset speed leaves ElevenLabs' own pacing
+  // alone, so reporting a value would misrepresent the call.
+  it("omits speed when unset", () => {
+    expect(buildElevenLabsTtsLogParams(base)).not.toHaveProperty("speed")
+  })
+
+  it("omits normalization when unset and reports it when set", () => {
+    expect(buildElevenLabsTtsLogParams(base)).not.toHaveProperty("applyTextNormalization")
+    expect(
+      buildElevenLabsTtsLogParams({ ...base, applyTextNormalization: "on" })
+    ).toMatchObject({ applyTextNormalization: "on" })
+  })
+
+  // The log row must stay compact and must not duplicate the neighbouring
+  // sentences, which are already large in the message body.
+  it("reports context as presence plus length, never the text itself", () => {
+    const params = buildElevenLabsTtsLogParams({
+      ...base,
+      previousText: "Previous sentence.",
+      nextText: "Next one.",
+    })
+    expect(params).toMatchObject({
+      contextBefore: true,
+      contextAfter: true,
+      contextBeforeChars: 18,
+      contextAfterChars: 9,
+    })
+    expect(JSON.stringify(params)).not.toContain("Previous sentence")
+    expect(JSON.stringify(params)).not.toContain("Next one")
+  })
+
+  it("omits the char counts when there is no context", () => {
+    const params = buildElevenLabsTtsLogParams(base)
+    expect(params).not.toHaveProperty("contextBeforeChars")
+    expect(params).not.toHaveProperty("contextAfterChars")
+  })
+
+  // The generic `speech.format` is just "mp3"; ElevenLabs only accepts fixed
+  // (sample rate, bitrate) combos, so a configured rate gets snapped. This log
+  // line is the only place that snapping is visible, so reporting the generic
+  // format would tell the user nothing they didn't already configure.
+  it("reports the snapped ElevenLabs wire format, not the generic one", () => {
+    expect(buildElevenLabsTtsLogParams(base)).toMatchObject({
+      outputFormat: "mp3_44100_128",
+    })
+    expect(
+      buildElevenLabsTtsLogParams({ ...base, sampleRate: 22050, bitRate: "64" })
+    ).toMatchObject({ outputFormat: "mp3_22050_32" })
+    expect(
+      buildElevenLabsTtsLogParams({ ...base, format: "wav", sampleRate: 16000 })
+    ).toMatchObject({ outputFormat: "pcm_16000" })
+  })
+
+  // The failure path logs the request that just failed, and an unsupported
+  // format is one reason it may have failed — building the log must not throw
+  // inside the error handler and lose the entry.
+  it("falls back to the generic format instead of throwing on an unsupported one", () => {
+    expect(buildElevenLabsTtsLogParams({ ...base, format: "ogg" })).toMatchObject({
+      outputFormat: "ogg",
+    })
+  })
+
+  // The debug panel renders keys in insertion order, so identity/format come
+  // before the tuning values rather than being alphabetised apart.
+  it("keeps a stable, readable key order", () => {
+    expect(Object.keys(buildElevenLabsTtsLogParams(base)).slice(0, 4)).toEqual([
+      "voice",
+      "model",
+      "language",
+      "outputFormat",
+    ])
   })
 })
 

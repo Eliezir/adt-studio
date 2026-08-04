@@ -7158,6 +7158,9 @@ msgstr "Remplacer les quiz"
 msgid "Replace this audio file"
 msgstr "Remplacer ce fichier audio"
 
+msgid "Request settings"
+msgstr "Paramètres de la requête"
+
 msgid "Require comment on failure"
 msgstr "Commentaire requis en cas d'échec"
 

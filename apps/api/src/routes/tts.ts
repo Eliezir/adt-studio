@@ -39,6 +39,7 @@ import {
   generateWordTimestamps,
   findAdjacentSpeechText,
   elevenLabsVoiceSettingsFromConfig,
+  buildElevenLabsTtsLogParams,
   type ProviderRouting,
 } from "@adt/pipeline"
 import { getLiveSpeechRun } from "../services/speech-progress.js"
@@ -407,6 +408,8 @@ function appendSingleTtsLog(
     success: boolean
     cached: boolean
     error?: string
+    /** Resolved provider request parameters, for the debug panel. */
+    params?: Record<string, unknown>
   }
 ): void {
   const logEntry: LlmLogEntry = {
@@ -421,6 +424,7 @@ function appendSingleTtsLog(
     errorCount: options.success ? 0 : 1,
     attempt: 1,
     durationMs: options.durationMs,
+    ...(options.params ? { params: options.params } : {}),
     messages: [{
       role: "user",
       content: [{
@@ -837,6 +841,36 @@ export function createTTSRoutes(booksDir: string, configPath?: string, taskServi
       const bookDir = path.join(path.resolve(booksDir), safeLabel)
       const cacheDir = path.join(bookDir, ".cache")
 
+      // Request parameters recorded on the debug log entry so the settings that
+      // produced this audio are inspectable. Takes provider/model/voice per call
+      // because a fallback attempt logs a different provider than the primary.
+      // ElevenLabs only for now — the other providers' params are a separate change.
+      const logParamsFor = (
+        targetProvider: string,
+        targetModel: string,
+        targetVoice: string,
+      ): Record<string, unknown> | undefined =>
+        targetProvider === "elevenlabs"
+          ? buildElevenLabsTtsLogParams({
+              model: targetModel,
+              voice: targetVoice,
+              language: normalizedLanguage,
+              format,
+              sampleRate: config.speech?.sample_rate,
+              bitRate: config.speech?.bit_rate,
+              applyTextNormalization: config.speech?.elevenlabs_apply_text_normalization,
+              // Must match what generateEntry sends below, or the log would
+              // describe a request we didn't make.
+              previousText: config.speech?.elevenlabs_use_context
+                ? findAdjacentSpeechText(languageEntries, entryIndex, -1, config.speech)
+                : undefined,
+              nextText: config.speech?.elevenlabs_use_context
+                ? findAdjacentSpeechText(languageEntries, entryIndex, 1, config.speech)
+                : undefined,
+              ...elevenLabsVoiceSettingsFromConfig(config.speech),
+            })
+          : undefined
+
       const startMs = Date.now()
       const generateEntry = async (options: {
         targetProvider: string
@@ -940,6 +974,7 @@ export function createTTSRoutes(booksDir: string, configPath?: string, taskServi
           durationMs: Date.now() - startMs,
           success: true,
           cached: entry.cached,
+          params: logParamsFor(usedProvider, usedModel, usedVoice),
         })
 
         const mergedEntries = mergeSpeechEntry(
@@ -1015,6 +1050,7 @@ export function createTTSRoutes(booksDir: string, configPath?: string, taskServi
                 durationMs: Date.now() - startMs,
                 success: true,
                 cached: entry.cached,
+                params: logParamsFor(attempt.provider, attempt.model, attempt.voice),
               })
 
               const mergedEntries = mergeSpeechEntry(
@@ -1076,6 +1112,7 @@ export function createTTSRoutes(booksDir: string, configPath?: string, taskServi
           success: false,
           cached: false,
           error: fallbackFailureMessage,
+          params: logParamsFor(provider, model, voice),
         })
         storage.recordStepError(
           "tts",

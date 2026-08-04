@@ -7156,6 +7156,9 @@ msgstr "Substituir questionários"
 msgid "Replace this audio file"
 msgstr "Substituir este arquivo de áudio"
 
+msgid "Request settings"
+msgstr "Configurações da solicitação"
+
 msgid "Require comment on failure"
 msgstr "Require comment on failure"
 

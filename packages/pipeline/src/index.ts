@@ -191,6 +191,7 @@ export {
   computeSpeechCacheKey,
   findAdjacentSpeechText,
   elevenLabsVoiceSettingsFromConfig,
+  buildElevenLabsTtsLogParams,
   classifyElevenLabsTtsError,
   elevenLabsTtsRetryDelayMs,
   parseElevenLabsErrorStatus,
