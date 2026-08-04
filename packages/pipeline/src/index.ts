@@ -84,6 +84,12 @@ export {
 } from "./web-rendering.js"
 export { renderSectionLlm, type VisualRefinementDeps } from "./render-llm.js"
 export {
+  inspectOrderingActivityHtml,
+  inspectOrderingSection,
+  type OrderingContract,
+  type OrderingInspection,
+} from "./ordering-contract.js"
+export {
   DEFAULT_VISUAL_REVIEW_MODEL_ID,
   runVisualReviewLoop,
   type VisualReviewDeps,

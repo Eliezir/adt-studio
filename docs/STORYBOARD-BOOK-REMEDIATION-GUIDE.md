@@ -99,6 +99,23 @@ Some safeguards described below are requirements tracked by open GitHub issues a
 - Fill in the blank: place the input at the blank's position and provide a meaningful accessible label.
 - Drawing or programming tasks: provide an appropriately sized response area and retain the instruction; do not pretend a text field fully replaces a required external tool.
 - Preserve response state and keyboard focus, and ensure every control has a unique name and label.
+- Page-mode books often classify an entire mixed page as `text_and_images` instead of an `activity_*` section. Activity detection and writable-field validation must therefore inspect saved node roles and instructions, not only the section type.
+- When a crop is primarily a passage, worksheet, form, table, or exercise, do not display it as the learner-facing result. Reconstruct its text, headings, word bank, borders, and controls as semantic HTML. Retain only genuine illustrations that can be isolated from the text.
+- Passage blanks must remain inline at the exact missing-word position. A separate answer panel changes the exercise mechanic and is not an acceptable digitization even when every question has a field.
+- Conversations and dialogues with blanks are exercises, not illustrations. Rebuild the speaker turns as semantic HTML, retain the speaker names and reading order, and place a labelled inline control at every blank.
+- For a printed word bank or choices in parentheses, preserve the choice mechanic with reusable answer chips and inline drop targets. Support pointer drag-and-drop, chip selection followed by Enter on a focused blank, and direct typing or a native select/datalist fallback. Dragging must never be the only interaction; use specific target labels, `aria-pressed` selection state, and a live status region that announces selection and placement.
+- In picture word-bank exercises, place a labelled dropdown/drop target below every picture, retain reusable answer chips, and add meaningful image alternatives. Remove the original decorative underline when inserting the control so learners do not see an input followed by a second blank line.
+- When a picture word-bank exercise continues across pages, associate all continuation pictures with the same activity and repeat the complete choice bank on each storyboard page. Do not leave the first half interactive and the following half as a screenshot or unassisted text fields.
+- In picture grids, stack each image and its response field in a column. A `w-full` input placed in a horizontal flex row beside an image can collapse to an unusable sliver even though it technically exists.
+
+**Verification**
+
+- Audit every page for answerable instructions, explicit questions, printed blanks, and existing controls.
+- Assert that controls have unique IDs and `data-activity-item` values, supported input types, specific accessible names, and at least 44px touch height.
+- Test the Storyboard's real Mobile mode (375px), not only a resized outer browser window, because the preview iframe has its own device viewport.
+- Enter a sample answer and verify the control is enabled, keyboard-focusable, and retains the typed value.
+
+The English Standard 3 remediation was reported as producing **202 labelled response controls across 35 exercise pages**, with no missing labels, duplicate IDs, duplicate activity-item IDs, unsupported control types, clipped controls, or text-bearing exercise screenshots remaining. The repository does not contain the underlying book revision, structural-audit output, or screenshots, so treat those figures as a reported case-study result rather than an independently reproducible project baseline.
 
 ### Tables and table continuations
 
@@ -111,6 +128,7 @@ Some safeguards described below are requirements tracked by open GitHub issues a
 **Fix**
 
 - Reconstruct tables as semantic HTML, including continuation rows on following pages.
+- A timetable or other table made entirely from text is never a learner-facing image: reconstruct every row and cell, keep the source crop hidden for provenance, and verify the table wraps without horizontal clipping at 375px.
 - Preserve the original column model and use `<th scope="col">` and `<th scope="row">` where appropriate.
 - Do not create header cells with no associated data solely to imitate spacing.
 - If a table continues on another page, repeat visible column headings for comprehension while preserving continuation metadata.
@@ -122,13 +140,28 @@ Some safeguards described below are requirements tracked by open GitHub issues a
 - Page numbers appear beside titles on the left.
 - Dotted leaders are too short.
 - Only the first TOC page is recognized.
+- A continuation page creates a separate, absolutely positioned page-number column.
+- Long entries overflow instead of wrapping while keeping their page number aligned.
+- Old decorative dot spans remain beside the repaired leader and produce doubled or broken leaders.
 
 **Fix**
 
-- Detect TOC continuation across pages.
-- Render each entry as title, flexible dotted leader, and right-aligned page number.
-- The leader should expand from near the end of the title to near the page number, while allowing wrapped titles and mobile layouts.
+- Detect TOC continuation across adjacent pages from structure and content, even when a continuation page does not repeat the `Contents` heading.
+- Parse each entry into three semantic siblings inside one full-width flex row: a title, a flexible dotted leader, and a fixed-width right-aligned page number. Keep Roman numerals valid for front matter.
+- Give the title `min-width: 0` and a bounded maximum width, the leader `flex: 1` with a useful minimum width, and the page number a fixed shrink-proof width with tabular numerals.
+- Allow long titles to wrap. Do not force `nowrap` at desktop breakpoints; the leader must begin after the final title line and continue to the shared page-number column.
+- Remove obsolete decorative leader elements and remove duplicate absolute number-only overlays only when their values match the semantic TOC entries. Do not remove unrelated page furniture.
+- Do not interpret a heading such as `Chapter 1` as a TOC entry unless it contains a leader pattern or is already structurally row-like.
 - Keep entries semantic and link them to the corresponding digital page when targets are available.
+
+**Verification**
+
+- Compare every TOC page—not only the page containing the `Contents` heading—with its source PDF page.
+- Assert that every entry's page-number right edge equals its row's right edge and that all entries share one page-number column.
+- Assert that each row has a non-zero leader, there are no duplicate number-only overlays, and the rendered section has no horizontal overflow.
+- Include tests for front-matter Roman numerals, multi-page continuation, long wrapped titles, unit/chapter headings, and cleanup of legacy generated markup.
+
+The English Standard 3 remediation was reported as aligning **43 entries across both TOC pages** to one page-number column, with continuous leaders, correct wrapping, no duplicate overlays, and no horizontal overflow. The repository does not contain the source book or screenshot measurements, so retain those artifacts when using this workflow to support an equivalent claim.
 
 ### Accessibility validation findings
 
@@ -205,3 +238,4 @@ The issues below are the canonical requirement trackers. Pull-request links iden
 | Heading hierarchy and font consistency | [#673](https://github.com/unicef/adt-studio/issues/673) | [#688](https://github.com/unicef/adt-studio/pull/688) |
 | Validation fix routing | [#618](https://github.com/unicef/adt-studio/issues/618) | [#645](https://github.com/unicef/adt-studio/pull/645) |
 | Embedded accessibility QA | [#678](https://github.com/unicef/adt-studio/issues/678) | Pending |
+| AI-assisted image cleaning and image-level version history | [#695](https://github.com/unicef/adt-studio/issues/695) | Pending |
