@@ -20,7 +20,7 @@ import { useDirtyTabTracker } from "@/hooks/use-settings-dirty-tabs"
 import { LanguagePicker } from "@/components/LanguagePicker"
 import { useBook } from "@/hooks/use-books"
 import { useStepConfig } from "@/hooks/use-step-config"
-import { normalizeLocale } from "@/lib/languages"
+import { getBaseLanguage, normalizeLocale } from "@/lib/languages"
 import { resolveSpeechProviderForLanguage } from "@/lib/speech-routing"
 import { SpeechPromptsEditor } from "./components/SpeechPromptsEditor"
 import { VoiceMappingsEditor } from "./components/VoiceMappingsEditor"
@@ -1266,6 +1266,10 @@ const ELEVENLABS_ENTERPRISE_NORMALIZATION_MODELS = new Set([
   "eleven_flash_v2_5",
 ])
 
+// The generic `speech.format` values ElevenLabs can produce. Mirrors
+// `buildElevenLabsOutputFormat` in @adt/llm, which throws for anything else.
+const ELEVENLABS_SUPPORTED_FORMATS = new Set(["mp3", "opus", "wav", "pcm"])
+
 const MODEL_GROUPS_BY_PROVIDER: Record<string, typeof OPENAI_TTS_MODELS> = {
   openai: OPENAI_TTS_MODELS,
   azure: AZURE_TTS_MODELS,
@@ -1395,6 +1399,16 @@ function SpeechLanguageCards({
     (elevenLabsApplyTextNormalization === "on" || elevenLabsApplyTextNormalization === "auto") &&
     ELEVENLABS_ENTERPRISE_NORMALIZATION_MODELS.has(elevenLabsModel)
 
+  // `speech.format` is a free-text, book-wide value while providers are routed
+  // per language, so a format that only some providers accept (e.g. `ogg`, which
+  // Azure supports) fails every ElevenLabs entry mid-run. ElevenLabs only
+  // produces this fixed set, and the synthesizer throws rather than silently
+  // writing mp3 bytes into an `.ogg` file — warn here so it surfaces at edit
+  // time instead of part-way through a run.
+  const normalizedFormat = format.trim().toLowerCase()
+  const formatUnsupportedByElevenLabs =
+    normalizedFormat !== "" && !ELEVENLABS_SUPPORTED_FORMATS.has(normalizedFormat)
+
   const getProviderModel = (provider: string): string => {
     if (provider === "openai") return openaiModel
     if (provider === "azure") return azureModel
@@ -1431,6 +1445,18 @@ function SpeechLanguageCards({
     if (!voiceMappings) return ""
     const providerMap = voiceMappings[provider] as Record<string, string> | undefined
     return providerMap?.[lang] ?? providerMap?.["default"] ?? ""
+  }
+
+  // ADT ships only a global `default` for ElevenLabs (an English voice) plus a
+  // single `es-uy` mapping, where azure/gemini carry per-locale maps. So a
+  // non-English language routed to ElevenLabs silently narrates in an English
+  // voice — audible, but nothing in the UI said so. Only flagged for ElevenLabs
+  // and only when the language has no mapping of its own.
+  const usesEnglishDefaultVoice = (lang: string, provider: string): boolean => {
+    if (provider !== "elevenlabs" || getBaseLanguage(normalizeLocale(lang)) === "en") return false
+    const providerMap = voiceMappings?.[provider] as Record<string, string> | undefined
+    if (!providerMap) return false
+    return providerMap[lang] === undefined && providerMap["default"] !== undefined
   }
 
   const resolveInstruction = (lang: string): string => {
@@ -1621,6 +1647,12 @@ function SpeechLanguageCards({
                 )}
               </div>
 
+              {usesEnglishDefaultVoice(lang, provider) && (
+                <p className="text-[11px] text-amber-600 dark:text-amber-500">
+                  {t`No ElevenLabs voice is mapped for this language, so it uses the default English voice and will narrate with an English accent. Map a voice for ${lang} in the Voices tab.`}
+                </p>
+              )}
+
               {/* Accent / instruction prompt */}
               {instruction && (
                 <div className="space-y-1">
@@ -1681,6 +1713,12 @@ function SpeechLanguageCards({
           <p className="text-[11px] text-muted-foreground">
             {t`Applies to every language routed to ElevenLabs.`}
           </p>
+
+          {formatUnsupportedByElevenLabs && (
+            <p className="text-[11px] text-amber-600 dark:text-amber-500">
+              {t`ElevenLabs cannot produce the "${normalizedFormat}" format, so every ElevenLabs entry will fail. Use mp3, opus, wav, or pcm — the Format field above applies to all providers.`}
+            </p>
+          )}
 
           <div className="flex items-start gap-3 pt-1">
             <Switch

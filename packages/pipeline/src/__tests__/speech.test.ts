@@ -802,6 +802,26 @@ describe("findAdjacentSpeechText", () => {
     expect(findAdjacentSpeechText(entries, 2, -1, undefined)).toBe("Real text.")
   })
 
+  // `generateSpeechFile` skips entries that fail isSpeakableText, so a
+  // punctuation-only neighbour has no audio and no intonation to borrow — it
+  // would only end up in the cache key.
+  it("skips punctuation-only neighbours, matching what synthesis skips", () => {
+    const entries = [
+      entry("p001_t001", "Real text."),
+      entry("p001_t002", "…"),
+      entry("p001_t003", "—"),
+      entry("p001_t004", "Fourth."),
+    ]
+
+    expect(findAdjacentSpeechText(entries, 3, -1, undefined)).toBe("Real text.")
+  })
+
+  it("still accepts a neighbour whose only speakable content is a number", () => {
+    const entries = [entry("p001_t001", "1998."), entry("p001_t002", "Next.")]
+
+    expect(findAdjacentSpeechText(entries, 1, -1, undefined)).toBe("1998.")
+  })
+
   // The stage-runner appends Easy Read variants to the source-language array,
   // so an unconstrained scan makes the last main entry's next_text an Easy Read
   // rewrite of much earlier content.

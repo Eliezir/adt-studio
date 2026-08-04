@@ -525,9 +525,12 @@ const EASY_READ_ID_RE = /_easy_read$/
  *
  * Two constraints beyond "pick the neighbour":
  *
- * 1. The text is emoji-stripped, exactly like the entry's own `text` is before
- *    synthesis. Sending emoji only in the context fields would ask ElevenLabs
- *    to reason about characters it never has to speak.
+ * 1. The text is emoji-stripped and screened with `isSpeakableText`, exactly
+ *    like the entry's own `text` is before synthesis. Sending emoji only in the
+ *    context fields would ask ElevenLabs to reason about characters it never has
+ *    to speak; screening for speakability skips neighbours that are pure
+ *    punctuation ("…", "—"), which `generateSpeechFile` never synthesizes and
+ *    which carry no intonation to borrow — they would only sit in the cache key.
  * 2. The search stays inside the current entry's variant group. For the source
  *    language the stage-runner appends the Easy Read variants to the entry
  *    array (`[...catalog.entries, ...sourceEasyReadEntries]`), so a plain
@@ -546,7 +549,7 @@ export function findAdjacentSpeechText(
     if (EASY_READ_ID_RE.test(entry.id) !== wantEasyRead) continue
     if (isTtsExcluded(entry.id, speechConfig)) continue
     const text = stripEmojis(entry.text).trim()
-    if (text) return text
+    if (isSpeakableText(text)) return text
   }
   return undefined
 }

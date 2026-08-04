@@ -3240,6 +3240,9 @@ msgstr "Clé API ElevenLabs"
 msgid "ElevenLabs API Key"
 msgstr "Clé API ElevenLabs"
 
+msgid "ElevenLabs cannot produce the \"{normalizedFormat}\" format, so every ElevenLabs entry will fail. Use mp3, opus, wav, or pcm — the Format field above applies to all providers."
+msgstr "ElevenLabs ne peut pas produire le format « {normalizedFormat} », donc toutes les entrées ElevenLabs échoueront. Utilisez mp3, opus, wav ou pcm : le champ Format ci-dessus s'applique à tous les fournisseurs."
+
 msgid "ElevenLabs settings"
 msgstr "Paramètres ElevenLabs"
 
@@ -5480,6 +5483,9 @@ msgstr "Aucune règle désactivée"
 
 msgid "No Easy Read for this page"
 msgstr "Pas de lecture facile pour cette page"
+
+msgid "No ElevenLabs voice is mapped for this language, so it uses the default English voice and will narrate with an English accent. Map a voice for {lang} in the Voices tab."
+msgstr "Aucune voix ElevenLabs n'est associée à cette langue ; la voix anglaise par défaut est donc utilisée et la narration aura un accent anglais. Associez une voix à {lang} dans l'onglet Voix."
 
 msgid "No embedded text layer — text was recovered from the page image"
 msgstr "Pas de couche de texte intégrée — le texte a été récupéré à partir de l'image de la page"
