@@ -1,72 +1,32 @@
-import {
-  useState,
-  useEffect,
-  useRef,
-  useCallback,
-  useMemo,
-  type ChangeEvent,
-} from "react";
-import { createPortal } from "react-dom";
-import { Link } from "@tanstack/react-router";
-import {
-  AudioLines,
-  Check,
-  ChevronDown,
-  ChevronRight,
-  ChevronUp,
-  CircleStop,
-  Languages,
-  Loader2,
-  Play,
-  Pause,
-  Plus,
-  RotateCcw,
-  Save,
-  Settings,
-  Trash2,
-  TriangleAlert,
-  Type,
-  Upload,
-  Volume2,
-  VolumeX,
-  WandSparkles,
-  X,
-} from "lucide-react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { api, getAudioUrl, BASE_URL } from "@/api/client";
-import type {
-  TextCatalogEntry,
-  TranslationEvaluationStatusResponse,
-  WordTimestamp,
-  WordTimestampEntry,
-} from "@/api/client";
-import { VersionPicker } from "@/components/pipeline/components/VersionPicker";
-import { useBookConfig, useUpdateBookConfig } from "@/hooks/use-book-config";
-import { useActiveConfig } from "@/hooks/use-debug";
-import { useBook } from "@/hooks/use-books";
-import { useStepHeader } from "../../components/StepViewRouter";
-import { LoadingState } from "../../components/LoadingState";
-import { useBookRun } from "@/hooks/use-book-run";
-import { useBookTasks } from "@/hooks/use-book-tasks";
-import { useStageMissingCounts } from "@/hooks/use-stage-missing-counts";
-import { useApiKey } from "@/hooks/use-api-key";
-import { StageRunCard } from "../../components/StageRunCard";
-import { StageEmptyState } from "../../components/StageEmptyState";
-import { useVirtualizer } from "@tanstack/react-virtual";
-import { cn } from "@/lib/utils";
-import { normalizeLocale } from "@/lib/languages";
-import {
-  languageUsesSpeechProvider,
-  resolveSpeechProviderForLanguage,
-} from "@/lib/speech-routing";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
-import {
-  isTranslationEvaluationEnabled,
-  resolveTranslationLanguageState,
-} from "./lib/translations-view-state";
+import { useState, useEffect, useRef, useCallback, useMemo, type ChangeEvent } from "react"
+import { createPortal } from "react-dom"
+import { Link } from "@tanstack/react-router"
+import { AudioLines, Check, ChevronDown, ChevronRight, ChevronUp, CircleStop, Languages, Loader2, Play, Pause, Plus, RotateCcw, Save, Settings, Trash2, TriangleAlert, Type, Upload, Volume2, VolumeX, WandSparkles, X } from "lucide-react"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { DEFAULT_OPENAI_TTS_MODEL_ID } from "@adt/types"
+import { api, getAudioUrl, BASE_URL } from "@/api/client"
+import type { TextCatalogEntry, TranslationEvaluationStatusResponse, WordTimestamp, WordTimestampEntry } from "@/api/client"
+import { VersionPicker } from "@/components/pipeline/components/VersionPicker"
+import { useBookConfig, useUpdateBookConfig } from "@/hooks/use-book-config"
+import { useActiveConfig } from "@/hooks/use-debug"
+import { useBook } from "@/hooks/use-books"
+import { useStepHeader } from "../../components/StepViewRouter"
+import { LoadingState } from "../../components/LoadingState"
+import { useBookRun } from "@/hooks/use-book-run"
+import { useBookTasks } from "@/hooks/use-book-tasks"
+import { useStageMissingCounts } from "@/hooks/use-stage-missing-counts"
+import { useApiKey } from "@/hooks/use-api-key"
+import { StageRunCard } from "../../components/StageRunCard"
+import { StageEmptyState } from "../../components/StageEmptyState"
+import { useVirtualizer } from "@tanstack/react-virtual"
+import { cn } from "@/lib/utils"
+import { normalizeLocale } from "@/lib/languages"
+import { languageUsesSpeechProvider, resolveSpeechProviderForLanguage } from "@/lib/speech-routing"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Button } from "@/components/ui/button"
+import { Label } from "@/components/ui/label"
+import { Switch } from "@/components/ui/switch"
+import { isTranslationEvaluationEnabled, resolveTranslationLanguageState } from "./lib/translations-view-state"
 import {
   type CatalogCategory,
   getEntryCategory,
@@ -291,19 +251,9 @@ function TranslationReviewInline({
 // pinned one. Mirrors resolveVoice()/resolveSpeechModel() in @adt/pipeline (and
 // config/voices.yaml) so we never show an OpenAI voice/model for a Gemini/Azure provider.
 // Values are voice/model identifiers, not user-facing copy — display only.
-
-const DEFAULT_TTS_VOICE: Record<string, string> = {
-  openai: "alloy",
 // eslint-disable-next-line lingui/no-unlocalized-strings -- voice identifiers
-  azure: "en-US-JennyNeural",
-// eslint-disable-next-line lingui/no-unlocalized-strings -- voice identifiers
-  gemini: "Kore",
-};
-const DEFAULT_TTS_MODEL: Record<string, string> = {
-  openai: "gpt-4o-mini-tts",
-  azure: "azure-tts",
-  gemini: "gemini-2.5-pro-preview-tts",
-};
+const DEFAULT_TTS_VOICE: Record<string, string> = { openai: "alloy", azure: "en-US-JennyNeural", gemini: "Kore" }
+const DEFAULT_TTS_MODEL: Record<string, string> = { openai: DEFAULT_OPENAI_TTS_MODEL_ID, azure: "azure-tts", gemini: "gemini-2.5-pro-preview-tts" }
 
 export function LanguageView({
   bookLabel,
@@ -523,6 +473,31 @@ export function LanguageView({
     () => new Map(entries.map((entry) => [entry.id, entry.text])),
     [entries],
   );
+
+  // Bare-numeric entries (page numbers) still set to be read aloud. Surfaced as
+  // an opt-in banner on the Speech stage: page numbers otherwise get spoken by
+  // TTS, which sounds wrong. Detection is intentionally simple (the user
+  // confirms before muting) — 1–3 digits covers page numbers, including the
+  // doubled forms ("66"/"88") some PDFs emit for shadowed single digits.
+  const [pageNumbersDismissed, setPageNumbersDismissed] = useState(false);
+  const pageNumberEntries = useMemo(() => {
+    if (!isSpeechStage) return [] as { id: string; text: string }[];
+    return entries.filter((e) => {
+      const text = (e.text ?? "").trim();
+      return (
+        /^\d{1,3}$/.test(text) &&
+        !isAnswerEntry(e.id) &&
+        !excludedTextIdSet.has(e.id)
+      );
+    });
+  }, [entries, isSpeechStage, excludedTextIdSet]);
+  const pageNumberPreview = useMemo(() => {
+    const uniq = Array.from(
+      new Set(pageNumberEntries.map((e) => e.text.trim())),
+    ).sort((a, b) => Number(a) - Number(b));
+    const shown = uniq.slice(0, 8).join(", ");
+    return uniq.length > 8 ? `${shown}…` : shown;
+  }, [pageNumberEntries]);
   const pageFilteredEntries = selectedPageId
     ? entries.filter((e) => e.id.startsWith(selectedPageId + "_"))
     : entries;
@@ -585,8 +560,13 @@ export function LanguageView({
     wordHighlightingEnabled,
   ]);
 
-  const toggleEntryMuted = useCallback(
-    (textId: string) => {
+  // Shared writer for the read-aloud exclusion list: applies `mutate` to the
+  // current effective set, persists it, and mirrors the pending state so the UI
+  // updates optimistically. Writes are serialized through configUpdateQueueRef
+  // so rapid edits don't race. Mutating against the effective (merged) set means
+  // the write matches what the user currently sees.
+  const updateExcludedTextIds = useCallback(
+    (mutate: (set: Set<string>) => void) => {
       const currentConfig = { ...(bookConfigData?.config ?? {}) } as Record<
         string,
         unknown
@@ -595,13 +575,10 @@ export function LanguageView({
         currentConfig.speech && typeof currentConfig.speech === "object"
           ? { ...(currentConfig.speech as Record<string, unknown>) }
           : {};
-      // Toggle against the effective (merged) exclusions so the write matches
-      // what the user currently sees.
       const next = new Set(
         pendingExcludedTextIdsRef.current ?? effectiveExcludedTextIds,
       );
-      if (next.has(textId)) next.delete(textId);
-      else next.add(textId);
+      mutate(next);
       const nextIds = Array.from(next);
       pendingExcludedTextIdsRef.current = nextIds;
       setPendingExcludedTextIds(nextIds);
@@ -637,6 +614,26 @@ export function LanguageView({
       queryClient,
       updateConfig,
     ],
+  );
+
+  const toggleEntryMuted = useCallback(
+    (textId: string) => {
+      updateExcludedTextIds((set) => {
+        if (set.has(textId)) set.delete(textId);
+        else set.add(textId);
+      });
+    },
+    [updateExcludedTextIds],
+  );
+
+  const muteEntries = useCallback(
+    (textIds: string[]) => {
+      if (textIds.length === 0) return;
+      updateExcludedTextIds((set) => {
+        for (const id of textIds) set.add(id);
+      });
+    },
+    [updateExcludedTextIds],
   );
 
   // Fetch word timestamps for the active language on the speech page
@@ -981,6 +978,13 @@ export function LanguageView({
       failedAudioMap.set(f.textId, f.error);
     }
   }
+  // Per-item word-highlighting (timestamp) failures for the selected language.
+  // These entries have audio but no per-word timings — commonly an empty slice
+  // (e.g. a bare page number) in page-batched mode — so the user can prune them.
+  const failedTimestampMap = new Map<string, string>();
+  for (const f of timestampData?.failed ?? []) {
+    failedTimestampMap.set(f.textId, f.error);
+  }
   // Separate base-language audio map for the source column in translation view
   const baseAudioMap = new Map<
     string,
@@ -1287,22 +1291,26 @@ export function LanguageView({
     const provider =
       (speechConfig && typeof speechConfig === "object"
         ? ((speechConfig as Record<string, unknown>).default_provider as string)
-        : undefined) ?? "openai";
-    const defaultVoice =
-      DEFAULT_TTS_VOICE[provider] ?? DEFAULT_TTS_VOICE.openai;
+        : undefined) ?? "openai"
+    const defaultVoice = DEFAULT_TTS_VOICE[provider] ?? DEFAULT_TTS_VOICE.openai
+    const configuredOpenAIDefault =
+      typeof merged?.default_speech_generation_model === "string"
+        ? merged.default_speech_generation_model
+        : DEFAULT_TTS_MODEL.openai
     const defaultModel =
-      DEFAULT_TTS_MODEL[provider] ?? DEFAULT_TTS_MODEL.openai;
+      provider === "openai"
+        ? configuredOpenAIDefault
+        : DEFAULT_TTS_MODEL[provider] ?? configuredOpenAIDefault
     if (!speechConfig || typeof speechConfig !== "object") {
       return { provider, voice: defaultVoice, model: defaultModel };
     }
-    const sc = speechConfig as Record<string, unknown>;
-    const voice = (sc.voice as string) ?? defaultVoice;
-    const model = (sc.model as string) ?? undefined;
-    const providers = sc.providers as
-      Record<string, Record<string, unknown>> | undefined;
-    const providerModel = providers?.[provider]?.model as string | undefined;
-    return { provider, voice, model: providerModel ?? model ?? defaultModel };
-  }, [speechConfig]);
+    const sc = speechConfig as Record<string, unknown>
+    const voice = (sc.voice as string) ?? defaultVoice
+    const model = (sc.model as string) ?? undefined
+    const providers = sc.providers as Record<string, Record<string, unknown>> | undefined
+    const providerModel = providers?.[provider]?.model as string | undefined
+    return { provider, voice, model: providerModel ?? model ?? defaultModel }
+  }, [merged?.default_speech_generation_model, speechConfig])
 
   const headerControls = catalog ? (
     <div className="flex items-center gap-1.5 ml-auto">
@@ -1362,15 +1370,61 @@ export function LanguageView({
             bookLabel={bookLabel}
             pendingLabel={pendingLabel}
             pendingLabelKey={pendingLabelKey}
-            onPreview={(d) => {
-              const data = d as { entries?: TextCatalogEntry[] };
-              setPendingEntries(data?.entries ?? []);
+            onRestored={() => {
+              setPendingEntries(null);
               setAppliedSuggestionEntryIds(new Set());
             }}
             onSave={() => saveRef.current()}
             onDiscard={() => {
               setPendingEntries(null);
               setAppliedSuggestionEntryIds(new Set());
+            }}
+            diff={{
+              items: (d) => (d as { entries?: TextCatalogEntry[] } | null)?.entries ?? [],
+              keyOf: (it) => (it as TextCatalogEntry).id,
+              diffText: (it) => (it as TextCatalogEntry).text ?? "",
+              searchText: (it) => {
+                const e = it as TextCatalogEntry;
+                return `${e.id} ${sourceEntriesById.get(e.id) ?? ""} ${e.text ?? ""}`;
+              },
+              searchPlaceholder: t`Search original or translation…`,
+              renderItem: (it, ctx) => {
+                const e = it as TextCatalogEntry;
+                const cat = getEntryCategory(e.id);
+                const catLabel =
+                  cat === "captions"
+                    ? t`Caption`
+                    : cat === "answers"
+                      ? t`Answer`
+                      : cat === "glossary"
+                        ? t`Glossary`
+                        : cat === "easy-read"
+                          ? t`Easy Read`
+                          : t`Text`;
+                const pageMatch = /^pg0*(\d+)/.exec(e.id);
+                const pageRef = pageMatch ? t`p${pageMatch[1]}` : null;
+                // Original (source-language) text for this entry — shown as
+                // context so a translation change can be judged against it.
+                const source = sourceEntriesById.get(e.id);
+                return (
+                  <span className="flex min-w-0 flex-col gap-0.5">
+                    <span className="flex items-center gap-1.5 text-[9px] uppercase tracking-wide text-muted-foreground">
+                      <span className="rounded bg-muted px-1 py-0.5 font-semibold" title={e.id}>
+                        {catLabel}
+                      </span>
+                      {pageRef ? <span className="tabular-nums">{pageRef}</span> : null}
+                    </span>
+                    {source && source !== e.text ? (
+                      <span className="line-clamp-2 text-[11px] text-muted-foreground">{source}</span>
+                    ) : null}
+                    {ctx?.diff ? (
+                      <span className="text-foreground">{ctx.diff}</span>
+                    ) : e.text ? (
+                      <span className="text-foreground">{e.text}</span>
+                    ) : null}
+                  </span>
+                );
+              },
             }}
           />
         )}
@@ -1661,6 +1715,39 @@ export function LanguageView({
               </Button>
             </div>
           )}
+
+          {isSpeechStage &&
+            !pageNumbersDismissed &&
+            pageNumberEntries.length > 0 && (
+              <div className="flex items-center justify-between gap-3 rounded-md border border-amber-200 bg-amber-50 px-3 py-2">
+                <div className="text-xs text-amber-900">
+                  {t`Page numbers detected — these will be read aloud: ${pageNumberPreview}. Mute them all from text-to-speech?`}
+                </div>
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-7 px-3 text-xs border-amber-300 bg-white text-amber-900 hover:bg-amber-100"
+                    onClick={() =>
+                      muteEntries(pageNumberEntries.map((e) => e.id))
+                    }
+                    disabled={updateConfig.isPending}
+                  >
+                    <VolumeX className="mr-1 h-3 w-3" />
+                    {t`Mute all from read-aloud`}
+                  </Button>
+                  <button
+                    type="button"
+                    onClick={() => setPageNumbersDismissed(true)}
+                    title={t`Dismiss`}
+                    aria-label={t`Dismiss`}
+                    className="text-amber-700 hover:text-amber-900 cursor-pointer"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              </div>
+            )}
 
           {/* Language filter pills — always shown, base language first */}
           {editingLanguage && (
@@ -2038,6 +2125,17 @@ export function LanguageView({
                   !audioFailure &&
                   !isRunning &&
                   (stageDone || hasStageError);
+                // Word-highlighting failed but the audio itself is fine — the
+                // clip plays, it just has no per-word timings. Only shown when
+                // there's no more fundamental audio problem to report.
+                const timestampFailure =
+                  isSpeechStage &&
+                  !isAnswer &&
+                  !exclusion.excluded &&
+                  !audioFailure &&
+                  !audioMissing
+                    ? failedTimestampMap.get(entry.id)
+                    : undefined;
                 const audioStatusBadges = (
                   <>
                     {audioFailure && (
@@ -2051,6 +2149,14 @@ export function LanguageView({
                     {audioMissing && (
                       <span className="ml-1.5 text-[9px] font-medium text-amber-700 bg-amber-100 rounded px-1 py-0.5">
                         {t`No audio`}
+                      </span>
+                    )}
+                    {timestampFailure && (
+                      <span
+                        title={timestampFailure}
+                        className="ml-1.5 text-[9px] font-medium text-orange-700 bg-orange-100 rounded px-1 py-0.5 cursor-help"
+                      >
+                        {t`Highlighting failed`}
                       </span>
                     )}
                   </>

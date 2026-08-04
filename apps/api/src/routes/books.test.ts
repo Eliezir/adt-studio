@@ -296,6 +296,49 @@ describe("PUT /books/:label/config", () => {
     ).toBe(true)
   })
 
+  it("validates and normalizes book-level model overrides", async () => {
+    createTestBook("model-overrides")
+    const app = createBookRoutes(tmpDir)
+    const res = await app.request("/books/model-overrides/config", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        config: {
+          default_model: " Anthropic:Claude-Sonnet-4-6 ",
+          default_image_generation_model: " OpenAI:DALL-E-3 ",
+          default_speech_generation_model: " TTS-1-HD ",
+        },
+      }),
+    })
+
+    expect(res.status).toBe(200)
+    expect(await res.json()).toEqual({
+      config: {
+        default_model: "anthropic:claude-sonnet-4-6",
+        default_image_generation_model: "openai:dall-e-3",
+        default_speech_generation_model: "tts-1-hd",
+      },
+    })
+  })
+
+  it("rejects invalid book-level model overrides", async () => {
+    createTestBook("invalid-model-overrides")
+    const app = createBookRoutes(tmpDir)
+    const res = await app.request("/books/invalid-model-overrides/config", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        config: {
+          default_model: "../invalid",
+          default_image_generation_model: "gpt-image-2",
+          default_speech_generation_model: "../invalid",
+        },
+      }),
+    })
+
+    expect(res.status).toBe(400)
+  })
+
   it("persists image meaningfulness settings", async () => {
     createTestBook("meaningful-config")
     const app = createBookRoutes(tmpDir)
@@ -1563,6 +1606,29 @@ describe("GET /books/:label/captioned-images", () => {
     const ids = body.images.map((i) => i.imageId).sort()
     expect(ids).toEqual(["pg001_im001", "pg001_im002"])
     expect(body.images.find((i) => i.imageId === "pg001_im001")?.caption).toBe("First caption")
+  })
+
+  it("uses the restored caption version instead of MAX(version)", async () => {
+    setupBook("cap-restored")
+    const storage = createBookStorage("cap-restored", tmpDir)
+    try {
+      storage.putNodeData("image-captioning", "pg001", {
+        captions: [
+          { imageId: "pg001_im001", caption: "Superseded caption", decorative: true },
+          { imageId: "pg001_im002", caption: "Newer second caption" },
+        ],
+      })
+      expect(storage.setCurrentNodeVersion("image-captioning", "pg001", 1)).toBe(true)
+    } finally {
+      storage.close()
+    }
+
+    const app = createBookRoutes(tmpDir)
+    const res = await app.request("/books/cap-restored/captioned-images")
+    expect(res.status).toBe(200)
+    const body = await res.json() as { images: Array<{ imageId: string; caption: string }> }
+    expect(body.images.find((i) => i.imageId === "pg001_im001")?.caption).toBe("First caption")
+    expect(body.images.find((i) => i.imageId === "pg001_im002")?.caption).toBe("Second caption")
   })
 
   it("returns 404 for missing book", async () => {
