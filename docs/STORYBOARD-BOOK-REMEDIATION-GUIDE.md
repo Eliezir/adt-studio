@@ -115,7 +115,7 @@ Some safeguards described below are requirements tracked by open GitHub issues a
 - Test the Storyboard's real Mobile mode (375px), not only a resized outer browser window, because the preview iframe has its own device viewport.
 - Enter a sample answer and verify the control is enabled, keyboard-focusable, and retains the typed value.
 
-The English Standard 3 remediation produced **202 labelled response controls across 35 exercise pages**. The structural audit found no missing labels, duplicate IDs, duplicate activity-item IDs, unsupported control types, or controls hidden behind screenshot fallbacks. The live desktop and 375px mobile checks found no clipped controls after repairing the image-passage, dialogue, and picture-grid edge cases. Remaining activity images were verified as genuine illustration prompts rather than text-bearing exercise screenshots.
+The English Standard 3 remediation was reported as producing **202 labelled response controls across 35 exercise pages**, with no missing labels, duplicate IDs, duplicate activity-item IDs, unsupported control types, clipped controls, or text-bearing exercise screenshots remaining. The repository does not contain the underlying book revision, structural-audit output, or screenshots, so treat those figures as a reported case-study result rather than an independently reproducible project baseline.
 
 ### Tables and table continuations
 
@@ -161,7 +161,7 @@ The English Standard 3 remediation produced **202 labelled response controls acr
 - Assert that each row has a non-zero leader, there are no duplicate number-only overlays, and the rendered section has no horizontal overflow.
 - Include tests for front-matter Roman numerals, multi-page continuation, long wrapped titles, unit/chapter headings, and cleanup of legacy generated markup.
 
-This repair was verified on both TOC pages of **English Standard 3**: 43 entries aligned to one page-number column, with continuous leaders, correct wrapping, no duplicate overlays, and no horizontal overflow.
+The English Standard 3 remediation was reported as aligning **43 entries across both TOC pages** to one page-number column, with continuous leaders, correct wrapping, no duplicate overlays, and no horizontal overflow. The repository does not contain the source book or screenshot measurements, so retain those artifacts when using this workflow to support an equivalent claim.
 
 ### Accessibility validation findings
 

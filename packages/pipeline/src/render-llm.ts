@@ -7,7 +7,10 @@ import { getViewportBreakpoints, type ScreenshotRenderer } from "./screenshot.js
 import type { RenderConfig, RenderExecutionOptions, RenderNode, RenderSectionInput } from "./web-rendering.js"
 import { runVisualReviewLoop } from "./visual-review.js"
 import { buildTypographyCss, typographyPreservationErrors } from "./typography.js"
-import { repairTableOfContentsLayout } from "./toc-layout.js"
+import {
+  repairTableOfContentsLayout,
+  tableOfContentsLayoutErrors,
+} from "./toc-layout.js"
 import { DEFAULT_TYPOGRAPHY } from "@adt/types"
 
 /** Dependencies for the optional visual refinement loop. */
@@ -216,7 +219,10 @@ function validateWebRendering(
   const imageUrlPrefix = `/api/books/${label}/images`
   const expectedTexts = new Map(leaf_texts.map((t) => [t.text_id, t.text]))
   const optionalTextIds = collectOptionalTextIds(leaf_texts)
-  const candidateHtml = autoRepairUnderlineActivityHtml(r.content, sectionType)
+  let candidateHtml = autoRepairUnderlineActivityHtml(r.content, sectionType)
+  if (sectionType === "table_of_contents") {
+    candidateHtml = repairTableOfContentsLayout(candidateHtml, leaf_texts)
+  }
   const minimumEditableElements = minimumLearnerResponseCount(nodes)
 
   const check = validateSectionHtml(
@@ -235,6 +241,10 @@ function validateWebRendering(
       minimumEditableElements,
     }
   )
+  if (sectionType === "table_of_contents") {
+    check.errors.push(...tableOfContentsLayoutErrors(candidateHtml, leaf_texts))
+    check.valid = check.errors.length === 0
+  }
   if (check.valid && check.sectionHtml) {
     return {
       valid: true,
@@ -246,26 +256,24 @@ function validateWebRendering(
   return { valid: check.valid, errors: check.errors }
 }
 
-const RESPONSE_ROLES = new Set(["activity_question", "activity_fill_in_the_blank"])
-const ACTIONABLE_INSTRUCTION_RE = /\b(?:answer|write|fill|complete|choose|name|identify|describe|match|draw|say)\b/i
-
 /** Require one response per explicit question/blank. If the tree only contains
- * an actionable activity instruction (common on mixed page-mode pages), require
- * at least one control so a static screenshot cannot pass validation. */
-function minimumLearnerResponseCount(nodes: RenderNode[]): number {
-  let explicit = 0
-  let actionableInstructions = 0
+ * an activity instruction (common on mixed page-mode pages), require at least
+ * one control so a static screenshot cannot pass validation. Questions and
+ * blank leaves often describe the same response, so use the larger count
+ * instead of adding them together. */
+export function minimumLearnerResponseCount(nodes: RenderNode[]): number {
+  let questions = 0
+  let blanks = 0
+  let hasInstruction = false
   function walk(node: RenderNode): void {
-    if (node.role && RESPONSE_ROLES.has(node.role)) explicit += 1
-    if (
-      node.role === "activity_instruction" &&
-      typeof node.text === "string" &&
-      ACTIONABLE_INSTRUCTION_RE.test(node.text)
-    ) actionableInstructions += 1
+    if (node.role === "activity_question") questions += 1
+    if (node.role === "activity_fill_in_the_blank") blanks += 1
+    if (node.role === "activity_instruction") hasInstruction = true
     for (const child of node.children ?? []) walk(child)
   }
   for (const node of nodes) walk(node)
-  return explicit > 0 ? explicit : actionableInstructions
+  const explicit = Math.max(questions, blanks)
+  return explicit > 0 ? explicit : hasInstruction ? 1 : 0
 }
 
 function collectLeafDataIdOrder(nodes: RenderNode[]): string[] {

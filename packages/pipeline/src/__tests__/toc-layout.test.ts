@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest"
-import { repairTableOfContentsLayout } from "../toc-layout.js"
+import {
+  repairTableOfContentsLayout,
+  tableOfContentsLayoutErrors,
+} from "../toc-layout.js"
 
 describe("repairTableOfContentsLayout", () => {
   it("splits a dotted TOC leaf into title, leader, and right-aligned page number", () => {
@@ -94,5 +97,21 @@ describe("repairTableOfContentsLayout", () => {
     expect(repairTableOfContentsLayout(html, [
       { text_id: "body-1", text_type: "text", text: "Plants need water." },
     ])).toBe(html)
+  })
+})
+
+describe("tableOfContentsLayoutErrors", () => {
+  it("rejects an unmarked nested row that deterministic string repair cannot rewrite", () => {
+    const html = '<div data-id="toc-1" class="flex"><span>Digestive system</span><span class="border-dotted"></span><span>1</span></div>'
+    expect(tableOfContentsLayoutErrors(html, [
+      { text_id: "toc-1", text_type: "text", text: "Digestive system........1" },
+    ])).toContainEqual(expect.stringContaining('data-id="toc-1"'))
+  })
+
+  it("accepts the marked title, leader, and page-number structure", () => {
+    const html = '<div data-id="toc-1" class="flex"><span data-toc-title="true">Digestive system</span><span data-toc-leader="true" class="border-dotted"></span><span data-toc-page-number="true">1</span></div>'
+    expect(tableOfContentsLayoutErrors(html, [
+      { text_id: "toc-1", text_type: "text", text: "Digestive system........1" },
+    ])).toEqual([])
   })
 })

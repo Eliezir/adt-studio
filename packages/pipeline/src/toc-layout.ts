@@ -1,4 +1,5 @@
 import type { LeafText } from "./web-rendering.js"
+import { DomUtils, parseDocument } from "htmlparser2"
 
 interface TocParts {
   title: string
@@ -10,7 +11,12 @@ interface TocParts {
 function splitTocEntry(text: string): TocParts | null {
   const dotted = text.match(/^(.*?)(\.{2,})(\s*)([ivxlcdm]+|\d+)\s*$/i)
   if (dotted && dotted[1].trim()) {
-    return { title: dotted[1], leader: dotted[2], separator: dotted[3], pageNumber: dotted[4] }
+    return {
+      title: dotted[1],
+      leader: dotted[2],
+      separator: dotted[3],
+      pageNumber: dotted[4],
+    }
   }
   const merged = text.match(/^(.*?\D)(\s*)([ivxlcdm]+|\d+)\s*$/i)
   if (!merged || !merged[1].trim()) return null
@@ -18,7 +24,11 @@ function splitTocEntry(text: string): TocParts | null {
 }
 
 function escapeHtml(text: string): string {
-  return text.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;")
+  return text
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
 }
 
 function escapeRegex(text: string): string {
@@ -34,7 +44,10 @@ function addRowClasses(openingTag: string): string {
 }
 
 /** Guarantee title → dotted leader → right-aligned page-number TOC rows. */
-export function repairTableOfContentsLayout(html: string, leafTexts: LeafText[]): string {
+export function repairTableOfContentsLayout(
+  html: string,
+  leafTexts: LeafText[],
+): string {
   let repaired = html
   const expectedPageNumbers = new Set<string>()
   for (const leaf of leafTexts) {
@@ -46,18 +59,30 @@ export function repairTableOfContentsLayout(html: string, leafTexts: LeafText[])
       `(<([a-z][\\w-]*)\\b[^>]*\\bdata-id=(['"])${id}\\3[^>]*>)([^<>]*)(<\\/\\2>)`,
       "i",
     )
-    repaired = repaired.replace(element, (match, opening: string, _tag: string, _quote: string, _content: string, closing: string) => {
-      // OCR often drops leaders altogether. In that case, only repair elements
-      // that the renderer already treated as rows. This prevents a heading such
-      // as "Chapter 1" from being mistaken for an entry whose page number is 1.
-      if (!parts.leader && !/\b(?:flex|grid|items-baseline)\b/.test(opening)) return match
-      const leader = parts.leader
-        ? `<span aria-hidden="true" class="mx-1.5 sm:mx-2 flex-1 min-w-6 border-b-2 border-dotted border-current opacity-80"><span class="sr-only">${escapeHtml(parts.leader)}</span></span>`
-        : `<span aria-hidden="true" class="mx-1.5 sm:mx-2 flex-1 min-w-6 border-b-2 border-dotted border-current opacity-80"></span>`
-      const titleText = parts.leader ? parts.title : parts.title + parts.separator
-      const pageText = parts.leader ? parts.separator + parts.pageNumber : parts.pageNumber
-      return `${addRowClasses(opening)}<span class="min-w-0 max-w-[82%]">${escapeHtml(titleText)}</span>${leader}<span class="w-8 sm:w-10 shrink-0 text-right tabular-nums">${escapeHtml(pageText)}</span>${closing}`
-    })
+    repaired = repaired.replace(
+      element,
+      (
+        match,
+        opening: string,
+        _tag: string,
+        _quote: string,
+        _content: string,
+        closing: string,
+      ) => {
+        // OCR often drops leaders altogether. In that case, only repair elements
+        // that the renderer already treated as rows. This prevents a heading such
+        // as "Chapter 1" from being mistaken for an entry whose page number is 1.
+        if (!parts.leader && !/\b(?:flex|grid|items-baseline)\b/.test(opening)) return match
+        const leader = parts.leader
+          ? `<span data-toc-leader="true" aria-hidden="true" class="mx-1.5 sm:mx-2 flex-1 min-w-6 border-b-2 border-dotted border-current opacity-80"><span class="sr-only">${escapeHtml(parts.leader)}</span></span>`
+          : `<span data-toc-leader="true" aria-hidden="true" class="mx-1.5 sm:mx-2 flex-1 min-w-6 border-b-2 border-dotted border-current opacity-80"></span>`
+        const titleText = parts.leader ? parts.title : parts.title + parts.separator
+        const pageText = parts.leader
+          ? parts.separator + parts.pageNumber
+          : parts.pageNumber
+        return `${addRowClasses(opening)}<span data-toc-title="true" class="min-w-0 max-w-[82%]">${escapeHtml(titleText)}</span>${leader}<span data-toc-page-number="true" class="w-8 sm:w-10 shrink-0 text-right tabular-nums">${escapeHtml(pageText)}</span>${closing}`
+      },
+    )
   }
 
   // Some generated TOCs add a second, decorative leader immediately after
@@ -90,4 +115,36 @@ export function repairTableOfContentsLayout(html: string, leafTexts: LeafText[])
   // TOC rows must be allowed to wrap at every viewport, matching print.
   repaired = repaired.replace(/\s*\bsm:flex-nowrap\b/g, "")
   return repaired
+}
+
+/** Confirm that every TOC leaf the deterministic repair recognizes retains the
+ * three direct child markers needed by layout and runtime translation. */
+export function tableOfContentsLayoutErrors(
+  html: string,
+  leafTexts: LeafText[],
+): string[] {
+  const doc = parseDocument(html)
+  const errors: string[] = []
+  for (const leaf of leafTexts) {
+    const parts = splitTocEntry(leaf.text)
+    if (!parts) continue
+    const element = DomUtils.findOne(
+      (node) => node.type === "tag" && node.attribs?.["data-id"] === leaf.text_id,
+      doc.children,
+      true,
+    )
+    if (!element) continue
+    const classes = element.attribs?.class ?? ""
+    if (!parts.leader && !/\b(?:flex|grid|items-baseline)\b/.test(classes)) continue
+    const directChildren = (element.children ?? []).filter((child) => "attribs" in child)
+    const markerIndexes = ["data-toc-title", "data-toc-leader", "data-toc-page-number"].map(
+      (attribute) => directChildren.findIndex((child) => child.attribs?.[attribute] === "true"),
+    )
+    if (markerIndexes.some((index) => index < 0) || markerIndexes.join(",") !== "0,1,2") {
+      errors.push(
+        `TOC entry data-id="${leaf.text_id}" must contain direct title, leader, and page-number spans in that order.`,
+      )
+    }
+  }
+  return errors
 }
