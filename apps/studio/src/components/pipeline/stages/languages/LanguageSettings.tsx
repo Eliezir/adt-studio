@@ -28,6 +28,7 @@ import { SelectImagesDialog } from "./components/SelectImagesDialog"
 import { WordHighlightPreview } from "./components/WordHighlightPreview"
 import { useLingui } from "@lingui/react/macro"
 import { displayLang } from "./lib/display-lang"
+import { tabContainerClass } from "./lib/tab-container-class"
 import { PROVIDER_LABELS } from "./lib/provider-labels"
 import {
   formatElevenLabsVoiceLabel,
@@ -537,7 +538,7 @@ export function LanguageSettings({ bookLabel, tab = "general", stageSlug = "tran
   })
 
   return (
-    <div className={tab === "prompt" ? "h-full w-full" : "p-4 max-w-2xl space-y-6"}>
+    <div className={tabContainerClass(tab)}>
       {tab === "general" && !isSpeechStage && (
         <div className="space-y-4">
           {/* Base language (non-removable) */}

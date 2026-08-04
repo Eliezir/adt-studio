@@ -268,9 +268,11 @@ export function VoiceMappingsEditor({ bookLabel }: VoiceMappingsEditorProps) {
         </div>
       )}
 
-      {/* Table */}
-      <div className="rounded-md border overflow-hidden">
-        <table className="w-full text-xs">
+      {/* Table. Scrolls horizontally rather than compressing: with six columns
+          a narrow settings pane would otherwise squeeze the voice cells until
+          names like `en-US-JennyNeural` are unreadable. */}
+      <div className="rounded-md border overflow-x-auto">
+        <table className="w-full min-w-[860px] text-xs">
           <thead>
             <tr className="bg-muted/50 border-b">
               <th className="text-left font-medium px-3 py-2 w-28">{t`Language`}</th>
