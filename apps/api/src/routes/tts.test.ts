@@ -657,6 +657,114 @@ describe("POST /books/:label/tts/generate-one", () => {
     })
   })
 
+  // Regression: the synthesizer used to be built without audioOptions here, so a
+  // regenerated entry was synthesized at ElevenLabs' default mp3_44100_128 while
+  // the rest of the book used the configured rates — and the debug log reported
+  // the configured format, describing a request that was never made.
+  it("honors speech.sample_rate/bit_rate and logs the format it actually requested", async () => {
+    fs.writeFileSync(
+      configPath,
+      `role_types:
+  section_text: Main body text
+structure_types:
+  paragraph: Paragraph
+speech:
+  default_provider: elevenlabs
+  sample_rate: 22050
+  bit_rate: "32"
+  providers:
+    elevenlabs:
+      languages:
+        - en
+`
+    )
+    const label = "elevenlabs-audio-options"
+    seedBook(label)
+
+    fetchMock.mockResolvedValueOnce(
+      new Response(new Uint8Array([51, 52]), {
+        status: 200,
+        headers: { "Content-Type": "audio/mpeg" },
+      })
+    )
+
+    const app = createTTSRoutes(tmpDir, configPath)
+    const res = await app.request(`/books/${label}/tts/generate-one`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-ElevenLabs-API-Key": "el-test",
+      },
+      body: JSON.stringify({ textId: "pg001_t001", language: "en" }),
+    })
+    expect(res.status).toBe(200)
+
+    expect(String(fetchMock.mock.calls[0][0])).toContain("output_format=mp3_22050_32")
+    expect(readLatestLogParams(label)).toMatchObject({ outputFormat: "mp3_22050_32" })
+  })
+
+  // Regression: ElevenLabs throttles on concurrent requests, so a 429 here used
+  // to fail the entry outright — the only retry path was gated on Gemini's "did
+  // not include audio data" message.
+  it("retries an ElevenLabs 429 and succeeds", async () => {
+    writeConfig("elevenlabs")
+    const label = "elevenlabs-429-retry"
+    seedBook(label)
+
+    fetchMock
+      .mockResolvedValueOnce(
+        new Response("too many concurrent requests", {
+          status: 429,
+          statusText: "Too Many Requests",
+        })
+      )
+      .mockResolvedValueOnce(
+        new Response(new Uint8Array([61, 62]), {
+          status: 200,
+          headers: { "Content-Type": "audio/mpeg" },
+        })
+      )
+
+    const app = createTTSRoutes(tmpDir, configPath)
+    const res = await app.request(`/books/${label}/tts/generate-one`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-ElevenLabs-API-Key": "el-test",
+      },
+      body: JSON.stringify({ textId: "pg001_t001", language: "en" }),
+    })
+
+    expect(res.status).toBe(200)
+    expect((await res.json()).entry.provider).toBe("elevenlabs")
+    expect(fetchMock).toHaveBeenCalledTimes(2)
+  })
+
+  // A permanent 4xx must fail immediately rather than burning the retry budget
+  // on a request that will never succeed.
+  it("does not retry a permanent ElevenLabs 401", async () => {
+    writeConfig("elevenlabs")
+    const label = "elevenlabs-401-no-retry"
+    seedBook(label)
+
+    fetchMock.mockResolvedValue(
+      new Response("invalid_api_key", { status: 401, statusText: "Unauthorized" })
+    )
+
+    const app = createTTSRoutes(tmpDir, configPath)
+    const res = await app.request(`/books/${label}/tts/generate-one`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-ElevenLabs-API-Key": "el-test",
+      },
+      body: JSON.stringify({ textId: "pg001_t001", language: "en" }),
+    })
+
+    expect(res.status).toBe(502)
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+  })
+
   it("does not record ElevenLabs settings for a Gemini-routed language", async () => {
     writeConfig("gemini")
     const label = "gemini-log-params"

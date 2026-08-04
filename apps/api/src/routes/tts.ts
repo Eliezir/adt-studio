@@ -40,6 +40,8 @@ import {
   findAdjacentSpeechText,
   elevenLabsVoiceSettingsFromConfig,
   buildElevenLabsTtsLogParams,
+  classifyElevenLabsTtsError,
+  elevenLabsTtsRetryDelayMs,
   type ProviderRouting,
 } from "@adt/pipeline"
 import { getLiveSpeechRun } from "../services/speech-progress.js"
@@ -263,6 +265,12 @@ function getGeminiFallbackModel(model: string): string | null {
   }
   return null
 }
+
+// Retries for a single-item ElevenLabs regeneration. Much lower than the batch
+// paths' ELEVENLABS_TTS_MAX_RATE_LIMIT_RETRIES (5, backing off to 30s) because
+// this runs inside an HTTP request: 2 retries at 2s + 4s absorb a transient
+// concurrency 429 while keeping the response well inside client/proxy timeouts.
+const ELEVENLABS_SINGLE_ITEM_MAX_RETRIES = 2
 
 /**
  * The credential a given TTS provider needs for single-item regeneration, or
@@ -872,7 +880,7 @@ export function createTTSRoutes(booksDir: string, configPath?: string, taskServi
           : undefined
 
       const startMs = Date.now()
-      const generateEntry = async (options: {
+      const synthesizeEntry = async (options: {
         targetProvider: string
         targetModel: string
         targetVoice: string
@@ -903,7 +911,18 @@ export function createTTSRoutes(booksDir: string, configPath?: string, taskServi
                     region: azureSpeechRegion!,
                   })
                 : options.targetProvider === "elevenlabs"
-                  ? createElevenLabsTTSSynthesizer({ apiKey: elevenLabsApiKey! })
+                  ? createElevenLabsTTSSynthesizer(
+                      { apiKey: elevenLabsApiKey! },
+                      // Must match stage-runner.ts and pipeline-dag.ts: without
+                      // these, a regenerated entry is synthesized at ElevenLabs'
+                      // default mp3_44100_128 while the rest of the book used the
+                      // configured rates, and `logParamsFor` below (which does
+                      // read them) would report a format we never requested.
+                      {
+                        sampleRate: config.speech?.sample_rate,
+                        bitRate: config.speech?.bit_rate,
+                      },
+                    )
                   : createTTSSynthesizer(openaiApiKey),
           provider: options.targetProvider,
           geminiTemperature: config.speech?.temperature,
@@ -924,6 +943,48 @@ export function createTTSRoutes(booksDir: string, configPath?: string, taskServi
           // cache key as stage-runner.ts and pipeline-dag.ts.
           ...elevenLabsVoiceSettingsFromConfig(config.speech),
         })
+
+      /**
+       * `synthesizeEntry` plus the ElevenLabs 429/5xx retry.
+       *
+       * ElevenLabs throttles on *concurrent* requests rather than by RPM, so a
+       * user clicking regenerate while a run is in flight — or retuning a voice
+       * in quick succession, which is what the voice-tuning sliders invite —
+       * gets a 429 that both full-run paths retry but this one used to surface
+       * as an outright failure. (The cross-provider fallback below can't help:
+       * it is gated on Gemini's "did not include audio data".)
+       *
+       * The retry budget is deliberately smaller than the batch paths': this is
+       * a synchronous HTTP handler, so it absorbs the transient concurrency hit
+       * without holding the request open long enough to trip a client or proxy
+       * timeout. Wrapping here rather than at the call sites covers the fallback
+       * attempts too.
+       */
+      const generateEntry = async (options: {
+        targetProvider: string
+        targetModel: string
+        targetVoice: string
+      }): Promise<Awaited<ReturnType<typeof synthesizeEntry>>> => {
+        for (let attemptCount = 1; ; attemptCount++) {
+          try {
+            return await synthesizeEntry(options)
+          } catch (err) {
+            const message = err instanceof Error ? err.message : String(err)
+            if (
+              options.targetProvider !== "elevenlabs" ||
+              attemptCount > ELEVENLABS_SINGLE_ITEM_MAX_RETRIES ||
+              classifyElevenLabsTtsError(message) === "permanent"
+            ) {
+              throw err
+            }
+            const delayMs = elevenLabsTtsRetryDelayMs(attemptCount)
+            console.warn(
+              `[tts] ${safeLabel}: ElevenLabs TTS failed for ${textEntry.id}; retrying ${attemptCount + 1}/${ELEVENLABS_SINGLE_ITEM_MAX_RETRIES + 1} in ${delayMs}ms: ${message}`
+            )
+            await new Promise((resolve) => setTimeout(resolve, delayMs))
+          }
+        }
+      }
 
       try {
         let usedProvider = provider
