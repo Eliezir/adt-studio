@@ -15,6 +15,28 @@ export const DEFAULT_ELEVENLABS_TTS_MODEL_ID = "eleven_multilingual_v2"
 export const DEFAULT_ELEVENLABS_VOICE_ID = "21m00Tcm4TlvDq8ikWAM"
 
 /**
+ * Display names for the ElevenLabs voice IDs ADT Studio ships (the
+ * `DEFAULT_ELEVENLABS_VOICE_ID` fallback and the entries in
+ * `config/voices.yaml`).
+ *
+ * ElevenLabs voice IDs are opaque, and the UI normally resolves them to names
+ * through the account's voice list. That lookup can't help in two common cases:
+ * no ElevenLabs API key is configured (the key lives in browser storage, so a
+ * fresh profile has none), and premade library voices that the user has not
+ * added to their own workspace. Both left the UI showing a raw
+ * `21m00Tcm4TlvDq8ikWAM`.
+ *
+ * These are the IDs a user sees before configuring anything, so their names are
+ * known here and need no network call. The live list still wins when available —
+ * it is authoritative and covers the user's own voices too.
+ */
+export const ELEVENLABS_SHIPPED_VOICE_NAMES: Record<string, string> = {
+  [DEFAULT_ELEVENLABS_VOICE_ID]: "Rachel",
+  // Río de la Plata Spanish, mapped to `es-uy` in config/voices.yaml.
+  QK4xDwo9ESPHA4JNUpX3: "Tomás",
+}
+
+/**
  * Narration-oriented ElevenLabs `voice_settings` defaults, matching ElevenLabs'
  * own audiobook/narration recommendation.
  *

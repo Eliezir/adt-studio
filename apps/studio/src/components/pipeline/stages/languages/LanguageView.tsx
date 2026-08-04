@@ -38,10 +38,7 @@ import {
 } from "./lib/catalog-entries";
 import { displayLang } from "./lib/display-lang";
 import { PROVIDER_LABELS } from "./lib/provider-labels"
-import {
-  formatElevenLabsVoiceLabel,
-  useElevenLabsVoices,
-} from "@/hooks/use-elevenlabs-voices"
+import { useElevenLabsVoices } from "@/hooks/use-elevenlabs-voices"
 import { ImageLightbox } from "./components/ImageLightbox";
 import { WordHighlightPreview } from "./components/WordHighlightPreview";
 import { usePendingChanges } from "../../components/change-summary";
@@ -301,11 +298,7 @@ export function LanguageView({
     customApiKey,
   } = useApiKey();
   // Resolve opaque ElevenLabs voice IDs to names for the speech summary chip.
-  const { getVoice: getElevenLabsVoice } = useElevenLabsVoices();
-  const describeElevenLabsVoice = (voiceId: string): string => {
-    const voice = getElevenLabsVoice(voiceId);
-    return voice ? formatElevenLabsVoiceLabel(voice) : voiceId;
-  };
+  const { describeVoice: describeElevenLabsVoice } = useElevenLabsVoices();
   const translateState = stageState("translate");
   const speechState = stageState("speech");
   const activeState = isSpeechStage ? speechState : translateState;

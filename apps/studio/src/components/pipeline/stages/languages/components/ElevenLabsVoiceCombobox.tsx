@@ -82,7 +82,7 @@ export function ElevenLabsVoiceCombobox({
   className,
 }: ElevenLabsVoiceComboboxProps) {
   const { t } = useLingui()
-  const { voices, getVoice, isUnavailable, hasKey } = useElevenLabsVoices()
+  const { voices, describeVoice, isUnavailable, hasKey } = useElevenLabsVoices()
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState("")
   const inputRef = useRef<HTMLInputElement>(null)
@@ -112,12 +112,12 @@ export function ElevenLabsVoiceCombobox({
     )
   }
 
-  const selected = value ? getVoice(value) : undefined
-  const triggerLabel = !value
-    ? t`Default voice`
-    : selected
-      ? formatElevenLabsVoiceLabel(selected)
-      : value
+  // describeVoice also covers the voices we ship, so a premade default the
+  // account hasn't added still reads as a name rather than a raw ID.
+  const triggerLabel = value ? describeVoice(value) : t`Default voice`
+  // Getting the ID back unchanged means we have no name for it from either the
+  // account list or the voices we ship — most likely a typo or a stale ID.
+  const isUnknownVoice = Boolean(value) && triggerLabel === value
 
   const handleOpenChange = (next: boolean) => {
     setOpen(next)
@@ -200,9 +200,11 @@ export function ElevenLabsVoiceCombobox({
         </PopoverContent>
       </Popover>
 
-      {/* A stored ID that isn't in this account still has to be readable and
-          editable, rather than looking like a broken empty control. */}
-      {value && !selected ? (
+      {/* An unrecognised ID still has to be readable and editable rather than
+          looking like a broken empty control. Only warn when we genuinely have no
+          name for it — a premade voice we can name works fine even when it isn't
+          in the account's own list, so flagging that would just alarm. */}
+      {isUnknownVoice ? (
         <p className="text-[10px] text-muted-foreground">
           <Trans>This voice ID is not in your ElevenLabs account.</Trans>
         </p>

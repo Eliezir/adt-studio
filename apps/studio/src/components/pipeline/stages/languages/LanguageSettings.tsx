@@ -30,10 +30,7 @@ import { useLingui } from "@lingui/react/macro"
 import { displayLang } from "./lib/display-lang"
 import { tabContainerClass } from "./lib/tab-container-class"
 import { PROVIDER_LABELS } from "./lib/provider-labels"
-import {
-  formatElevenLabsVoiceLabel,
-  useElevenLabsVoices,
-} from "@/hooks/use-elevenlabs-voices"
+import { useElevenLabsVoices } from "@/hooks/use-elevenlabs-voices"
 import { ElevenLabsVoiceTuning } from "./components/ElevenLabsVoiceTuning"
 
 const PROMPT_TABS = ["prompt", "image-translation"]
@@ -1348,13 +1345,8 @@ function SpeechLanguageCards({
   })
 
   // ElevenLabs voice IDs are opaque (`21m00Tcm4TlvDq8ikWAM`), so resolve them to
-  // names for display. Falls back to the raw ID when the voice isn't in this
-  // account or no ElevenLabs key is configured.
-  const { getVoice: getElevenLabsVoice } = useElevenLabsVoices()
-  const describeElevenLabsVoice = (voiceId: string): string => {
-    const voice = getElevenLabsVoice(voiceId)
-    return voice ? formatElevenLabsVoiceLabel(voice) : voiceId
-  }
+  // names for display.
+  const { describeVoice: describeElevenLabsVoice } = useElevenLabsVoices()
 
   // Build a live speech config object to resolve providers
   const speechConfig = {

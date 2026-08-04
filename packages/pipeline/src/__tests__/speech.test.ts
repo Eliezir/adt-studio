@@ -2,6 +2,8 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest"
 import fs from "node:fs"
 import path from "node:path"
 import os from "node:os"
+import url from "node:url"
+import { ELEVENLABS_SHIPPED_VOICE_NAMES } from "@adt/types"
 import {
   stripEmojis,
   isSpeakableText,
@@ -854,6 +856,33 @@ describe("elevenLabsVoiceSettingsFromConfig", () => {
         elevenLabsSpeed: undefined,
       })
     }
+  })
+})
+
+// ---------------------------------------------------------------------------
+// Shipped ElevenLabs voices have display names
+// ---------------------------------------------------------------------------
+
+describe("config/voices.yaml ElevenLabs entries", () => {
+  // ElevenLabs voice IDs are opaque, and the UI can only resolve them to names
+  // via the account's voice list — which is empty when no API key is configured
+  // and may exclude premade library voices. So every ID we *ship* needs an entry
+  // in ELEVENLABS_SHIPPED_VOICE_NAMES, or the Speech settings fall back to
+  // showing a raw `21m00Tcm4TlvDq8ikWAM`. This catches a new voices.yaml entry
+  // that forgets one.
+  //
+  // Uses the production loader against the real file rather than a fixture, so
+  // it tracks whatever we actually ship.
+  it("all have display names", () => {
+    const repoRoot = path.resolve(path.dirname(url.fileURLToPath(import.meta.url)), "../../../..")
+    const configDir = path.join(repoRoot, "config")
+    expect(fs.existsSync(path.join(configDir, "voices.yaml"))).toBe(true)
+
+    const shippedIds = Object.values(loadVoicesConfig(configDir).elevenlabs ?? {})
+    expect(shippedIds.length).toBeGreaterThan(0)
+
+    const unnamed = shippedIds.filter((id) => !ELEVENLABS_SHIPPED_VOICE_NAMES[id])
+    expect(unnamed, "add these to ELEVENLABS_SHIPPED_VOICE_NAMES in @adt/types").toEqual([])
   })
 })
 
