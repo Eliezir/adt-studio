@@ -2,6 +2,8 @@ import { useState, useEffect } from "react"
 import { RefreshCw, AlertTriangle } from "lucide-react"
 import { Trans } from "@lingui/react/macro"
 import { useLingui } from "@lingui/react/macro"
+import { msg } from "@lingui/core/macro"
+import type { I18n, MessageDescriptor } from "@lingui/core"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -44,35 +46,45 @@ function getStatus(entry: LlmLogEntry): RowStatus {
   return "success"
 }
 
-/** Human-readable labels for the request-parameter keys a call may record.
- *  Keys not listed here fall back to the raw key, so a new param still shows up
- *  rather than being silently dropped. */
-function paramLabels(t: ReturnType<typeof useLingui>["t"]): Record<string, string> {
-  return {
-    voice: t`Voice`,
-    model: t`Model`,
-    language: t`Language`,
-    outputFormat: t`Format`,
-    stability: t`Stability`,
-    similarityBoost: t`Similarity`,
-    style: t`Style`,
-    useSpeakerBoost: t`Speaker boost`,
-    speed: t`Speed`,
-    applyTextNormalization: t`Normalization`,
-    contextBefore: t`Context before`,
-    contextAfter: t`Context after`,
-    contextBeforeChars: t`Context before (chars)`,
-    contextAfterChars: t`Context after (chars)`,
-  }
+/**
+ * Human-readable labels for the request-parameter keys a call may record.
+ * Keys not listed here fall back to the raw key, so a new param still shows up
+ * rather than being silently dropped.
+ *
+ * Declared as `msg` descriptors and resolved with `i18n._()` because this lives
+ * outside a component. The `t` macro from `useLingui()` only compiles where the
+ * transform can see it bound in scope — passing it into a plain helper leaves
+ * the tagged template untransformed, and the runtime `t` then receives a string
+ * array instead of a descriptor and returns nothing. That rendered every label
+ * blank while the values still showed.
+ */
+const PARAM_LABELS: Record<string, MessageDescriptor> = {
+  voice: msg`Voice`,
+  model: msg`Model`,
+  language: msg`Language`,
+  outputFormat: msg`Format`,
+  stability: msg`Stability`,
+  similarityBoost: msg`Similarity`,
+  style: msg`Style`,
+  useSpeakerBoost: msg`Speaker boost`,
+  speed: msg`Speed`,
+  applyTextNormalization: msg`Normalization`,
+  contextBefore: msg`Context before`,
+  contextAfter: msg`Context after`,
+  contextBeforeChars: msg`Context before (chars)`,
+  contextAfterChars: msg`Context after (chars)`,
 }
+
+const YES = msg`Yes`
+const NO = msg`No`
 
 /**
  * Render one request parameter's value. Values arrive as `unknown` because the
  * `params` record is free-form per call type, so this handles the scalar cases
  * and falls back to JSON rather than rendering "[object Object]".
  */
-function formatParamValue(value: unknown, t: ReturnType<typeof useLingui>["t"]): string {
-  if (typeof value === "boolean") return value ? t`Yes` : t`No`
+function formatParamValue(value: unknown, i18n: I18n): string {
+  if (typeof value === "boolean") return i18n._(value ? YES : NO)
   if (typeof value === "number") return value.toLocaleString()
   if (typeof value === "string") return value
   if (value === null || value === undefined) return "—"
@@ -88,8 +100,7 @@ function formatParamValue(value: unknown, t: ReturnType<typeof useLingui>["t"]):
  * stay adjacent instead of being alphabetised apart.
  */
 export function ParamGrid({ title, data }: { title: string; data: Record<string, unknown> }) {
-  const { t } = useLingui()
-  const labels = paramLabels(t)
+  const { i18n } = useLingui()
   const entries = Object.entries(data)
   if (entries.length === 0) return null
 
@@ -97,13 +108,18 @@ export function ParamGrid({ title, data }: { title: string; data: Record<string,
     <div>
       <div className="font-medium text-muted-foreground mb-1">{title}</div>
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 bg-muted p-3 rounded">
-        {entries.map(([key, value]) => (
-          <div key={key}>
-            <div className="text-muted-foreground mb-0.5">{labels[key] ?? key}</div>
-            {/* Values are provider identifiers and numbers — never translated. */}
-            <div className="font-medium break-words">{formatParamValue(value, t)}</div>
-          </div>
-        ))}
+        {entries.map(([key, value]) => {
+          const label = PARAM_LABELS[key]
+          return (
+            <div key={key}>
+              <div className="text-muted-foreground mb-0.5">
+                {label ? i18n._(label) : key}
+              </div>
+              {/* Values are provider identifiers and numbers — never translated. */}
+              <div className="font-medium break-words">{formatParamValue(value, i18n)}</div>
+            </div>
+          )
+        })}
       </div>
     </div>
   )

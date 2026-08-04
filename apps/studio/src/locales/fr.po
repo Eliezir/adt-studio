@@ -2307,6 +2307,18 @@ msgstr "Contenu"
 msgid "Context"
 msgstr "Contexte"
 
+msgid "Context after"
+msgstr "Contexte après"
+
+msgid "Context after (chars)"
+msgstr "Contexte après (caractères)"
+
+msgid "Context before"
+msgstr "Contexte avant"
+
+msgid "Context before (chars)"
+msgstr "Contexte avant (caractères)"
+
 msgid "Context included"
 msgstr "Contexte inclus"
 
@@ -5375,6 +5387,9 @@ msgstr "Diapositive suivante"
 msgid "Next Step"
 msgstr "Étape suivante"
 
+msgid "No"
+msgstr "Non"
+
 msgid "No acceptable review results for this view."
 msgstr "Aucun résultat de révision acceptable pour cette vue."
 
@@ -5753,6 +5768,9 @@ msgstr "bruit"
 
 msgid "None"
 msgstr "Aucun"
+
+msgid "Normalization"
+msgstr "Normalisation"
 
 msgid "Not compatible with Fixed Layout"
 msgstr "Incompatible avec la mise en page fixe"
@@ -9992,6 +10010,9 @@ msgstr "Rédiger avec l'IA le retour correct/incorrect pour chaque étape"
 #. placeholder {0}: `[[blank:item-${n}]]`
 msgid "Write your sentence with a {0} marker."
 msgstr "Écrivez votre phrase avec un marqueur {0}."
+
+msgid "Yes"
+msgstr "Oui"
 
 #~ msgid "Yesterday"
 #~ msgstr "Hier"

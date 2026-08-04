@@ -2305,6 +2305,18 @@ msgstr "Contents"
 msgid "Context"
 msgstr "Context"
 
+msgid "Context after"
+msgstr "Context after"
+
+msgid "Context after (chars)"
+msgstr "Context after (chars)"
+
+msgid "Context before"
+msgstr "Context before"
+
+msgid "Context before (chars)"
+msgstr "Context before (chars)"
+
 msgid "Context included"
 msgstr "Context included"
 
@@ -5373,6 +5385,9 @@ msgstr "Next slide"
 msgid "Next Step"
 msgstr "Next Step"
 
+msgid "No"
+msgstr "No"
+
 msgid "No acceptable review results for this view."
 msgstr "No acceptable review results for this view."
 
@@ -5751,6 +5766,9 @@ msgstr "noise"
 
 msgid "None"
 msgstr "None"
+
+msgid "Normalization"
+msgstr "Normalization"
 
 msgid "Not compatible with Fixed Layout"
 msgstr "Not compatible with Fixed Layout"
@@ -9990,6 +10008,9 @@ msgstr "Write correct/incorrect feedback for every step with AI"
 #. placeholder {0}: `[[blank:item-${n}]]`
 msgid "Write your sentence with a {0} marker."
 msgstr "Write your sentence with a {0} marker."
+
+msgid "Yes"
+msgstr "Yes"
 
 #~ msgid "Yesterday"
 #~ msgstr "Yesterday"

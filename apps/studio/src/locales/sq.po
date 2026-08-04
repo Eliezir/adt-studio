@@ -2306,6 +2306,18 @@ msgstr "Përmbajtja"
 msgid "Context"
 msgstr "Konteksti"
 
+msgid "Context after"
+msgstr "Konteksti pas"
+
+msgid "Context after (chars)"
+msgstr "Konteksti pas (karaktere)"
+
+msgid "Context before"
+msgstr "Konteksti para"
+
+msgid "Context before (chars)"
+msgstr "Konteksti para (karaktere)"
+
 msgid "Context included"
 msgstr "Konteksti i përfshirë"
 
@@ -5374,6 +5386,9 @@ msgstr "Sllajdi tjetër"
 msgid "Next Step"
 msgstr "Hapi tjetër"
 
+msgid "No"
+msgstr "Jo"
+
 msgid "No acceptable review results for this view."
 msgstr "Nuk ka rezultate të pranueshme të rishikimit për këtë pamje."
 
@@ -5752,6 +5767,9 @@ msgstr "zhurmë"
 
 msgid "None"
 msgstr "Asnjë"
+
+msgid "Normalization"
+msgstr "Normalizimi"
 
 msgid "Not compatible with Fixed Layout"
 msgstr "I papajtueshëm me Paraqitjen e fiksuar"
@@ -9991,6 +10009,9 @@ msgstr "Shkruani me AI reagimin e saktë/gabuar për çdo hap"
 #. placeholder {0}: `[[blank:item-${n}]]`
 msgid "Write your sentence with a {0} marker."
 msgstr "Shkruani fjalinë tuaj me një shënues {0}."
+
+msgid "Yes"
+msgstr "Po"
 
 #~ msgid "Yesterday"
 #~ msgstr "Dje"
