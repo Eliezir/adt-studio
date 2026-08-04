@@ -56,7 +56,6 @@ export {
   createGeminiTTSSynthesizer,
   createElevenLabsTTSSynthesizer,
   resolveElevenLabsVoiceSettings,
-  DEFAULT_ELEVENLABS_VOICE_SETTINGS,
   transcribeWithWhisper,
   type TTSSynthesizer,
   type ElevenLabsVoiceSettings,

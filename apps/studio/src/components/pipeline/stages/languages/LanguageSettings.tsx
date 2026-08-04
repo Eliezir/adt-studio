@@ -29,6 +29,11 @@ import { WordHighlightPreview } from "./components/WordHighlightPreview"
 import { useLingui } from "@lingui/react/macro"
 import { displayLang } from "./lib/display-lang"
 import { PROVIDER_LABELS } from "./lib/provider-labels"
+import {
+  formatElevenLabsVoiceLabel,
+  useElevenLabsVoices,
+} from "@/hooks/use-elevenlabs-voices"
+import { ElevenLabsVoiceTuning } from "./components/ElevenLabsVoiceTuning"
 
 const PROMPT_TABS = ["prompt", "image-translation"]
 
@@ -174,6 +179,13 @@ export function LanguageSettings({ bookLabel, tab = "general", stageSlug = "tran
   const [geminiSeed, setGeminiSeed] = useState("")
   const [elevenLabsUseContext, setElevenLabsUseContext] = useState(false)
   const [elevenLabsApplyTextNormalization, setElevenLabsApplyTextNormalization] = useState("")
+  // Voice-tuning values are strings so "" can mean "unset → use the default",
+  // matching the Gemini temperature/seed inputs in the same panel.
+  const [elevenLabsStability, setElevenLabsStability] = useState("")
+  const [elevenLabsSimilarityBoost, setElevenLabsSimilarityBoost] = useState("")
+  const [elevenLabsStyle, setElevenLabsStyle] = useState("")
+  const [elevenLabsUseSpeakerBoost, setElevenLabsUseSpeakerBoost] = useState("")
+  const [elevenLabsSpeed, setElevenLabsSpeed] = useState("")
   const [batchByPage, setBatchByPage] = useState(false)
   const [wordHighlighting, setWordHighlighting] = useState(false)
   const [easyReadTts, setEasyReadTts] = useState(false)
@@ -275,6 +287,17 @@ export function LanguageSettings({ bookLabel, tab = "general", stageSlug = "tran
     setElevenLabsApplyTextNormalization(
       typeof speech?.elevenlabs_apply_text_normalization === "string"
         ? speech.elevenlabs_apply_text_normalization
+        : ""
+    )
+    const numericOrBlank = (value: unknown) =>
+      typeof value === "number" ? String(value) : ""
+    setElevenLabsStability(numericOrBlank(speech?.elevenlabs_stability))
+    setElevenLabsSimilarityBoost(numericOrBlank(speech?.elevenlabs_similarity_boost))
+    setElevenLabsStyle(numericOrBlank(speech?.elevenlabs_style))
+    setElevenLabsSpeed(numericOrBlank(speech?.elevenlabs_speed))
+    setElevenLabsUseSpeakerBoost(
+      typeof speech?.elevenlabs_use_speaker_boost === "boolean"
+        ? String(speech.elevenlabs_use_speaker_boost)
         : ""
     )
     if (speech) {
@@ -384,6 +407,14 @@ export function LanguageSettings({ bookLabel, tab = "general", stageSlug = "tran
       // Invalid/blank → omit, which disables that param (Gemini's own default).
       const tempRaw = Number(geminiTemperature.trim())
       const seedRaw = Number(geminiSeed.trim())
+      // Same guard for the ElevenLabs voice_settings sliders: clamp into the
+      // schema's range so a stray value can't break AppConfig.parse. Blank →
+      // omit, which falls back to DEFAULT_ELEVENLABS_VOICE_SETTINGS.
+      const clampedOrUndefined = (raw: string, min: number, max: number) => {
+        const value = Number(raw.trim())
+        if (!raw.trim() || !Number.isFinite(value)) return undefined
+        return Math.min(max, Math.max(min, value))
+      }
       overrides.speech = {
         ...existing,
         model: speechModel.trim() || undefined,
@@ -402,6 +433,12 @@ export function LanguageSettings({ bookLabel, tab = "general", stageSlug = "tran
           elevenLabsApplyTextNormalization === "auto" || elevenLabsApplyTextNormalization === "on" || elevenLabsApplyTextNormalization === "off"
             ? elevenLabsApplyTextNormalization
             : undefined,
+        elevenlabs_stability: clampedOrUndefined(elevenLabsStability, 0, 1),
+        elevenlabs_similarity_boost: clampedOrUndefined(elevenLabsSimilarityBoost, 0, 1),
+        elevenlabs_style: clampedOrUndefined(elevenLabsStyle, 0, 1),
+        elevenlabs_speed: clampedOrUndefined(elevenLabsSpeed, 0.7, 1.2),
+        elevenlabs_use_speaker_boost:
+          elevenLabsUseSpeakerBoost === "" ? undefined : elevenLabsUseSpeakerBoost === "true",
       }
     }
     if (shouldWrite("translation_evaluation")) {
@@ -998,6 +1035,11 @@ export function LanguageSettings({ bookLabel, tab = "general", stageSlug = "tran
           geminiSeed={geminiSeed} setGeminiSeed={setGeminiSeed}
           elevenLabsUseContext={elevenLabsUseContext} setElevenLabsUseContext={setElevenLabsUseContext}
           elevenLabsApplyTextNormalization={elevenLabsApplyTextNormalization} setElevenLabsApplyTextNormalization={setElevenLabsApplyTextNormalization}
+          elevenLabsStability={elevenLabsStability} setElevenLabsStability={setElevenLabsStability}
+          elevenLabsSimilarityBoost={elevenLabsSimilarityBoost} setElevenLabsSimilarityBoost={setElevenLabsSimilarityBoost}
+          elevenLabsStyle={elevenLabsStyle} setElevenLabsStyle={setElevenLabsStyle}
+          elevenLabsUseSpeakerBoost={elevenLabsUseSpeakerBoost} setElevenLabsUseSpeakerBoost={setElevenLabsUseSpeakerBoost}
+          elevenLabsSpeed={elevenLabsSpeed} setElevenLabsSpeed={setElevenLabsSpeed}
           batchByPage={batchByPage} setBatchByPage={setBatchByPage}
           wordHighlighting={wordHighlighting} setWordHighlighting={setWordHighlighting}
           markDirty={markDirty}
@@ -1218,6 +1260,14 @@ function ReadAloudContentSection({
 
 /* ---------- Speech per-language cards ---------- */
 
+// ElevenLabs models whose text normalization is gated behind an Enterprise plan
+// (they disable it by default to keep latency low). Mirrors the same set in
+// @adt/llm's ElevenLabs synthesizer, which surfaces the upstream error.
+const ELEVENLABS_ENTERPRISE_NORMALIZATION_MODELS = new Set([
+  "eleven_turbo_v2_5",
+  "eleven_flash_v2_5",
+])
+
 const MODEL_GROUPS_BY_PROVIDER: Record<string, typeof OPENAI_TTS_MODELS> = {
   openai: OPENAI_TTS_MODELS,
   azure: AZURE_TTS_MODELS,
@@ -1246,6 +1296,11 @@ function SpeechLanguageCards({
   geminiSeed, setGeminiSeed,
   elevenLabsUseContext, setElevenLabsUseContext,
   elevenLabsApplyTextNormalization, setElevenLabsApplyTextNormalization,
+  elevenLabsStability, setElevenLabsStability,
+  elevenLabsSimilarityBoost, setElevenLabsSimilarityBoost,
+  elevenLabsStyle, setElevenLabsStyle,
+  elevenLabsUseSpeakerBoost, setElevenLabsUseSpeakerBoost,
+  elevenLabsSpeed, setElevenLabsSpeed,
   batchByPage, setBatchByPage,
   wordHighlighting, setWordHighlighting,
   markDirty,
@@ -1270,6 +1325,11 @@ function SpeechLanguageCards({
   geminiSeed: string; setGeminiSeed: (v: string) => void
   elevenLabsUseContext: boolean; setElevenLabsUseContext: (v: boolean) => void
   elevenLabsApplyTextNormalization: string; setElevenLabsApplyTextNormalization: (v: string) => void
+  elevenLabsStability: string; setElevenLabsStability: (v: string) => void
+  elevenLabsSimilarityBoost: string; setElevenLabsSimilarityBoost: (v: string) => void
+  elevenLabsStyle: string; setElevenLabsStyle: (v: string) => void
+  elevenLabsUseSpeakerBoost: string; setElevenLabsUseSpeakerBoost: (v: string) => void
+  elevenLabsSpeed: string; setElevenLabsSpeed: (v: string) => void
   batchByPage: boolean; setBatchByPage: (v: boolean) => void
   wordHighlighting: boolean; setWordHighlighting: (v: boolean) => void
   markDirty: (field: string) => void
@@ -1285,6 +1345,15 @@ function SpeechLanguageCards({
     queryKey: ["speech-instructions"],
     queryFn: () => api.getSpeechInstructions(),
   })
+
+  // ElevenLabs voice IDs are opaque (`21m00Tcm4TlvDq8ikWAM`), so resolve them to
+  // names for display. Falls back to the raw ID when the voice isn't in this
+  // account or no ElevenLabs key is configured.
+  const { getVoice: getElevenLabsVoice } = useElevenLabsVoices()
+  const describeElevenLabsVoice = (voiceId: string): string => {
+    const voice = getElevenLabsVoice(voiceId)
+    return voice ? formatElevenLabsVoiceLabel(voice) : voiceId
+  }
 
   // Build a live speech config object to resolve providers
   const speechConfig = {
@@ -1319,6 +1388,19 @@ function SpeechLanguageCards({
   }
 
   const allLanguages = [baseLanguage, ...Array.from(outputLanguages).filter((l) => l !== baseLanguage)]
+
+  // Which providers any language is actually routed to — drives whether the
+  // provider-specific settings sections below are shown at all.
+  const providersInUse = new Set(
+    allLanguages.map((lang) => resolveSpeechProviderForLanguage(lang, speechConfig)),
+  )
+
+  // ElevenLabs disables text normalization by default on the v2.5 models to keep
+  // latency low, and enabling it there needs an Enterprise plan — so this
+  // combination 400s for most accounts.
+  const normalizationNeedsEnterprise =
+    (elevenLabsApplyTextNormalization === "on" || elevenLabsApplyTextNormalization === "auto") &&
+    ELEVENLABS_ENTERPRISE_NORMALIZATION_MODELS.has(elevenLabsModel)
 
   const getProviderModel = (provider: string): string => {
     if (provider === "openai") return openaiModel
@@ -1481,7 +1563,7 @@ function SpeechLanguageCards({
         </div>
       </div>
 
-      {/* Per-language cards */}
+      {/* Per-language cards. Provider-specific settings render once, below. */}
       <div className="space-y-3">
         <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{t`Languages`}</h3>
         {allLanguages.map((lang) => {
@@ -1536,7 +1618,11 @@ function SpeechLanguageCards({
                   <div className="space-y-1">
                     <Label className="text-[10px] text-muted-foreground">{t`Voice`}</Label>
                     <div className="flex items-center h-8 px-2 rounded-md border border-input bg-muted/30 text-xs text-muted-foreground">
-                      {voice}
+                      {/* ElevenLabs voice IDs are opaque, so show the resolved
+                          name when we have it and fall back to the raw ID. */}
+                      {provider === "elevenlabs"
+                        ? describeElevenLabsVoice(voice)
+                        : voice}
                     </div>
                   </div>
                 )}
@@ -1552,69 +1638,6 @@ function SpeechLanguageCards({
                 </div>
               )}
 
-              {/* Gemini page batching — only shown when this language is
-                  routed to Gemini; other providers ignore this setting
-                  entirely. */}
-              {provider === "gemini" && (
-                <div className="space-y-2 pt-1 border-t">
-                  <Label className="text-[10px] font-medium text-muted-foreground pt-2 block">
-                    {t`Gemini page batching`}
-                  </Label>
-                  <div className="flex items-start gap-3">
-                    <Switch
-                      id={`batch-by-page-${lang}`}
-                      checked={batchByPage}
-                      onCheckedChange={(v) => { setBatchByPage(v); markDirty("speech") }}
-                    />
-                    <div className="space-y-1 flex-1">
-                      <Label htmlFor={`batch-by-page-${lang}`} className="text-xs">{t`Batch a whole page per request (experimental)`}</Label>
-                      <p className="text-[11px] text-muted-foreground">
-                        {t`Synthesize each page's text in a single Gemini request so tone flows naturally across sentences, then split the audio back into per-sentence clips. Needs an OpenAI key (used to align the split). Gemini-routed languages only; Chinese and Thai remain per-entry.`}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* ElevenLabs voice continuity & normalization — only shown
-                  when this language is routed to ElevenLabs; other
-                  providers ignore these settings entirely. */}
-              {provider === "elevenlabs" && (
-                <div className="space-y-2 pt-1 border-t">
-                  <Label className="text-[10px] font-medium text-muted-foreground pt-2 block">
-                    {t`ElevenLabs voice continuity`}
-                  </Label>
-                  <div className="flex items-start gap-3">
-                    <Switch
-                      id={`elevenlabs-use-context-${lang}`}
-                      checked={elevenLabsUseContext}
-                      onCheckedChange={(v) => { setElevenLabsUseContext(v); markDirty("speech") }}
-                    />
-                    <div className="space-y-1 flex-1">
-                      <Label htmlFor={`elevenlabs-use-context-${lang}`} className="text-xs">{t`Use adjacent text as context`}</Label>
-                      <p className="text-[11px] text-muted-foreground">
-                        {t`Send the neighboring sentence's text alongside each request so ElevenLabs can carry intonation across sentence boundaries. Changing this regenerates ElevenLabs audio on the next run.`}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="space-y-1.5 pt-1">
-                    <Label className="text-[10px] text-muted-foreground">{t`Text Normalization`}</Label>
-                    <select
-                      value={elevenLabsApplyTextNormalization}
-                      onChange={(e) => { setElevenLabsApplyTextNormalization(e.target.value); markDirty("speech") }}
-                      className="flex h-8 w-40 rounded-md border border-input bg-background px-3 py-1 text-xs shadow-sm"
-                    >
-                      <option value="">{t`Default`}</option>
-                      <option value="auto">{t`Auto`}</option>
-                      <option value="on">{t`On`}</option>
-                      <option value="off">{t`Off`}</option>
-                    </select>
-                    <p className="text-[11px] text-muted-foreground">
-                      {t`Controls whether ElevenLabs expands abbreviations, numbers, and symbols into spoken words (e.g. "N.º" → "Número"). "Auto" lets ElevenLabs decide per request; "On" always normalizes; "Off" reads the text as written, which is safer for codes, IDs, or text that shouldn't be expanded.`}
-                    </p>
-                  </div>
-                </div>
-              )}
             </div>
           )
         })}
@@ -1625,6 +1648,96 @@ function SpeechLanguageCards({
           </p>
         )}
       </div>
+
+      {/* Provider-specific settings.
+
+          These render ONCE, not inside each language card. They are stored as
+          single book-wide values under `speech.*`, so a copy inside every card
+          implied per-language control that does not exist — editing one card
+          silently changed all of them. Each section appears only when at least
+          one language is actually routed to that provider. */}
+      {providersInUse.has("gemini") && (
+        <div className="space-y-2 rounded-lg border p-4">
+          <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            {t`Gemini settings`}
+          </h3>
+          <p className="text-[11px] text-muted-foreground">
+            {t`Applies to every language routed to Gemini.`}
+          </p>
+          <div className="flex items-start gap-3 pt-1">
+            <Switch
+              id="batch-by-page"
+              checked={batchByPage}
+              onCheckedChange={(v) => { setBatchByPage(v); markDirty("speech") }}
+            />
+            <div className="space-y-1 flex-1">
+              <Label htmlFor="batch-by-page" className="text-xs">{t`Batch a whole page per request (experimental)`}</Label>
+              <p className="text-[11px] text-muted-foreground">
+                {t`Synthesize each page's text in a single Gemini request so tone flows naturally across sentences, then split the audio back into per-sentence clips. Needs an OpenAI key (used to align the split). Chinese and Thai remain per-entry.`}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {providersInUse.has("elevenlabs") && (
+        <div className="space-y-3 rounded-lg border p-4">
+          <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            {t`ElevenLabs settings`}
+          </h3>
+          <p className="text-[11px] text-muted-foreground">
+            {t`Applies to every language routed to ElevenLabs.`}
+          </p>
+
+          <div className="flex items-start gap-3 pt-1">
+            <Switch
+              id="elevenlabs-use-context"
+              checked={elevenLabsUseContext}
+              onCheckedChange={(v) => { setElevenLabsUseContext(v); markDirty("speech") }}
+            />
+            <div className="space-y-1 flex-1">
+              <Label htmlFor="elevenlabs-use-context" className="text-xs">{t`Use adjacent text as context`}</Label>
+              <p className="text-[11px] text-muted-foreground">
+                {t`Send the neighboring sentence's text alongside each request so ElevenLabs can carry intonation across sentence boundaries. Changing this regenerates ElevenLabs audio on the next run.`}
+              </p>
+            </div>
+          </div>
+
+          <div className="space-y-1.5 pt-1 border-t">
+            <Label className="text-[10px] text-muted-foreground pt-2 block">{t`Text Normalization`}</Label>
+            <select
+              value={elevenLabsApplyTextNormalization}
+              onChange={(e) => { setElevenLabsApplyTextNormalization(e.target.value); markDirty("speech") }}
+              className="flex h-8 w-40 rounded-md border border-input bg-background px-3 py-1 text-xs shadow-sm"
+            >
+              <option value="">{t`Default`}</option>
+              <option value="auto">{t`Auto`}</option>
+              <option value="on">{t`On`}</option>
+              <option value="off">{t`Off`}</option>
+            </select>
+            <p className="text-[11px] text-muted-foreground">
+              {t`Controls whether ElevenLabs expands abbreviations, numbers, and symbols into spoken words (e.g. "N.º" → "Número"). "Auto" lets ElevenLabs decide per request; "On" always normalizes; "Off" reads the text as written, which is safer for codes, IDs, or text that shouldn't be expanded.`}
+            </p>
+            {/* The v2.5 models disable normalization by default for latency and
+                only allow enabling it on an Enterprise plan, so warn before the
+                run fails with a 400. */}
+            {normalizationNeedsEnterprise && (
+              <p className="text-[11px] text-amber-600 dark:text-amber-500">
+                {t`Turning normalization on with ${elevenLabsModel} requires an ElevenLabs Enterprise plan. Use "Off", or switch to eleven_multilingual_v2 — it normalizes numbers better anyway.`}
+              </p>
+            )}
+          </div>
+
+          <ElevenLabsVoiceTuning
+            stability={elevenLabsStability} setStability={setElevenLabsStability}
+            similarityBoost={elevenLabsSimilarityBoost} setSimilarityBoost={setElevenLabsSimilarityBoost}
+            style={elevenLabsStyle} setStyle={setElevenLabsStyle}
+            useSpeakerBoost={elevenLabsUseSpeakerBoost} setUseSpeakerBoost={setElevenLabsUseSpeakerBoost}
+            speed={elevenLabsSpeed} setSpeed={setElevenLabsSpeed}
+            markDirty={markDirty}
+          />
+        </div>
+      )}
     </div>
   )
 }

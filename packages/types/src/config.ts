@@ -14,6 +14,32 @@ export const DEFAULT_ELEVENLABS_TTS_MODEL_ID = "eleven_multilingual_v2"
 // configured for the elevenlabs provider.
 export const DEFAULT_ELEVENLABS_VOICE_ID = "21m00Tcm4TlvDq8ikWAM"
 
+/**
+ * Narration-oriented ElevenLabs `voice_settings` defaults, matching ElevenLabs'
+ * own audiobook/narration recommendation.
+ *
+ * These are not cosmetic. ElevenLabs treats `voice_settings` as "voice settings
+ * overriding stored settings for the given voice", so when the field is absent
+ * the voice's own stored dashboard settings apply — arbitrary for community and
+ * cloned voices. ElevenLabs documents that a non-zero `style` "can lead to
+ * instability, including inconsistent speed, mispronunciation and the addition
+ * of extra sounds", and that low `stability` broadens emotional range at the
+ * cost of hallucinations. In practice that surfaces as filler sounds ("ehm",
+ * "uh") the source text never contained, so we always send a resolved block.
+ *
+ * Lives here (rather than beside the synthesizer) because the Studio also needs
+ * the numbers, to show what applies when a book overrides nothing.
+ *
+ * `speed` deliberately has no default: it is only sent when explicitly set, so
+ * an unset value leaves ElevenLabs' own pacing alone rather than pinning it.
+ */
+export const DEFAULT_ELEVENLABS_VOICE_SETTINGS = {
+  stability: 0.7,
+  similarity_boost: 0.5,
+  style: 0,
+  use_speaker_boost: true,
+} as const
+
 export const LLMModelId = z
   .string()
   .trim()

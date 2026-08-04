@@ -90,6 +90,10 @@ msgstr "{0, plural, one {# faqe} other {# faqe}}"
 msgid "{0} — type country or Enter for base"
 msgstr "{0} — shkruani vendin ose Enter për bazë"
 
+#. placeholder {0}: String(defaultValue ?? min)
+msgid "{0} (default)"
+msgstr "{0} (parazgjedhje)"
+
 #. placeholder {0}: tab.label
 msgid "{0} (unsaved changes)"
 msgstr "{0} (ndryshime të paruajtura)"
@@ -901,6 +905,9 @@ msgstr "Shto një çelës API në cilësimet e Librit për të ekzekutuar përkt
 msgid "Add an API key to re-run"
 msgstr "Shto një çelës API për të ri-ekzekutuar"
 
+msgid "Add an ElevenLabs API key in Settings to pick voices by name."
+msgstr "Shtoni një kyç API të ElevenLabs në Cilësimet për të zgjedhur zërat sipas emrit."
+
 msgid "Add at least one output language to run translation."
 msgstr "Shto të paktën një gjuhë dalëse për të ekzekutuar përkthimin."
 
@@ -1258,6 +1265,9 @@ msgstr "Mes yjeve"
 msgid "Amount"
 msgstr "Sasia"
 
+msgid "Amplifies the speaker's style. ElevenLabs recommends leaving this at 0 — raising it can cause inconsistent speed, mispronunciation, and extra sounds."
+msgstr "Përforcon stilin e folësit. ElevenLabs rekomandon ta lini në 0 — rritja e tij mund të shkaktojë shpejtësi të papërputhshme, shqiptim të gabuar dhe tinguj shtesë."
+
 msgid "An activity that does not fit the standard categories."
 msgstr "Një aktivitet që nuk i përshtatet kategorive standarde."
 
@@ -1366,6 +1376,12 @@ msgstr "Shfaqet në faqet {0}"
 
 msgid "Application Programming Interface — a set of rules that allows programs to communicate."
 msgstr "Ndërfaqe Programimi Aplikacioni — një grup rregullash që lejon programet të komunikojnë."
+
+msgid "Applies to every language routed to ElevenLabs."
+msgstr "Zbatohet për çdo gjuhë të drejtuar në ElevenLabs."
+
+msgid "Applies to every language routed to Gemini."
+msgstr "Zbatohet për çdo gjuhë të drejtuar në Gemini."
 
 msgid "Apply"
 msgstr "Apliko"
@@ -1714,6 +1730,9 @@ msgstr "Rigjenerimi i përmbledhjes së librit në radhë"
 
 msgid "Book title"
 msgstr "Titulli i librit"
+
+msgid "Boosts similarity to the original speaker, at some cost in latency."
+msgstr "Përforcon ngjashmërinë me folësin origjinal, me një kosto të vogël në vonesë."
 
 msgid "Borders"
 msgstr "Kufij"
@@ -2639,6 +2658,9 @@ msgstr "Ofruesi parazgjedhës"
 msgid "Default Render Strategy"
 msgstr "Strategjia parazgjedhëse e renderimit"
 
+msgid "Default voice"
+msgstr "Zëri i parazgjedhur"
+
 msgid "Default Voice"
 msgstr "Zëri parazgjedhës"
 
@@ -2685,6 +2707,9 @@ msgstr "Kaloi në N/A derisa kjo sesion rishikuesi të ketë një gjuhë të zgj
 
 msgid "Defaults"
 msgstr "Parazgjedhjet"
+
+msgid "Defaults follow ElevenLabs' own narration recommendation. Lowering stability or raising style makes delivery more expressive, but also makes ElevenLabs more likely to add sounds that aren't in the text — such as filled pauses like \"ehm\". Changing any of these regenerates ElevenLabs audio on the next run."
+msgstr "Vlerat e parazgjedhura ndjekin rekomandimin e ElevenLabs për narracion. Ulja e stabilitetit ose rritja e stilit e bën leximin më shprehës, por rrit edhe gjasat që ElevenLabs të shtojë tinguj që nuk janë në tekst — si pauza të mbushura të tipit \"ehm\". Ndryshimi i secilit prej tyre rigjeneron audion e ElevenLabs në ekzekutimin e ardhshëm."
 
 msgid "Define chat messages"
 msgstr "Përcakto mesazhet e chat-it"
@@ -3202,11 +3227,14 @@ msgstr "Çelësi API i ElevenLabs"
 msgid "ElevenLabs API Key"
 msgstr "Çelësi API i ElevenLabs"
 
+msgid "ElevenLabs settings"
+msgstr "Cilësimet e ElevenLabs"
+
 msgid "ElevenLabs Voice"
 msgstr "Zëri i ElevenLabs"
 
-msgid "ElevenLabs voice continuity"
-msgstr "Vazhdimësia e zërit të ElevenLabs"
+#~ msgid "ElevenLabs voice continuity"
+#~ msgstr "Vazhdimësia e zërit të ElevenLabs"
 
 msgid "emoji"
 msgstr "emoji"
@@ -3781,8 +3809,11 @@ msgstr "Çelësi API i Gemini është i nevojshëm për të gjeneruar audio."
 msgid "Gemini generates each sentence in its own request, so its tone can drift between sentences. Set a lower temperature (e.g. 0.4) to reduce that variation and a fixed seed to make delivery reproducible; leave both empty to disable them and use Gemini's own defaults. Only affects languages routed to Gemini — OpenAI and Azure ignore these. Changing either value regenerates Gemini audio on the next run."
 msgstr "Gemini e gjeneron çdo fjali në kërkesën e vet, prandaj toni mund të ndryshojë nga një fjali te tjetra. Vendos një temperaturë më të ulët (p.sh. 0.4) për ta zvogëluar këtë variacion dhe një farë të fiksuar për ta bërë leximin të riprodhueshëm; lëri të dyja bosh për t'i çaktivizuar dhe për të përdorur vlerat e paracaktuara të Gemini-t. Prek vetëm gjuhët e drejtuara te Gemini — OpenAI dhe Azure i shpërfillin. Ndryshimi i secilës vlerë e rigjeneron audion e Gemini në ekzekutimin e ardhshëm."
 
-msgid "Gemini page batching"
-msgstr "Grumbullimi i faqeve në Gemini"
+#~ msgid "Gemini page batching"
+#~ msgstr "Grumbullimi i faqeve në Gemini"
+
+msgid "Gemini settings"
+msgstr "Cilësimet e Gemini"
 
 msgid "Gemini Voice"
 msgstr "Zëri Gemini"
@@ -4080,6 +4111,9 @@ msgstr "I lartë"
 msgid "High-fidelity, expressive voices with fine-grained cloning support."
 msgstr "Zèra shprehës me cilësi të lartë me mbështetje për klonim zëri të detajuar."
 
+msgid "Higher keeps tone consistent across sentences. Lower widens emotional range at the cost of hallucinated sounds."
+msgstr "Një vlerë më e lartë mban tonin të njëtrajtshëm ndërmjet fjalive. Një vlerë më e ulët zgjeron gamën emocionale me kosto tingujt e halucinuar."
+
 msgid "Higher values filter out simple or blank images."
 msgstr "Vlerat më të larta filtrojnë imazhet e thjeshta ose bosh."
 
@@ -4127,6 +4161,9 @@ msgstr "Si funksionojnë titujt"
 
 msgid "How closely should the visual review match the original page? The reviewer rejects renderings that don't pass — stricter settings cause more rejections and rerenders."
 msgstr "Sa ngushtë duhet të përputhet rishikimi vizual me faqen origjinale? Rishikuesi hedh poshtë renderimet që nuk kalojnë — cilësimet më strikte shkaktojnë më shumë hedhje poshtë dhe rirendime."
+
+msgid "How closely to match the original voice recording. Lower it if you hear audio artifacts."
+msgstr "Sa afër duhet të jetë me regjistrimin origjinal të zërit. Ulni vlerën nëse dëgjoni defekte audio."
 
 msgid "How Easy Read works"
 msgstr "Si funksionon Easy Read"
@@ -4630,6 +4667,9 @@ msgstr "Lëre bosh për të përdorur gjuhën e librit."
 
 msgid "Leave setup"
 msgstr "Dil nga konfigurimi"
+
+msgid "Leave unset to keep ElevenLabs' own pacing. Extreme values reduce quality."
+msgstr "Lëreni të papërcaktuar për të ruajtur ritmin e vetë ElevenLabs. Vlerat ekstreme ulin cilësinë."
 
 msgid "Leave without finishing?"
 msgstr "Dil pa përfunduar?"
@@ -5700,6 +5740,9 @@ msgstr "Nuk ka përkthime të dukshme për të rishikuar."
 
 msgid "No voice mappings configured."
 msgstr "Nuk ka vendosje zëri të konfiguruara."
+
+msgid "No voices found"
+msgstr "Nuk u gjet asnjë zë"
 
 msgid "Nodes"
 msgstr "Nyje"
@@ -7619,6 +7662,9 @@ msgstr "Kërko terma ose përkufizime…"
 #~ msgid "Search versions…"
 #~ msgstr "Kërko versione…"
 
+msgid "Search voices"
+msgstr "Kërko zëra"
+
 msgid "Search..."
 msgstr "Kërko..."
 
@@ -8028,6 +8074,9 @@ msgstr "Mbivendosje videosh të gjuhës së shenjave për çdo faqe"
 msgid "Sign language videos provide access for deaf and hard of hearing readers who may not be fluent in written language."
 msgstr "Videot e gjuhës së shenjave ofrojnë qasje për lexuesit shurdhamutë dhe me dëgjim të kufizuar, të cilët mund të mos jenë të rrjedhshëm në gjuhën e shkruar."
 
+msgid "Similarity"
+msgstr "Ngjashmëria"
+
 msgid "Simplified Easy Read text variants."
 msgstr "Variante të thjeshtuara të tekstit Easy Read."
 
@@ -8152,6 +8201,9 @@ msgstr "Hapësirëzimi"
 msgid "Spanish"
 msgstr "Spanjisht"
 
+msgid "Speaker boost"
+msgstr "Përforcimi i folësit"
+
 msgid "Specialized workflows"
 msgstr "Flukse pune të specializuara"
 
@@ -8178,6 +8230,9 @@ msgstr "Prompte të të Folurit"
 
 msgid "Speech Settings"
 msgstr "Cilësimet e të Folurit"
+
+msgid "Speed"
+msgstr "Shpejtësia"
 
 msgid "Split"
 msgstr "Ndaj"
@@ -8245,6 +8300,9 @@ msgstr "Vetëm faqe të përbashkëta"
 
 msgid "Sprinkling some digital fairy dust..."
 msgstr "Duke spërkatur pak pluhur magjik dixhital..."
+
+msgid "Stability"
+msgstr "Stabiliteti"
 
 msgid "Stable"
 msgstr "Stabil"
@@ -8386,6 +8444,9 @@ msgstr "Stili"
 msgid "Style editing coming soon"
 msgstr "Redaktimi i stilit së shpejti"
 
+msgid "Style exaggeration"
+msgstr "Theksimi i stilit"
+
 msgid "Style guidance"
 msgstr "Udhëzime për stilin"
 
@@ -8470,8 +8531,11 @@ msgstr "Ndryshimi i prezantimit dështoi"
 msgid "Symbiosis"
 msgstr "Simbiozë"
 
-msgid "Synthesize each page's text in a single Gemini request so tone flows naturally across sentences, then split the audio back into per-sentence clips. Needs an OpenAI key (used to align the split). Gemini-routed languages only; Chinese and Thai remain per-entry."
-msgstr "E sintetizon tekstin e çdo faqeje në një kërkesë të vetme të Gemini-t që toni të rrjedhë natyrshëm nëpër fjali, pastaj e ndan audion sërish në klipe për çdo fjali. Kërkon një çelës të OpenAI-t (përdoret për të përafruar ndarjen). Vetëm për gjuhët e drejtuara te Gemini; kinezishtja dhe tajlandishtja mbeten për çdo hyrje veçmas."
+msgid "Synthesize each page's text in a single Gemini request so tone flows naturally across sentences, then split the audio back into per-sentence clips. Needs an OpenAI key (used to align the split). Chinese and Thai remain per-entry."
+msgstr "Sintetizon tekstin e çdo faqeje në një kërkesë të vetme Gemini, që toni të rrjedhë natyrshëm ndërmjet fjalive, dhe më pas e ndan audion në klipe sipas fjalisë. Kërkon një kyç OpenAI (përdorur për të përafruar ndarjen). Kinezishtja dhe tajlandishtja mbeten sipas njësisë."
+
+#~ msgid "Synthesize each page's text in a single Gemini request so tone flows naturally across sentences, then split the audio back into per-sentence clips. Needs an OpenAI key (used to align the split). Gemini-routed languages only; Chinese and Thai remain per-entry."
+#~ msgstr "E sintetizon tekstin e çdo faqeje në një kërkesë të vetme të Gemini-t që toni të rrjedhë natyrshëm nëpër fjali, pastaj e ndan audion sërish në klipe për çdo fjali. Kërkon një çelës të OpenAI-t (përdoret për të përafruar ndarjen). Vetëm për gjuhët e drejtuara te Gemini; kinezishtja dhe tajlandishtja mbeten për çdo hyrje veçmas."
 
 msgid "Synthesizes narration audio for each page."
 msgstr "Sintetizon audion e rrëfimit për çdo faqe."
@@ -9038,6 +9102,9 @@ msgstr "Ky tekst perceptohet vetëm nga teknologjitë ndihmëse."
 msgid "This version is empty."
 msgstr "Ky version është bosh."
 
+msgid "This voice ID is not in your ElevenLabs account."
+msgstr "Kjo ID zëri nuk është në llogarinë tuaj ElevenLabs."
+
 #~ msgid "This week"
 #~ msgstr "Këtë javë"
 
@@ -9256,6 +9323,9 @@ msgstr "Ktheje çdo PDF në një libër plotësisht të aksesueshëm — audio, 
 
 msgid "Turn this on to show the Validation review card in Preview and the Reviewer Validation tab in the Validation step."
 msgstr "Aktivizo këtë për të shfaqur kartën e rishikimit të Validimit në Paraparimim dhe skedën e Validimit të Rishikuesit në hapin e Validimit."
+
+msgid "Turning normalization on with {elevenLabsModel} requires an ElevenLabs Enterprise plan. Use \"Off\", or switch to eleven_multilingual_v2 — it normalizes numbers better anyway."
+msgstr "Aktivizimi i normalizimit me {elevenLabsModel} kërkon një plan Enterprise të ElevenLabs. Përdorni \"Off\", ose kaloni në eleven_multilingual_v2 — ai gjithsesi normalizon numrat më mirë."
 
 msgid "Two authentication methods are supported: Bearer tokens passed in the Authorization header, and API keys passed as a query parameter. Bearer tokens are preferred for server-to-server requests due to their short expiry window."
 msgstr "Mbështeten dy metoda autentikimi: tokenët Bearer të kaluar në kokën Authorization dhe çelësat API të kaluar si parametër pyetjeje. Tokenët Bearer preferohen për kërkesat server-te-server për shkak të dritares së tyre të shkurtër të skadimit."
@@ -9712,6 +9782,9 @@ msgstr "Zë"
 
 msgid "Voice Mappings"
 msgstr "Hartëzime zërash"
+
+msgid "Voice tuning (advanced)"
+msgstr "Rregullimi i zërit (i avancuar)"
 
 msgid "Voices"
 msgstr "Zëra"

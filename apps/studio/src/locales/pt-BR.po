@@ -89,6 +89,10 @@ msgstr "{0, plural, one {# página} other {# páginas}}"
 msgid "{0} — type country or Enter for base"
 msgstr "{0} — digite o país ou pressione Enter para o padrão"
 
+#. placeholder {0}: String(defaultValue ?? min)
+msgid "{0} (default)"
+msgstr "{0} (padrão)"
+
 #. placeholder {0}: tab.label
 msgid "{0} (unsaved changes)"
 msgstr "{0} (alterações não salvas)"
@@ -900,6 +904,9 @@ msgstr "Adicione uma chave de API nas configurações do Livro para executar tra
 msgid "Add an API key to re-run"
 msgstr "Adicione uma chave de API para reexecutar"
 
+msgid "Add an ElevenLabs API key in Settings to pick voices by name."
+msgstr "Adicione uma chave de API do ElevenLabs em Configurações para escolher vozes por nome."
+
 msgid "Add at least one output language to run translation."
 msgstr "Adicione pelo menos um idioma de saída para executar tradução."
 
@@ -1257,6 +1264,9 @@ msgstr "Entre as Estrelas"
 msgid "Amount"
 msgstr "Quantidade"
 
+msgid "Amplifies the speaker's style. ElevenLabs recommends leaving this at 0 — raising it can cause inconsistent speed, mispronunciation, and extra sounds."
+msgstr "Amplifica o estilo do locutor. O ElevenLabs recomenda deixar em 0: aumentar pode causar velocidade inconsistente, pronúncia incorreta e sons extras."
+
 msgid "An activity that does not fit the standard categories."
 msgstr "Uma atividade que não se enquadra nas categorias padrão."
 
@@ -1365,6 +1375,12 @@ msgstr "Aparece nas páginas {0}"
 
 msgid "Application Programming Interface — a set of rules that allows programs to communicate."
 msgstr "Interface de programação de aplicativos (API) — conjunto de regras que permite que programas se comuniquem."
+
+msgid "Applies to every language routed to ElevenLabs."
+msgstr "Aplica-se a todos os idiomas direcionados ao ElevenLabs."
+
+msgid "Applies to every language routed to Gemini."
+msgstr "Aplica-se a todos os idiomas direcionados ao Gemini."
 
 msgid "Apply"
 msgstr "Aplicar"
@@ -1713,6 +1729,9 @@ msgstr "Regeneração do resumo do livro na fila"
 
 msgid "Book title"
 msgstr "Título do livro"
+
+msgid "Boosts similarity to the original speaker, at some cost in latency."
+msgstr "Aumenta a semelhança com o locutor original, com algum custo em latência."
 
 msgid "Borders"
 msgstr "Bordas"
@@ -2638,6 +2657,9 @@ msgstr "Provedor padrão"
 msgid "Default Render Strategy"
 msgstr "Estratégia de renderização padrão"
 
+msgid "Default voice"
+msgstr "Voz padrão"
+
 msgid "Default Voice"
 msgstr "Voz padrão"
 
@@ -2684,6 +2706,9 @@ msgstr "Defaulted to N/A until this reviewer session has a language selected."
 
 msgid "Defaults"
 msgstr "Padrões"
+
+msgid "Defaults follow ElevenLabs' own narration recommendation. Lowering stability or raising style makes delivery more expressive, but also makes ElevenLabs more likely to add sounds that aren't in the text — such as filled pauses like \"ehm\". Changing any of these regenerates ElevenLabs audio on the next run."
+msgstr "Os padrões seguem a recomendação de narração do próprio ElevenLabs. Reduzir a estabilidade ou aumentar o estilo torna a locução mais expressiva, mas também aumenta a chance de o ElevenLabs adicionar sons que não estão no texto, como pausas preenchidas do tipo \"ehm\". Alterar qualquer um desses valores regenera o áudio do ElevenLabs na próxima execução."
 
 msgid "Define chat messages"
 msgstr "Definir mensagens de chat"
@@ -3201,11 +3226,14 @@ msgstr "Chave de API do ElevenLabs"
 msgid "ElevenLabs API Key"
 msgstr "Chave de API do ElevenLabs"
 
+msgid "ElevenLabs settings"
+msgstr "Configurações do ElevenLabs"
+
 msgid "ElevenLabs Voice"
 msgstr "Voz do ElevenLabs"
 
-msgid "ElevenLabs voice continuity"
-msgstr "Continuidade de voz do ElevenLabs"
+#~ msgid "ElevenLabs voice continuity"
+#~ msgstr "Continuidade de voz do ElevenLabs"
 
 msgid "emoji"
 msgstr "emoji"
@@ -3780,8 +3808,11 @@ msgstr "É necessária uma chave de API do Gemini para gerar áudio."
 msgid "Gemini generates each sentence in its own request, so its tone can drift between sentences. Set a lower temperature (e.g. 0.4) to reduce that variation and a fixed seed to make delivery reproducible; leave both empty to disable them and use Gemini's own defaults. Only affects languages routed to Gemini — OpenAI and Azure ignore these. Changing either value regenerates Gemini audio on the next run."
 msgstr "O Gemini gera cada frase em sua própria requisição, então o tom pode variar entre as frases. Defina uma temperatura mais baixa (ex.: 0,4) para reduzir essa variação e uma semente fixa para tornar a leitura reproduzível; deixe ambos vazios para desativá-los e usar os valores padrão do Gemini. Afeta apenas os idiomas roteados para o Gemini — o OpenAI e o Azure ignoram esses valores. Alterar qualquer um deles regenera o áudio do Gemini na próxima execução."
 
-msgid "Gemini page batching"
-msgstr "Agrupamento de páginas do Gemini"
+#~ msgid "Gemini page batching"
+#~ msgstr "Agrupamento de páginas do Gemini"
+
+msgid "Gemini settings"
+msgstr "Configurações do Gemini"
 
 msgid "Gemini Voice"
 msgstr "Voz do Gemini"
@@ -4079,6 +4110,9 @@ msgstr "Alto"
 msgid "High-fidelity, expressive voices with fine-grained cloning support."
 msgstr "Vozes expressivas de alta fidelidade com suporte a clonagem de voz detalhada."
 
+msgid "Higher keeps tone consistent across sentences. Lower widens emotional range at the cost of hallucinated sounds."
+msgstr "Um valor alto mantém o tom consistente entre frases. Um valor baixo amplia a faixa emocional ao custo de sons alucinados."
+
 msgid "Higher values filter out simple or blank images."
 msgstr "Valores mais altos filtram imagens simples ou em branco."
 
@@ -4126,6 +4160,9 @@ msgstr "Como funcionam as legendas"
 
 msgid "How closely should the visual review match the original page? The reviewer rejects renderings that don't pass — stricter settings cause more rejections and rerenders."
 msgstr "Quão próximo a revisão visual deve corresponder à página original? O revisor rejeita renderizações que não passam — configurações mais rigorosas causam mais rejeições e rerenderizações."
+
+msgid "How closely to match the original voice recording. Lower it if you hear audio artifacts."
+msgstr "O quanto deve corresponder à gravação de voz original. Reduza se você ouvir artefatos de áudio."
 
 msgid "How Easy Read works"
 msgstr "Como funciona a Leitura Fácil"
@@ -4629,6 +4666,9 @@ msgstr "Deixe vazio para usar o idioma do livro."
 
 msgid "Leave setup"
 msgstr "Sair da configuração"
+
+msgid "Leave unset to keep ElevenLabs' own pacing. Extreme values reduce quality."
+msgstr "Deixe sem definir para manter o ritmo do próprio ElevenLabs. Valores extremos reduzem a qualidade."
 
 msgid "Leave without finishing?"
 msgstr "Sair sem concluir?"
@@ -5699,6 +5739,9 @@ msgstr "Não há traduções visíveis para revisar."
 
 msgid "No voice mappings configured."
 msgstr "Nenhum mapeamento de voz configurado."
+
+msgid "No voices found"
+msgstr "Nenhuma voz encontrada"
 
 msgid "Nodes"
 msgstr "Nodes"
@@ -7618,6 +7661,9 @@ msgstr "Buscar termos ou definições…"
 #~ msgid "Search versions…"
 #~ msgstr "Buscar versões…"
 
+msgid "Search voices"
+msgstr "Pesquisar vozes"
+
 msgid "Search..."
 msgstr "Buscar..."
 
@@ -8027,6 +8073,9 @@ msgstr "Sobreposições de vídeo em língua de sinais para cada página"
 msgid "Sign language videos provide access for deaf and hard of hearing readers who may not be fluent in written language."
 msgstr "Vídeos em língua de sinais oferecem acesso para leitores surdos e com deficiência auditiva que podem não ser fluentes em linguagem escrita."
 
+msgid "Similarity"
+msgstr "Semelhança"
+
 msgid "Simplified Easy Read text variants."
 msgstr "Variantes de texto simplificadas de Leitura Fácil."
 
@@ -8151,6 +8200,9 @@ msgstr "Espaçamento"
 msgid "Spanish"
 msgstr "Espanhol"
 
+msgid "Speaker boost"
+msgstr "Reforço do locutor"
+
 msgid "Specialized workflows"
 msgstr "Fluxos de trabalho especializados"
 
@@ -8177,6 +8229,9 @@ msgstr "Prompts de fala"
 
 msgid "Speech Settings"
 msgstr "Configurações de Fala"
+
+msgid "Speed"
+msgstr "Velocidade"
 
 msgid "Split"
 msgstr "Dividir"
@@ -8244,6 +8299,9 @@ msgstr "Apenas spreads"
 
 msgid "Sprinkling some digital fairy dust..."
 msgstr "Salpicando um pouco de pó mágico digital..."
+
+msgid "Stability"
+msgstr "Estabilidade"
 
 msgid "Stable"
 msgstr "Estável"
@@ -8385,6 +8443,9 @@ msgstr "Estilo"
 msgid "Style editing coming soon"
 msgstr "Edição de estilo em breve"
 
+msgid "Style exaggeration"
+msgstr "Exageração do estilo"
+
 msgid "Style guidance"
 msgstr "Orientação de estilo"
 
@@ -8469,8 +8530,11 @@ msgstr "Falha ao mudar a apresentação"
 msgid "Symbiosis"
 msgstr "Simbiose"
 
-msgid "Synthesize each page's text in a single Gemini request so tone flows naturally across sentences, then split the audio back into per-sentence clips. Needs an OpenAI key (used to align the split). Gemini-routed languages only; Chinese and Thai remain per-entry."
-msgstr "Sintetiza o texto de cada página em uma única requisição do Gemini para que o tom flua naturalmente entre as frases e depois divide o áudio de volta em clipes por frase. Precisa de uma chave da OpenAI (usada para alinhar a divisão). Apenas para idiomas roteados para o Gemini; chinês e tailandês permanecem por entrada."
+msgid "Synthesize each page's text in a single Gemini request so tone flows naturally across sentences, then split the audio back into per-sentence clips. Needs an OpenAI key (used to align the split). Chinese and Thai remain per-entry."
+msgstr "Sintetiza o texto de cada página em uma única solicitação ao Gemini para que o tom flua naturalmente entre as frases e depois divide o áudio em clipes por frase. Requer uma chave da OpenAI (usada para alinhar a divisão). Chinês e tailandês continuam sendo processados por entrada."
+
+#~ msgid "Synthesize each page's text in a single Gemini request so tone flows naturally across sentences, then split the audio back into per-sentence clips. Needs an OpenAI key (used to align the split). Gemini-routed languages only; Chinese and Thai remain per-entry."
+#~ msgstr "Sintetiza o texto de cada página em uma única requisição do Gemini para que o tom flua naturalmente entre as frases e depois divide o áudio de volta em clipes por frase. Precisa de uma chave da OpenAI (usada para alinhar a divisão). Apenas para idiomas roteados para o Gemini; chinês e tailandês permanecem por entrada."
 
 msgid "Synthesizes narration audio for each page."
 msgstr "Sintetiza áudio de narração para cada página."
@@ -9037,6 +9101,9 @@ msgstr "Este texto é perceptível apenas para tecnologias assistivas."
 msgid "This version is empty."
 msgstr "Esta versão está vazia."
 
+msgid "This voice ID is not in your ElevenLabs account."
+msgstr "Este ID de voz não está na sua conta do ElevenLabs."
+
 #~ msgid "This week"
 #~ msgstr "Esta semana"
 
@@ -9255,6 +9322,9 @@ msgstr "Transforme qualquer PDF em um livro totalmente acessível — áudio, tr
 
 msgid "Turn this on to show the Validation review card in Preview and the Reviewer Validation tab in the Validation step."
 msgstr "Turn this on to show the Validation review card in Preview and the Reviewer Validation tab in the Validation step."
+
+msgid "Turning normalization on with {elevenLabsModel} requires an ElevenLabs Enterprise plan. Use \"Off\", or switch to eleven_multilingual_v2 — it normalizes numbers better anyway."
+msgstr "Ativar a normalização com {elevenLabsModel} exige um plano Enterprise do ElevenLabs. Use \"Desativada\" ou mude para eleven_multilingual_v2, que aliás normaliza números melhor."
 
 msgid "Two authentication methods are supported: Bearer tokens passed in the Authorization header, and API keys passed as a query parameter. Bearer tokens are preferred for server-to-server requests due to their short expiry window."
 msgstr "Dois métodos de autenticação são suportados: tokens Bearer passados no cabeçalho de autorização e chaves de API passadas como um parâmetro de consulta. Tokens Bearer são preferidos para solicitações de servidor para servidor devido à sua curta janela de expiração."
@@ -9711,6 +9781,9 @@ msgstr "Voz"
 
 msgid "Voice Mappings"
 msgstr "Mapeamentos de voz"
+
+msgid "Voice tuning (advanced)"
+msgstr "Ajuste de voz (avançado)"
 
 msgid "Voices"
 msgstr "Vozes"

@@ -1,3 +1,5 @@
+import { DEFAULT_ELEVENLABS_VOICE_SETTINGS } from "@adt/types"
+
 /**
  * ElevenLabs `voice_settings` overrides, in our camelCase option naming.
  * Named separately so the pipeline options, the TTS cache key, and the
@@ -40,29 +42,6 @@ export interface SynthesizeSpeechOptions extends ElevenLabsVoiceSettingsOverride
   /** Aborts the in-flight HTTP request (run cancellation). */
   signal?: AbortSignal
 }
-
-/**
- * Narration-oriented ElevenLabs `voice_settings` defaults, matching
- * ElevenLabs' own audiobook/narration recommendation (stability 0.7,
- * similarity_boost 0.5, style 0).
- *
- * These are not cosmetic. ElevenLabs treats `voice_settings` as "voice
- * settings overriding stored settings for the given voice" — so when the field
- * is *absent*, the voice's own stored dashboard settings apply, and for
- * community or cloned voices those are arbitrary. ElevenLabs documents that a
- * non-zero `style` "can lead to instability, including inconsistent speed,
- * mispronunciation and the addition of extra sounds", and that a low
- * `stability` broadens emotional range at the cost of hallucinations. In
- * practice that surfaces as filler sounds ("ehm", "uh") the source text never
- * contained. Sending a resolved block on every request takes that decision
- * away from the voice's stored config.
- */
-export const DEFAULT_ELEVENLABS_VOICE_SETTINGS = {
-  stability: 0.7,
-  similarity_boost: 0.5,
-  style: 0,
-  use_speaker_boost: true,
-} as const
 
 /** The wire shape of ElevenLabs' `voice_settings` request field. */
 export interface ElevenLabsVoiceSettings {
