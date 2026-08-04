@@ -544,6 +544,144 @@ describe("createElevenLabsTTSSynthesizer", () => {
       })
     ).rejects.toThrow(/ElevenLabs TTS request failed \(401\)/)
   })
+
+  // Omitting `voice_settings` hands control to the voice's stored dashboard
+  // settings, which is what let community voices inject filler sounds ("ehm").
+  // The block must be present on every request.
+  it("always sends voice_settings with the narration defaults", async () => {
+    fetchMock.mockResolvedValue(new Response(new Uint8Array([1]), { status: 200 }))
+
+    const synth = createElevenLabsTTSSynthesizer({ apiKey: "el-test" })
+    await synth.synthesize({
+      model: "eleven_multilingual_v2",
+      voice: "21m00Tcm4TlvDq8ikWAM",
+      input: "Hello world",
+      responseFormat: "mp3",
+    })
+
+    const [, init] = fetchMock.mock.calls[0]
+    expect(JSON.parse(String(init?.body)).voice_settings).toEqual({
+      stability: 0.7,
+      similarity_boost: 0.5,
+      style: 0,
+      use_speaker_boost: true,
+    })
+  })
+
+  it("lets explicit voice_settings overrides win over the defaults", async () => {
+    fetchMock.mockResolvedValue(new Response(new Uint8Array([1]), { status: 200 }))
+
+    const synth = createElevenLabsTTSSynthesizer({ apiKey: "el-test" })
+    await synth.synthesize({
+      model: "eleven_multilingual_v2",
+      voice: "21m00Tcm4TlvDq8ikWAM",
+      input: "Hello world",
+      responseFormat: "mp3",
+      elevenLabsStability: 0.2,
+      elevenLabsSimilarityBoost: 0.9,
+      elevenLabsStyle: 0.4,
+      elevenLabsUseSpeakerBoost: false,
+      elevenLabsSpeed: 0.9,
+    })
+
+    const [, init] = fetchMock.mock.calls[0]
+    expect(JSON.parse(String(init?.body)).voice_settings).toEqual({
+      stability: 0.2,
+      similarity_boost: 0.9,
+      style: 0.4,
+      use_speaker_boost: false,
+      speed: 0.9,
+    })
+  })
+
+  // `speed` has no default so an unset value leaves ElevenLabs' own pacing
+  // alone rather than pinning it to 1.0.
+  it("omits speed from voice_settings when it is not set", async () => {
+    fetchMock.mockResolvedValue(new Response(new Uint8Array([1]), { status: 200 }))
+
+    const synth = createElevenLabsTTSSynthesizer({ apiKey: "el-test" })
+    await synth.synthesize({
+      model: "eleven_multilingual_v2",
+      voice: "21m00Tcm4TlvDq8ikWAM",
+      input: "Hello world",
+      responseFormat: "mp3",
+      elevenLabsStability: 0.8,
+    })
+
+    const [, init] = fetchMock.mock.calls[0]
+    const settings = JSON.parse(String(init?.body)).voice_settings
+    expect(settings.stability).toBe(0.8)
+    expect(settings.speed).toBeUndefined()
+  })
+
+  // Falling back to mp3 for an unsupported format would write mp3 bytes into a
+  // file whose extension came from the same `format` value (e.g. `.ogg`).
+  it("throws instead of silently falling back to mp3 for an unsupported format", async () => {
+    const synth = createElevenLabsTTSSynthesizer({ apiKey: "el-test" })
+
+    await expect(
+      synth.synthesize({
+        model: "eleven_multilingual_v2",
+        voice: "21m00Tcm4TlvDq8ikWAM",
+        input: "Hello world",
+        responseFormat: "ogg",
+      })
+    ).rejects.toThrow(/does not support the "ogg" audio format/)
+    expect(fetchMock).not.toHaveBeenCalled()
+  })
+
+  it("still accepts mp3 after the unsupported-format guard", async () => {
+    fetchMock.mockResolvedValue(new Response(new Uint8Array([1]), { status: 200 }))
+
+    const synth = createElevenLabsTTSSynthesizer({ apiKey: "el-test" }, { sampleRate: 22050 })
+    await synth.synthesize({
+      model: "eleven_multilingual_v2",
+      voice: "21m00Tcm4TlvDq8ikWAM",
+      input: "Hello world",
+      responseFormat: "mp3",
+    })
+
+    const [url] = fetchMock.mock.calls[0]
+    expect(url).toContain("output_format=mp3_22050_32")
+  })
+
+  it("explains the Enterprise requirement when v2.5 rejects text normalization", async () => {
+    fetchMock.mockResolvedValue(
+      new Response("apply_text_normalization is not supported for this model", {
+        status: 400,
+        statusText: "Bad Request",
+      })
+    )
+
+    const synth = createElevenLabsTTSSynthesizer({ apiKey: "el-test" })
+
+    await expect(
+      synth.synthesize({
+        model: "eleven_flash_v2_5",
+        voice: "21m00Tcm4TlvDq8ikWAM",
+        input: "Hello world",
+        responseFormat: "mp3",
+        elevenLabsApplyTextNormalization: "on",
+      })
+    ).rejects.toThrow(/requires an ElevenLabs Enterprise plan/)
+  })
+
+  it("does not add the Enterprise hint for unrelated 400s", async () => {
+    fetchMock.mockResolvedValue(
+      new Response("voice_not_found", { status: 400, statusText: "Bad Request" })
+    )
+
+    const synth = createElevenLabsTTSSynthesizer({ apiKey: "el-test" })
+
+    await expect(
+      synth.synthesize({
+        model: "eleven_multilingual_v2",
+        voice: "missing-voice",
+        input: "Hello world",
+        responseFormat: "mp3",
+      })
+    ).rejects.toThrow(/^ElevenLabs TTS request failed \(400\): voice_not_found$/)
+  })
 })
 
 describe("transcribeWithWhisper", () => {

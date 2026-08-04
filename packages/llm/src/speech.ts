@@ -1,4 +1,18 @@
-export interface SynthesizeSpeechOptions {
+/**
+ * ElevenLabs `voice_settings` overrides, in our camelCase option naming.
+ * Named separately so the pipeline options, the TTS cache key, and the
+ * config→options mapping can all share one field list instead of restating
+ * five fields each.
+ */
+export interface ElevenLabsVoiceSettingsOverrides {
+  elevenLabsStability?: number
+  elevenLabsSimilarityBoost?: number
+  elevenLabsStyle?: number
+  elevenLabsUseSpeakerBoost?: boolean
+  elevenLabsSpeed?: number
+}
+
+export interface SynthesizeSpeechOptions extends ElevenLabsVoiceSettingsOverrides {
   model: string
   voice: string
   input: string
@@ -25,6 +39,63 @@ export interface SynthesizeSpeechOptions {
   elevenLabsApplyTextNormalization?: "auto" | "on" | "off"
   /** Aborts the in-flight HTTP request (run cancellation). */
   signal?: AbortSignal
+}
+
+/**
+ * Narration-oriented ElevenLabs `voice_settings` defaults, matching
+ * ElevenLabs' own audiobook/narration recommendation (stability 0.7,
+ * similarity_boost 0.5, style 0).
+ *
+ * These are not cosmetic. ElevenLabs treats `voice_settings` as "voice
+ * settings overriding stored settings for the given voice" — so when the field
+ * is *absent*, the voice's own stored dashboard settings apply, and for
+ * community or cloned voices those are arbitrary. ElevenLabs documents that a
+ * non-zero `style` "can lead to instability, including inconsistent speed,
+ * mispronunciation and the addition of extra sounds", and that a low
+ * `stability` broadens emotional range at the cost of hallucinations. In
+ * practice that surfaces as filler sounds ("ehm", "uh") the source text never
+ * contained. Sending a resolved block on every request takes that decision
+ * away from the voice's stored config.
+ */
+export const DEFAULT_ELEVENLABS_VOICE_SETTINGS = {
+  stability: 0.7,
+  similarity_boost: 0.5,
+  style: 0,
+  use_speaker_boost: true,
+} as const
+
+/** The wire shape of ElevenLabs' `voice_settings` request field. */
+export interface ElevenLabsVoiceSettings {
+  stability: number
+  similarity_boost: number
+  style: number
+  use_speaker_boost: boolean
+  speed?: number
+}
+
+/**
+ * Merge {@link DEFAULT_ELEVENLABS_VOICE_SETTINGS} with any explicit overrides.
+ *
+ * Exported because the TTS cache key must hash the *effective* settings, not
+ * just the user's overrides — otherwise changing the defaults in a future
+ * release would silently reuse audio generated under the old ones. The request
+ * body and the cache key must both derive from this one function.
+ *
+ * `speed` is only present when explicitly set, so unset leaves ElevenLabs'
+ * own pacing alone rather than pinning it to 1.0.
+ */
+export function resolveElevenLabsVoiceSettings(
+  options: ElevenLabsVoiceSettingsOverrides
+): ElevenLabsVoiceSettings {
+  return {
+    stability: options.elevenLabsStability ?? DEFAULT_ELEVENLABS_VOICE_SETTINGS.stability,
+    similarity_boost:
+      options.elevenLabsSimilarityBoost ?? DEFAULT_ELEVENLABS_VOICE_SETTINGS.similarity_boost,
+    style: options.elevenLabsStyle ?? DEFAULT_ELEVENLABS_VOICE_SETTINGS.style,
+    use_speaker_boost:
+      options.elevenLabsUseSpeakerBoost ?? DEFAULT_ELEVENLABS_VOICE_SETTINGS.use_speaker_boost,
+    ...(options.elevenLabsSpeed !== undefined ? { speed: options.elevenLabsSpeed } : {}),
+  }
 }
 
 export interface TTSSynthesizer {
@@ -549,6 +620,13 @@ export function createGeminiTTSSynthesizer(
  * has no native "wav" format, so wav/pcm requests ask for raw PCM at the
  * resolved sample rate and get wrapped as WAV locally (mirrors the Gemini
  * handling). Unset `audioOptions` reproduce the previous hardcoded defaults.
+ *
+ * Throws on anything else. The caller derives the audio file's *extension*
+ * from the same `format` value, so silently falling back to mp3 here would
+ * write mp3 bytes into e.g. a `.ogg` file — a corrupt bundle that only shows
+ * up at playback time. `resolveSpeechFormat` passes `speech.format` through
+ * unvalidated for every non-Gemini provider, so this is the only place that
+ * knows the supported set.
  */
 function buildElevenLabsOutputFormat(
   format: string,
@@ -566,6 +644,11 @@ function buildElevenLabsOutputFormat(
   if (normalized === "wav" || normalized === "pcm") {
     return `pcm_${resolveElevenLabsPcmSampleRate(audioOptions?.sampleRate)}`
   }
+  if (normalized !== "mp3") {
+    throw new Error(
+      `ElevenLabs TTS does not support the "${format}" audio format (supported: mp3, opus, wav, pcm)`
+    )
+  }
 
   const sampleRate = audioOptions?.sampleRate !== undefined
     ? nearestValue(ELEVENLABS_MP3_SAMPLE_RATES, audioOptions.sampleRate)
@@ -576,6 +659,39 @@ function buildElevenLabsOutputFormat(
     ? nearestValue(allowedBitrates, requestedKbps)
     : defaultBitrate
   return `mp3_${sampleRate}_${bitrate}`
+}
+
+/** ElevenLabs models whose text normalization is gated behind an Enterprise
+ *  plan — the v2.5 family disables it by default to keep latency low. */
+const ELEVENLABS_ENTERPRISE_NORMALIZATION_MODELS = new Set([
+  "eleven_turbo_v2_5",
+  "eleven_flash_v2_5",
+])
+
+/**
+ * Append an actionable hint to an upstream ElevenLabs error when we can infer
+ * the cause from the request we sent. Without this, "request failed (400)" plus
+ * a terse upstream body reads as a generic outage rather than a config problem
+ * the user can fix.
+ */
+function elevenLabsErrorHint(
+  status: number,
+  message: string,
+  options: SynthesizeSpeechOptions
+): string {
+  if (
+    status === 400 &&
+    options.elevenLabsApplyTextNormalization &&
+    options.elevenLabsApplyTextNormalization !== "off" &&
+    ELEVENLABS_ENTERPRISE_NORMALIZATION_MODELS.has(options.model) &&
+    /normalization/i.test(message)
+  ) {
+    return (
+      ` — text normalization on ${options.model} requires an ElevenLabs Enterprise plan.` +
+      ` Set Text Normalization to "Off", or switch to eleven_multilingual_v2, which normalizes numbers better anyway.`
+    )
+  }
+  return ""
 }
 
 /**
@@ -608,6 +724,10 @@ export function createElevenLabsTTSSynthesizer(
         body: JSON.stringify({
           text: options.input,
           model_id: options.model,
+          // Always sent — an absent `voice_settings` hands control to the
+          // voice's stored dashboard settings, which is what lets community
+          // voices inject filler sounds. See resolveElevenLabsVoiceSettings.
+          voice_settings: resolveElevenLabsVoiceSettings(options),
           ...(options.elevenLabsPreviousText
             ? { previous_text: options.elevenLabsPreviousText }
             : {}),
@@ -623,7 +743,8 @@ export function createElevenLabsTTSSynthesizer(
       if (!response.ok) {
         const message = await response.text()
         throw new Error(
-          `ElevenLabs TTS request failed (${response.status}): ${message || response.statusText}`
+          `ElevenLabs TTS request failed (${response.status}): ${message || response.statusText}` +
+            elevenLabsErrorHint(response.status, message, options)
         )
       }
 
