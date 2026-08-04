@@ -196,6 +196,16 @@ export interface AzureCredentials {
   region: string
 }
 
+/** An ElevenLabs voice as surfaced by `GET /speech-config/elevenlabs-voices`
+ *  (a trimmed projection of ElevenLabs' own `/v2/voices` payload). */
+export interface ElevenLabsVoice {
+  voice_id: string
+  name?: string
+  category?: string
+  labels?: Record<string, string>
+  verified_languages?: Array<{ language?: string; accent?: string }>
+}
+
 export interface StageRunProviderCredentials {
   anthropicApiKey?: string
   googleApiKey?: string
@@ -1842,6 +1852,14 @@ export const api = {
     request<Record<string, Record<string, string>>>("/speech-config/voices", {
       method: "PUT",
       body: JSON.stringify(data),
+    }),
+
+  /** Human-readable names for the opaque ElevenLabs voice IDs in voices.yaml.
+   *  Returns an empty list (not an error) when no ElevenLabs key is set, so the
+   *  voice picker can fall back to a free-text input. */
+  getElevenLabsVoices: (elevenLabsApiKey?: string) =>
+    request<{ voices: ElevenLabsVoice[] }>("/speech-config/elevenlabs-voices", {
+      headers: elevenLabsApiKey ? { "X-ElevenLabs-API-Key": elevenLabsApiKey } : {},
     }),
 
   prepareExport: (

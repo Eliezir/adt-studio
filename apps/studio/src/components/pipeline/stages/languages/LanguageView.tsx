@@ -38,6 +38,10 @@ import {
 } from "./lib/catalog-entries";
 import { displayLang } from "./lib/display-lang";
 import { PROVIDER_LABELS } from "./lib/provider-labels"
+import {
+  formatElevenLabsVoiceLabel,
+  useElevenLabsVoices,
+} from "@/hooks/use-elevenlabs-voices"
 import { ImageLightbox } from "./components/ImageLightbox";
 import { WordHighlightPreview } from "./components/WordHighlightPreview";
 import { usePendingChanges } from "../../components/change-summary";
@@ -296,6 +300,12 @@ export function LanguageView({
     customBaseUrl,
     customApiKey,
   } = useApiKey();
+  // Resolve opaque ElevenLabs voice IDs to names for the speech summary chip.
+  const { getVoice: getElevenLabsVoice } = useElevenLabsVoices();
+  const describeElevenLabsVoice = (voiceId: string): string => {
+    const voice = getElevenLabsVoice(voiceId);
+    return voice ? formatElevenLabsVoiceLabel(voice) : voiceId;
+  };
   const translateState = stageState("translate");
   const speechState = stageState("speech");
   const activeState = isSpeechStage ? speechState : translateState;
@@ -1624,7 +1634,11 @@ export function LanguageView({
                   <p className="text-sm mt-0.5">
                     <span>{PROVIDER_LABELS[speechSummary.provider] ?? speechSummary.provider}</span>
                     {" · "}
-                    {speechSummary.voice}
+                    {/* ElevenLabs voices are opaque IDs — resolve to a name
+                        when the account's voice list is available. */}
+                    {speechSummary.provider === "elevenlabs"
+                      ? describeElevenLabsVoice(speechSummary.voice)
+                      : speechSummary.voice}
                     {" · "}
                     <span className="text-muted-foreground">
                       {speechSummary.model}

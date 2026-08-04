@@ -14,6 +14,7 @@ import { useRegisterDirtyTabs } from "@/hooks/use-settings-dirty-tabs"
 import { useBookRun } from "@/hooks/use-book-run"
 import { useApiKey } from "@/hooks/use-api-key"
 import { useLingui } from "@lingui/react/macro"
+import { ElevenLabsVoiceCombobox } from "./ElevenLabsVoiceCombobox"
 
 interface VoiceMappingsEditorProps {
   bookLabel: string
@@ -295,20 +296,28 @@ export function VoiceMappingsEditor({ bookLabel }: VoiceMappingsEditorProps) {
                 </td>
                 {PROVIDER_ORDER.map((key) => (
                   <td key={key} className="px-3 py-1.5">
-                    <Input
-                      value={row[key]}
-                      onChange={(e) => updateRow(i, key, e.target.value)}
-                      className="h-7 text-xs"
-                      placeholder={
-                        key === "openai"
-                          ? t`e.g. alloy`
-                          : key === "azure"
-                            ? t`e.g. en-US-JennyNeural`
-                            : key === "gemini"
-                              ? t`e.g. Kore`
-                              : t`e.g. 21m00Tcm4TlvDq8ikWAM`
-                      }
-                    />
+                    {/* ElevenLabs voices are opaque IDs, so they get a picker
+                        that resolves names. The other providers use readable
+                        names already (alloy, Kore, en-US-JennyNeural). */}
+                    {key === "elevenlabs" ? (
+                      <ElevenLabsVoiceCombobox
+                        value={row[key]}
+                        onChange={(voiceId) => updateRow(i, key, voiceId)}
+                      />
+                    ) : (
+                      <Input
+                        value={row[key]}
+                        onChange={(e) => updateRow(i, key, e.target.value)}
+                        className="h-7 text-xs"
+                        placeholder={
+                          key === "openai"
+                            ? t`e.g. alloy`
+                            : key === "azure"
+                              ? t`e.g. en-US-JennyNeural`
+                              : t`e.g. Kore`
+                        }
+                      />
+                    )}
                   </td>
                 ))}
                 <td className="px-2 py-1.5">
