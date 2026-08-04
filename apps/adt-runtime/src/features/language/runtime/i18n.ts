@@ -127,8 +127,8 @@ interface TocTextParts {
 }
 
 function splitTocText(text: string): TocTextParts | null {
-  const dotted = text.match(/^(.*?)(\.{2,})(\s*)([ivxlcdm]+|\d+)\s*$/i)
-  if (dotted?.[1].trim()) {
+  const dotted = text.match(/^(.*?)(\.(?:\s*\.)+)(\s*)([ivxlcdm]+|\d+)\s*$/i)
+  if (dotted) {
     return {
       title: dotted[1],
       leader: dotted[2],

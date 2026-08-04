@@ -23,6 +23,25 @@ describe("applyTranslationsToDOM", () => {
     expect(row.querySelectorAll(":scope > span")).toHaveLength(3)
   })
 
+  it("keeps spaced dot leaders out of the visible title after translation", () => {
+    document.body.innerHTML = `
+      <section data-section-type="table_of_contents">
+        <div data-id="toc-1" class="flex items-baseline">
+          <span data-toc-title="true">Weather</span>
+          <span data-toc-leader="true" aria-hidden="true" class="border-dotted"><span class="sr-only">. . . . .</span></span>
+          <span data-toc-page-number="true">5</span>
+        </div>
+      </section>
+    `
+
+    applyTranslationsToDOM({ "toc-1": "Clima . . . . . 5" })
+
+    const row = document.querySelector<HTMLElement>('[data-id="toc-1"]')!
+    expect(row.querySelector("[data-toc-title]")?.textContent).toBe("Clima ")
+    expect(row.querySelector("[data-toc-leader] .sr-only")?.textContent).toBe(". . . . .")
+    expect(row.querySelector("[data-toc-page-number]")?.textContent).toBe(" 5")
+  })
+
   it("translates the title while preserving TOC layout when no page number is supplied", () => {
     document.body.innerHTML = `
       <section data-section-type="table_of_contents">

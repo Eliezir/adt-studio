@@ -27,6 +27,68 @@ describe("repairTableOfContentsLayout", () => {
     expect(repaired).toContain(">v</span>")
   })
 
+  it("repairs nested unmarked rows without changing their wrapper hierarchy", () => {
+    const repaired = repairTableOfContentsLayout(
+      '<div data-id="toc-1" class="pl-6 flex"><span>Weather</span><span class="border-dotted"></span><span>5</span></div>',
+      [{ text_id: "toc-1", text_type: "text", text: "Weather........5" }],
+    )
+
+    expect(repaired).toContain('data-id="toc-1" class="pl-6 flex items-baseline w-full min-w-0 gap-0"')
+    expect(repaired).toContain('data-toc-title="true"')
+    expect(repaired).toContain('<span class="sr-only">........</span>')
+    expect(repaired).toContain('data-toc-page-number="true"')
+    expect(tableOfContentsLayoutErrors(repaired, [
+      { text_id: "toc-1", text_type: "text", text: "Weather........5" },
+    ])).toEqual([])
+  })
+
+  it("recognizes and preserves spaced dot leaders", () => {
+    const repaired = repairTableOfContentsLayout(
+      '<div data-id="toc-1" class="flex"><span>Weather</span><span>5</span></div>',
+      [{ text_id: "toc-1", text_type: "text", text: "Weather . . . . . 5" }],
+    )
+
+    expect(repaired).toContain('<span class="sr-only">. . . . .</span>')
+    expect(repaired).toContain('data-toc-page-number="true" class="w-8 sm:w-10 shrink-0 text-right tabular-nums"> 5</span>')
+    expect(tableOfContentsLayoutErrors(repaired, [
+      { text_id: "toc-1", text_type: "text", text: "Weather . . . . . 5" },
+    ])).toEqual([])
+  })
+
+  it("canonicalizes marked rows whose dots remain in the page-number span", () => {
+    const repaired = repairTableOfContentsLayout(
+      '<div data-id="toc-1" class="flex"><span data-toc-title="true">Weather  </span><span data-toc-leader="true" aria-hidden="true" class="border-dotted"></span><span data-toc-page-number="true">. . . . .  5</span></div>',
+      [{ text_id: "toc-1", text_type: "text", text: "Weather . . . . . 5" }],
+    )
+
+    expect(repaired).toContain('<span data-toc-title="true" class="min-w-0 max-w-[82%]">Weather </span>')
+    expect(repaired).toContain('<span class="sr-only">. . . . .</span>')
+    expect(repaired).toContain('data-toc-page-number="true" class="w-8 sm:w-10 shrink-0 text-right tabular-nums"> 5</span>')
+  })
+
+  it("repairs a leader-only leaf that follows a separately extracted title", () => {
+    const repaired = repairTableOfContentsLayout(
+      '<div data-id="toc-1" class="flex"><span data-toc-title="true"></span><span data-toc-leader="true" aria-hidden="true" class="border-dotted"></span><span data-toc-page-number="true">. . . . . 43</span></div>',
+      [{ text_id: "toc-1", text_type: "text", text: ". . . . . 43" }],
+    )
+
+    expect(repaired).toContain('data-toc-title="true" class="min-w-0 max-w-[82%]"></span>')
+    expect(repaired).toContain('<span class="sr-only">. . . . .</span>')
+    expect(repaired).toContain('data-toc-page-number="true" class="w-8 sm:w-10 shrink-0 text-right tabular-nums"> 43</span>')
+  })
+
+  it("is idempotent once a nested row has been repaired", () => {
+    const leaves = [
+      { text_id: "toc-1", text_type: "text", text: "Introduction........vi" },
+    ]
+    const once = repairTableOfContentsLayout(
+      '<div data-id="toc-1" class="flex"><span>Introduction</span><span>vi</span></div>',
+      leaves,
+    )
+
+    expect(repairTableOfContentsLayout(once, leaves)).toBe(once)
+  })
+
   it("repairs every entry on consecutive contents pages", () => {
     const pageThree = repairTableOfContentsLayout(
       '<div class="space-y-1"><div class="flex items-baseline" data-id="p3-a">Acknowledgements v</div><div class="flex items-baseline pl-6" data-id="p3-b">Activity 8: Oral practice 9</div></div>',
@@ -101,7 +163,7 @@ describe("repairTableOfContentsLayout", () => {
 })
 
 describe("tableOfContentsLayoutErrors", () => {
-  it("rejects an unmarked nested row that deterministic string repair cannot rewrite", () => {
+  it("rejects an unmarked nested row before repair", () => {
     const html = '<div data-id="toc-1" class="flex"><span>Digestive system</span><span class="border-dotted"></span><span>1</span></div>'
     expect(tableOfContentsLayoutErrors(html, [
       { text_id: "toc-1", text_type: "text", text: "Digestive system........1" },
