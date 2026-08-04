@@ -38,6 +38,7 @@ import {
   generateSpeechFile,
   generateWordTimestamps,
   findAdjacentSpeechText,
+  elevenLabsVoiceSettingsFromConfig,
   type ProviderRouting,
 } from "@adt/pipeline"
 import { getLiveSpeechRun } from "../services/speech-progress.js"
@@ -262,6 +263,42 @@ function getGeminiFallbackModel(model: string): string | null {
   return null
 }
 
+/**
+ * The credential a given TTS provider needs for single-item regeneration, or
+ * null when the request already carries it. Returns a message naming the
+ * missing header so the UI can tell the user which key to add, rather than
+ * failing with a generic "provider not supported".
+ */
+function getMissingProviderKeyMessage(
+  provider: string,
+  keys: {
+    geminiApiKey?: string
+    openaiApiKey?: string
+    azureSpeechKey?: string
+    azureSpeechRegion?: string
+    elevenLabsApiKey?: string
+  },
+): string | null {
+  switch (provider) {
+    case "gemini":
+      return keys.geminiApiKey
+        ? null
+        : "Gemini API key required. Set X-Gemini-API-Key header."
+    case "elevenlabs":
+      return keys.elevenLabsApiKey
+        ? null
+        : "ElevenLabs API key required. Set X-ElevenLabs-API-Key header."
+    case "azure":
+      return keys.azureSpeechKey && keys.azureSpeechRegion
+        ? null
+        : "Azure Speech key and region required. Set X-Azure-Speech-Key and X-Azure-Speech-Region headers."
+    default:
+      return keys.openaiApiKey
+        ? null
+        : "OpenAI API key required. Set X-OpenAI-Key header."
+  }
+}
+
 function getSingleItemFallbackAttempts(options: {
   openaiApiKey?: string
   azureSpeechKey?: string
@@ -271,6 +308,9 @@ function getSingleItemFallbackAttempts(options: {
   providerConfigs: Record<string, TTSProviderConfig>
   voiceMaps: ReturnType<typeof loadVoicesConfig>
   defaultOpenAIModel?: string
+  /** The provider already tried as the primary attempt — excluded so a
+   *  failure isn't retried against the same provider that just failed. */
+  primaryProvider?: string
 }): SingleItemFallbackAttempt[] {
   const attempts: SingleItemFallbackAttempt[] = []
 
@@ -302,7 +342,7 @@ function getSingleItemFallbackAttempts(options: {
     })
   }
 
-  return attempts
+  return attempts.filter((attempt) => attempt.provider !== options.primaryProvider)
 }
 
 function resolveUploadedAudioFormat(file: File): "mp3" | "wav" | "ogg" {
@@ -710,11 +750,6 @@ export function createTTSRoutes(booksDir: string, configPath?: string, taskServi
     const azureSpeechKey = c.req.header("X-Azure-Speech-Key")?.trim()
     const azureSpeechRegion = c.req.header("X-Azure-Speech-Region")?.trim()
     const elevenLabsApiKey = c.req.header("X-ElevenLabs-API-Key")?.trim()
-    if (!geminiApiKey) {
-      throw new HTTPException(400, {
-        message: "Gemini API key required. Set X-Gemini-API-Key header.",
-      })
-    }
 
     const normalizedLanguage = normalizeLocale(parsed.data.language)
     const storage = createBookStorage(safeLabel, booksDir)
@@ -740,11 +775,20 @@ export function createTTSRoutes(booksDir: string, configPath?: string, taskServi
         defaultProvider: config.speech?.default_provider ?? "openai",
       }
       const provider = resolveProviderForLanguage(normalizedLanguage, routing)
-      if (provider !== "gemini") {
-        throw new HTTPException(400, {
-          message:
-            "Single-item audio generation is only available when Gemini is selected for that language.",
-        })
+      // The API key is validated against the *resolved* provider rather than
+      // always demanding a Gemini key: a book routed to ElevenLabs (or Azure,
+      // or OpenAI) has no Gemini key to give, and previously got turned away
+      // before this point — making single-item regeneration unreachable for
+      // every provider but Gemini.
+      const missingKeyMessage = getMissingProviderKeyMessage(provider, {
+        geminiApiKey,
+        openaiApiKey,
+        azureSpeechKey,
+        azureSpeechRegion,
+        elevenLabsApiKey,
+      })
+      if (missingKeyMessage) {
+        throw new HTTPException(400, { message: missingKeyMessage })
       }
 
       const languageEntries = getCatalogEntriesForLanguage(
@@ -788,6 +832,7 @@ export function createTTSRoutes(booksDir: string, configPath?: string, taskServi
         providerConfigs,
         voiceMaps,
         defaultOpenAIModel: defaultSpeechModel,
+        primaryProvider: provider,
       })
       const bookDir = path.join(path.resolve(booksDir), safeLabel)
       const cacheDir = path.join(bookDir, ".cache")
@@ -841,6 +886,9 @@ export function createTTSRoutes(booksDir: string, configPath?: string, taskServi
               ? findAdjacentSpeechText(languageEntries, entryIndex, 1, config.speech)
               : undefined,
           elevenLabsApplyTextNormalization: config.speech?.elevenlabs_apply_text_normalization,
+          // Voice-tuning overrides. Shared helper so this path hashes the same
+          // cache key as stage-runner.ts and pipeline-dag.ts.
+          ...elevenLabsVoiceSettingsFromConfig(config.speech),
         })
 
       try {
@@ -920,7 +968,7 @@ export function createTTSRoutes(booksDir: string, configPath?: string, taskServi
           if (currentStatus === "error") {
             storage.recordStepError(
               "tts",
-              `${completion.remainingItems} Gemini audio item(s) still need generation.`
+              `${completion.remainingItems} audio item(s) still need generation.`
             )
           }
         }
@@ -995,7 +1043,7 @@ export function createTTSRoutes(booksDir: string, configPath?: string, taskServi
                 if (currentStatus === "error") {
                   storage.recordStepError(
                     "tts",
-                    `${completion.remainingItems} Gemini audio item(s) still need generation.`
+                    `${completion.remainingItems} audio item(s) still need generation.`
                   )
                 }
               }

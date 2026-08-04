@@ -527,7 +527,63 @@ describe("POST /books/:label/tts/generate-one", () => {
     expect(thirdInit?.headers).toMatchObject({ "xi-api-key": "el-test" })
   })
 
-  it("rejects single-item generation when the language is not routed to Gemini", async () => {
+  // Single-item regeneration used to hard-fail for every provider but Gemini,
+  // so a book routed to ElevenLabs could never regenerate one entry from the UI
+  // — which is exactly the listen-and-retune loop the voice-tuning settings need.
+  it("generates a single item for an ElevenLabs-routed language with only an ElevenLabs key", async () => {
+    writeConfig("elevenlabs")
+    const label = "elevenlabs-single-item"
+    seedBook(label)
+
+    fetchMock.mockResolvedValueOnce(
+      new Response(new Uint8Array([31, 32, 33, 34]), {
+        status: 200,
+        headers: { "Content-Type": "audio/mpeg" },
+      })
+    )
+
+    const app = createTTSRoutes(tmpDir, configPath)
+    const res = await app.request(`/books/${label}/tts/generate-one`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-ElevenLabs-API-Key": "el-test",
+      },
+      body: JSON.stringify({ textId: "pg001_t001", language: "en" }),
+    })
+
+    expect(res.status).toBe(200)
+    const body = await res.json()
+    expect(body.entry.provider).toBe("elevenlabs")
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+
+    const [url, init] = fetchMock.mock.calls[0]
+    expect(String(url)).toContain("https://api.elevenlabs.io/v1/text-to-speech/")
+    expect(init?.headers).toMatchObject({ "xi-api-key": "el-test" })
+    // The voice-tuning defaults must reach this path too, not just full runs.
+    expect(JSON.parse(String(init?.body)).voice_settings).toMatchObject({
+      stability: 0.7,
+      style: 0,
+    })
+  })
+
+  it("asks for the ElevenLabs key by name when the language is routed to ElevenLabs", async () => {
+    writeConfig("elevenlabs")
+    const label = "elevenlabs-missing-key"
+    seedBook(label)
+
+    const app = createTTSRoutes(tmpDir, configPath)
+    const res = await app.request(`/books/${label}/tts/generate-one`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ textId: "pg001_t001", language: "en" }),
+    })
+
+    expect(res.status).toBe(400)
+    await expect(res.text()).resolves.toContain("Set X-ElevenLabs-API-Key header.")
+  })
+
+  it("asks for the OpenAI key when the language is routed to OpenAI", async () => {
     writeConfig("openai")
     const label = "openai-audio"
     seedBook(label)
@@ -537,15 +593,30 @@ describe("POST /books/:label/tts/generate-one", () => {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        // A Gemini key is no help when the language is routed to OpenAI.
         "X-Gemini-API-Key": "gm-test",
       },
       body: JSON.stringify({ textId: "pg001_t001", language: "en" }),
     })
 
     expect(res.status).toBe(400)
-    await expect(res.text()).resolves.toContain(
-      "Single-item audio generation is only available when Gemini is selected for that language."
-    )
+    await expect(res.text()).resolves.toContain("Set X-OpenAI-Key header.")
+  })
+
+  it("still requires a Gemini key for a Gemini-routed language", async () => {
+    writeConfig("gemini")
+    const label = "gemini-missing-key"
+    seedBook(label)
+
+    const app = createTTSRoutes(tmpDir, configPath)
+    const res = await app.request(`/books/${label}/tts/generate-one`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ textId: "pg001_t001", language: "en" }),
+    })
+
+    expect(res.status).toBe(400)
+    await expect(res.text()).resolves.toContain("Set X-Gemini-API-Key header.")
   })
 })
 
