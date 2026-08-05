@@ -4,7 +4,7 @@ import { createHash } from "node:crypto"
 import { pathToFileURL } from "node:url"
 import { Hono } from "hono"
 import { HTTPException } from "hono/http-exception"
-import { isTtsExcluded, parseBookLabel } from "@adt/types"
+import { isHeadingRole, isTtsExcluded, parseBookLabel } from "@adt/types"
 import {
   WebRenderingOutput,
   type SpeechConfig,
@@ -378,7 +378,7 @@ function findFirstHeadingLeaf(
 ): { text: string; nodeId: string } | null {
   for (const n of nodes) {
     if (n.isPruned) continue
-    if (n.role === "heading" && typeof n.text === "string" && n.text.length > 0) {
+    if (isHeadingRole(n.role) && typeof n.text === "string" && n.text.length > 0) {
       return { text: n.text, nodeId: n.nodeId }
     }
     if (n.children && n.children.length > 0) {

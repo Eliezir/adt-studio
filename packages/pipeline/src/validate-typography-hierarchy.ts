@@ -10,12 +10,13 @@ interface HtmlNode {
 interface LeafText {
   text_id: string
   text_type: string
+  heading_level?: number
 }
 
-const ROLE_HEADING = {
-  chapter_title: { tag: "h1", className: "adt-h1" },
-  section_heading: { tag: "h2", className: "adt-h2" },
-  subheading: { tag: "h3", className: "adt-h3" },
+const ROLE_HEADING_LEVEL = {
+  chapter_title: 1,
+  section_heading: 2,
+  subheading: 3,
 } as const
 
 const TEXT_SIZE_RE = /\btext-(?:xs|sm|base|lg|xl|[2-9]xl)\b|\btext-\[(?:\d|\.\d|clamp\(|calc\(|var\(|length:)[^\]]*\]/
@@ -42,41 +43,63 @@ function closestHeading(node: HtmlNode | undefined): HtmlNode | undefined {
   return undefined
 }
 
+function containsHeading(node: HtmlNode): boolean {
+  if (/^h[1-6]$/.test(node.name ?? "")) return true
+  return (node.children ?? []).some(containsHeading)
+}
+
 function hasClass(node: HtmlNode, className: string): boolean {
   return (node.attribs?.class?.split(/\s+/) ?? []).includes(className)
 }
 
-/** Enforce the sectioning hierarchy and prevent per-page font-size overrides. */
-export function validateTypographyHierarchy(html: string, leafTexts: LeafText[]): string[] {
+export interface TypographyHierarchyOptions {
+  /** Activity/overlay controls may size non-heading UI text independently. */
+  allowNonHeadingFontSizes?: boolean
+}
+
+/** Enforce the sectioning hierarchy and prevent per-page heading-size overrides. */
+export function validateTypographyHierarchy(
+  html: string,
+  leafTexts: LeafText[],
+  options: TypographyHierarchyOptions = {},
+): string[] {
   const root = parseDocument(html) as unknown as HtmlNode
   const errors: string[] = []
 
   walk(root, (node) => {
     const classes = node.attribs?.class ?? ""
-    if (TEXT_SIZE_RE.test(classes)) {
+    const controlsHeading = closestHeading(node) !== undefined || containsHeading(node)
+    if (TEXT_SIZE_RE.test(classes) && (!options.allowNonHeadingFontSizes || controlsHeading)) {
       errors.push(`Typography must not use a font-size utility: "${classes}".`)
     }
-    if (/font-size\s*:/i.test(node.attribs?.style ?? "")) {
+    if (
+      /font-size\s*:/i.test(node.attribs?.style ?? "") &&
+      (!options.allowNonHeadingFontSizes || controlsHeading)
+    ) {
       errors.push("Typography must not use inline font-size; use the book-wide adt-* class.")
     }
   })
 
   for (const leaf of leafTexts) {
-    const expected = ROLE_HEADING[leaf.text_type as keyof typeof ROLE_HEADING]
+    const roleLevel =
+      ROLE_HEADING_LEVEL[leaf.text_type as keyof typeof ROLE_HEADING_LEVEL]
+    const expectedLevel = leaf.heading_level ?? roleLevel
     const isLegacyHeading = leaf.text_type === "heading"
-    if (!expected && !isLegacyHeading) continue
+    if (!expectedLevel && !isLegacyHeading) continue
 
     const content = findByDataId(root, leaf.text_id)
     const heading = closestHeading(content)
     if (!heading) {
-      errors.push(`Heading "${leaf.text_id}" must be rendered inside a semantic <h1>, <h2>, or <h3>.`)
+      errors.push(`Heading "${leaf.text_id}" must be rendered inside a semantic <h1> through <h6>.`)
       continue
     }
 
-    if (expected) {
-      if (heading.name !== expected.tag || !hasClass(heading, expected.className)) {
+    if (expectedLevel) {
+      const expectedTag = `h${expectedLevel}`
+      const expectedClass = `adt-h${expectedLevel}`
+      if (heading.name !== expectedTag || !hasClass(heading, expectedClass)) {
         errors.push(
-          `Heading role "${leaf.text_type}" (${leaf.text_id}) must use <${expected.tag} class="${expected.className}">.`,
+          `Heading role "${leaf.text_type}" (${leaf.text_id}) must use <${expectedTag} class="${expectedClass}">.`,
         )
       }
       continue
@@ -84,9 +107,9 @@ export function validateTypographyHierarchy(html: string, leafTexts: LeafText[])
 
     const level = heading.name?.slice(1)
     const expectedClass = `adt-h${level}`
-    if (!level || !["1", "2", "3"].includes(level) || !hasClass(heading, expectedClass)) {
+    if (!level || !["1", "2", "3", "4", "5", "6"].includes(level) || !hasClass(heading, expectedClass)) {
       errors.push(
-        `Legacy heading "${leaf.text_id}" must align its semantic tag with its typography class (h1/adt-h1, h2/adt-h2, or h3/adt-h3).`,
+        `Legacy heading "${leaf.text_id}" must align its semantic tag with its typography class (h1/adt-h1 through h6/adt-h6).`,
       )
     }
   }

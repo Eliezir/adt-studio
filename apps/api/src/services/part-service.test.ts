@@ -78,7 +78,7 @@ function addProcessedPage(label: string, pageNumber: number): void {
 function markPartStepsDone(label: string): void {
   const storage = createBookStorage(label, tmpDir)
   try {
-    for (const step of ["extract", "metadata", "book-summary", "page-sectioning", "web-rendering"]) {
+    for (const step of ["extract", "metadata", "book-summary", "book-outline", "page-sectioning", "web-rendering"]) {
       storage.markStepCompleted(step)
     }
   } finally {
@@ -236,6 +236,12 @@ describe("mergePart", () => {
         "SELECT status FROM step_runs WHERE step = 'book-summary'",
       ) as Array<{ status: string }>
       expect(bookSummary).toEqual([{ status: "done" }])
+
+      // A part-local outline is not authoritative for the assembled book.
+      const bookOutline = db.all(
+        "SELECT status FROM step_runs WHERE step = 'book-outline'",
+      ) as Array<{ status: string }>
+      expect(bookOutline).toEqual([])
     } finally {
       db.close()
     }

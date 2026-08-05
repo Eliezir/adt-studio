@@ -34,18 +34,26 @@ import type { ExportResult } from "./export-service.js"
  * steps: stage completion requires *every* step to be done/skipped, so clearing
  * `book-summary` would make the whole Extract stage read as "not run" and block
  * the downstream UI (e.g. the Sectioning page's "Extract hasn't run" gate).
+ * `book-outline` is deliberately excluded: a hierarchy inferred from one part
+ * is not a book-wide hierarchy and must never be marked complete on assembly.
  */
 const PER_PAGE_STAGE_NAMES = new Set<string>(["extract", "sectioning", "storyboard"])
+const BOOK_WIDE_REBUILD_STEPS = new Set<string>(["book-outline"])
 const PER_PAGE_STAGE_STEPS = new Set<string>(
   PIPELINE.filter((s) => PER_PAGE_STAGE_NAMES.has(s.name)).flatMap((s) =>
-    s.steps.map((st) => st.name),
+    s.steps
+      .map((st) => st.name)
+      .filter((step) => !BOOK_WIDE_REBUILD_STEPS.has(step)),
   ),
 )
 /** Steps of the downstream / book-level stages, cleared on merge so the UI
  *  flags them for re-running on the assembled book. */
-const DOWNSTREAM_STEPS = PIPELINE.filter((s) => !PER_PAGE_STAGE_NAMES.has(s.name)).flatMap((s) =>
-  s.steps.map((st) => st.name),
-)
+const DOWNSTREAM_STEPS = [
+  ...PIPELINE.filter((s) => !PER_PAGE_STAGE_NAMES.has(s.name)).flatMap((s) =>
+    s.steps.map((st) => st.name),
+  ),
+  ...BOOK_WIDE_REBUILD_STEPS,
+]
 const DOWNSTREAM_STAGE_NAMES = PIPELINE.filter((s) => !PER_PAGE_STAGE_NAMES.has(s.name)).map(
   (s) => s.name,
 )

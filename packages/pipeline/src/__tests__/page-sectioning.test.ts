@@ -24,6 +24,10 @@ function makeCtx(overrides?: {
   roleKeys?: string[]
   sectionTypeKeys?: string[]
   availableImageIds?: string[]
+  outlineEntries?: Map<
+    string,
+    { outlineId: string; level: number; styleClusterId: string; title: string }
+  >
 }) {
   return {
     structureKeys: new Set(
@@ -40,6 +44,7 @@ function makeCtx(overrides?: {
       overrides?.sectionTypeKeys ?? ["text_only", "images_only"]
     ),
     availableImageIds: new Set(overrides?.availableImageIds ?? []),
+    outlineEntries: overrides?.outlineEntries,
   }
 }
 
@@ -563,6 +568,73 @@ describe("runValidator", () => {
     expect(result.valid).toBe(false)
     expect(result.errors.join("\n")).toMatch(/invalid value "bogus_role"/)
   })
+
+  it("enforces authoritative H1-H6 outline metadata", () => {
+    const outlineEntries = new Map([
+      [
+        "outline-004",
+        {
+          outlineId: "outline-004",
+          level: 4,
+          styleClusterId: "minor-heading",
+          title: "Try this",
+        },
+      ],
+    ])
+    const valid = runValidator(
+      {
+        reasoning: "",
+        sections: [
+          {
+            section_type: "text_only",
+            background_color: "#fff",
+            text_color: "#000",
+            page_number: 1,
+            nodes: [
+              {
+                role: "heading",
+                text: "Try this",
+                heading_level: 4,
+                outline_entry_id: "outline-004",
+                heading_style_cluster_id: "minor-heading",
+              },
+            ],
+          },
+        ],
+      },
+      makeCtx({ outlineEntries }),
+    )
+    expect(valid).toEqual({ valid: true, errors: [] })
+
+    const invalid = runValidator(
+      {
+        reasoning: "",
+        sections: [
+          {
+            section_type: "text_only",
+            background_color: "#fff",
+            text_color: "#000",
+            page_number: 1,
+            nodes: [
+              {
+                role: "subheading",
+                text: "Try this",
+                heading_level: 4,
+                outline_entry_id: "outline-004",
+                heading_style_cluster_id: "minor-heading",
+              },
+            ],
+          },
+        ],
+      },
+      makeCtx({
+        roleKeys: ["heading", "subheading", "text", "caption", "image"],
+        outlineEntries,
+      }),
+    )
+    expect(invalid.valid).toBe(false)
+    expect(invalid.errors.join(" ")).toContain('outline level 4 requires role "heading"')
+  })
 })
 
 // ── finalizePageSectioning ──────────────────────────────────────
@@ -826,6 +898,76 @@ describe("sectionPage", () => {
     expect(output.sections[0].nodes[0].structure).toBe("paragraph")
     expect(output.sections[0].nodes[0].children?.[0].nodeId).toBe("pg001_n0002")
     expect(output.sections[0].nodes[0].children?.[0].text).toBe("Hello")
+  })
+
+  it("passes book context to sectioning and persists authoritative heading metadata", async () => {
+    let capturedContext: Record<string, unknown> | undefined
+    const fakeLlm: LLMModel = {
+      generateObject: async <T>(opts: GenerateObjectOptions) => {
+        capturedContext = opts.context
+        return {
+          object: {
+            reasoning: "Matched the chapter title.",
+            sections: [
+              {
+                section_type: "text_only",
+                background_color: "#fff",
+                text_color: "#000",
+                page_number: 1,
+                nodes: [
+                  {
+                    role: "chapter_title",
+                    text: "Chapter One",
+                    heading_level: 1,
+                    outline_entry_id: "outline-001",
+                    heading_style_cluster_id: "chapter-style",
+                  },
+                ],
+              },
+            ],
+          } as T,
+        }
+      },
+    }
+    const outline = {
+      entries: [
+        {
+          outlineId: "outline-001",
+          title: "Chapter One",
+          level: 1,
+          kind: "chapter" as const,
+          pageId: "pg001",
+          pageNumber: 1,
+          sourceCandidateIds: ["pg001_hc001"],
+          parentId: null,
+          styleClusterId: "chapter-style",
+          confidence: 0.98,
+        },
+      ],
+      ancestors: [],
+      styleClusters: [
+        { styleClusterId: "chapter-style", description: "Large title", level: 1 },
+      ],
+    }
+
+    const result = await sectionPage(
+      makeInput({ outline }),
+      makeConfig({
+        roleTypes: [
+          { key: "chapter_title", description: "Chapter title" },
+          { key: "text", description: "Body" },
+        ],
+      }),
+      fakeLlm,
+    )
+
+    expect(capturedContext?.book_outline).toEqual(outline)
+    expect(result.sections[0].nodes[0]).toMatchObject({
+      role: "chapter_title",
+      headingLevel: 1,
+      outlineEntryId: "outline-001",
+      headingStyleClusterId: "chapter-style",
+    })
   })
 
   it("adopts reviewer's replacement tree when reviewer rejects then proposes valid replacement", async () => {

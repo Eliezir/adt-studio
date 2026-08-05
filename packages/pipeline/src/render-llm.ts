@@ -62,6 +62,8 @@ export async function renderSectionLlm(
     typography: (input.typography ?? DEFAULT_TYPOGRAPHY).styles,
     viewports: getViewportBreakpoints(),
     _isActivity: isActivity,
+    _allowNonHeadingFontSizes:
+      isActivity || config.promptName === "web_generation_html_overlay",
     user_instructions: input.userPrompt ?? "",
   }
 
@@ -201,11 +203,17 @@ function validateWebRendering(
 ): ValidationResult {
   const r = result as { reasoning: string; content: string }
   const label = context.label as string
-  const leaf_texts = context.leaf_texts as Array<{ text_id: string; text_type: string; text: string }>
+  const leaf_texts = context.leaf_texts as Array<{
+    text_id: string
+    text_type: string
+    text: string
+    heading_level?: number
+  }>
   const images = context.images as Array<{ image_id: string }>
   const nodes = context.nodes as RenderNode[]
   const group_ids = context.group_ids as string[]
   const isActivity = context._isActivity as boolean | undefined
+  const allowNonHeadingFontSizes = context._allowNonHeadingFontSizes as boolean | undefined
   const sectionId = context.section_id as string
   const sectionType = context.section_type as string
   const allowedTextIds = leaf_texts.map((t) => t.text_id)
@@ -230,7 +238,11 @@ function validateWebRendering(
       expectedContentIdOrder: collectLeafDataIdOrder(nodes),
     }
   )
-  const typographyErrors = validateTypographyHierarchy(check.sectionHtml ?? candidateHtml, leaf_texts)
+  const typographyErrors = validateTypographyHierarchy(
+    check.sectionHtml ?? candidateHtml,
+    leaf_texts,
+    { allowNonHeadingFontSizes },
+  )
   if (check.valid && typographyErrors.length === 0 && check.sectionHtml) {
     return {
       valid: true,

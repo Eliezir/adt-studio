@@ -22,7 +22,7 @@ import type {
   Quiz,
   ImageCaptioningOutput,
 } from "@adt/types"
-import { WebRenderingOutput as WebRenderingOutputSchema, isTtsExcluded, FIXED_LAYOUT_MAX_SCALE } from "@adt/types"
+import { WebRenderingOutput as WebRenderingOutputSchema, isHeadingRole, isTtsExcluded, FIXED_LAYOUT_MAX_SCALE } from "@adt/types"
 import {
   GOOGLE_FONTS,
   googleFontsReferencedIn,
@@ -2696,7 +2696,7 @@ function findHeadingText(
 ): { textId: string; text: string } | null {
   const walk = (node: ContentNodeData): { textId: string; text: string } | null => {
     if (node.isPruned) return null
-    if (node.role === "heading" && node.text) {
+    if (isHeadingRole(node.role) && node.text) {
       return { textId: node.nodeId, text: node.text }
     }
     if (node.children) {

@@ -40,4 +40,21 @@ describe("validateTypographyHierarchy", () => {
       expect.stringContaining("inline font-size"),
     ]))
   })
+
+  it("allows activity control sizing without allowing heading overrides", () => {
+    expect(validateTypographyHierarchy(
+      `<section><p class="text-sm" data-id="body">Option</p><h4 class="adt-h4" data-id="heading">Try it</h4></section>`,
+      [
+        { text_id: "body", text_type: "text" },
+        { text_id: "heading", text_type: "heading", heading_level: 4 },
+      ],
+      { allowNonHeadingFontSizes: true },
+    )).toEqual([])
+
+    expect(validateTypographyHierarchy(
+      `<section><h4 class="adt-h4 text-xl" data-id="heading">Try it</h4></section>`,
+      [{ text_id: "heading", text_type: "heading", heading_level: 4 }],
+      { allowNonHeadingFontSizes: true },
+    )).toContainEqual(expect.stringContaining("font-size utility"))
+  })
 })

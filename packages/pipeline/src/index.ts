@@ -67,6 +67,25 @@ export {
   type BookSummaryPageInput,
 } from "./book-summary.js"
 export {
+  generateBookOutline,
+  buildBookOutlineConfig,
+  readBookOutline,
+  outlineContextForPage,
+  BOOK_OUTLINE_NODE,
+  BOOK_OUTLINE_ITEM,
+  type BookOutlineConfig,
+  type PageOutlineContext,
+} from "./book-outline.js"
+export {
+  buildBookOutlineEvidence,
+  buildHeadingCandidates,
+  buildProofSheets,
+  type BookOutlineEvidence,
+  type BookOutlineEvidencePage,
+  type HeadingCandidateEvidence,
+  type BookOutlineProofSheet,
+} from "./book-outline-evidence.js"
+export {
   renderPage,
   buildRenderStrategyResolver,
   buildRenderContext,

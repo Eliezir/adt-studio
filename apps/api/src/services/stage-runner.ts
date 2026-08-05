@@ -69,6 +69,14 @@ import {
   wavDurationSeconds,
   stripEmojis,
   generateBookSummary,
+  generateBookOutline,
+  buildBookOutlineConfig,
+  buildBookOutlineEvidence,
+  readBookOutline,
+  outlineContextForPage,
+  BOOK_OUTLINE_NODE,
+  BOOK_OUTLINE_ITEM,
+  readTypeScale,
   buildBookSummaryConfig,
   filterPageImageMeaningfulness,
   buildMeaningfulnessConfig,
@@ -89,7 +97,7 @@ import type { PageSectioningConfig, TranslationConfig, QuizPageInput, ProviderRo
 import { loadStyleguideContent } from "./styleguide.js"
 import { createTTSSynthesizer, createAzureTTSSynthesizer, createGeminiTTSSynthesizer } from "@adt/llm"
 import type { TTSSynthesizer } from "@adt/llm"
-import { STAGE_ORDER, isTtsExcluded } from "@adt/types"
+import { STAGE_ORDER, PositionedTextOutput, isTtsExcluded } from "@adt/types"
 import type { PageErrorPolicy, PageErrorAction } from "@adt/types"
 import { beginSpeechRun, endSpeechRun } from "./speech-progress.js"
 import type {
@@ -1018,7 +1026,49 @@ async function runExtractStep(
       throw err
     }
 
-    // Step 4: Per-page image classification runs as four sequential passes,
+    // Step 4: Build one book-wide semantic outline before page sectioning.
+    // The configured default is OpenAI; no provider-specific PDF API is used.
+    progress.emit({ type: "step-start", step: "book-outline" })
+    try {
+      const outlineConfig = buildBookOutlineConfig(config)
+      const outlineModel = createLLMModel({
+        modelId: outlineConfig.modelId,
+        cacheDir,
+        promptEngine,
+        rateLimiter,
+        onLog: onLlmLog,
+        credentials: llmCredentials,
+        signal: options.signal,
+      })
+      const evidencePages = pages.map((page) => {
+        const positionedRow = storage.getLatestNodeData("positioned-text", page.pageId)
+        const positioned = PositionedTextOutput.safeParse(positionedRow?.data)
+        return {
+          pageId: page.pageId,
+          pageNumber: page.pageNumber,
+          text: page.text,
+          imageBase64: storage.getPageImageBase64(page.pageId),
+          ...(positioned.success && { positionedText: positioned.data }),
+        }
+      })
+      const evidence = buildBookOutlineEvidence(evidencePages, readTypeScale(storage))
+      const outline = await generateBookOutline(evidence, outlineConfig, outlineModel)
+      storage.putNodeData(BOOK_OUTLINE_NODE, BOOK_OUTLINE_ITEM, outline)
+      progress.emit({
+        type: "step-complete",
+        step: "book-outline",
+        message: `${outline.entries.length} headings`,
+      })
+      console.log(`[stage-run] ${label}: book outline complete (${outline.entries.length} headings)`)
+    } catch (err) {
+      if (isCancellation(err, [options.signal])) throw err
+      const msg = toErrorMessage(err)
+      console.error(`[stage-run] ${label}: book outline failed: ${msg}`)
+      progress.emit({ type: "step-error", step: "book-outline", error: msg })
+      throw err
+    }
+
+    // Step 5: Per-page image classification runs as four sequential passes,
     // each with its own progress reporting so the UI reflects real timing.
     const imageClassifyConfig = buildStageRunnerImageClassifyConfig(config, storage)
     const meaningfulnessConfig = buildMeaningfulnessConfig(config)
@@ -1196,6 +1246,7 @@ async function runSectioningStep(
       : null
 
     const pages = storage.getPages()
+    const bookOutline = readBookOutline(storage)
     const totalPages = pages.length
     const effectiveConcurrency = config.concurrency ?? 32
 
@@ -1237,6 +1288,7 @@ async function runSectioningStep(
               text: page.text,
               imageBase64: storage.getPageImageBase64(page.pageId),
               availableImages,
+              outline: outlineContextForPage(bookOutline, page.pageId),
             },
             pageSectioningConfig,
             structuringModel,

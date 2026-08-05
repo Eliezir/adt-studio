@@ -113,6 +113,10 @@ msgstr "{0} × {1}px · {2} puntos"
 msgid "{0} accepted anyway"
 msgstr "{0} aceptadas de todos modos"
 
+#. placeholder {0}: String(view.assigned)
+msgid "{0} assigned"
+msgstr "{0} asignados"
+
 #. placeholder {0}: String(totalAudioFiles)
 msgid "{0} audio"
 msgstr "{0} audios"
@@ -168,6 +172,10 @@ msgstr "{0} imagen"
 #. placeholder {0}: reviewCounts.needsAttention
 msgid "{0} issue/issues"
 msgstr "{0} incidencia(s)"
+
+#. placeholder {0}: String(view.issues)
+msgid "{0} issues"
+msgstr "{0} problemas"
 
 #. placeholder {0}: visibleFindingsUniverse.length
 msgid "{0} items"
@@ -1259,6 +1267,9 @@ msgstr "Una actividad de respuesta abierta."
 msgid "Analyze with AI"
 msgstr "Analizar con IA"
 
+msgid "Analyzes the complete book to identify a consistent heading hierarchy."
+msgstr "Analiza el libro completo para identificar una jerarquía de títulos coherente."
+
 msgid "Analyzing part…"
 msgstr "Analizando la parte…"
 
@@ -1428,6 +1439,12 @@ msgstr "Recurso"
 
 msgid "Assign..."
 msgstr "Asignar..."
+
+msgid "Assigned"
+msgstr "Asignado"
+
+msgid "Assignment evidence"
+msgstr "Evidencia de asignación"
 
 msgid "At the river's edge"
 msgstr "A la orilla del río"
@@ -1638,6 +1655,9 @@ msgstr "Los datos del libro están desactualizados y deben reconstruirse."
 msgid "Book Fonts"
 msgstr "Fuentes del libro"
 
+msgid "Book heading outline"
+msgstr "Jerarquía de títulos del libro"
+
 msgid "Book images"
 msgstr "Imágenes del libro"
 
@@ -1658,6 +1678,12 @@ msgstr "Se actualizaron las sustituciones de modelos del libro."
 
 msgid "Book order"
 msgstr "Orden del libro"
+
+msgid "Book outline"
+msgstr "Esquema del libro"
+
+msgid "Book Outline"
+msgstr "Esquema del libro"
 
 msgid "Book package ready"
 msgstr "Paquete del libro listo"
@@ -1782,6 +1808,9 @@ msgstr "Respuesta en caché"
 msgid "Calculate word timestamps for all entries"
 msgstr "Calcular marcas de tiempo por palabra para todas las entradas"
 
+msgid "Callout"
+msgstr "Recuadro"
+
 msgid "Calls"
 msgstr "Llamadas"
 
@@ -1900,6 +1929,9 @@ msgstr "Cambiar el idioma restablece el trabajo posterior."
 
 msgid "Changing the type regenerates the activity when you save."
 msgstr "Cambiar el tipo regenera la actividad al guardar."
+
+msgid "Chapter"
+msgstr "Capítulo"
 
 msgid "Chapter 1: Introduction"
 msgstr "Capítulo 1: Introducción"
@@ -2174,6 +2206,9 @@ msgstr "Condensación"
 msgid "Conditionally include text"
 msgstr "Incluir texto condicionalmente"
 
+msgid "confidence"
+msgstr "confianza"
+
 msgid "Config"
 msgstr "Configuración"
 
@@ -2317,6 +2352,9 @@ msgstr "Respuesta correcta (alternativas separadas por |)"
 
 msgid "Correct the metadata extracted from the document."
 msgstr "Corrige los metadatos extraídos del documento."
+
+msgid "Could not load the book outline."
+msgstr "No se pudo cargar el esquema del libro."
 
 msgid "Could not load the Google Fonts catalog. Check your connection and try again."
 msgstr "No se pudo cargar el catálogo de Google Fonts. Comprueba tu conexión e inténtalo de nuevo."
@@ -3910,6 +3948,15 @@ msgstr "encabezado"
 msgid "Heading"
 msgstr "Título"
 
+msgid "Heading level 4"
+msgstr "Nivel de título 4"
+
+msgid "Heading level 5"
+msgstr "Nivel de título 5"
+
+msgid "Heading level 6"
+msgstr "Nivel de título 6"
+
 msgid "Headings"
 msgstr "Títulos"
 
@@ -4314,6 +4361,9 @@ msgstr "Tipos de problemas que se revisan"
 msgid "Issues"
 msgstr "Problemas"
 
+msgid "Issues only"
+msgstr "Solo problemas"
+
 msgid "It contains unexpected file paths. Use a .zip exported from ADT Studio."
 msgstr "Contiene rutas de archivo inesperadas. Usa un archivo .zip exportado desde ADT Studio."
 
@@ -4595,6 +4645,9 @@ msgstr "Cargando versiones beta…"
 
 msgid "Loading book config…"
 msgstr "Cargando configuración del libro…"
+
+msgid "Loading book outline..."
+msgstr "Cargando el esquema del libro..."
 
 msgid "Loading Book..."
 msgstr "Cargando libro..."
@@ -4981,6 +5034,9 @@ msgstr "Copiando diseño..."
 msgid "Mirrors the original book's activity layout as closely as possible."
 msgstr "Refleja el diseño de actividades del libro original lo más cerca posible."
 
+msgid "Mismatch"
+msgstr "No coincide"
+
 msgid "Miss"
 msgstr "Miss"
 
@@ -5016,6 +5072,9 @@ msgstr "Modelo"
 
 msgid "Model overrides"
 msgstr "Sustituciones de modelos"
+
+msgid "Model reasoning"
+msgstr "Razonamiento del modelo"
 
 #~ msgid "Model variant"
 #~ msgstr "Variante de modelo"
@@ -5186,6 +5245,9 @@ msgstr "No hay versiones beta disponibles."
 msgid "No beta versions found"
 msgstr "No se encontraron versiones beta"
 
+msgid "No book outline has been extracted yet."
+msgstr "Aún no se ha extraído ningún esquema del libro."
+
 msgid "No books match your search"
 msgstr "Ningún libro coincide con tu búsqueda"
 
@@ -5338,6 +5400,9 @@ msgstr "No se detectó una licencia open source. Asegúrate de tener derecho a i
 
 msgid "No other images in this book"
 msgstr "No hay otras imágenes en este libro"
+
+msgid "No outline entries match the current filter."
+msgstr "Ninguna entrada del esquema coincide con el filtro actual."
 
 msgid "No page linked"
 msgstr "No hay página vinculada"
@@ -5808,6 +5873,9 @@ msgstr "En procesamiento"
 msgid "Out of date"
 msgstr "Desactualizado"
 
+msgid "Outline ID:"
+msgstr "ID del esquema:"
+
 msgid "Output languages"
 msgstr "Idiomas de salida"
 
@@ -5894,8 +5962,8 @@ msgid "Page"
 msgstr "Página"
 
 #. placeholder {0}: String(activePage.pageNumber)
+#. placeholder {0}: String(entry.pageNumber)
 #. placeholder {0}: String(group.pageNumber)
-#. placeholder {0}: String(item.pageNumber)
 msgid "Page {0}"
 msgstr "Página {0}"
 
@@ -6036,6 +6104,9 @@ msgstr "párrafo"
 
 msgid "Paragraph"
 msgstr "Párrafo"
+
+msgid "Parent:"
+msgstr "Elemento superior:"
 
 msgid "Parsing pages"
 msgstr "Analizando páginas"
@@ -6984,6 +7055,9 @@ msgstr "Revisión completa: {0} aceptables, {1} pendientes de guardar."
 msgid "Review complete: all {0} reviewed translations are acceptable."
 msgstr "Revisión completa: las {0} traducciones revisadas son aceptables."
 
+msgid "Review each heading’s level, page, confidence, style cluster, and storyboard assignment."
+msgstr "Revisa el nivel, la página, la confianza, el grupo de estilos y la asignación en el guion gráfico de cada título."
+
 msgid "Review one session at a time to inspect page coverage and flagged findings."
 msgstr "Review one session at a time to inspect page coverage and flagged findings."
 
@@ -7311,6 +7385,9 @@ msgstr "Buscar fuentes"
 
 msgid "Search fonts..."
 msgstr "Buscar fuentes..."
+
+msgid "Search headings, IDs, or style clusters..."
+msgstr "Buscar títulos, ID o grupos de estilos..."
 
 msgid "Search languages..."
 msgstr "Buscar idiomas..."
@@ -7812,6 +7889,9 @@ msgstr "Ordenar por"
 msgid "Source"
 msgstr "Fuente"
 
+msgid "Source candidates:"
+msgstr "Candidatos de origen:"
+
 msgid "Source file"
 msgstr "Archivo de origen"
 
@@ -8010,6 +8090,9 @@ msgstr "Storyboard"
 msgid "Storyboard has already been run. Changes made here will not take effect until storyboard is re-run."
 msgstr "El storyboard ya se ejecutó. Los cambios realizados aquí no tendrán efecto hasta que se vuelva a ejecutar el storyboard."
 
+msgid "Storyboard nodes:"
+msgstr "Nodos del guion gráfico:"
+
 msgid "Storyboard not ready"
 msgstr "Storyboard no está listo"
 
@@ -8079,6 +8162,9 @@ msgstr "Referencia de estilo"
 msgid "Style reference image"
 msgstr "Imagen de referencia de estilo"
 
+msgid "Style:"
+msgstr "Estilo:"
+
 msgid "Styleguide"
 msgstr "Guía de estilo"
 
@@ -8096,6 +8182,9 @@ msgstr "Subtítulo"
 
 msgid "Submit"
 msgstr "Enviar"
+
+msgid "Subsection"
+msgstr "Subsección"
 
 msgid "Success"
 msgstr "Éxito"
@@ -9216,6 +9305,7 @@ msgstr "Variaciones"
 msgid "Verified applied"
 msgstr "Aplicación verificada"
 
+#. placeholder {0}: String(data.version)
 #. placeholder {0}: String(version)
 msgid "Version {0}"
 msgstr "Versión {0}"

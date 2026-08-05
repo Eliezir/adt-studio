@@ -6,6 +6,7 @@ import type {
   BookFontRole,
   BookMetadata,
   BookSummary,
+  BookOutlineAuditResponse,
   BookTypography,
   ActivityOutline,
   EditableActivity,
@@ -1439,6 +1440,9 @@ export const api = {
     request<VersionListResponse>(
       `/books/${label}/debug/versions/${node}/${itemId}${includeData ? "?includeData=true" : ""}`
     ),
+
+  getBookOutline: (label: string) =>
+    request<BookOutlineAuditResponse | null>(`/books/${label}/book-outline`),
 
   getBookConfig: (label: string) =>
     request<BookConfigResponse>(`/books/${label}/config`),
