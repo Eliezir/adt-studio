@@ -92,6 +92,15 @@ export interface PackageAdtWebOptions {
   quizMatchBookStyle?: boolean
 }
 
+/** Pages with either a dedicated activity section or an inline word bank need
+ * the standalone activity runtime after the full reader bundle is stripped. */
+export function pageNeedsActivitiesBundle(html: string): boolean {
+  return (
+    html.includes('data-section-type="activity_') ||
+    (html.includes("data-word-bank-chip") && html.includes("data-word-bank-target"))
+  )
+}
+
 export interface PageEntry {
   section_id: string
   href: string
@@ -2757,6 +2766,7 @@ export const EXPORT_MIME_TYPES: Record<string, string> = {
   ".svg": "image/svg+xml",
   ".webp": "image/webp",
   ".mp3": "audio/mpeg",
+  ".flac": "audio/flac",
   ".mp4": "video/mp4",
   ".webm": "video/webm",
   ".ogg": "audio/ogg",

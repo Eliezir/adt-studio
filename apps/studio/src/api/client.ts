@@ -197,6 +197,16 @@ export interface AzureCredentials {
   region: string
 }
 
+/** An ElevenLabs voice as surfaced by `GET /speech-config/elevenlabs-voices`
+ *  (a trimmed projection of ElevenLabs' own `/v2/voices` payload). */
+export interface ElevenLabsVoice {
+  voice_id: string
+  name?: string
+  category?: string
+  labels?: Record<string, string>
+  verified_languages?: Array<{ language?: string; accent?: string }>
+}
+
 export interface StageRunProviderCredentials {
   anthropicApiKey?: string
   googleApiKey?: string
@@ -204,6 +214,7 @@ export interface StageRunProviderCredentials {
   customApiKey?: string
   azure?: AzureCredentials
   geminiApiKey?: string
+  elevenLabsApiKey?: string
 }
 
 export interface RunStagesOptions {
@@ -241,6 +252,9 @@ function buildApiHeaders(
   }
   if (providerCredentials?.geminiApiKey) {
     headers["X-Gemini-API-Key"] = providerCredentials.geminiApiKey
+  }
+  if (providerCredentials?.elevenLabsApiKey) {
+    headers["X-ElevenLabs-API-Key"] = providerCredentials.elevenLabsApiKey
   }
   return headers
 }
@@ -598,6 +612,9 @@ export interface LlmLogEntry {
     durationMs: number
     usage?: { inputTokens: number; outputTokens: number }
     validationErrors?: string[]
+    /** Resolved provider request parameters, when the call recorded them.
+     *  Free-form: keys and value types vary by call type. */
+    params?: Record<string, unknown>
     system?: string
     messages: Array<{
       role: string
@@ -1205,7 +1222,13 @@ export const api = {
     apiKey: string,
     currentHtml?: string,
   ) =>
-    request<{ taskId?: string; status?: string; html?: string; reasoning?: string }>(
+    request<{
+      taskId?: string
+      status?: string
+      html?: string
+      reasoning?: string
+      activityAnswers?: Record<string, string>
+    }>(
       `/books/${label}/pages/${pageId}/sections/${sectionIndex}/ai-edit`,
       {
         method: "POST",
@@ -1444,6 +1467,14 @@ export const api = {
   getBookOutline: (label: string) =>
     request<BookOutlineAuditResponse | null>(`/books/${label}/book-outline`),
 
+  /** Roll an entity back to an existing version (moves the current-version
+   *  pointer; does not create a new version). */
+  restoreVersion: (label: string, node: string, itemId: string, version: number) =>
+    request<{ node: string; itemId: string; version: number }>(
+      `/books/${label}/versions/${node}/${itemId}/restore`,
+      { method: "POST", body: JSON.stringify({ version }) }
+    ),
+
   getBookConfig: (label: string) =>
     request<BookConfigResponse>(`/books/${label}/config`),
 
@@ -1666,6 +1697,7 @@ export const api = {
       geminiApiKey: string
       openaiApiKey?: string
       azure?: AzureCredentials
+      elevenLabsApiKey?: string
     }
   ) =>
     request<GenerateSingleTTSResponse>(`/books/${label}/tts/generate-one`, {
@@ -1675,6 +1707,7 @@ export const api = {
         ...(credentials.openaiApiKey ? { "X-OpenAI-Key": credentials.openaiApiKey } : {}),
         ...(credentials.azure?.key ? { "X-Azure-Speech-Key": credentials.azure.key } : {}),
         ...(credentials.azure?.region ? { "X-Azure-Speech-Region": credentials.azure.region } : {}),
+        ...(credentials.elevenLabsApiKey ? { "X-ElevenLabs-API-Key": credentials.elevenLabsApiKey } : {}),
       },
       body: JSON.stringify({ textId, language }),
     }),
@@ -1834,6 +1867,14 @@ export const api = {
       body: JSON.stringify(data),
     }),
 
+  /** Human-readable names for the opaque ElevenLabs voice IDs in voices.yaml.
+   *  Returns an empty list (not an error) when no ElevenLabs key is set, so the
+   *  voice picker can fall back to a free-text input. */
+  getElevenLabsVoices: (elevenLabsApiKey?: string) =>
+    request<{ voices: ElevenLabsVoice[] }>("/speech-config/elevenlabs-voices", {
+      headers: elevenLabsApiKey ? { "X-ElevenLabs-API-Key": elevenLabsApiKey } : {},
+    }),
+
   prepareExport: (
     label: string,
     format: ExportFormat = "project",
@@ -1952,6 +1993,26 @@ export const api = {
     if (!res.ok) {
       const body = await res.json().catch(() => ({ error: res.statusText }))
       throw new Error(body.error ?? `ADT export failed: ${res.status}`)
+    }
+    const buf = await res.arrayBuffer()
+    return new Blob([buf], { type: "application/zip" })
+  },
+
+  exportPnld: async (label: string): Promise<Blob | null> => {
+    if (!isDesktop()) {
+      triggerDirectDownload(`${BASE_URL}/books/${label}/export-pnld`)
+      return null
+    }
+    const url = `${BASE_URL}/books/${label}/export-pnld`
+    const res = await fetch(url, {
+      method: "GET",
+      headers: { Accept: "application/zip" },
+      mode: "cors",
+      signal: AbortSignal.timeout(1_800_000),
+    })
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({ error: res.statusText }))
+      throw new Error(body.error ?? `PNLD export failed: ${res.status}`)
     }
     const buf = await res.arrayBuffer()
     return new Blob([buf], { type: "application/zip" })
