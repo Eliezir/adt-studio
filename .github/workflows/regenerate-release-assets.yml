@@ -1,0 +1,248 @@
+name: Regenerate release assets
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: "Unpublished stable draft tag (for example v0.7.5)"
+        required: true
+        type: string
+      regenerate:
+        description: "What to regenerate"
+        required: true
+        default: both
+        type: choice
+        options:
+          - both
+          - notes
+          - image
+      hero_feature:
+        description: "Main feature to emphasize (optional)"
+        required: false
+        type: string
+      release_context:
+        description: "Feedback or extra context for the release notes (optional)"
+        required: false
+        type: string
+      image_context:
+        description: "Feedback or extra art direction for the cover (optional)"
+        required: false
+        type: string
+      cover_palette:
+        description: "Cover palette"
+        required: true
+        default: random
+        type: choice
+        options:
+          - random
+          - blue
+          - purple
+          - teal
+          - orange
+          - green
+          - magenta
+          - custom
+      cover_colors:
+        description: "Colors to use when palette is custom (for example navy and coral)"
+        required: false
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: regenerate-release-assets-${{ inputs.release_tag }}
+  cancel-in-progress: false
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
+jobs:
+  regenerate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: release-ai
+    steps:
+      - name: Validate request
+        env:
+          TAG: ${{ inputs.release_tag }}
+        run: |
+          if [[ "$GITHUB_REF_NAME" != "main" ]]; then
+            echo "::error::Run this workflow from main."
+            exit 1
+          fi
+          if [[ ! "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::release_tag must be a stable v-prefixed semantic version."
+            exit 1
+          fi
+
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.release_tag }}
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Validate unpublished draft
+        id: draft
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          TAG: ${{ inputs.release_tag }}
+        run: |
+          gh api "repos/$REPO/releases/tags/$TAG" > draft.json
+          if [[ "$(jq -r '.draft' draft.json)" != "true" ]] \
+            || [[ "$(jq -r '.prerelease' draft.json)" != "false" ]]; then
+            echo "::error::$TAG is not an unpublished stable draft."
+            exit 1
+          fi
+          RELEASE_ID=$(jq -r '.id' draft.json)
+          jq -r '.body // ""' draft.json > current-release.md
+          BODY_HASH=$(sha256sum current-release.md | awk '{print $1}')
+          PREV_TAG=$(git tag --list 'v*' \
+            | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' \
+            | sort -V \
+            | awk -v target="$TAG" '$0 == target { print previous; exit } { previous=$0 }')
+          if [[ -z "$PREV_TAG" ]]; then
+            echo "::error::Could not resolve the stable tag before $TAG."
+            exit 1
+          fi
+          echo "release_id=$RELEASE_ID" >> "$GITHUB_OUTPUT"
+          echo "body_hash=$BODY_HASH" >> "$GITHUB_OUTPUT"
+          echo "prev_tag=$PREV_TAG" >> "$GITHUB_OUTPUT"
+
+      - name: Compose factual base notes
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          TAG: ${{ inputs.release_tag }}
+          PREV_TAG: ${{ steps.draft.outputs.prev_tag }}
+        run: |
+          ARGS=(
+            -X POST "repos/$REPO/releases/generate-notes"
+            -f "tag_name=$TAG"
+            -f "target_commitish=$TAG"
+          )
+          [[ -n "$PREV_TAG" ]] && ARGS+=(-f "previous_tag_name=$PREV_TAG")
+          gh api "${ARGS[@]}" --jq '.body' > release-notes-base.md
+          test -s release-notes-base.md
+
+      - name: Regenerate selected assets
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          REPO: ${{ github.repository }}
+          TAG: ${{ inputs.release_tag }}
+          PREV_TAG: ${{ steps.draft.outputs.prev_tag }}
+          REGENERATE: ${{ inputs.regenerate }}
+          HERO_FEATURE: ${{ inputs.hero_feature }}
+          RELEASE_CONTEXT: ${{ inputs.release_context }}
+          IMAGE_CONTEXT: ${{ inputs.image_context }}
+          COVER_PALETTE: ${{ inputs.cover_palette }}
+          COVER_COLORS: ${{ inputs.cover_colors }}
+          COVER_NAME: release-cover-${{ github.run_id }}.png
+        run: |
+          if [[ -z "${OPENAI_API_KEY:-}" ]]; then
+            echo "::error::OPENAI_API_KEY is not configured."
+            exit 1
+          fi
+          COVER_URL="https://github.com/$REPO/releases/download/$TAG/$COVER_NAME"
+          ARGS=(
+            --from "$PREV_TAG"
+            --to "$TAG"
+            --tag "$TAG"
+            --repo "$REPO"
+            --hero "${HERO_FEATURE:-}"
+            --release-context "${RELEASE_CONTEXT:-}"
+            --image-context "${IMAGE_CONTEXT:-}"
+            --palette "${COVER_PALETTE:-random}"
+            --custom-colors "${COVER_COLORS:-}"
+            --existing-notes-file current-release.md
+            --regenerate "$REGENERATE"
+            --cover-name "$COVER_NAME"
+            --cover-url "$COVER_URL"
+            --output regenerated-assets
+          )
+          ARGS+=(--base-notes-file release-notes-base.md)
+          node scripts/generate-ai-release-assets.mjs "${ARGS[@]}"
+
+      - name: Verify draft did not change during generation
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          TAG: ${{ inputs.release_tag }}
+          EXPECTED_HASH: ${{ steps.draft.outputs.body_hash }}
+        run: |
+          gh api "repos/$REPO/releases/tags/$TAG" > draft-current.json
+          if [[ "$(jq -r '.draft' draft-current.json)" != "true" ]]; then
+            echo "::error::$TAG was published while regeneration was running."
+            exit 1
+          fi
+          jq -r '.body // ""' draft-current.json > body-current.md
+          ACTUAL_HASH=$(sha256sum body-current.md | awk '{print $1}')
+          if [[ "$ACTUAL_HASH" != "$EXPECTED_HASH" ]]; then
+            echo "::error::The draft was edited while regeneration was running. Run regeneration again to avoid overwriting human edits."
+            exit 1
+          fi
+
+      - name: Upload generated assets and update draft
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          TAG: ${{ inputs.release_tag }}
+          RELEASE_ID: ${{ steps.draft.outputs.release_id }}
+          REGENERATE: ${{ inputs.regenerate }}
+          COVER_NAME: release-cover-${{ github.run_id }}.png
+        run: |
+          if [[ "$REGENERATE" == "image" || "$REGENERATE" == "both" ]]; then
+            for cover in regenerated-assets/release-cover-*.png; do
+              [[ -e "$cover" ]] && gh release upload "$TAG" --repo "$REPO" --clobber \
+                "$cover#Release cover"
+            done
+          fi
+          gh release upload "$TAG" --repo "$REPO" --clobber \
+            "regenerated-assets/release-editorial.json#AI release editorial metadata"
+
+          # Recheck after uploading because publishing and manual edits do not
+          # participate in this workflow's per-tag concurrency lock.
+          gh api "repos/$REPO/releases/tags/$TAG" > draft-before-patch.json
+          if [[ "$(jq -r '.draft' draft-before-patch.json)" != "true" ]]; then
+            echo "::error::$TAG was published before the notes could be updated."
+            exit 1
+          fi
+          jq -r '.body // ""' draft-before-patch.json > body-before-patch.md
+          BEFORE_HASH=$(sha256sum body-before-patch.md | awk '{print $1}')
+          EXPECTED_HASH=$(sha256sum body-current.md | awk '{print $1}')
+          if [[ "$BEFORE_HASH" != "$EXPECTED_HASH" ]]; then
+            echo "::error::The draft changed before update; refusing to overwrite it."
+            exit 1
+          fi
+
+          jq -n --rawfile body regenerated-assets/release-notes.md '{body: $body}' \
+            | gh api --method PATCH "repos/$REPO/releases/$RELEASE_ID" --input - >/dev/null
+
+          if [[ "$REGENERATE" == "image" || "$REGENERATE" == "both" ]]; then
+            COVER_PREFIX="${COVER_NAME%.png}-"
+            gh api --paginate "repos/$REPO/releases/$RELEASE_ID/assets?per_page=100" \
+              | jq -r --arg prefix "$COVER_PREFIX" \
+                '.[] | select((.name | startswith("release-cover-")) and ((.name | startswith($prefix)) | not)) | .id' \
+              | while read -r asset_id; do
+                  gh api --method DELETE "repos/$REPO/releases/assets/$asset_id"
+                done
+          fi
+
+      - name: Add review links
+        env:
+          REPO: ${{ github.repository }}
+          TAG: ${{ inputs.release_tag }}
+          REGENERATE: ${{ inputs.regenerate }}
+          COVER_PALETTE: ${{ inputs.cover_palette }}
+        run: |
+          {
+            echo "### Release assets regenerated"
+            echo "- Updated: \`$REGENERATE\`"
+            echo "- Cover palette: \`${COVER_PALETTE:-random}\`"
+            echo "- Review draft: https://github.com/$REPO/releases/tag/$TAG"
+            echo "- When satisfied, use GitHub's **Publish release** button."
+          } >> "$GITHUB_STEP_SUMMARY"

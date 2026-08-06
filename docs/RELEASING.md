@@ -186,7 +186,43 @@ actor for an App) and re-import.
 
 Open **Actions -> Release -> Run workflow**, select the release branch, and
 choose `beta`, `beta-minor`, `beta-major`, `patch`, `minor`, or `major` from
-the **Version increment** list.
+the **Version increment** list. Leave **Preview notes and covers only** checked
+to test the form and AI output without creating a release, tag, build, package,
+commit, or Docker image. The run uploads the English notes and coordinated
+light/dark covers as a short-lived workflow artifact. Uncheck it only when
+cutting a real release from `develop` or `main`.
+
+Although the Release workflow already exists on the default branch, GitHub
+still builds the manual input form from that default-branch definition. A
+feature branch can be selected under **Use workflow from**, but its newly added
+controls cannot be reviewed reliably in the primary repository's UI before this
+schema reaches `develop`.
+
+For an exact pre-merge UI test, use a temporary fork, make the test branch its
+default branch, and open that fork's **Actions -> Release -> Run workflow**
+form. Create a restricted `release-ai-preview` environment in the fork, allow
+only that exact branch, and add an `OPENAI_API_KEY` with a conservative spend
+limit. The preview token has read-only repository access. Delete the fork or
+secret after testing. CLI/API dispatch can execute a feature-branch workflow in
+the primary repository, but it does not expose the new controls in the web form.
+
+Stable releases and previews also accept editorial and cover inputs:
+
+- **Main feature** — the user-visible feature the notes and cover should lead
+  with;
+- **Release context** — audience, tone, priorities, or factual clarification
+  for the notes;
+- **Image context** — visual direction, composition, or elements to avoid;
+- **Cover palette** — `random`, blue, purple, teal, orange, green, magenta, or
+  custom;
+- **Custom colors** — a short palette description used only with `custom`, such
+  as `navy and coral`.
+
+Empty editorial fields let the model choose from the generated changelog and
+commit history. `random` selects a palette deterministically from the release
+tag, keeping a light/dark pair coordinated while varying successive releases.
+Preview mode accepts only stable increments (`patch`, `minor`, or `major`),
+because beta releases do not use AI-generated assets.
 
 The branch contract is enforced:
 
@@ -223,11 +259,79 @@ case-insensitive, and only the head commit of the push is inspected.
    `apps/desktop/package.json`, and updates issue-template versions.
 2. `desktop` builds and signs installers for Windows, macOS, and Linux.
 3. `docker` builds and publishes the combined application image to GHCR.
-4. `finalize` commits release metadata, creates the tag, and publishes the
-   GitHub Release only after all builds succeed.
+4. `finalize` commits release metadata and creates the tag. Beta releases are
+   published immediately; stable releases are saved as drafts for human review.
 
-Stable Docker releases update both their version tag and `latest`. Beta images
-publish only their version tag and cannot overwrite `latest`.
+Both channels stage only their versioned Docker image during the build. When a
+human publishes a stable draft, [`promote-stable-docker.yml`](../.github/workflows/promote-stable-docker.yml)
+promotes that exact versioned image to `latest`. Beta images can never overwrite
+`latest`.
+
+### Stable release review
+
+Stable releases use AI to turn GitHub's factual generated notes into the
+editorial format used by recent releases and to create an on-brand light/dark
+cover pair with the established release typography, glossy 3D feature tile, and
+exact version, headline, and subtitle copy. The light cover is generated first;
+the dark cover edits that result so layout, feature geometry, and typography
+remain aligned across themes.
+Create a `release-ai` GitHub Environment, allow deployments from `main` and
+`develop`, and add its `OPENAI_API_KEY` secret. Do not add required reviewers to
+this environment: the draft's **Publish release** button is the editorial
+approval gate. If the secret is absent or either API call fails, the draft is
+still created with GitHub's generated notes and no cover.
+
+After the workflow succeeds:
+
+1. Open the draft link in the workflow summary.
+2. Review the rendered notes, both cover themes, and attached installers
+   together.
+3. Edit the draft directly, or open **Actions -> Regenerate release assets**.
+4. Choose `notes`, `image`, or `both`, select a palette (or `random`), provide
+   optional feedback/context, and run the regeneration from `main`.
+5. When satisfied, click **Publish release** on the draft. This is the human
+   confirmation step and triggers Docker `latest` promotion.
+
+Regeneration works only for an unpublished stable `vX.Y.Z` draft. Generated
+blocks are wrapped in hidden Markdown markers so image-only regeneration keeps
+the notes unchanged, notes-only regeneration keeps the cover unchanged, and
+human text outside those blocks is preserved. If the draft is edited or
+published while regeneration runs, the workflow refuses to overwrite it.
+
+Only one stable draft may exist at a time. A stable draft already has a public
+protected tag, metadata commit, and versioned Docker image, so abandoning one is
+not equivalent to deleting an ordinary draft. Delete the draft, remove the
+version tag through an authorized tag-protection bypass, and revert the metadata
+commit before calculating another release. Remove the versioned GHCR image too
+if it should not remain available.
+
+### Local release preview
+
+The same generator can be exercised without creating a tag or GitHub Release:
+
+```bash
+OPENAI_API_KEY=... node scripts/generate-ai-release-assets.mjs \
+  --from v0.7.4 \
+  --to HEAD \
+  --tag v0.7.5 \
+  --repo unicef/adt-studio \
+  --hero "PNLD export" \
+  --release-context "Write for educators and production teams" \
+  --image-context "Focus on formal distribution" \
+  --palette orange \
+  --output .context/release-preview
+```
+
+Use `--palette custom --custom-colors "navy and coral"` for a custom palette.
+The generated Markdown uses a `<picture>` element to select
+`release-cover-dark.png` or `release-cover-light.png` from the viewer's GitHub
+theme.
+
+Add `--no-image` for a text-only preview or `--dry-run` to write the collected
+context and OpenAI request without making any API calls. Preview files live
+under the gitignored `.context/` directory. Set `OPENAI_IMAGE_QUALITY=low` and
+`OPENAI_IMAGE_SIZE=1024x1024` for a faster, lower-cost local cover draft; CI
+uses the landscape production defaults.
 
 ### Beta release provenance
 
@@ -258,8 +362,6 @@ rendered by GitHub's feed before showing update notes.
 
 If composition or provenance lookup fails, the workflow discards the temporary
 file and lets `gh release create --generate-notes` produce the release normally.
-Stable releases do not run the composer and retain their existing generated-note
-behavior.
 
 ## Desktop channels
 
@@ -267,11 +369,11 @@ Beta and stable are separate desktop products and can be installed together.
 Any version containing `-beta` uses the beta product identity and updater
 channel, including staging versions such as `0.7.5-beta-pr-123`.
 
-| Installed build                | Updater channel | Receives        |
-| ------------------------------ | --------------- | --------------- |
-| Stable (`X.Y.Z`)               | `latest`        | Stable releases |
-| Beta (`X.Y.Z-beta.N`)          | `beta`          | Beta releases   |
-| Staging (`X.Y.Z-beta-pr-<n>`)  | `beta`          | Beta releases   |
+| Installed build               | Updater channel | Receives        |
+| ----------------------------- | --------------- | --------------- |
+| Stable (`X.Y.Z`)              | `latest`        | Stable releases |
+| Beta (`X.Y.Z-beta.N`)         | `beta`          | Beta releases   |
+| Staging (`X.Y.Z-beta-pr-<n>`) | `beta`          | Beta releases   |
 
 The version browser accepts numbered beta releases and PR-qualified staging
 builds. Staging artifacts themselves are not listed remotely because they are

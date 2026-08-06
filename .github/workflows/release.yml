@@ -5,10 +5,15 @@ on:
     branches: [main, develop]
   workflow_dispatch:
     inputs:
+      preview_only:
+        description: "Preview notes and covers only — no release, build, tag, or push"
+        required: true
+        default: true
+        type: boolean
       release_type:
         description: "Version increment"
         required: true
-        default: beta
+        default: patch
         type: choice
         options:
           - beta
@@ -17,12 +22,42 @@ on:
           - patch
           - minor
           - major
+      hero_feature:
+        description: "Main feature to emphasize in stable release notes and cover (optional)"
+        required: false
+        type: string
+      release_context:
+        description: "Extra editorial context for stable release notes (optional)"
+        required: false
+        type: string
+      image_context:
+        description: "Extra art direction for the stable release cover (optional)"
+        required: false
+        type: string
+      cover_palette:
+        description: "Stable release cover palette"
+        required: true
+        default: random
+        type: choice
+        options:
+          - random
+          - blue
+          - purple
+          - teal
+          - orange
+          - green
+          - magenta
+          - custom
+      cover_colors:
+        description: "Colors to use when palette is custom (for example navy and coral)"
+        required: false
+        type: string
 
 permissions:
   contents: read
 
 concurrency:
-  group: release
+  group: ${{ inputs.preview_only && 'release-preview' || 'release' }}
   cancel-in-progress: false
 
 # Opt JS actions into Node 24 ahead of the June 2026 default — silences the
@@ -32,10 +67,122 @@ env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
 
 jobs:
+  preview:
+    if: github.event_name == 'workflow_dispatch' && inputs.preview_only
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: release-ai-preview
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Resolve preview release range
+        id: release
+        env:
+          RELEASE_TYPE: ${{ inputs.release_type }}
+        run: |
+          if [[ "$RELEASE_TYPE" == beta* ]]; then
+            echo "::error::AI release assets are used for stable releases. Select patch, minor, or major for a preview."
+            exit 1
+          fi
+          VERSION=$(node scripts/calculate-release-version.mjs "$RELEASE_TYPE")
+          TAG="v$VERSION"
+          PREV_TAG=$(git tag --list 'v*' \
+            | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' \
+            | sort -V \
+            | tail -1)
+          if [[ -z "$PREV_TAG" ]]; then
+            echo "::error::No previous release tag was found for the preview."
+            exit 1
+          fi
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "prev_tag=$PREV_TAG" >> "$GITHUB_OUTPUT"
+          echo "Previewing $PREV_TAG...$TAG from $GITHUB_SHA"
+
+      - name: Compose factual preview notes
+        env:
+          PREV_TAG: ${{ steps.release.outputs.prev_tag }}
+        run: |
+          mkdir -p release-preview
+          {
+            echo "## Changes since $PREV_TAG"
+            echo
+            git log --reverse --format='- %s (`%h`)' "$PREV_TAG..$GITHUB_SHA"
+          } > release-notes-base.md
+          test -s release-notes-base.md
+
+      - name: Generate preview notes and theme covers
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          TAG: ${{ steps.release.outputs.tag }}
+          PREV_TAG: ${{ steps.release.outputs.prev_tag }}
+          REPO: ${{ github.repository }}
+          HERO_FEATURE: ${{ inputs.hero_feature }}
+          RELEASE_CONTEXT: ${{ inputs.release_context }}
+          IMAGE_CONTEXT: ${{ inputs.image_context }}
+          COVER_PALETTE: ${{ inputs.cover_palette }}
+          COVER_COLORS: ${{ inputs.cover_colors }}
+        run: |
+          if [[ -z "${OPENAI_API_KEY:-}" ]]; then
+            echo "::error::Add OPENAI_API_KEY to the release-ai-preview environment before running a preview."
+            exit 1
+          fi
+          node scripts/generate-ai-release-assets.mjs \
+            --from "$PREV_TAG" \
+            --to "$GITHUB_SHA" \
+            --tag "$TAG" \
+            --repo "$REPO" \
+            --hero "${HERO_FEATURE:-}" \
+            --release-context "${RELEASE_CONTEXT:-}" \
+            --image-context "${IMAGE_CONTEXT:-}" \
+            --palette "${COVER_PALETTE:-random}" \
+            --custom-colors "${COVER_COLORS:-}" \
+            --base-notes-file release-notes-base.md \
+            --cover-name release-cover.png \
+            --cover-url ./release-cover.png \
+            --output release-preview
+
+      - name: Add preview to workflow summary
+        env:
+          TAG: ${{ steps.release.outputs.tag }}
+          PREV_TAG: ${{ steps.release.outputs.prev_tag }}
+        run: |
+          {
+            echo "## Release asset preview"
+            echo
+            echo "- Prospective release: \`$TAG\`"
+            echo "- Change range: \`$PREV_TAG...$GITHUB_SHA\`"
+            echo "- No tag, release, build, package, or commit was created."
+            echo "- Download the artifact below to inspect both cover themes at full size."
+            echo
+            echo "<details><summary>Generated release notes</summary>"
+            echo
+            sed '/<!-- adt-ai-cover:start -->/,/<!-- adt-ai-cover:end -->/d' \
+              release-preview/release-notes.md
+            echo
+            echo "</details>"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload release preview
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-preview-${{ github.run_id }}
+          retention-days: 3
+          if-no-files-found: error
+          path: release-preview
+
   prepare:
     if: >-
       ${{
         contains(fromJSON('["main", "develop"]'), github.ref_name)
+        && (github.event_name != 'workflow_dispatch' || !inputs.preview_only)
         && (github.event_name == 'workflow_dispatch' || startsWith(github.event.head_commit.message, 'RELEASE:'))
       }}
     runs-on: ubuntu-latest
@@ -97,10 +244,9 @@ jobs:
             echo "::error::Calculated tag $TAG already exists on origin."
             exit 1
           fi
+          # Stable `latest` is promoted only after a human publishes the draft
+          # GitHub Release. The versioned image is safe to stage beforehand.
           DOCKER_TAGS="ghcr.io/unicef/adt-studio:$TAG"
-          if [[ "$PRERELEASE" == "false" ]]; then
-            DOCKER_TAGS="$DOCKER_TAGS"$'\n'"ghcr.io/unicef/adt-studio:latest"
-          fi
           # Changelog baseline: pin the previous tag so release-note generation
           # never falls back to the repo's first commit when GitHub can't infer
           # an ancestor (stable and beta tags live on divergent branch lines).
@@ -121,6 +267,20 @@ jobs:
             echo "EOF"
           } >> "$GITHUB_OUTPUT"
           echo "Resolved tag: $TAG (type: $RELEASE_TYPE, prerelease: $PRERELEASE)"
+
+      - name: Refuse a second outstanding stable draft
+        if: steps.tag.outputs.prerelease == 'false'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          DRAFT=$(gh api --paginate "repos/$REPO/releases?per_page=100" \
+            --jq '.[] | select(.draft == true and (.tag_name | test("^v[0-9]+\\.[0-9]+\\.[0-9]+$"))) | .tag_name' \
+            | head -1)
+          if [[ -n "$DRAFT" ]]; then
+            echo "::error::Stable draft $DRAFT is still awaiting review. Publish or abandon it before starting another stable release."
+            exit 1
+          fi
 
       - uses: pnpm/action-setup@v4
 
@@ -325,6 +485,7 @@ jobs:
     needs: [prepare, desktop, docker]
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    environment: release-ai
     permissions:
       contents: write
       pull-requests: read
@@ -398,6 +559,74 @@ jobs:
         run: |
           sed "s/__TAG__/${TAG}/g" docker/compose-release.yml.template > docker-compose.yml
 
+      - name: Compose stable base release notes
+        if: needs.prepare.outputs.prerelease == 'false'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ needs.prepare.outputs.tag }}
+          REPO: ${{ github.repository }}
+          PREV_TAG: ${{ needs.prepare.outputs.prev_tag }}
+        run: |
+          rm -rf release-assets
+          mkdir -p release-assets
+          ARGS=(
+            -X POST "repos/$REPO/releases/generate-notes"
+            -f "tag_name=$TAG"
+            -f "target_commitish=$TAG"
+          )
+          [[ -n "$PREV_TAG" ]] && ARGS+=(-f "previous_tag_name=$PREV_TAG")
+          if gh api "${ARGS[@]}" --jq '.body' > release-notes-base.tmp \
+            && [[ -s release-notes-base.tmp ]]; then
+            mv release-notes-base.tmp release-notes-base.md
+            cp release-notes-base.md release-assets/release-notes.md
+          else
+            rm -f release-notes-base.tmp release-notes-base.md
+            echo "::warning::Could not compose stable base notes; the draft will use GitHub-generated notes."
+          fi
+
+      - name: Generate AI notes and cover for stable draft
+        if: needs.prepare.outputs.prerelease == 'false'
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          TAG: ${{ needs.prepare.outputs.tag }}
+          REPO: ${{ github.repository }}
+          PREV_TAG: ${{ needs.prepare.outputs.prev_tag }}
+          HERO_FEATURE: ${{ inputs.hero_feature }}
+          RELEASE_CONTEXT: ${{ inputs.release_context }}
+          IMAGE_CONTEXT: ${{ inputs.image_context }}
+          COVER_PALETTE: ${{ inputs.cover_palette }}
+          COVER_COLORS: ${{ inputs.cover_colors }}
+          COVER_NAME: release-cover-${{ github.run_id }}.png
+        run: |
+          if [[ -z "${OPENAI_API_KEY:-}" ]]; then
+            echo "::warning::OPENAI_API_KEY is not configured; keeping GitHub-generated notes and no cover."
+            exit 0
+          fi
+          if [[ ! -s release-notes-base.md ]]; then
+            echo "::warning::No factual base notes are available; skipping AI generation."
+            exit 0
+          fi
+          COVER_URL="https://github.com/$REPO/releases/download/$TAG/$COVER_NAME"
+          if node scripts/generate-ai-release-assets.mjs \
+            --from "$PREV_TAG" \
+            --to "$TAG" \
+            --tag "$TAG" \
+            --repo "$REPO" \
+            --hero "${HERO_FEATURE:-}" \
+            --release-context "${RELEASE_CONTEXT:-}" \
+            --image-context "${IMAGE_CONTEXT:-}" \
+            --palette "${COVER_PALETTE:-random}" \
+            --custom-colors "${COVER_COLORS:-}" \
+            --base-notes-file release-notes-base.md \
+            --cover-name "$COVER_NAME" \
+            --cover-url "$COVER_URL" \
+            --output release-assets; then
+            echo "AI release assets generated for human review."
+          else
+            echo "::warning::AI generation failed; keeping GitHub-generated notes and no cover."
+            find release-assets -maxdepth 1 -name 'release-cover-*.png' -delete
+          fi
+
       - name: Create GitHub release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -408,15 +637,35 @@ jobs:
         run: |
           PRERELEASE_FLAG=""
           [[ "$PRERELEASE" == "true" ]] && PRERELEASE_FLAG="--prerelease"
+          DRAFT_FLAG=()
+          [[ "$PRERELEASE" == "false" ]] && DRAFT_FLAG=(--draft)
           START_TAG_FLAG=()
           [[ -n "$PREV_TAG" ]] && START_TAG_FLAG=(--notes-start-tag "$PREV_TAG")
           NOTES_ARGS=(--generate-notes "${START_TAG_FLAG[@]}")
           if [[ "$PRERELEASE" == "true" && -s release-notes.md ]]; then
             NOTES_ARGS=(--notes-file release-notes.md)
+          elif [[ "$PRERELEASE" == "false" && -s release-assets/release-notes.md ]]; then
+            NOTES_ARGS=(--notes-file release-assets/release-notes.md)
+          fi
+          ASSETS=(dist/* docker-compose.yml scripts/windows-setup-and-run.bat)
+          if [[ "$PRERELEASE" == "false" ]]; then
+            [[ -s release-assets/release-editorial.json ]] \
+              && ASSETS+=("release-assets/release-editorial.json#AI release editorial metadata")
+            for cover in release-assets/release-cover-*.png; do
+              [[ -e "$cover" ]] && ASSETS+=("$cover#Release cover")
+            done
           fi
           gh release create "$TAG" --repo "$REPO" \
             --title "ADT Studio $TAG" \
-            "${NOTES_ARGS[@]}" $PRERELEASE_FLAG \
-            dist/* \
-            docker-compose.yml \
-            scripts/windows-setup-and-run.bat
+            "${NOTES_ARGS[@]}" $PRERELEASE_FLAG "${DRAFT_FLAG[@]}" \
+            "${ASSETS[@]}"
+
+          if [[ "$PRERELEASE" == "false" ]]; then
+            {
+              echo "### Stable release draft ready"
+              echo "- Review and publish: https://github.com/$REPO/releases/tag/$TAG"
+              echo "- The cover includes coordinated light and dark theme assets."
+              echo "- Regenerate notes or cover: https://github.com/$REPO/actions/workflows/regenerate-release-assets.yml"
+              echo "- The Docker \`latest\` tag will be promoted only after publication."
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
