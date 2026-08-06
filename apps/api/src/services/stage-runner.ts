@@ -1445,7 +1445,12 @@ async function runStoryboardStep(
   try {
     const config = loadBookConfig(label, booksDir, configPath)
 
-    const styleguideContent = loadStyleguideContent(config.styleguide, configPath)
+    const styleguideContent = loadStyleguideContent(
+      config.styleguide,
+      configPath,
+      booksDir,
+      label,
+    )
 
     // Render config is always needed
     const resolveRenderConfig = buildRenderStrategyResolver(config)
