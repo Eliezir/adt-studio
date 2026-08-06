@@ -1712,6 +1712,9 @@ msgstr "Hierarkia e titujve të librit"
 msgid "Book images"
 msgstr "Figurat e librit"
 
+msgid "Book hierarchy needs rebuilding"
+msgstr "Hierarkia e librit duhet të rindërtohet"
+
 msgid "Book info"
 msgstr "Info libri"
 
@@ -6986,8 +6989,8 @@ msgstr "Ri-ekzekuto fjalimin"
 msgid "Re-run Storyboard"
 msgstr "Ekzekuto përsëri Storyboard-in"
 
-msgid "Re-run these book-level stages on the assembled book:"
-msgstr "Riekzekuto këto faza në nivel libri në librin e bashkuar:"
+msgid "Re-run these stages on the assembled book:"
+msgstr "Riekzekuto këto faza në librin e bashkuar:"
 
 msgid "Re-run translation"
 msgstr "Ri-ekzekuto përkthimin"
@@ -7597,6 +7600,9 @@ msgstr "NË EKZEKUTIM"
 
 msgid "Running Sectioning will run Extract first, then section the extracted pages."
 msgstr "Ekzekutimi i Seksionimit do të ekzekutojë Ekstraktimin së pari, pastaj do të seksionojë faqet e ekstraktuara."
+
+msgid "Running Sectioning will rebuild the book-wide outline from the merged pages, then apply it without re-running PDF extraction."
+msgstr "Ekzekutimi i Seksionimit do ta rindërtojë strukturën e të gjithë librit nga faqet e bashkuara dhe do ta zbatojë pa e ekzekutuar përsëri nxjerrjen e PDF-së."
 
 msgid "Running Storyboard will run the earlier core stages it depends on first, then render the typed sections."
 msgstr "Ekzekutimi i Storyboard-it do të ekzekutojë fazat kryesore të mëparshme nga të cilat varet së pari, pastaj do të renderojë seksionet e shtypura."

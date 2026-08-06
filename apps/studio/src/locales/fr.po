@@ -1713,6 +1713,9 @@ msgstr "Hiérarchie des titres du livre"
 msgid "Book images"
 msgstr "Images du livre"
 
+msgid "Book hierarchy needs rebuilding"
+msgstr "La hiérarchie du livre doit être reconstruite"
+
 msgid "Book info"
 msgstr "Infos du livre"
 
@@ -6987,8 +6990,8 @@ msgstr "Relancer la synthèse vocale"
 msgid "Re-run Storyboard"
 msgstr "Relancer le Scénarimage"
 
-msgid "Re-run these book-level stages on the assembled book:"
-msgstr "Relancez ces étapes au niveau du livre sur le livre assemblé :"
+msgid "Re-run these stages on the assembled book:"
+msgstr "Relancez ces étapes sur le livre assemblé :"
 
 msgid "Re-run translation"
 msgstr "Relancer la traduction"
@@ -7598,6 +7601,9 @@ msgstr "EN COURS"
 
 msgid "Running Sectioning will run Extract first, then section the extracted pages."
 msgstr "Lancer Sectioning exécutera d'abord Extraction, puis découpera en sections les pages extraites."
+
+msgid "Running Sectioning will rebuild the book-wide outline from the merged pages, then apply it without re-running PDF extraction."
+msgstr "L’exécution du découpage reconstruira le plan global du livre à partir des pages fusionnées, puis l’appliquera sans relancer l’extraction du PDF."
 
 msgid "Running Storyboard will run the earlier core stages it depends on first, then render the typed sections."
 msgstr "Lancer Storyboard exécutera d'abord les étapes principales précédentes dont il dépend, puis affichera les sections typées."

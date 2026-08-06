@@ -41,6 +41,18 @@ export interface BookOutlineEvidence {
   typeScale: TypeScale | null
 }
 
+/** Keep each page's prompt contribution bounded without discarding both ends. */
+export const BOOK_OUTLINE_MAX_PAGE_TEXT_CHARS = 12_000
+
+function boundedPageText(text: string): string {
+  if (text.length <= BOOK_OUTLINE_MAX_PAGE_TEXT_CHARS) return text
+  const marker = "\n\n[... middle of page text omitted for outline input ...]\n\n"
+  const available = BOOK_OUTLINE_MAX_PAGE_TEXT_CHARS - marker.length
+  const leading = Math.ceil(available / 2)
+  const trailing = Math.floor(available / 2)
+  return `${text.slice(0, leading)}${marker}${text.slice(-trailing)}`
+}
+
 interface GroupedParagraph {
   text: string[]
   textIds: string[]
@@ -135,7 +147,9 @@ export function buildHeadingCandidates(
     }
 
     // Some scanned books have no positioned text. Keep the outline step useful
-    // by falling back to compact OCR lines with no visual-style claims.
+    // by falling back to compact OCR lines with no visual-style claims. The
+    // same per-page limit still applies: a malformed OCR page must not make the
+    // whole-book request unbounded.
     if (groups.size === 0) {
       const lines = page.text
         .split(/\r?\n/)
@@ -175,7 +189,7 @@ export function buildHeadingCandidates(
 
     // Keep the strongest blocks when a page is unusually dense, then restore
     // source reading order so the book-level model sees a coherent sequence.
-    const pageLimit = positioned ? maxPerPage : ranked.length
+    const pageLimit = maxPerPage
     const selected = ranked
       .sort((a, b) => b.likelihood - a.likelihood || a.group.order - b.group.order)
       .slice(0, pageLimit)
@@ -293,7 +307,11 @@ export function buildBookOutlineEvidence(
   typeScale: TypeScale | null,
 ): BookOutlineEvidence {
   return {
-    pages: pages.map(({ pageId, pageNumber, text }) => ({ pageId, pageNumber, text })),
+    pages: pages.map(({ pageId, pageNumber, text }) => ({
+      pageId,
+      pageNumber,
+      text: boundedPageText(text),
+    })),
     candidates: buildHeadingCandidates(pages, typeScale),
     proofSheets: buildProofSheets(pages),
     typeScale,

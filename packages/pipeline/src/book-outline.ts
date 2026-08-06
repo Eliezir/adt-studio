@@ -12,6 +12,11 @@ import type { BookOutlineEvidence } from "./book-outline-evidence.js"
 
 export const BOOK_OUTLINE_NODE = "book-outline"
 export const BOOK_OUTLINE_ITEM = "book"
+export const BOOK_OUTLINE_CHUNK_PAGE_LIMIT = 16
+
+const BOOK_OUTLINE_CHUNK_PROMPT = "book_outline_chunk"
+const BOOK_OUTLINE_SYNTHESIS_PROMPT = "book_outline_synthesis"
+const BOOK_OUTLINE_CHUNK_MAX_TOKENS = 16_384
 
 export interface BookOutlineConfig {
   promptName: string
@@ -155,33 +160,132 @@ function validateBookOutline(
   return { valid: errors.length === 0, errors }
 }
 
-/** Generate one authoritative hierarchy from all extracted book evidence. */
+function promptContext(evidence: BookOutlineEvidence): Record<string, unknown> {
+  return {
+    pages: evidence.pages,
+    candidates: evidence.candidates,
+    proof_sheets: evidence.proofSheets.map((sheet) => ({
+      sheet_id: sheet.sheetId,
+      page_ids: sheet.pageIds,
+      page_numbers: sheet.pageNumbers,
+      image_base64: sheet.imageBase64,
+    })),
+    type_scale: evidence.typeScale,
+  }
+}
+
+function evidenceChunk(
+  evidence: BookOutlineEvidence,
+  pages: BookOutlineEvidence["pages"],
+): BookOutlineEvidence {
+  const pageIds = new Set(pages.map((page) => page.pageId))
+  return {
+    pages,
+    candidates: evidence.candidates.filter((candidate) => pageIds.has(candidate.pageId)),
+    // Default proof sheets contain 16 pages, matching the chunk boundary. Keep
+    // only sheets wholly represented by this request so visual evidence never
+    // leaks in from a neighboring chunk.
+    proofSheets: evidence.proofSheets.filter((sheet) =>
+      sheet.pageIds.every((pageId) => pageIds.has(pageId)),
+    ),
+    typeScale: evidence.typeScale,
+  }
+}
+
+async function generateOutlinePass(
+  evidence: BookOutlineEvidence,
+  config: BookOutlineConfig,
+  llmModel: LLMModel,
+  prompt: string,
+  taskType: string,
+  maxTokens: number,
+): Promise<BookOutlineOutput> {
+  const result = await llmModel.generateObject<BookOutlineOutput>({
+    schema: BookOutlineOutput,
+    prompt,
+    context: promptContext(evidence),
+    validate: (raw) => validateBookOutline(raw, evidence),
+    maxRetries: config.maxRetries,
+    maxTokens,
+    timeoutMs: config.timeoutMs,
+    log: {
+      taskType,
+      promptName: prompt,
+    },
+  })
+
+  return result.object
+}
+
+/**
+ * Generate one authoritative hierarchy from all extracted book evidence.
+ * Small books keep the original single-call path. Larger books are analyzed in
+ * deterministic proof-sheet-sized chunks, then normalized in one compact
+ * global synthesis call. No request receives unbounded raw book text/images.
+ */
 export async function generateBookOutline(
   evidence: BookOutlineEvidence,
   config: BookOutlineConfig,
   llmModel: LLMModel,
 ): Promise<BookOutlineOutput> {
+  if (evidence.pages.length <= BOOK_OUTLINE_CHUNK_PAGE_LIMIT) {
+    return generateOutlinePass(
+      evidence,
+      config,
+      llmModel,
+      config.promptName,
+      "book-outline",
+      32_768,
+    )
+  }
+
+  const chunks: Array<{
+    chunkId: string
+    pageNumbers: number[]
+    output: BookOutlineOutput
+  }> = []
+
+  for (let start = 0; start < evidence.pages.length; start += BOOK_OUTLINE_CHUNK_PAGE_LIMIT) {
+    const pages = evidence.pages.slice(start, start + BOOK_OUTLINE_CHUNK_PAGE_LIMIT)
+    const chunk = evidenceChunk(evidence, pages)
+    const chunkNumber = chunks.length + 1
+    const prompt = config.promptName === "book_outline"
+      ? BOOK_OUTLINE_CHUNK_PROMPT
+      : config.promptName
+    const output = await generateOutlinePass(
+      chunk,
+      config,
+      llmModel,
+      prompt,
+      "book-outline",
+      BOOK_OUTLINE_CHUNK_MAX_TOKENS,
+    )
+    chunks.push({
+      chunkId: `chunk-${String(chunkNumber).padStart(3, "0")}`,
+      pageNumbers: pages.map((page) => page.pageNumber),
+      output,
+    })
+  }
+
   const result = await llmModel.generateObject<BookOutlineOutput>({
     schema: BookOutlineOutput,
-    prompt: config.promptName,
+    prompt: BOOK_OUTLINE_SYNTHESIS_PROMPT,
     context: {
-      pages: evidence.pages,
-      candidates: evidence.candidates,
-      proof_sheets: evidence.proofSheets.map((sheet) => ({
-        sheet_id: sheet.sheetId,
-        page_ids: sheet.pageIds,
-        page_numbers: sheet.pageNumbers,
-        image_base64: sheet.imageBase64,
+      chunks: chunks.map((chunk) => ({
+        chunk_id: chunk.chunkId,
+        page_numbers: chunk.pageNumbers,
+        entries: chunk.output.entries,
+        style_clusters: chunk.output.styleClusters,
       })),
       type_scale: evidence.typeScale,
     },
     validate: (raw) => validateBookOutline(raw, evidence),
     maxRetries: config.maxRetries,
-    maxTokens: 32768,
+    maxTokens: 32_768,
     timeoutMs: config.timeoutMs,
     log: {
       taskType: "book-outline",
-      promptName: config.promptName,
+      promptName: BOOK_OUTLINE_SYNTHESIS_PROMPT,
     },
   })
 

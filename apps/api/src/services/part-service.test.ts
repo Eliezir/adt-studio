@@ -211,6 +211,7 @@ describe("mergePart", () => {
 
     expect(result.addedPages).toBe(2)
     expect(result.replacedPages).toBe(0)
+    expect(result.staleSteps).toEqual(expect.arrayContaining(["sectioning", "storyboard"]))
 
     const db = targetDb("raven")
     try {
@@ -226,13 +227,20 @@ describe("mergePart", () => {
       const glossary = db.all("SELECT status FROM step_runs WHERE step = 'glossary'")
       expect(glossary).toEqual([])
 
-      // Per-page stages are carried from the part and stay complete...
+      // The part-local tree is retained for inspection/version history, but its
+      // completion is cleared because it was derived from a non-authoritative
+      // part-local outline.
       const sectioning = db.all(
         "SELECT status FROM step_runs WHERE step = 'page-sectioning'",
       ) as Array<{ status: string }>
-      expect(sectioning).toEqual([{ status: "done" }])
+      expect(sectioning).toEqual([])
 
-      // ...including book-summary, which lives in the Extract stage and must
+      const rendering = db.all(
+        "SELECT status FROM step_runs WHERE step = 'web-rendering'",
+      ) as Array<{ status: string }>
+      expect(rendering).toEqual([])
+
+      // Book-summary lives in the Extract stage and must
       // NOT be cleared (else the whole Extract stage reads as "not run").
       const bookSummary = db.all(
         "SELECT status FROM step_runs WHERE step = 'book-summary'",

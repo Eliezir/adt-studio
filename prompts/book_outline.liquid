@@ -2,7 +2,7 @@
 You are a book-structure analyst. Build one authoritative semantic outline for the ENTIRE book, using all pages together.
 
 The input contains:
-- Complete extracted text with stable page IDs and page numbers.
+- Bounded extracted page text with stable page IDs and page numbers.
 - Compact positioned-text candidates. Each candidate has a stable ID, exact text, typography, location, and a local heading-likelihood hint.
 - Row-major proof sheets showing the visual progression of every page.
 - A deterministic book-wide type-scale histogram when the PDF exposes font sizes.
@@ -35,7 +35,7 @@ Observed sizes (px → character count):{% for size in type_scale.observed %} {{
 - {{ candidate.candidateId }} | {{ candidate.pageId }} / page {{ candidate.pageNumber }} | text={{ candidate.text | json }} | size={{ candidate.fontSizePx }} | bodyRatio={{ candidate.sizeToBodyRatio }} | weight={{ candidate.fontWeight }} | centered={{ candidate.centered }} | top={{ candidate.topRatio }} | left={{ candidate.leftRatio }} | width={{ candidate.widthRatio }} | family={{ candidate.fontFamily }} | color={{ candidate.color }} | localHint={{ candidate.headingLikelihood }}
 {% endfor %}
 
-## Complete page text
+## Bounded page text
 {% for page in pages %}
 --- {{ page.pageId }} / Page {{ page.pageNumber }} ---
 {{ page.text }}

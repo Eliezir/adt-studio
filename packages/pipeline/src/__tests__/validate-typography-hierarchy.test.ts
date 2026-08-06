@@ -37,8 +37,39 @@ describe("validateTypographyHierarchy", () => {
     ])
     expect(errors).toEqual(expect.arrayContaining([
       expect.stringContaining("font-size utility"),
-      expect.stringContaining("inline font-size"),
+      expect.stringContaining("inline font/font-size"),
     ]))
+  })
+
+  it("rejects conflicting hierarchy classes and alternate size override syntax", () => {
+    const leaf = [{ text_id: "heading", text_type: "chapter_title" }]
+    expect(validateTypographyHierarchy(
+      `<h1 class="adt-h1 adt-h2" data-id="heading">Chapter</h1>`,
+      leaf,
+    )).toContainEqual(expect.stringContaining("chapter_title"))
+    expect(validateTypographyHierarchy(
+      `<h1 class="adt-h1 md:text-[min(3vw,2rem)]" data-id="heading">Chapter</h1>`,
+      leaf,
+    )).toContainEqual(expect.stringContaining("font-size utility"))
+    expect(validateTypographyHierarchy(
+      `<h1 class="adt-h1" style="font: 12px sans-serif" data-id="heading">Chapter</h1>`,
+      leaf,
+    )).toContainEqual(expect.stringContaining("inline font/font-size"))
+    expect(validateTypographyHierarchy(
+      `<style>.adt-h1 { font-size: 12px }</style><h1 class="adt-h1" data-id="heading">Chapter</h1>`,
+      leaf,
+    )).toContainEqual(expect.stringContaining("<style> block"))
+    expect(validateTypographyHierarchy(
+      `<h1 class="adt-h1"><span class="adt-h2" data-id="heading">Chapter</span></h1>`,
+      leaf,
+    )).toContainEqual(expect.stringContaining("semantic heading element"))
+  })
+
+  it("does not confuse arbitrary text colors with arbitrary font sizes", () => {
+    expect(validateTypographyHierarchy(
+      `<h1 class="adt-h1 text-[#123456]" data-id="heading">Chapter</h1>`,
+      [{ text_id: "heading", text_type: "chapter_title" }],
+    )).toEqual([])
   })
 
   it("allows activity control sizing without allowing heading overrides", () => {
