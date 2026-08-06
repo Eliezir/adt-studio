@@ -1708,11 +1708,11 @@ msgstr "Fuentes del libro"
 msgid "Book heading outline"
 msgstr "Jerarquía de títulos del libro"
 
-msgid "Book images"
-msgstr "Imágenes del libro"
-
 msgid "Book hierarchy needs rebuilding"
 msgstr "Es necesario reconstruir la jerarquía del libro"
+
+msgid "Book images"
+msgstr "Imágenes del libro"
 
 msgid "Book info"
 msgstr "Información del libro"
@@ -7597,11 +7597,11 @@ msgstr "EN CURSO"
 #~ msgid "Running {stageLabel}"
 #~ msgstr "Ejecutando {stageLabel}"
 
-msgid "Running Sectioning will run Extract first, then section the extracted pages."
-msgstr "Ejecutar Sectioning ejecutará primero Extracción y luego dividirá en secciones las páginas extraídas."
-
 msgid "Running Sectioning will rebuild the book-wide outline from the merged pages, then apply it without re-running PDF extraction."
 msgstr "Al ejecutar el seccionamiento, se reconstruirá el esquema de todo el libro a partir de las páginas combinadas y se aplicará sin volver a ejecutar la extracción del PDF."
+
+msgid "Running Sectioning will run Extract first, then section the extracted pages."
+msgstr "Ejecutar Sectioning ejecutará primero Extracción y luego dividirá en secciones las páginas extraídas."
 
 msgid "Running Storyboard will run the earlier core stages it depends on first, then render the typed sections."
 msgstr "Ejecutar Storyboard ejecutará primero las etapas principales anteriores de las que depende y luego renderizará las secciones tipificadas."

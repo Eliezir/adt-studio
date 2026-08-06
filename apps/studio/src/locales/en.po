@@ -1708,11 +1708,11 @@ msgstr "Book Fonts"
 msgid "Book heading outline"
 msgstr "Book heading outline"
 
-msgid "Book images"
-msgstr "Book images"
-
 msgid "Book hierarchy needs rebuilding"
 msgstr "Book hierarchy needs rebuilding"
+
+msgid "Book images"
+msgstr "Book images"
 
 msgid "Book info"
 msgstr "Book info"
@@ -7597,11 +7597,11 @@ msgstr "RUNNING"
 #~ msgid "Running {stageLabel}"
 #~ msgstr "Running {stageLabel}"
 
-msgid "Running Sectioning will run Extract first, then section the extracted pages."
-msgstr "Running Sectioning will run Extract first, then section the extracted pages."
-
 msgid "Running Sectioning will rebuild the book-wide outline from the merged pages, then apply it without re-running PDF extraction."
 msgstr "Running Sectioning will rebuild the book-wide outline from the merged pages, then apply it without re-running PDF extraction."
+
+msgid "Running Sectioning will run Extract first, then section the extracted pages."
+msgstr "Running Sectioning will run Extract first, then section the extracted pages."
 
 msgid "Running Storyboard will run the earlier core stages it depends on first, then render the typed sections."
 msgstr "Running Storyboard will run the earlier core stages it depends on first, then render the typed sections."
