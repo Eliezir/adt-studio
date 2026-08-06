@@ -1,6 +1,6 @@
 import fs from "node:fs"
 import path from "node:path"
-import { parseBookLabel } from "@adt/types"
+import { parseBookLabel, StyleguideName } from "@adt/types"
 
 export type StyleguideSourceKind = "book" | "uploaded" | "bundled"
 
@@ -31,6 +31,12 @@ export function getWritableStyleguidesDir(booksDir: string): string {
 export function getBookStyleguidesDir(booksDir: string, bookLabel: string): string {
   const safeLabel = parseBookLabel(bookLabel)
   return path.join(path.resolve(booksDir), safeLabel, "styleguides")
+}
+
+/** Derive a filesystem-safe style guide name from every supported book label. */
+export function getGeneratedStyleguideName(bookLabel: string): string {
+  const safeLabel = parseBookLabel(bookLabel)
+  return StyleguideName.parse(`${safeLabel.replaceAll(".", "-")}-generated`)
 }
 
 export function getStyleguideSearchDirs(
@@ -117,6 +123,28 @@ function writeErrorMessage(error: unknown): string {
   return "Could not save the style guide."
 }
 
+interface FileSnapshot {
+  existed: boolean
+  content?: Buffer
+}
+
+function snapshotFile(filePath: string): FileSnapshot {
+  return fs.existsSync(filePath)
+    ? { existed: true, content: fs.readFileSync(filePath) }
+    : { existed: false }
+}
+
+function restoreFile(filePath: string, snapshot: FileSnapshot): void {
+  if (!snapshot.existed) {
+    if (fs.existsSync(filePath)) fs.rmSync(filePath)
+    return
+  }
+
+  const current = fs.existsSync(filePath) ? fs.readFileSync(filePath) : undefined
+  if (current && snapshot.content && current.equals(snapshot.content)) return
+  fs.writeFileSync(filePath, snapshot.content!)
+}
+
 /**
  * Persist one style guide and keep any preview in the same source directory.
  * Uploads omit previewHtml, which invalidates a stale preview of the same name.
@@ -134,15 +162,45 @@ export function writeStyleguideFiles(options: {
     throw new StyleguideWriteError("Could not save the style guide because its name is invalid.")
   }
 
+  let markdownSnapshot: FileSnapshot | undefined
+  let previewSnapshot: FileSnapshot | undefined
+  let markdownTouched = false
+  let previewTouched = false
+
   try {
     fs.mkdirSync(dir, { recursive: true })
+    markdownSnapshot = snapshotFile(markdownPath)
+    previewSnapshot = snapshotFile(previewPath)
+
+    markdownTouched = true
     fs.writeFileSync(markdownPath, content, "utf-8")
     if (previewHtml !== undefined) {
+      previewTouched = true
       fs.writeFileSync(previewPath, previewHtml, "utf-8")
     } else if (fs.existsSync(previewPath)) {
+      previewTouched = true
       fs.rmSync(previewPath)
     }
   } catch (error) {
-    throw new StyleguideWriteError(writeErrorMessage(error), { cause: error })
+    const rollbackErrors: unknown[] = []
+    if (markdownTouched && markdownSnapshot) {
+      try {
+        restoreFile(markdownPath, markdownSnapshot)
+      } catch (rollbackError) {
+        rollbackErrors.push(rollbackError)
+      }
+    }
+    if (previewTouched && previewSnapshot) {
+      try {
+        restoreFile(previewPath, previewSnapshot)
+      } catch (rollbackError) {
+        rollbackErrors.push(rollbackError)
+      }
+    }
+
+    const cause = rollbackErrors.length > 0
+      ? new AggregateError([error, ...rollbackErrors], "Style guide rollback failed")
+      : error
+    throw new StyleguideWriteError(writeErrorMessage(error), { cause })
   }
 }

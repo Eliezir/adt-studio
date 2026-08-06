@@ -67,6 +67,21 @@ describe("GET /styleguides", () => {
     const response = await app().request("/styleguides?book=../outside")
     expect(response.status).toBe(400)
   })
+
+  it("lists and previews a generated guide for a dotted book label", async () => {
+    const dottedDir = path.join(booksDir, "book.v1", "styleguides")
+    fs.mkdirSync(dottedDir, { recursive: true })
+    fs.writeFileSync(path.join(dottedDir, "book-v1-generated.md"), "# Generated")
+
+    const listResponse = await app().request("/styleguides?book=book.v1")
+    expect(await listResponse.json()).toEqual({ styleguides: ["book-v1-generated"] })
+
+    const previewResponse = await app().request(
+      "/styleguides/book-v1-generated/preview?book=book.v1",
+    )
+    expect(previewResponse.status).toBe(200)
+    expect((await previewResponse.json()).html).toContain("Generated")
+  })
 })
 
 describe("GET /styleguides/:name/preview", () => {

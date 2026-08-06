@@ -1,10 +1,11 @@
 import fs from "node:fs"
 import os from "node:os"
 import path from "node:path"
-import { afterEach, beforeEach, describe, expect, it } from "vitest"
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import {
   getBookStyleguidesDir,
   getBundledStyleguidesDir,
+  getGeneratedStyleguideName,
   getWritableStyleguidesDir,
   loadStyleguideContent,
   resolveStyleguideSource,
@@ -34,6 +35,7 @@ beforeEach(() => {
 })
 
 afterEach(() => {
+  vi.restoreAllMocks()
   fs.rmSync(tmpDir, { recursive: true, force: true })
   if (previousStyleguidesDir === undefined) delete process.env.STYLEGUIDES_DIR
   else process.env.STYLEGUIDES_DIR = previousStyleguidesDir
@@ -53,6 +55,10 @@ describe("styleguide directories", () => {
 
   it("rejects traversal in a book label", () => {
     expect(() => getBookStyleguidesDir(booksDir, "../outside")).toThrow()
+  })
+
+  it("derives a valid generated name from a book label containing dots", () => {
+    expect(getGeneratedStyleguideName("book.v1")).toBe("book-v1-generated")
   })
 })
 
@@ -114,6 +120,34 @@ describe("writeStyleguideFiles", () => {
     fs.writeFileSync(previewPath, "stale")
     writeStyleguideFiles({ dir: writableDir, name: "custom", content: "fresh" })
     expect(fs.existsSync(previewPath)).toBe(false)
+  })
+
+  it("restores the previous pair when the preview write fails", () => {
+    const markdownPath = path.join(bookDir, "my-book-generated.md")
+    const previewPath = path.join(bookDir, "my-book-generated-preview.html")
+    fs.writeFileSync(markdownPath, "old markdown")
+    fs.writeFileSync(previewPath, "old preview")
+
+    const originalWriteFileSync = fs.writeFileSync
+    vi.spyOn(fs, "writeFileSync").mockImplementation((file, data, options) => {
+      if (path.resolve(String(file)) === previewPath && data === "new preview") {
+        const error = new Error("blocked preview") as NodeJS.ErrnoException
+        error.code = "EACCES"
+        throw error
+      }
+      return originalWriteFileSync(file, data, options)
+    })
+
+    expect(() =>
+      writeStyleguideFiles({
+        dir: bookDir,
+        name: "my-book-generated",
+        content: "new markdown",
+        previewHtml: "new preview",
+      }),
+    ).toThrow("target directory is not writable")
+    expect(fs.readFileSync(markdownPath, "utf-8")).toBe("old markdown")
+    expect(fs.readFileSync(previewPath, "utf-8")).toBe("old preview")
   })
 
   it("maps invalid target failures to a clear error", () => {

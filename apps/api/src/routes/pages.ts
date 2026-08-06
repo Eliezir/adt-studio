@@ -43,6 +43,7 @@ import { samplePageEdges, extractPages, computeGroups, countPdfPages } from "@ad
 import { reRenderPage, aiEditSection } from "../services/page-edit-service.js"
 import {
   getBookStyleguidesDir,
+  getGeneratedStyleguideName,
   StyleguideWriteError,
   writeStyleguideFiles,
 } from "../services/styleguide.js"
@@ -3075,7 +3076,7 @@ export function createPageRoutes(
       // Generated style guides are book data, so keep them inside the project
       // directory where export/import and ordinary folder copies preserve them.
       const styleguidesDir = getBookStyleguidesDir(resolvedBooksDir, safeLabel)
-      const sgName = `${safeLabel}-generated`
+      const sgName = getGeneratedStyleguideName(safeLabel)
       try {
         writeStyleguideFiles({
           dir: styleguidesDir,
