@@ -35,22 +35,28 @@ on:
         required: false
         type: string
       cover_palette:
-        description: "Curated stable release cover palette"
+        description: "ADT + pipeline feature palette"
         required: true
-        default: random
+        default: auto
         type: choice
         options:
+          - auto
           - random
-          - blue
-          - purple
-          - teal
-          - orange
-          - green
-          - magenta
-          - navy-coral
-          - indigo-gold
-          - teal-apricot
-          - plum-mint
+          - adt
+          - extract
+          - sectioning
+          - storyboard
+          - captions
+          - quizzes
+          - glossary
+          - toc
+          - easy-read
+          - sign-language
+          - translate
+          - speech
+          - validation
+          - preview
+          - export
 
 permissions:
   contents: read
@@ -145,7 +151,7 @@ jobs:
             --hero "${HERO_FEATURE:-}" \
             --release-context "${RELEASE_CONTEXT:-}" \
             --image-context "${IMAGE_CONTEXT:-}" \
-            --palette "${COVER_PALETTE:-random}" \
+            --palette "${COVER_PALETTE:-auto}" \
             --base-notes-file release-notes-base.md \
             --cover-name release-cover.png \
             --cover-url ./release-cover.png \
@@ -616,7 +622,7 @@ jobs:
             --hero "${HERO_FEATURE:-}" \
             --release-context "${RELEASE_CONTEXT:-}" \
             --image-context "${IMAGE_CONTEXT:-}" \
-            --palette "${COVER_PALETTE:-random}" \
+            --palette "${COVER_PALETTE:-auto}" \
             --base-notes-file release-notes-base.md \
             --cover-name "$COVER_NAME" \
             --cover-url "$COVER_URL" \

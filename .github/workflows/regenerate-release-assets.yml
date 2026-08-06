@@ -29,22 +29,28 @@ on:
         required: false
         type: string
       cover_palette:
-        description: "Curated cover palette"
+        description: "ADT + pipeline feature palette"
         required: true
-        default: random
+        default: auto
         type: choice
         options:
+          - auto
           - random
-          - blue
-          - purple
-          - teal
-          - orange
-          - green
-          - magenta
-          - navy-coral
-          - indigo-gold
-          - teal-apricot
-          - plum-mint
+          - adt
+          - extract
+          - sectioning
+          - storyboard
+          - captions
+          - quizzes
+          - glossary
+          - toc
+          - easy-read
+          - sign-language
+          - translate
+          - speech
+          - validation
+          - preview
+          - export
 
 permissions:
   contents: write
@@ -154,7 +160,7 @@ jobs:
             --hero "${HERO_FEATURE:-}"
             --release-context "${RELEASE_CONTEXT:-}"
             --image-context "${IMAGE_CONTEXT:-}"
-            --palette "${COVER_PALETTE:-random}"
+            --palette "${COVER_PALETTE:-auto}"
             --existing-notes-file current-release.md
             --regenerate "$REGENERATE"
             --cover-name "$COVER_NAME"
@@ -239,7 +245,7 @@ jobs:
           {
             echo "### Release assets regenerated"
             echo "- Updated: \`$REGENERATE\`"
-            echo "- Cover palette: \`${COVER_PALETTE:-random}\`"
+            echo "- Cover palette: \`${COVER_PALETTE:-auto}\`"
             echo "- Review draft: https://github.com/$REPO/releases/tag/$TAG"
             echo "- When satisfied, use GitHub's **Publish release** button."
           } >> "$GITHUB_STEP_SUMMARY"

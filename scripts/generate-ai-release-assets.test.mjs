@@ -10,6 +10,7 @@ import {
   editImage,
   generateEditorial,
   generateImage,
+  inferPipelineStage,
   pairedCoverAssets,
   resolveCoverPalette,
   runCli,
@@ -156,19 +157,36 @@ describe("AI release assets", () => {
     expect(request.body.get("image[]")).toBeInstanceOf(Blob);
   });
 
-  it("resolves random palettes deterministically and supports curated pairs", () => {
+  it("resolves ADT stage palettes and deterministic random accents", () => {
     const first = resolveCoverPalette("random", "v0.7.5");
     const second = resolveCoverPalette("random", "v0.7.5");
     expect(first).toEqual(second);
     expect(first.requested).toBe("random");
-    expect(resolveCoverPalette("orange", "v0.7.5").name).toBe("orange");
-    expect(resolveCoverPalette("navy-coral", "v0.7.5")).toEqual({
-      requested: "navy-coral",
-      name: "navy-coral",
-      colors: "deep navy with warm coral and apricot highlights",
-    });
+    const storyboard = resolveCoverPalette("storyboard", "v0.7.5");
+    expect(storyboard.name).toBe("storyboard");
+    expect(storyboard.accent).toBe("pipeline violet");
+    expect(storyboard.colors).toContain("ADT Studio electric blue");
+    expect(resolveCoverPalette("auto", "v0.7.5", "quizzes").name).toBe(
+      "quizzes",
+    );
     expect(() => resolveCoverPalette("custom", "v0.7.5")).toThrow(/palette/);
     expect(() => resolveCoverPalette("beige", "v0.7.5")).toThrow(/palette/);
+  });
+
+  it("infers pipeline stage colors from the main feature before fallbacks", () => {
+    expect(inferPipelineStage("Book-wide heading hierarchy")).toBe(
+      "storyboard",
+    );
+    expect(inferPipelineStage("Accessible ordering activities")).toBe(
+      "quizzes",
+    );
+    expect(inferPipelineStage("ElevenLabs voice tuning")).toBe("speech");
+    expect(inferPipelineStage("PNLD export")).toBe("export");
+    expect(inferPipelineStage("", "Image captions for accessibility")).toBe(
+      "captions",
+    );
+    expect(inferPipelineStage("A general ADT Studio improvement")).toBe("adt");
+    expect(inferPipelineStage("Protocol hardening")).toBe("adt");
   });
 
   it("derives coordinated light and dark asset names and URLs", () => {
@@ -221,17 +239,18 @@ describe("AI release assets", () => {
       validateEditorial(editorialPayload),
       "Emphasize a packaged book",
       "v0.7.5",
-      resolveCoverPalette("orange", "v0.7.5"),
+      resolveCoverPalette("storyboard", "v0.7.5"),
     );
     expect(prompt).toContain("Emphasize a packaged book");
     expect(prompt).toContain('Eyebrow: "RELEASE V0.7.5"');
     expect(prompt).toContain('Headline: "Books That Travel"');
     expect(prompt).toContain("Left 44%");
     expect(prompt).toContain("rounded-square colored app");
-    expect(prompt).toContain("vivid orange");
+    expect(prompt).toContain("ADT Studio electric blue");
+    expect(prompt).toContain("pipeline violet");
     expect(prompt).toContain(editorialPayload.image_prompt);
     expect(
-      buildDarkThemePrompt(resolveCoverPalette("orange", "v0.7.5")),
+      buildDarkThemePrompt(resolveCoverPalette("storyboard", "v0.7.5")),
     ).toContain("Change only its color theme from light to dark");
   });
 

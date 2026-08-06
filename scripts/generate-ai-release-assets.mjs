@@ -10,22 +10,75 @@ const COVER_END = "<!-- adt-ai-cover:end -->";
 const NOTES_START = "<!-- adt-ai-notes:start -->";
 const NOTES_END = "<!-- adt-ai-notes:end -->";
 const REGENERATE_VALUES = new Set(["notes", "image", "both"]);
+const ADT_BRAND_COLORS =
+  "ADT Studio electric blue (#2B7FFF), deep navy, white, and cool blue-gray";
 const COVER_PALETTES = {
-  blue: "cobalt blue with small cyan highlights",
-  purple: "electric violet with small periwinkle-blue highlights",
-  teal: "rich teal with small aqua highlights",
-  orange: "vivid orange with small cobalt-blue highlights",
-  green: "emerald green with small mint highlights",
-  magenta: "vivid magenta with small violet highlights",
-  "navy-coral": "deep navy with warm coral and apricot highlights",
-  "indigo-gold": "deep indigo with warm gold and amber highlights",
-  "teal-apricot": "dark teal with warm apricot and soft peach highlights",
-  "plum-mint": "rich plum with cool mint and pale aqua highlights",
+  adt: { label: "ADT", accent: "ADT Studio electric blue" },
+  extract: { label: "Extract", accent: "pipeline royal blue" },
+  sectioning: { label: "Sectioning", accent: "pipeline sky blue" },
+  storyboard: { label: "Storyboard", accent: "pipeline violet" },
+  captions: { label: "Image Captions", accent: "pipeline teal" },
+  quizzes: { label: "Quizzes", accent: "pipeline orange" },
+  glossary: { label: "Glossary", accent: "pipeline lime green" },
+  toc: { label: "Table of Contents", accent: "pipeline amber" },
+  "easy-read": { label: "Easy Read", accent: "pipeline fuchsia" },
+  "sign-language": { label: "Sign Language", accent: "pipeline cyan" },
+  translate: { label: "Language", accent: "pipeline pink" },
+  speech: { label: "Speech", accent: "pipeline rose" },
+  validation: { label: "Validation", accent: "pipeline emerald" },
+  preview: { label: "Preview", accent: "pipeline graphite gray" },
+  export: { label: "Export", accent: "pipeline indigo" },
 };
 const COVER_PALETTE_VALUES = new Set([
+  "auto",
   "random",
   ...Object.keys(COVER_PALETTES),
 ]);
+const PIPELINE_STAGE_KEYWORDS = {
+  storyboard: [
+    "storyboard",
+    "heading hierarchy",
+    "book outline",
+    "typography",
+    "layout editor",
+    "style editor",
+    "visual review",
+  ],
+  quizzes: [
+    "quizzes",
+    "quiz",
+    "activities",
+    "activity",
+    "question",
+    "fill in the blank",
+    "multiple choice",
+    "ordering",
+  ],
+  captions: [
+    "image captions",
+    "captioning",
+    "caption",
+    "alt text",
+    "image description",
+  ],
+  glossary: ["glossary"],
+  toc: ["table of contents", "toc"],
+  "easy-read": ["easy read", "easy-read"],
+  "sign-language": ["sign language", "sign-language"],
+  speech: ["speech", "narration", "tts", "voice", "audio", "elevenlabs"],
+  translate: [
+    "translation",
+    "translate",
+    "localization",
+    "localized",
+    "output language",
+  ],
+  validation: ["validation", "accessibility audit", "accessibility assessment"],
+  export: ["export", "epub", "webpub", "pnld", "packaging", "distribution"],
+  preview: ["preview", "reader", "responsive", "mobile"],
+  sectioning: ["sectioning", "page section", "content tree", "watermark text"],
+  extract: ["extract", "extraction", "pdf", "raster", "ocr"],
+};
 
 export const RELEASE_EDITORIAL_SCHEMA = {
   type: "object",
@@ -286,29 +339,75 @@ export async function generateEditorial({
   return validateEditorial(JSON.parse(extractOutputText(response)));
 }
 
-export function resolveCoverPalette(requestedPalette = "random", tag = "") {
-  const requested = limited(requestedPalette, 40).toLowerCase() || "random";
+export function inferPipelineStage(...contexts) {
+  for (const context of contexts) {
+    const normalized = String(context ?? "")
+      .toLowerCase()
+      .replaceAll(/[-_]/g, " ");
+    if (!normalized.trim()) continue;
+    let bestStage = "";
+    let bestScore = 0;
+    for (const [stage, keywords] of Object.entries(PIPELINE_STAGE_KEYWORDS)) {
+      const score = keywords.reduce((total, keyword) => {
+        const matches =
+          keyword.length <= 3
+            ? new RegExp(`\\b${keyword}\\b`).test(normalized)
+            : normalized.includes(keyword);
+        return total + (matches ? 1 : 0);
+      }, 0);
+      if (score > bestScore) {
+        bestStage = stage;
+        bestScore = score;
+      }
+    }
+    if (bestStage) return bestStage;
+  }
+  return "adt";
+}
+
+export function resolveCoverPalette(
+  requestedPalette = "auto",
+  tag = "",
+  inferredStage = "adt",
+) {
+  const requested = limited(requestedPalette, 40).toLowerCase() || "auto";
   if (!COVER_PALETTE_VALUES.has(requested)) {
     throw new Error(
       `palette must be one of: ${[...COVER_PALETTE_VALUES].join(", ")}`,
     );
   }
   const name =
-    requested === "random"
-      ? Object.keys(COVER_PALETTES)[
-          createHash("sha256")
-            .update(tag || "adt-studio")
-            .digest()[0] % Object.keys(COVER_PALETTES).length
-        ]
-      : requested;
-  return { requested, name, colors: COVER_PALETTES[name] };
+    requested === "auto"
+      ? inferredStage in COVER_PALETTES
+        ? inferredStage
+        : "adt"
+      : requested === "random"
+        ? Object.keys(COVER_PALETTES)[
+            createHash("sha256")
+              .update(tag || "adt-studio")
+              .digest()[0] % Object.keys(COVER_PALETTES).length
+          ]
+        : requested;
+  const definition = COVER_PALETTES[name];
+  const colors =
+    name === "adt"
+      ? ADT_BRAND_COLORS
+      : `${ADT_BRAND_COLORS} as the brand foundation, with ${definition.accent} as the dominant ${definition.label} feature accent`;
+  return {
+    requested,
+    name,
+    label: definition.label,
+    brand: ADT_BRAND_COLORS,
+    accent: definition.accent,
+    colors,
+  };
 }
 
 export function buildImagePrompt(
   editorial,
   imageContext = "",
   tag = "",
-  palette = resolveCoverPalette("random", tag),
+  palette = resolveCoverPalette("adt", tag),
 ) {
   const releaseLabel = `RELEASE ${limited(tag, 40).toUpperCase()}`;
   return `Use case: ads-marketing
@@ -323,8 +422,11 @@ Exact text (render verbatim, exactly once, with no other text):
 
 Feature illustration: ${editorial.imagePrompt}
 Additional art direction: ${limited(imageContext, 4_000) || "None."}
-Color palette: ${palette.colors}. Use this palette as the dominant feature-tile
-and accent color while retaining neutral white objects and accessible contrast.
+Brand palette: ${palette.brand}.
+Feature palette: ${palette.accent}. Use the feature accent as the dominant color
+for the main tile and feature objects. Keep ADT electric blue visible in the
+eyebrow, dot grid, corner rings, secondary edges, and small highlights. Retain
+neutral white objects and accessible contrast.
 
 Established visual system:
 - Bright white background with an extremely subtle cool-toned edge glow.
@@ -361,8 +463,10 @@ Dark-theme treatment:
 - Replace the white background with a deep navy-black studio background.
 - Render headline text warm white, eyebrow text in a lighter palette tint, and
   subtitle text in a readable cool gray-blue.
-- Keep the feature tile in a deep, saturated version of ${palette.colors}, with
-  luminous palette-colored rim light and highlights.
+- Keep the feature tile in a deep, saturated version of ${palette.accent}, with
+  luminous stage-colored rim light and highlights.
+- Preserve ADT electric blue in the eyebrow, dot grid, corner rings, secondary
+  edges, and small highlights so the cover remains visibly part of ADT Studio.
 - Keep white feature symbols bright and preserve colored accent symbols.
 - Make the dot grid and corner rings subtle luminous palette-color details.
 - Preserve accessible contrast and the premium glossy 3D material treatment.
@@ -581,7 +685,7 @@ export async function runCli(argv = process.argv.slice(2)) {
   const imageContext =
     options["image-context"] ?? process.env.IMAGE_CONTEXT ?? "";
   const requestedPalette =
-    options.palette ?? process.env.COVER_PALETTE ?? "random";
+    options.palette ?? process.env.COVER_PALETTE ?? "auto";
   const outputDir = path.resolve(
     options.output ?? process.env.OUTPUT_DIR ?? ".context/release-preview",
   );
@@ -595,10 +699,16 @@ export async function runCli(argv = process.argv.slice(2)) {
   const coverName = options["cover-name"] ?? "release-cover.png";
   const coverUrl = options["cover-url"] ?? `./${coverName}`;
   const covers = pairedCoverAssets(coverName, coverUrl);
-  const palette = resolveCoverPalette(requestedPalette, tag);
   const baseNotes = await readOptional(options["base-notes-file"]);
   const existingBody = await readOptional(options["existing-notes-file"]);
   const context = collectReleaseContext({ from, to, baseNotes });
+  const inferredStage = inferPipelineStage(
+    heroFeature,
+    imageContext,
+    releaseContext,
+    `${context.baseNotes}\n${context.commitLog}\n${context.diffStat}`,
+  );
+  const palette = resolveCoverPalette(requestedPalette, tag, inferredStage);
   const prompt = buildEditorialPrompt({
     tag,
     context,

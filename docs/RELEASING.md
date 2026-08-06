@@ -215,13 +215,18 @@ Stable releases and previews also accept editorial and cover inputs:
 - **Release context** — audience, tone, priorities, or factual clarification
   for the notes;
 - **Image context** — visual direction, composition, or elements to avoid;
-- **Cover palette** — `random`, blue, purple, teal, orange, green, magenta,
-  navy-coral, indigo-gold, teal-apricot, or plum-mint. Every option is curated;
-  the workflow does not accept arbitrary colors.
+- **Cover palette** — `auto`, `random`, `adt`, or a pipeline stage. Every cover
+  keeps ADT electric blue (`#2B7FFF`), deep navy, white, and cool blue-gray as
+  its brand foundation. A stage choice adds its product accent: Storyboard violet,
+  Quizzes orange, Captions teal, Glossary lime, Table of Contents amber, Easy
+  Read fuchsia, Language pink, Speech rose, Validation emerald, and the matching
+  colors for the remaining pipeline stages.
 
 Empty editorial fields let the model choose from the generated changelog and
-commit history. `random` selects a palette deterministically from the release
-tag, keeping a light/dark pair coordinated while varying successive releases.
+commit history. `auto` infers the stage from the main feature first, then the
+art direction, release context, generated notes, commits, and changed files.
+`random` selects a stage accent deterministically from the release tag. Both
+modes keep the light/dark pair coordinated and retain the ADT brand foundation.
 Preview mode accepts only stable increments (`patch`, `minor`, or `major`),
 because beta releases do not use AI-generated assets.
 
@@ -295,7 +300,7 @@ After the workflow succeeds:
 2. Review the rendered notes, both cover themes, and attached installers
    together.
 3. Edit the draft directly, or open **Actions -> Regenerate release assets**.
-4. Choose `notes`, `image`, or `both`, select a palette (or `random`), provide
+4. Choose `notes`, `image`, or `both`, select `auto` or a stage palette, provide
    optional feedback/context, and run the regeneration from `main`.
 5. When satisfied, click **Publish release** on the draft. This is the human
    confirmation step and triggers Docker `latest` promotion.
@@ -326,13 +331,14 @@ OPENAI_API_KEY=... node scripts/generate-ai-release-assets.mjs \
   --hero "PNLD export" \
   --release-context "Write for educators and production teams" \
   --image-context "Focus on formal distribution" \
-  --palette orange \
+  --palette auto \
   --output .context/release-preview
 ```
 
-Choose one of the curated pair names, such as `--palette navy-coral`, for a
-two-color direction. Arbitrary color input is intentionally unsupported so the
-release series stays visually coherent.
+Choose a stage explicitly, such as `--palette storyboard` or
+`--palette quizzes`, to override automatic inference. Arbitrary color input is
+intentionally unsupported so every cover remains grounded in ADT colors and the
+pipeline's established stage accents.
 
 The generated Markdown uses a `<picture>` element to select
 `release-cover-dark.png` or `release-cover-light.png` from the viewer's GitHub
