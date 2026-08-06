@@ -29,7 +29,7 @@ on:
         required: false
         type: string
       cover_palette:
-        description: "Cover palette"
+        description: "Curated cover palette"
         required: true
         default: random
         type: choice
@@ -41,11 +41,10 @@ on:
           - orange
           - green
           - magenta
-          - custom
-      cover_colors:
-        description: "Colors to use when palette is custom (for example navy and coral)"
-        required: false
-        type: string
+          - navy-coral
+          - indigo-gold
+          - teal-apricot
+          - plum-mint
 
 permissions:
   contents: write
@@ -140,7 +139,6 @@ jobs:
           RELEASE_CONTEXT: ${{ inputs.release_context }}
           IMAGE_CONTEXT: ${{ inputs.image_context }}
           COVER_PALETTE: ${{ inputs.cover_palette }}
-          COVER_COLORS: ${{ inputs.cover_colors }}
           COVER_NAME: release-cover-${{ github.run_id }}.png
         run: |
           if [[ -z "${OPENAI_API_KEY:-}" ]]; then
@@ -157,7 +155,6 @@ jobs:
             --release-context "${RELEASE_CONTEXT:-}"
             --image-context "${IMAGE_CONTEXT:-}"
             --palette "${COVER_PALETTE:-random}"
-            --custom-colors "${COVER_COLORS:-}"
             --existing-notes-file current-release.md
             --regenerate "$REGENERATE"
             --cover-name "$COVER_NAME"

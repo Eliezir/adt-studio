@@ -215,16 +215,22 @@ Stable releases and previews also accept editorial and cover inputs:
 - **Release context** — audience, tone, priorities, or factual clarification
   for the notes;
 - **Image context** — visual direction, composition, or elements to avoid;
-- **Cover palette** — `random`, blue, purple, teal, orange, green, magenta, or
-  custom;
-- **Custom colors** — a short palette description used only with `custom`, such
-  as `navy and coral`.
+- **Cover palette** — `random`, blue, purple, teal, orange, green, magenta,
+  navy-coral, indigo-gold, teal-apricot, or plum-mint. Every option is curated;
+  the workflow does not accept arbitrary colors.
 
 Empty editorial fields let the model choose from the generated changelog and
 commit history. `random` selects a palette deterministically from the release
 tag, keeping a light/dark pair coordinated while varying successive releases.
 Preview mode accepts only stable increments (`patch`, `minor`, or `major`),
 because beta releases do not use AI-generated assets.
+
+GitHub's `workflow_dispatch` form supports only boolean, choice, number,
+environment, and single-line string inputs. It cannot add sections, multiline
+text areas, conditional fields, or palette swatches. If release coordination
+eventually needs a richer GitHub-native interface, use an Issue Form to collect
+the request and keep the release workflow as the controlled executor; that
+approach requires additional authorization and issue-parsing automation.
 
 The branch contract is enforced:
 
@@ -324,7 +330,10 @@ OPENAI_API_KEY=... node scripts/generate-ai-release-assets.mjs \
   --output .context/release-preview
 ```
 
-Use `--palette custom --custom-colors "navy and coral"` for a custom palette.
+Choose one of the curated pair names, such as `--palette navy-coral`, for a
+two-color direction. Arbitrary color input is intentionally unsupported so the
+release series stays visually coherent.
+
 The generated Markdown uses a `<picture>` element to select
 `release-cover-dark.png` or `release-cover-light.png` from the viewer's GitHub
 theme.

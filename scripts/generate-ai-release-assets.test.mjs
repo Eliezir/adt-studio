@@ -156,17 +156,18 @@ describe("AI release assets", () => {
     expect(request.body.get("image[]")).toBeInstanceOf(Blob);
   });
 
-  it("resolves random palettes deterministically and supports custom colors", () => {
+  it("resolves random palettes deterministically and supports curated pairs", () => {
     const first = resolveCoverPalette("random", "v0.7.5");
     const second = resolveCoverPalette("random", "v0.7.5");
     expect(first).toEqual(second);
     expect(first.requested).toBe("random");
     expect(resolveCoverPalette("orange", "v0.7.5").name).toBe("orange");
-    expect(resolveCoverPalette("custom", "v0.7.5", "navy and coral")).toEqual({
-      requested: "custom",
-      name: "custom",
-      colors: "navy and coral",
+    expect(resolveCoverPalette("navy-coral", "v0.7.5")).toEqual({
+      requested: "navy-coral",
+      name: "navy-coral",
+      colors: "deep navy with warm coral and apricot highlights",
     });
+    expect(() => resolveCoverPalette("custom", "v0.7.5")).toThrow(/palette/);
     expect(() => resolveCoverPalette("beige", "v0.7.5")).toThrow(/palette/);
   });
 

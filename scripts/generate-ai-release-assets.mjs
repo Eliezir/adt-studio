@@ -17,10 +17,13 @@ const COVER_PALETTES = {
   orange: "vivid orange with small cobalt-blue highlights",
   green: "emerald green with small mint highlights",
   magenta: "vivid magenta with small violet highlights",
+  "navy-coral": "deep navy with warm coral and apricot highlights",
+  "indigo-gold": "deep indigo with warm gold and amber highlights",
+  "teal-apricot": "dark teal with warm apricot and soft peach highlights",
+  "plum-mint": "rich plum with cool mint and pale aqua highlights",
 };
 const COVER_PALETTE_VALUES = new Set([
   "random",
-  "custom",
   ...Object.keys(COVER_PALETTES),
 ]);
 
@@ -283,23 +286,12 @@ export async function generateEditorial({
   return validateEditorial(JSON.parse(extractOutputText(response)));
 }
 
-export function resolveCoverPalette(
-  requestedPalette = "random",
-  tag = "",
-  customColors = "",
-) {
+export function resolveCoverPalette(requestedPalette = "random", tag = "") {
   const requested = limited(requestedPalette, 40).toLowerCase() || "random";
   if (!COVER_PALETTE_VALUES.has(requested)) {
     throw new Error(
       `palette must be one of: ${[...COVER_PALETTE_VALUES].join(", ")}`,
     );
-  }
-  if (requested === "custom") {
-    return {
-      requested,
-      name: "custom",
-      colors: requireValue(customColors, "custom-colors").slice(0, 300),
-    };
   }
   const name =
     requested === "random"
@@ -590,8 +582,6 @@ export async function runCli(argv = process.argv.slice(2)) {
     options["image-context"] ?? process.env.IMAGE_CONTEXT ?? "";
   const requestedPalette =
     options.palette ?? process.env.COVER_PALETTE ?? "random";
-  const customColors =
-    options["custom-colors"] ?? process.env.COVER_COLORS ?? "";
   const outputDir = path.resolve(
     options.output ?? process.env.OUTPUT_DIR ?? ".context/release-preview",
   );
@@ -605,7 +595,7 @@ export async function runCli(argv = process.argv.slice(2)) {
   const coverName = options["cover-name"] ?? "release-cover.png";
   const coverUrl = options["cover-url"] ?? `./${coverName}`;
   const covers = pairedCoverAssets(coverName, coverUrl);
-  const palette = resolveCoverPalette(requestedPalette, tag, customColors);
+  const palette = resolveCoverPalette(requestedPalette, tag);
   const baseNotes = await readOptional(options["base-notes-file"]);
   const existingBody = await readOptional(options["existing-notes-file"]);
   const context = collectReleaseContext({ from, to, baseNotes });
