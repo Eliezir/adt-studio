@@ -1805,11 +1805,17 @@ export const api = {
   getTemplates: () =>
     request<{ templates: string[] }>(`/templates`),
 
-  getStyleguides: () =>
-    request<{ styleguides: string[] }>(`/styleguides`),
+  getStyleguides: (bookLabel?: string) =>
+    request<{ styleguides: string[] }>(
+      bookLabel ? `/styleguides?book=${encodeURIComponent(bookLabel)}` : `/styleguides`,
+    ),
 
-  getStyleguidePreview: (name: string) =>
-    request<{ name: string; html: string }>(`/styleguides/${name}/preview`),
+  getStyleguidePreview: (name: string, bookLabel?: string) =>
+    request<{ name: string; html: string }>(
+      `/styleguides/${encodeURIComponent(name)}/preview${
+        bookLabel ? `?book=${encodeURIComponent(bookLabel)}` : ""
+      }`,
+    ),
 
   uploadStyleguide: (file: File) => {
     const form = new FormData()

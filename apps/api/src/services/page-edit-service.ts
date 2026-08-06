@@ -93,7 +93,12 @@ export async function reRenderPage(
     const config = loadBookConfig(label, booksDir, configPath)
     const resolveRenderConfig = buildRenderStrategyResolver(config)
 
-    const styleguideContent = loadStyleguideContent(config.styleguide, configPath)
+    const styleguideContent = loadStyleguideContent(
+      config.styleguide,
+      configPath,
+      booksDir,
+      label,
+    )
 
     // Create LLM model resolver (model-specific, cached)
     const cacheDir = path.join(path.resolve(booksDir), label, ".cache")

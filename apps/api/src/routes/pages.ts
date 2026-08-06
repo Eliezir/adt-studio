@@ -42,6 +42,12 @@ import {
 } from "@adt/pipeline"
 import { samplePageEdges, extractPages, computeGroups, countPdfPages } from "@adt/pdf"
 import { reRenderPage, aiEditSection } from "../services/page-edit-service.js"
+import {
+  getBookStyleguidesDir,
+  getGeneratedStyleguideName,
+  StyleguideWriteError,
+  writeStyleguideFiles,
+} from "../services/styleguide.js"
 import type { TaskService } from "../services/task-service.js"
 import {
   segmentPageImages,
@@ -3307,13 +3313,23 @@ export function createPageRoutes(
         llmModel
       )
 
-      // Save to assets/styleguides/{label}-generated.md
-      const projectRoot = configPath ? path.dirname(configPath) : path.resolve(booksDir, "..")
-      const styleguidesDir = path.join(projectRoot, "assets", "styleguides")
-      fs.mkdirSync(styleguidesDir, { recursive: true })
-      const sgName = `${safeLabel}-generated`
-      fs.writeFileSync(path.join(styleguidesDir, `${sgName}.md`), result.content, "utf-8")
-      fs.writeFileSync(path.join(styleguidesDir, `${sgName}-preview.html`), result.preview_html, "utf-8")
+      // Generated style guides are book data, so keep them inside the project
+      // directory where export/import and ordinary folder copies preserve them.
+      const styleguidesDir = getBookStyleguidesDir(resolvedBooksDir, safeLabel)
+      const sgName = getGeneratedStyleguideName(safeLabel)
+      try {
+        writeStyleguideFiles({
+          dir: styleguidesDir,
+          name: sgName,
+          content: result.content,
+          previewHtml: result.preview_html,
+        })
+      } catch (err) {
+        if (err instanceof StyleguideWriteError) {
+          throw new HTTPException(500, { message: err.message })
+        }
+        throw err
+      }
 
       return c.json({
         name: sgName,
