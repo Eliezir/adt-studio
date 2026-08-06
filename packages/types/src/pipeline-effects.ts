@@ -116,6 +116,7 @@ const NODE_CACHE_RESOURCES: Record<PipelineNodeName, readonly PipelineCacheResou
   "extract": ["books", "book", "pages"],
   "metadata": ["books", "book"],
   "book-summary": ["books", "book"],
+  "book-outline": ["book", "pages"],
   "image-filtering": ["pages"],
   "image-segmentation": ["pages"],
   "image-cropping": ["pages"],

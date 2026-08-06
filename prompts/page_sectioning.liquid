@@ -29,6 +29,29 @@ Do NOT set both `structure` and `role` on the same node. Do NOT nest containers 
 
 {% for t in role_types %}- `{{ t.key }}`: {{ t.description }}
 {% endfor %}
+
+## HEADING HIERARCHY (BOOK-WIDE CONSISTENCY)
+
+{% if book_outline %}
+The following entries come from an earlier analysis of the ENTIRE book and are authoritative for this page:
+{% for entry in book_outline.entries %}- `{{ entry.outlineId }}`: level {{ entry.level }}, kind {{ entry.kind }}, title "{{ entry.title }}", style cluster `{{ entry.styleClusterId }}`
+{% endfor %}
+Book ancestors that establish the current nesting context:
+{% for entry in book_outline.ancestors %}- `{{ entry.outlineId }}`: level {{ entry.level }}, "{{ entry.title }}"
+{% endfor %}
+
+- Represent every listed page entry as heading leaf content. Set `outline_entry_id`, `heading_level`, and `heading_style_cluster_id` exactly from the outline entry.
+- Levels 1, 2, and 3 use roles `chapter_title`, `section_heading`, and `subheading` respectively. Levels 4, 5, and 6 use the generic `heading` role plus their authoritative `heading_level`.
+- If one outline title is split into adjacent visible leaves (for example chapter number + name), each heading leaf may reference the same outline entry, but preserve each leaf's exact visible text.
+- Do not attach outline metadata to captions, labels, body text, running headers, or decorative text.
+{% endif %}
+
+- Classify every visible heading by its semantic rank, not merely by being bold: top-level chapter/unit/display heading → `chapter_title` (H1); major section within it → `section_heading` (H2); nested subsection/minor/callout/activity heading → `subheading` (H3).
+- Use visual evidence from the original page—font size, weight, colour, spacing, numbering, indentation, banner treatment—and the surrounding content structure together. A heading's wording alone does not determine its level.
+- Equivalent publisher styles must receive the same role throughout the book. For example, all chapter names use `chapter_title`, all peer topic headings use `section_heading`, and repeated "Prevention methods"-style children use `subheading`.
+- A chapter number and its adjacent chapter name may both be `chapter_title`; the renderer may compose them visually, but their hierarchy remains H1. Do not demote a long chapter title merely because it wraps.
+- Use the generic `heading` role for authoritative levels 4–6, or when the source provides insufficient evidence to choose a level. Never use ordinary `text` for a heading.
+- A heading leaf may include `heading_level` (integer 1–6), `outline_entry_id`, and `heading_style_cluster_id`. These fields are required when the book outline supplies them and must not be used on non-heading leaves.
 ## SECTION TYPES
 
 {% for t in section_types %}- `{{ t.key }}`: {{ t.description }}

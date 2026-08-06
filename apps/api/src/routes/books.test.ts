@@ -800,6 +800,7 @@ describe("GET /books/:label/step-status", () => {
     "extract",
     "metadata",
     "book-summary",
+    "book-outline",
     "image-filtering",
     "image-segmentation",
     "image-cropping",

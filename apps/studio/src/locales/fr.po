@@ -122,6 +122,10 @@ msgstr "{0} acceptées quand même"
 #~ msgid "{0} added"
 #~ msgstr "{0} ajoutées"
 
+#. placeholder {0}: String(view.assigned)
+msgid "{0} assigned"
+msgstr "{0} attribués"
+
 #. placeholder {0}: String(totalAudioFiles)
 msgid "{0} audio"
 msgstr "{0} audio"
@@ -177,6 +181,10 @@ msgstr "{0} img"
 #. placeholder {0}: reviewCounts.needsAttention
 msgid "{0} issue/issues"
 msgstr "{0} problème(s)"
+
+#. placeholder {0}: String(view.issues)
+msgid "{0} issues"
+msgstr "{0} problèmes"
 
 #. placeholder {0}: visibleFindingsUniverse.length
 msgid "{0} items"
@@ -1290,6 +1298,9 @@ msgstr "Une activité à réponse ouverte."
 msgid "Analyze with AI"
 msgstr "Analyser avec l'IA"
 
+msgid "Analyzes the complete book to identify a consistent heading hierarchy."
+msgstr "Analyse l’ensemble du livre afin d’identifier une hiérarchie de titres cohérente."
+
 msgid "Analyzing part…"
 msgstr "Analyse de la partie…"
 
@@ -1471,6 +1482,12 @@ msgstr "Ressource"
 
 msgid "Assign..."
 msgstr "Attribuer..."
+
+msgid "Assigned"
+msgstr "Attribué"
+
+msgid "Assignment evidence"
+msgstr "Preuves d’attribution"
 
 msgid "At the river's edge"
 msgstr "Au bord de la rivière"
@@ -1690,6 +1707,12 @@ msgstr "Les données du livre sont obsolètes et doivent être reconstruites."
 msgid "Book Fonts"
 msgstr "Polices du livre"
 
+msgid "Book heading outline"
+msgstr "Hiérarchie des titres du livre"
+
+msgid "Book hierarchy needs rebuilding"
+msgstr "La hiérarchie du livre doit être reconstruite"
+
 msgid "Book images"
 msgstr "Images du livre"
 
@@ -1710,6 +1733,12 @@ msgstr "Les remplacements de modèles du livre ont été mis à jour."
 
 msgid "Book order"
 msgstr "Ordre du livre"
+
+msgid "Book outline"
+msgstr "Plan du livre"
+
+msgid "Book Outline"
+msgstr "Plan du livre"
 
 msgid "Book package ready"
 msgstr "Paquet du livre prêt"
@@ -1852,6 +1881,9 @@ msgstr "Réponse en cache"
 msgid "Calculate word timestamps for all entries"
 msgstr "Calculer les horodatages de mots pour toutes les entrées"
 
+msgid "Callout"
+msgstr "Encadré"
+
 msgid "Calls"
 msgstr "Appels"
 
@@ -1976,6 +2008,9 @@ msgstr "Changer la langue réinitialise le travail en aval."
 
 msgid "Changing the type regenerates the activity when you save."
 msgstr "Changer le type régénère l'activité à l'enregistrement."
+
+msgid "Chapter"
+msgstr "Chapitre"
 
 msgid "Chapter 1: Introduction"
 msgstr "Chapitre 1 : Introduction"
@@ -2259,6 +2294,9 @@ msgstr "Condensation"
 msgid "Conditionally include text"
 msgstr "Inclure du texte conditionnellement"
 
+msgid "confidence"
+msgstr "confiance"
+
 msgid "Config"
 msgstr "Config"
 
@@ -2420,6 +2458,9 @@ msgstr "Réponse correcte (alternatives séparées par |)"
 
 msgid "Correct the metadata extracted from the document."
 msgstr "Corrigez les métadonnées extraites du document."
+
+msgid "Could not load the book outline."
+msgstr "Impossible de charger le plan du livre."
 
 msgid "Could not load the Google Fonts catalog. Check your connection and try again."
 msgstr "Impossible de charger le catalogue Google Fonts. Vérifiez votre connexion et réessayez."
@@ -4106,6 +4147,15 @@ msgstr "titre"
 msgid "Heading"
 msgstr "Titre"
 
+msgid "Heading level 4"
+msgstr "Niveau de titre 4"
+
+msgid "Heading level 5"
+msgstr "Niveau de titre 5"
+
+msgid "Heading level 6"
+msgstr "Niveau de titre 6"
+
 msgid "Headings"
 msgstr "Titres"
 
@@ -4525,6 +4575,9 @@ msgstr "Types de problèmes à vérifier"
 msgid "Issues"
 msgstr "Problèmes"
 
+msgid "Issues only"
+msgstr "Problèmes uniquement"
+
 msgid "It contains unexpected file paths. Use a .zip exported from ADT Studio."
 msgstr "Il contient des chemins de fichiers inattendus. Utilisez un fichier .zip exporté depuis ADT Studio."
 
@@ -4821,6 +4874,9 @@ msgstr "Chargement des versions bêta…"
 
 msgid "Loading book config…"
 msgstr "Chargement de la configuration du livre…"
+
+msgid "Loading book outline..."
+msgstr "Chargement du plan du livre..."
 
 msgid "Loading Book..."
 msgstr "Chargement du livre..."
@@ -5225,6 +5281,9 @@ msgstr "Reproduction de la mise en page..."
 msgid "Mirrors the original book's activity layout as closely as possible."
 msgstr "Reflète la disposition des activités du livre original aussi fidèlement que possible."
 
+msgid "Mismatch"
+msgstr "Incohérence"
+
 msgid "Miss"
 msgstr "Échec"
 
@@ -5260,6 +5319,9 @@ msgstr "Modèle"
 
 msgid "Model overrides"
 msgstr "Remplacements de modèles"
+
+msgid "Model reasoning"
+msgstr "Raisonnement du modèle"
 
 #~ msgid "Model variant"
 #~ msgstr "Variante de modèle"
@@ -5448,6 +5510,9 @@ msgstr "Aucune version bêta trouvée"
 #~ msgid "No beta versions match your search."
 #~ msgstr "Aucune version bêta ne correspond à votre recherche."
 
+msgid "No book outline has been extracted yet."
+msgstr "Aucun plan du livre n’a encore été extrait."
+
 msgid "No books match your search"
 msgstr "Aucun livre ne correspond à votre recherche"
 
@@ -5612,6 +5677,9 @@ msgstr "Aucune licence open source détectée. Assurez-vous d'avoir le droit d'i
 
 msgid "No other images in this book"
 msgstr "Aucune autre image dans ce livre"
+
+msgid "No outline entries match the current filter."
+msgstr "Aucune entrée du plan ne correspond au filtre actuel."
 
 msgid "No page linked"
 msgstr "Aucune page liée"
@@ -6112,6 +6180,9 @@ msgstr "En cours de traitement"
 msgid "Out of date"
 msgstr "Obsolète"
 
+msgid "Outline ID:"
+msgstr "ID du plan :"
+
 msgid "Output languages"
 msgstr "Langues de sortie"
 
@@ -6203,8 +6274,8 @@ msgid "Page"
 msgstr "Page"
 
 #. placeholder {0}: String(activePage.pageNumber)
+#. placeholder {0}: String(entry.pageNumber)
 #. placeholder {0}: String(group.pageNumber)
-#. placeholder {0}: String(item.pageNumber)
 msgid "Page {0}"
 msgstr "Page {0}"
 
@@ -6348,6 +6419,9 @@ msgstr "paragraphe"
 
 msgid "Paragraph"
 msgstr "Paragraphe"
+
+msgid "Parent:"
+msgstr "Parent :"
 
 msgid "Parsing pages"
 msgstr "Analyse des pages"
@@ -6916,8 +6990,8 @@ msgstr "Relancer la synthèse vocale"
 msgid "Re-run Storyboard"
 msgstr "Relancer le Scénarimage"
 
-msgid "Re-run these book-level stages on the assembled book:"
-msgstr "Relancez ces étapes au niveau du livre sur le livre assemblé :"
+msgid "Re-run these stages on the assembled book:"
+msgstr "Relancez ces étapes sur le livre assemblé :"
 
 msgid "Re-run translation"
 msgstr "Relancer la traduction"
@@ -7335,6 +7409,9 @@ msgstr "Révision terminée : {0} acceptables, {1} en attente d'enregistrement."
 msgid "Review complete: all {0} reviewed translations are acceptable."
 msgstr "Révision terminée : les {0} traductions révisées sont acceptables."
 
+msgid "Review each heading’s level, page, confidence, style cluster, and storyboard assignment."
+msgstr "Vérifiez le niveau, la page, le degré de confiance, le groupe de styles et l’attribution dans le storyboard de chaque titre."
+
 msgid "Review one session at a time to inspect page coverage and flagged findings."
 msgstr "Révisez une session à la fois pour inspecter la couverture des pages et les résultats signalés."
 
@@ -7522,6 +7599,9 @@ msgstr "EN COURS"
 #~ msgid "Running {stageLabel}"
 #~ msgstr "Exécution de {stageLabel}"
 
+msgid "Running Sectioning will rebuild the book-wide outline from the merged pages, then apply it without re-running PDF extraction."
+msgstr "L’exécution du découpage reconstruira le plan global du livre à partir des pages fusionnées, puis l’appliquera sans relancer l’extraction du PDF."
+
 msgid "Running Sectioning will run Extract first, then section the extracted pages."
 msgstr "Lancer Sectioning exécutera d'abord Extraction, puis découpera en sections les pages extraites."
 
@@ -7686,6 +7766,9 @@ msgstr "Rechercher des polices"
 
 msgid "Search fonts..."
 msgstr "Rechercher des polices..."
+
+msgid "Search headings, IDs, or style clusters..."
+msgstr "Rechercher des titres, des ID ou des groupes de styles..."
 
 msgid "Search languages..."
 msgstr "Rechercher langues..."
@@ -8238,6 +8321,9 @@ msgstr "Trier par"
 msgid "Source"
 msgstr "Source"
 
+msgid "Source candidates:"
+msgstr "Candidats sources :"
+
 msgid "Source file"
 msgstr "Fichier source"
 
@@ -8454,6 +8540,9 @@ msgstr "Scénarimage"
 msgid "Storyboard has already been run. Changes made here will not take effect until storyboard is re-run."
 msgstr "Le scénarimage a déjà été exécuté. Les modifications effectuées ici ne prendront effet que lorsque le scénarimage sera relancé."
 
+msgid "Storyboard nodes:"
+msgstr "Nœuds du storyboard :"
+
 msgid "Storyboard not ready"
 msgstr "Storyboard non prêt"
 
@@ -8526,6 +8615,9 @@ msgstr "Référence de style"
 msgid "Style reference image"
 msgstr "Image de référence de style"
 
+msgid "Style:"
+msgstr "Style :"
+
 msgid "Styleguide"
 msgstr "Styleguide"
 
@@ -8546,6 +8638,9 @@ msgstr "Soumettre"
 
 msgid "Submit to the FNDE PNLD Digital platform and validate with VALIDE."
 msgstr "Soumettez à la plateforme PNLD Digital du FNDE et validez avec VALIDE."
+
+msgid "Subsection"
+msgstr "Sous-section"
 
 msgid "Success"
 msgstr "Succès"
@@ -9766,6 +9861,7 @@ msgstr "Variantes"
 msgid "Verified applied"
 msgstr "Application vérifiée"
 
+#. placeholder {0}: String(data.version)
 #. placeholder {0}: String(version)
 msgid "Version {0}"
 msgstr "Version {0}"

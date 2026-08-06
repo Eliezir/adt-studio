@@ -247,6 +247,7 @@ export const AppConfig = z
     translation: StepConfig.optional(),
     metadata: StepConfig.optional(),
     book_summary: StepConfig.optional(),
+    book_outline: StepConfig.optional(),
     quiz_generation: QuizGenerationConfig.optional(),
     easy_read: EasyReadConfig.optional(),
     default_render_strategy: z.string().optional(),

@@ -82,6 +82,23 @@ describe("web rendering reading-order prompts", () => {
     )
   })
 
+  it("maps semantic heading roles to one book-wide type scale", async () => {
+    const messages = await promptEngine.renderPrompt("web_generation_html", {
+      ...generationContext(),
+      typography: [
+        { className: "adt-h1", label: "Chapter title", mobilePx: 30, desktopPx: 48 },
+        { className: "adt-h2", label: "Section heading", mobilePx: 24, desktopPx: 36 },
+        { className: "adt-h3", label: "Subheading", mobilePx: 20, desktopPx: 28 },
+      ],
+    })
+    const prompt = messages.map(messageText).join("\n")
+
+    expect(prompt).toContain("Heading roles are authoritative")
+    expect(prompt).toContain('`chapter_title` → semantic `<h1 class="adt-h1">`')
+    expect(prompt).toContain('`section_heading` → `<h2 class="adt-h2">`')
+    expect(prompt).toContain('`subheading` → `<h3 class="adt-h3">`')
+  })
+
   it("requires right-aligned page numbers and dotted leaders for TOC pages", async () => {
     const messages = await promptEngine.renderPrompt("web_generation_html", {
       ...generationContext(),

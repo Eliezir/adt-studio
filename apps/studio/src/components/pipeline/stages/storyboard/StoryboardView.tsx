@@ -1,5 +1,5 @@
 import { useEffect, useRef, useCallback, useState, type ReactNode } from "react"
-import { ArrowLeft, ArrowRight, LayoutGrid, RotateCcw, Table2 } from "lucide-react"
+import { ArrowLeft, ArrowRight, LayoutGrid, ListTree, RotateCcw, Table2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { usePages, usePage } from "@/hooks/use-pages"
 import { useStepHeader } from "../../components/StepViewRouter"
@@ -11,6 +11,7 @@ import { StageEmptyState } from "../../components/StageEmptyState"
 import { StoryboardSectionDetail } from "./components/StoryboardSectionDetail"
 import { StoryboardQuizDetail } from "./components/StoryboardQuizDetail"
 import { SectioningOverview } from "./components/SectioningOverview"
+import { BookOutlineAudit } from "./components/BookOutlineAudit"
 import { useSectionNav } from "@/routes/books.$label"
 import { Trans } from "@lingui/react/macro"
 import { useLingui } from "@lingui/react/macro"
@@ -22,6 +23,7 @@ export function StoryboardView({ bookLabel, selectedPageId: selectedPageIdProp, 
   const { data: pages, isLoading: pagesLoading } = usePages(bookLabel)
   const setSelectedPageId = onSelectPage ?? (() => {})
   const [overviewMode, setOverviewMode] = useState(false)
+  const [outlineMode, setOutlineMode] = useState(false)
   const hasUnsavedChanges = useHasUnsavedChanges()
   const { setExtra, setOnLabelClick } = useStepHeader()
   const { stageState, queueRun } = useBookRun()
@@ -190,6 +192,7 @@ export function StoryboardView({ bookLabel, selectedPageId: selectedPageIdProp, 
       }`}
       onClick={() => {
         if (!overviewMode && !confirmUnsavedNavigation()) return
+        setOutlineMode(false)
         setOverviewMode((v) => !v)
       }}
       title={t`Overview`}
@@ -198,9 +201,27 @@ export function StoryboardView({ bookLabel, selectedPageId: selectedPageIdProp, 
     </button>
   )
 
+  const outlineToggle = (
+    <button
+      type="button"
+      className={`flex items-center justify-center w-7 h-7 rounded transition-colors ${
+        outlineMode ? "bg-white/30 text-white" : "bg-white/15 hover:bg-white/25 text-white/70"
+      }`}
+      onClick={() => {
+        if (!outlineMode && !confirmUnsavedNavigation()) return
+        setOverviewMode(false)
+        setOutlineMode((value) => !value)
+      }}
+      title={t`Book outline`}
+    >
+      <ListTree className="h-3.5 w-3.5" />
+    </button>
+  )
+
   const navigationArrows = (
     <div className="flex gap-1">
       {overviewToggle}
+      {outlineToggle}
       <button
         type="button"
         className="flex items-center justify-center w-7 h-7 rounded bg-white/15 hover:bg-white/25 transition-colors disabled:opacity-30 disabled:cursor-default"
@@ -231,6 +252,24 @@ export function StoryboardView({ bookLabel, selectedPageId: selectedPageIdProp, 
       }
     }
 
+    if (outlineMode) {
+      setOnLabelClick(null)
+      setExtra(
+        <>
+          <span className="text-white/40 text-sm">/</span>
+          <span className="text-sm font-medium">{t`Book outline`}</span>
+          <div className="ml-auto flex gap-1">
+            {overviewToggle}
+            {outlineToggle}
+          </div>
+        </>
+      )
+      return () => {
+        setExtra(null)
+        setOnLabelClick(null)
+      }
+    }
+
     // Overview mode: show overview header
     if (overviewMode) {
       setOnLabelClick(null)
@@ -240,6 +279,7 @@ export function StoryboardView({ bookLabel, selectedPageId: selectedPageIdProp, 
           <span className="text-sm font-medium">{t`Overview`}</span>
           <div className="ml-auto flex gap-1">
             {overviewToggle}
+            {outlineToggle}
           </div>
         </>
       )
@@ -262,6 +302,7 @@ export function StoryboardView({ bookLabel, selectedPageId: selectedPageIdProp, 
           <span className="text-sm font-medium">{t`Page ${String(selectedPageSummary.pageNumber)}`}</span>
           <div className="ml-auto flex gap-1">
             {overviewToggle}
+            {outlineToggle}
             <button
               type="button"
               className="flex items-center justify-center w-7 h-7 rounded bg-white/15 hover:bg-white/25 transition-colors disabled:opacity-30 disabled:cursor-default"
@@ -289,7 +330,7 @@ export function StoryboardView({ bookLabel, selectedPageId: selectedPageIdProp, 
       setExtra(null)
       setOnLabelClick(null)
     }
-  }, [selectedPageId, selectedPageSummary?.pageNumber, sectionIndex, sectionCount, canGoPrev, canGoNext, prevPageId, nextPageId, setExtra, setOnLabelClick, page?.sectioningTree, showRunCard, overviewMode, isQuizRoute])
+  }, [selectedPageId, selectedPageSummary?.pageNumber, sectionIndex, sectionCount, canGoPrev, canGoNext, prevPageId, nextPageId, setExtra, setOnLabelClick, page?.sectioningTree, showRunCard, overviewMode, outlineMode, isQuizRoute])
 
   // Keyboard arrow navigation
   useEffect(() => {
@@ -385,6 +426,19 @@ export function StoryboardView({ bookLabel, selectedPageId: selectedPageIdProp, 
     )
   }
 
+  if (outlineMode) {
+    return (
+      <BookOutlineAudit
+        bookLabel={bookLabel}
+        onNavigateToPage={(pageId) => {
+          setOutlineMode(false)
+          setSectionIndex(0)
+          setSelectedPageId(pageId)
+        }}
+      />
+    )
+  }
+
   // Quiz route: pseudo-pageId is `quiz-{index}`. Render the quiz panel.
   if (isQuizRoute && selectedQuizIndex != null) {
     return (
@@ -392,7 +446,7 @@ export function StoryboardView({ bookLabel, selectedPageId: selectedPageIdProp, 
         bookLabel={bookLabel}
         quizIndex={selectedQuizIndex}
         navigationArrows={
-          <div className="flex gap-1">{overviewToggle}</div>
+          <div className="flex gap-1">{overviewToggle}{outlineToggle}</div>
         }
       />
     )

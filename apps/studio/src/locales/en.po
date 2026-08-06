@@ -120,6 +120,10 @@ msgstr "{0} accepted anyway"
 #~ msgid "{0} added"
 #~ msgstr "{0} added"
 
+#. placeholder {0}: String(view.assigned)
+msgid "{0} assigned"
+msgstr "{0} assigned"
+
 #. placeholder {0}: String(totalAudioFiles)
 msgid "{0} audio"
 msgstr "{0} audio"
@@ -175,6 +179,10 @@ msgstr "{0} img"
 #. placeholder {0}: reviewCounts.needsAttention
 msgid "{0} issue/issues"
 msgstr "{0} issue/issues"
+
+#. placeholder {0}: String(view.issues)
+msgid "{0} issues"
+msgstr "{0} issues"
 
 #. placeholder {0}: visibleFindingsUniverse.length
 msgid "{0} items"
@@ -1288,6 +1296,9 @@ msgstr "An open-ended answer activity."
 msgid "Analyze with AI"
 msgstr "Analyze with AI"
 
+msgid "Analyzes the complete book to identify a consistent heading hierarchy."
+msgstr "Analyzes the complete book to identify a consistent heading hierarchy."
+
 msgid "Analyzing part…"
 msgstr "Analyzing part…"
 
@@ -1469,6 +1480,12 @@ msgstr "Asset"
 
 msgid "Assign..."
 msgstr "Assign..."
+
+msgid "Assigned"
+msgstr "Assigned"
+
+msgid "Assignment evidence"
+msgstr "Assignment evidence"
 
 msgid "At the river's edge"
 msgstr "At the river's edge"
@@ -1688,6 +1705,12 @@ msgstr "Book data is outdated and must be rebuilt."
 msgid "Book Fonts"
 msgstr "Book Fonts"
 
+msgid "Book heading outline"
+msgstr "Book heading outline"
+
+msgid "Book hierarchy needs rebuilding"
+msgstr "Book hierarchy needs rebuilding"
+
 msgid "Book images"
 msgstr "Book images"
 
@@ -1708,6 +1731,12 @@ msgstr "Book model overrides updated."
 
 msgid "Book order"
 msgstr "Book order"
+
+msgid "Book outline"
+msgstr "Book outline"
+
+msgid "Book Outline"
+msgstr "Book Outline"
 
 msgid "Book package ready"
 msgstr "Book package ready"
@@ -1850,6 +1879,9 @@ msgstr "Cached response"
 msgid "Calculate word timestamps for all entries"
 msgstr "Calculate word timestamps for all entries"
 
+msgid "Callout"
+msgstr "Callout"
+
 msgid "Calls"
 msgstr "Calls"
 
@@ -1974,6 +2006,9 @@ msgstr "Changing the language resets downstream work."
 
 msgid "Changing the type regenerates the activity when you save."
 msgstr "Changing the type regenerates the activity when you save."
+
+msgid "Chapter"
+msgstr "Chapter"
 
 msgid "Chapter 1: Introduction"
 msgstr "Chapter 1: Introduction"
@@ -2257,6 +2292,9 @@ msgstr "Condensation"
 msgid "Conditionally include text"
 msgstr "Conditionally include text"
 
+msgid "confidence"
+msgstr "confidence"
+
 msgid "Config"
 msgstr "Config"
 
@@ -2418,6 +2456,9 @@ msgstr "Correct answer (alternatives separated by |)"
 
 msgid "Correct the metadata extracted from the document."
 msgstr "Correct the metadata extracted from the document."
+
+msgid "Could not load the book outline."
+msgstr "Could not load the book outline."
 
 msgid "Could not load the Google Fonts catalog. Check your connection and try again."
 msgstr "Could not load the Google Fonts catalog. Check your connection and try again."
@@ -4104,6 +4145,15 @@ msgstr "heading"
 msgid "Heading"
 msgstr "Heading"
 
+msgid "Heading level 4"
+msgstr "Heading level 4"
+
+msgid "Heading level 5"
+msgstr "Heading level 5"
+
+msgid "Heading level 6"
+msgstr "Heading level 6"
+
 msgid "Headings"
 msgstr "Headings"
 
@@ -4523,6 +4573,9 @@ msgstr "Issue types to check"
 msgid "Issues"
 msgstr "Issues"
 
+msgid "Issues only"
+msgstr "Issues only"
+
 msgid "It contains unexpected file paths. Use a .zip exported from ADT Studio."
 msgstr "It contains unexpected file paths. Use a .zip exported from ADT Studio."
 
@@ -4819,6 +4872,9 @@ msgstr "Loading beta versions…"
 
 msgid "Loading book config…"
 msgstr "Loading book config…"
+
+msgid "Loading book outline..."
+msgstr "Loading book outline..."
 
 msgid "Loading Book..."
 msgstr "Loading Book..."
@@ -5223,6 +5279,9 @@ msgstr "Mirroring layout..."
 msgid "Mirrors the original book's activity layout as closely as possible."
 msgstr "Mirrors the original book's activity layout as closely as possible."
 
+msgid "Mismatch"
+msgstr "Mismatch"
+
 msgid "Miss"
 msgstr "Miss"
 
@@ -5258,6 +5317,9 @@ msgstr "Model"
 
 msgid "Model overrides"
 msgstr "Model overrides"
+
+msgid "Model reasoning"
+msgstr "Model reasoning"
 
 #~ msgid "Model variant"
 #~ msgstr "Model variant"
@@ -5446,6 +5508,9 @@ msgstr "No beta versions found"
 #~ msgid "No beta versions match your search."
 #~ msgstr "No beta versions match your search."
 
+msgid "No book outline has been extracted yet."
+msgstr "No book outline has been extracted yet."
+
 msgid "No books match your search"
 msgstr "No books match your search"
 
@@ -5610,6 +5675,9 @@ msgstr "No open-source license detected. Make sure you have the right to embed a
 
 msgid "No other images in this book"
 msgstr "No other images in this book"
+
+msgid "No outline entries match the current filter."
+msgstr "No outline entries match the current filter."
 
 msgid "No page linked"
 msgstr "No page linked"
@@ -6110,6 +6178,9 @@ msgstr "Out for processing"
 msgid "Out of date"
 msgstr "Out of date"
 
+msgid "Outline ID:"
+msgstr "Outline ID:"
+
 msgid "Output languages"
 msgstr "Output languages"
 
@@ -6201,8 +6272,8 @@ msgid "Page"
 msgstr "Page"
 
 #. placeholder {0}: String(activePage.pageNumber)
+#. placeholder {0}: String(entry.pageNumber)
 #. placeholder {0}: String(group.pageNumber)
-#. placeholder {0}: String(item.pageNumber)
 msgid "Page {0}"
 msgstr "Page {0}"
 
@@ -6346,6 +6417,9 @@ msgstr "paragraph"
 
 msgid "Paragraph"
 msgstr "Paragraph"
+
+msgid "Parent:"
+msgstr "Parent:"
 
 msgid "Parsing pages"
 msgstr "Parsing pages"
@@ -6914,8 +6988,8 @@ msgstr "Re-run speech"
 msgid "Re-run Storyboard"
 msgstr "Re-run Storyboard"
 
-msgid "Re-run these book-level stages on the assembled book:"
-msgstr "Re-run these book-level stages on the assembled book:"
+msgid "Re-run these stages on the assembled book:"
+msgstr "Re-run these stages on the assembled book:"
 
 msgid "Re-run translation"
 msgstr "Re-run translation"
@@ -7333,6 +7407,9 @@ msgstr "Review complete: {0} acceptable, {1} pending save."
 msgid "Review complete: all {0} reviewed translations are acceptable."
 msgstr "Review complete: all {0} reviewed translations are acceptable."
 
+msgid "Review each heading’s level, page, confidence, style cluster, and storyboard assignment."
+msgstr "Review each heading’s level, page, confidence, style cluster, and storyboard assignment."
+
 msgid "Review one session at a time to inspect page coverage and flagged findings."
 msgstr "Review one session at a time to inspect page coverage and flagged findings."
 
@@ -7520,6 +7597,9 @@ msgstr "RUNNING"
 #~ msgid "Running {stageLabel}"
 #~ msgstr "Running {stageLabel}"
 
+msgid "Running Sectioning will rebuild the book-wide outline from the merged pages, then apply it without re-running PDF extraction."
+msgstr "Running Sectioning will rebuild the book-wide outline from the merged pages, then apply it without re-running PDF extraction."
+
 msgid "Running Sectioning will run Extract first, then section the extracted pages."
 msgstr "Running Sectioning will run Extract first, then section the extracted pages."
 
@@ -7684,6 +7764,9 @@ msgstr "Search fonts"
 
 msgid "Search fonts..."
 msgstr "Search fonts..."
+
+msgid "Search headings, IDs, or style clusters..."
+msgstr "Search headings, IDs, or style clusters..."
 
 msgid "Search languages..."
 msgstr "Search languages..."
@@ -8236,6 +8319,9 @@ msgstr "Sort by"
 msgid "Source"
 msgstr "Source"
 
+msgid "Source candidates:"
+msgstr "Source candidates:"
+
 msgid "Source file"
 msgstr "Source file"
 
@@ -8452,6 +8538,9 @@ msgstr "Storyboard"
 msgid "Storyboard has already been run. Changes made here will not take effect until storyboard is re-run."
 msgstr "Storyboard has already been run. Changes made here will not take effect until storyboard is re-run."
 
+msgid "Storyboard nodes:"
+msgstr "Storyboard nodes:"
+
 msgid "Storyboard not ready"
 msgstr "Storyboard not ready"
 
@@ -8524,6 +8613,9 @@ msgstr "Style reference"
 msgid "Style reference image"
 msgstr "Style reference image"
 
+msgid "Style:"
+msgstr "Style:"
+
 msgid "Styleguide"
 msgstr "Styleguide"
 
@@ -8544,6 +8636,9 @@ msgstr "Submit"
 
 msgid "Submit to the FNDE PNLD Digital platform and validate with VALIDE."
 msgstr "Submit to the FNDE PNLD Digital platform and validate with VALIDE."
+
+msgid "Subsection"
+msgstr "Subsection"
 
 msgid "Success"
 msgstr "Success"
@@ -9764,6 +9859,7 @@ msgstr "Variations"
 msgid "Verified applied"
 msgstr "Verified applied"
 
+#. placeholder {0}: String(data.version)
 #. placeholder {0}: String(version)
 msgid "Version {0}"
 msgstr "Version {0}"

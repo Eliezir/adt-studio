@@ -218,6 +218,18 @@ export {
 export { BookMetadata } from "./metadata.js"
 
 export { BookSummaryOutput } from "./book-summary.js"
+export {
+  HeadingLevel,
+  HeadingKind,
+  HEADING_ROLE_LEVELS,
+  isHeadingRole,
+  headingLevelForRole,
+  BookOutlineStyleCluster,
+  BookOutlineEntry,
+  BookOutlineOutput,
+  BookOutlineAppliedHeading,
+  BookOutlineAuditResponse,
+} from "./book-outline.js"
 
 export { ExtractionWarning } from "./extraction-warning.js"
 

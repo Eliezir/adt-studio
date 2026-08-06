@@ -37,6 +37,17 @@ import { readTypography } from "./typography.js"
 import { extractMetadata, buildMetadataConfig } from "./metadata-extraction.js"
 import { generateBookSummary, buildBookSummaryConfig } from "./book-summary.js"
 import {
+  BOOK_OUTLINE_ITEM,
+  BOOK_OUTLINE_NODE,
+  buildBookOutlineConfig,
+  generateBookOutline,
+  outlineContextForPage,
+  readBookOutline,
+} from "./book-outline.js"
+import { buildBookOutlineEvidence } from "./book-outline-evidence.js"
+import { readTypeScale } from "./type-scale.js"
+import { PositionedTextOutput } from "@adt/types"
+import {
   sectionPage,
   buildPageSectioningConfig,
 } from "./page-sectioning.js"
@@ -196,6 +207,7 @@ export async function runFullPipeline(
 
     // Build all step configs upfront
     const metadataConfig = buildMetadataConfig(config)
+    const bookOutlineConfig = buildBookOutlineConfig(config)
     const pageSectioningConfig = buildPageSectioningConfig(config)
     const imageClassifyConfig = buildImageClassifyConfig(config)
     const meaningfulnessConfig = buildMeaningfulnessConfig(config)
@@ -253,6 +265,25 @@ export async function runFullPipeline(
       const model = getModel(bookSummaryConfig.modelId)
       const result = await generateBookSummary(summaryPages, bookSummaryConfig, model)
       storage.putNodeData("book-summary", "book", result)
+    })
+
+    executors.set("book-outline", async () => {
+      const pages = storage.getPages()
+      const evidencePages = pages.map((page) => {
+        const positionedRow = storage.getLatestNodeData("positioned-text", page.pageId)
+        const positioned = PositionedTextOutput.safeParse(positionedRow?.data)
+        return {
+          pageId: page.pageId,
+          pageNumber: page.pageNumber,
+          text: page.text,
+          imageBase64: storage.getPageImageBase64(page.pageId),
+          ...(positioned.success && { positionedText: positioned.data }),
+        }
+      })
+      const evidence = buildBookOutlineEvidence(evidencePages, readTypeScale(storage))
+      const model = getModel(bookOutlineConfig.modelId)
+      const result = await generateBookOutline(evidence, bookOutlineConfig, model)
+      storage.putNodeData(BOOK_OUTLINE_NODE, BOOK_OUTLINE_ITEM, result)
     })
 
     executors.set("image-filtering", async (p) => {
@@ -485,6 +516,7 @@ export async function runFullPipeline(
       // produced in the web-rendering step instead (see below).
       const model = getModel(pageSectioningConfig.modelId)
       const pages = storage.getPages()
+      const bookOutline = readBookOutline(storage)
       const totalPages = pages.length
       await processWithConcurrency(pages, effectiveConcurrency, async (page) => {
         const imageClassRow = storage.getLatestNodeData("image-filtering", page.pageId)
@@ -505,6 +537,7 @@ export async function runFullPipeline(
             text: page.text,
             imageBase64,
             availableImages,
+            outline: outlineContextForPage(bookOutline, page.pageId),
           },
           pageSectioningConfig,
           model,

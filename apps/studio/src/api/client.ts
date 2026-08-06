@@ -6,6 +6,7 @@ import type {
   BookFontRole,
   BookMetadata,
   BookSummary,
+  BookOutlineAuditResponse,
   BookTypography,
   ActivityOutline,
   EditableActivity,
@@ -1499,6 +1500,9 @@ export const api = {
     request<VersionListResponse>(
       `/books/${label}/debug/versions/${node}/${itemId}${includeData ? "?includeData=true" : ""}`
     ),
+
+  getBookOutline: (label: string) =>
+    request<BookOutlineAuditResponse | null>(`/books/${label}/book-outline`),
 
   /** Roll an entity back to an existing version (moves the current-version
    *  pointer; does not create a new version). */

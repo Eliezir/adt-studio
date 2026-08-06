@@ -121,6 +121,10 @@ msgstr "{0} pranuar gjithsesi"
 #~ msgid "{0} added"
 #~ msgstr "{0} të shtuara"
 
+#. placeholder {0}: String(view.assigned)
+msgid "{0} assigned"
+msgstr "{0} të caktuar"
+
 #. placeholder {0}: String(totalAudioFiles)
 msgid "{0} audio"
 msgstr "{0} audio"
@@ -176,6 +180,10 @@ msgstr "{0} img"
 #. placeholder {0}: reviewCounts.needsAttention
 msgid "{0} issue/issues"
 msgstr "{0} çështje/çështje"
+
+#. placeholder {0}: String(view.issues)
+msgid "{0} issues"
+msgstr "{0} probleme"
 
 #. placeholder {0}: visibleFindingsUniverse.length
 msgid "{0} items"
@@ -1289,6 +1297,9 @@ msgstr "Një aktivitet me përgjigje të hapur."
 msgid "Analyze with AI"
 msgstr "Analizo me IA"
 
+msgid "Analyzes the complete book to identify a consistent heading hierarchy."
+msgstr "Analizon të gjithë librin për të identifikuar një hierarki të qëndrueshme të titujve."
+
 msgid "Analyzing part…"
 msgstr "Po analizohet pjesa…"
 
@@ -1470,6 +1481,12 @@ msgstr "Burim"
 
 msgid "Assign..."
 msgstr "Cakto..."
+
+msgid "Assigned"
+msgstr "I caktuar"
+
+msgid "Assignment evidence"
+msgstr "Dëshmitë e caktimit"
 
 msgid "At the river's edge"
 msgstr "Në buzë të lumit"
@@ -1689,6 +1706,12 @@ msgstr "Të dhënat e librit janë të vjetruara dhe duhet të rindërtohen."
 msgid "Book Fonts"
 msgstr "Fontet e librit"
 
+msgid "Book heading outline"
+msgstr "Hierarkia e titujve të librit"
+
+msgid "Book hierarchy needs rebuilding"
+msgstr "Hierarkia e librit duhet të rindërtohet"
+
 msgid "Book images"
 msgstr "Figurat e librit"
 
@@ -1709,6 +1732,12 @@ msgstr "Mbivendosjet e modeleve të librit u përditësuan."
 
 msgid "Book order"
 msgstr "Rendi i librit"
+
+msgid "Book outline"
+msgstr "Struktura e librit"
+
+msgid "Book Outline"
+msgstr "Struktura e librit"
 
 msgid "Book package ready"
 msgstr "Paketa e librit gati"
@@ -1851,6 +1880,9 @@ msgstr "Përgjigje e ruajtur në cache"
 msgid "Calculate word timestamps for all entries"
 msgstr "Llogarit vulat kohore të fjalëve për të gjitha shënimet"
 
+msgid "Callout"
+msgstr "Kuti anësore"
+
 msgid "Calls"
 msgstr "Thirrje"
 
@@ -1975,6 +2007,9 @@ msgstr "Ndryshimi i gjuhës rivendos punën e mëvonshme."
 
 msgid "Changing the type regenerates the activity when you save."
 msgstr "Ndryshimi i llojit e rigjeneron aktivitetin kur ruani."
+
+msgid "Chapter"
+msgstr "Kapitull"
 
 msgid "Chapter 1: Introduction"
 msgstr "Kapitulli 1: Hyrje"
@@ -2258,6 +2293,9 @@ msgstr "Kondensim"
 msgid "Conditionally include text"
 msgstr "Përfshi tekst me kusht"
 
+msgid "confidence"
+msgstr "besueshmëri"
+
 msgid "Config"
 msgstr "Konfigurim"
 
@@ -2419,6 +2457,9 @@ msgstr "Përgjigja e saktë (alternativat ndahen me |)"
 
 msgid "Correct the metadata extracted from the document."
 msgstr "Korrigjoni meta të dhënat e nxjerra nga dokumenti."
+
+msgid "Could not load the book outline."
+msgstr "Struktura e librit nuk mund të ngarkohej."
 
 msgid "Could not load the Google Fonts catalog. Check your connection and try again."
 msgstr "Katalogu i Google Fonts nuk u ngarkua dot. Kontrolloni lidhjen tuaj dhe provoni përsëri."
@@ -4105,6 +4146,15 @@ msgstr "titull"
 msgid "Heading"
 msgstr "Titull"
 
+msgid "Heading level 4"
+msgstr "Niveli i titullit 4"
+
+msgid "Heading level 5"
+msgstr "Niveli i titullit 5"
+
+msgid "Heading level 6"
+msgstr "Niveli i titullit 6"
+
 msgid "Headings"
 msgstr "Titujt"
 
@@ -4524,6 +4574,9 @@ msgstr "Llojet e çështjeve për të kontrolluar"
 msgid "Issues"
 msgstr "Probleme"
 
+msgid "Issues only"
+msgstr "Vetëm problemet"
+
 msgid "It contains unexpected file paths. Use a .zip exported from ADT Studio."
 msgstr "Ai përmban shtigje skedarësh të papritura. Përdorni një skedar .zip të eksportuar nga ADT Studio."
 
@@ -4820,6 +4873,9 @@ msgstr "Po ngarkohen versionet beta…"
 
 msgid "Loading book config…"
 msgstr "Po ngarkohet konfigurimi i librit…"
+
+msgid "Loading book outline..."
+msgstr "Duke ngarkuar strukturën e librit..."
 
 msgid "Loading Book..."
 msgstr "Duke ngarkuar librin..."
@@ -5224,6 +5280,9 @@ msgstr "Duke pasqyruar strukturën..."
 msgid "Mirrors the original book's activity layout as closely as possible."
 msgstr "Pasqyron sa më shumë të jetë e mundur strukturën e aktiviteteve të librit origjinal."
 
+msgid "Mismatch"
+msgstr "Mospërputhje"
+
 msgid "Miss"
 msgstr "Mungesë"
 
@@ -5259,6 +5318,9 @@ msgstr "Model"
 
 msgid "Model overrides"
 msgstr "Mbivendosjet e modeleve"
+
+msgid "Model reasoning"
+msgstr "Arsyetimi i modelit"
 
 #~ msgid "Model variant"
 #~ msgstr "Variant modeli"
@@ -5447,6 +5509,9 @@ msgstr "Nuk u gjet asnjë version beta"
 #~ msgid "No beta versions match your search."
 #~ msgstr "Asnjë version beta nuk përputhet me kërkimin tuaj."
 
+msgid "No book outline has been extracted yet."
+msgstr "Ende nuk është nxjerrë asnjë strukturë e librit."
+
 msgid "No books match your search"
 msgstr "Asnjë libër nuk përputhet me kërkimin tuaj"
 
@@ -5611,6 +5676,9 @@ msgstr "Nuk u zbulua licencë open-source. Sigurohuni që keni të drejtën të 
 
 msgid "No other images in this book"
 msgstr "Nuk ka imazhe të tjera në këtë libër"
+
+msgid "No outline entries match the current filter."
+msgstr "Asnjë hyrje e strukturës nuk përputhet me filtrin aktual."
 
 msgid "No page linked"
 msgstr "Nuk ka faqe të lidhur"
@@ -6111,6 +6179,9 @@ msgstr "Në përpunim"
 msgid "Out of date"
 msgstr "I vjetëruar"
 
+msgid "Outline ID:"
+msgstr "ID-ja e strukturës:"
+
 msgid "Output languages"
 msgstr "Gjuhët e daljes"
 
@@ -6202,8 +6273,8 @@ msgid "Page"
 msgstr "Faqe"
 
 #. placeholder {0}: String(activePage.pageNumber)
+#. placeholder {0}: String(entry.pageNumber)
 #. placeholder {0}: String(group.pageNumber)
-#. placeholder {0}: String(item.pageNumber)
 msgid "Page {0}"
 msgstr "Faqja {0}"
 
@@ -6347,6 +6418,9 @@ msgstr "paragraf"
 
 msgid "Paragraph"
 msgstr "Paragraf"
+
+msgid "Parent:"
+msgstr "Prindi:"
 
 msgid "Parsing pages"
 msgstr "Analizimi i faqeve"
@@ -6915,8 +6989,8 @@ msgstr "Ri-ekzekuto fjalimin"
 msgid "Re-run Storyboard"
 msgstr "Ekzekuto përsëri Storyboard-in"
 
-msgid "Re-run these book-level stages on the assembled book:"
-msgstr "Riekzekuto këto faza në nivel libri në librin e bashkuar:"
+msgid "Re-run these stages on the assembled book:"
+msgstr "Riekzekuto këto faza në librin e bashkuar:"
 
 msgid "Re-run translation"
 msgstr "Ri-ekzekuto përkthimin"
@@ -7334,6 +7408,9 @@ msgstr "Rishikimi përfundoi: {0} e pranueshme, {1} në pritje të ruajtjes."
 msgid "Review complete: all {0} reviewed translations are acceptable."
 msgstr "Rishikimi përfundoi: të gjitha {0} përkthimet e rishikuara janë të pranueshme."
 
+msgid "Review each heading’s level, page, confidence, style cluster, and storyboard assignment."
+msgstr "Rishikoni nivelin, faqen, besueshmërinë, grupin e stileve dhe caktimin në storyboard për çdo titull."
+
 msgid "Review one session at a time to inspect page coverage and flagged findings."
 msgstr "Rishikoni një sesion në të njëjtën kohë për të inspektuar mbulimin e faqeve dhe gjetjet e shënuara."
 
@@ -7521,6 +7598,9 @@ msgstr "NË EKZEKUTIM"
 #~ msgid "Running {stageLabel}"
 #~ msgstr "Duke ekzekutuar {stageLabel}"
 
+msgid "Running Sectioning will rebuild the book-wide outline from the merged pages, then apply it without re-running PDF extraction."
+msgstr "Ekzekutimi i Seksionimit do ta rindërtojë strukturën e të gjithë librit nga faqet e bashkuara dhe do ta zbatojë pa e ekzekutuar përsëri nxjerrjen e PDF-së."
+
 msgid "Running Sectioning will run Extract first, then section the extracted pages."
 msgstr "Ekzekutimi i Seksionimit do të ekzekutojë Ekstraktimin së pari, pastaj do të seksionojë faqet e ekstraktuara."
 
@@ -7685,6 +7765,9 @@ msgstr "Kërko fonte"
 
 msgid "Search fonts..."
 msgstr "Kërko fonte..."
+
+msgid "Search headings, IDs, or style clusters..."
+msgstr "Kërkoni tituj, ID ose grupe stilesh..."
 
 msgid "Search languages..."
 msgstr "Kërko gjuhë..."
@@ -8237,6 +8320,9 @@ msgstr "Rendit sipas"
 msgid "Source"
 msgstr "Burimi"
 
+msgid "Source candidates:"
+msgstr "Kandidatët burimorë:"
+
 msgid "Source file"
 msgstr "Skedari burim"
 
@@ -8453,6 +8539,9 @@ msgstr "Storyboard"
 msgid "Storyboard has already been run. Changes made here will not take effect until storyboard is re-run."
 msgstr "Storyboard-i është ekzekutuar tashmë. Ndryshimet e bëra këtu nuk do të hyjnë në fuqi derisa storyboard-i të ri-ekzekutohet."
 
+msgid "Storyboard nodes:"
+msgstr "Nyjet e storyboard-it:"
+
 msgid "Storyboard not ready"
 msgstr "Storyboard-i nuk është gati"
 
@@ -8525,6 +8614,9 @@ msgstr "Referencë stili"
 msgid "Style reference image"
 msgstr "Imazh referencë stili"
 
+msgid "Style:"
+msgstr "Stili:"
+
 msgid "Styleguide"
 msgstr "Udhëzues Stili"
 
@@ -8545,6 +8637,9 @@ msgstr "Dërgo"
 
 msgid "Submit to the FNDE PNLD Digital platform and validate with VALIDE."
 msgstr "Dorëzoni në platformën PNLD Digital të FNDE-së dhe validoni me VALIDE."
+
+msgid "Subsection"
+msgstr "Nënseksion"
 
 msgid "Success"
 msgstr "Sukses"
@@ -9765,6 +9860,7 @@ msgstr "Variacione"
 msgid "Verified applied"
 msgstr "Vërtetimi u aplikua"
 
+#. placeholder {0}: String(data.version)
 #. placeholder {0}: String(version)
 msgid "Version {0}"
 msgstr "Versioni {0}"
