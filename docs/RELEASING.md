@@ -203,8 +203,10 @@ default branch, and open that fork's **Actions -> Release -> Run workflow**
 form. Create a restricted `release-ai-preview` environment in the fork, allow
 only that exact branch, and add an `OPENAI_API_KEY` with a conservative spend
 limit. The preview token has read-only repository access. Delete the fork or
-secret after testing. CLI/API dispatch can execute a feature-branch workflow in
-the primary repository, but it does not expose the new controls in the web form.
+secret after testing. Preview mode fetches the canonical upstream release tags,
+which GitHub does not copy into every fork. CLI/API dispatch can execute a
+feature-branch workflow in the primary repository, but it does not expose the
+new controls in the web form.
 
 Stable releases and previews also accept editorial and cover inputs:
 

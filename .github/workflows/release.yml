@@ -83,6 +83,11 @@ jobs:
         with:
           node-version: 22
 
+      - name: Fetch canonical release tags
+        run: >-
+          git fetch --force --tags https://github.com/unicef/adt-studio.git
+          'refs/tags/v*:refs/tags/v*'
+
       - name: Resolve preview release range
         id: release
         env:
