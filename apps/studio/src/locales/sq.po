@@ -1772,6 +1772,12 @@ msgstr "Kufij"
 msgid "Both"
 msgstr "Të dyja"
 
+msgid "Both pages lose their rendering and will be re-rendered automatically."
+msgstr "Të dyja faqet humbin renderimin e tyre dhe do të ri-renderizohen automatikisht."
+
+msgid "Both pages lose their rendering. Without an API key they cannot be re-rendered, so the Storyboard will need re-running."
+msgstr "Të dyja faqet humbin renderimin e tyre. Pa një çelës API ato nuk mund të ri-renderizohen, prandaj Storyboard-i do të duhet të ekzekutohet përsëri."
+
 msgid "Boxed Text"
 msgstr "Tekst i inkuadruar"
 
@@ -5920,6 +5926,9 @@ msgstr "nga"
 msgid "Off"
 msgstr "Joaktiv"
 
+msgid "Offset"
+msgstr "Zhvendosje"
+
 #~ msgid "Older"
 #~ msgstr "Më i vjetër"
 
@@ -6974,6 +6983,9 @@ msgstr "Ri-ekzekuto {stageLabel}?"
 msgid "Re-run speech"
 msgstr "Ri-ekzekuto fjalimin"
 
+msgid "Re-run Storyboard"
+msgstr "Ekzekuto përsëri Storyboard-in"
+
 msgid "Re-run these book-level stages on the assembled book:"
 msgstr "Riekzekuto këto faza në nivel libri në librin e bashkuar:"
 
@@ -7474,6 +7486,15 @@ msgstr "Rritja e temperaturave të oqeanit shkakton zbardhjen e koraleve - kur k
 msgid "Role"
 msgstr "Rol"
 
+msgid "Rotate"
+msgstr "Rrotullo"
+
+msgid "Rotate 90° clockwise"
+msgstr "Rrotullo 90° në kahun orar"
+
+msgid "Rotate 90° counter-clockwise"
+msgstr "Rrotullo 90° në kahun kundërorar"
+
 msgid "Row"
 msgstr "Rresht"
 
@@ -7679,6 +7700,9 @@ msgstr "Duke ruajtur..."
 msgid "Saving…"
 msgstr "Po ruhet…"
 
+msgid "Scale"
+msgstr "Shkallë"
+
 msgid "Scene 04"
 msgstr "Skena 04"
 
@@ -7847,6 +7871,9 @@ msgstr "Llojet e Seksionit"
 
 msgid "Sectioning"
 msgstr "Seksionim"
+
+msgid "Sectioning has changed since these pages were rendered. Re-run Storyboard to regenerate them."
+msgstr "Seksionimi ka ndryshuar që kur u renderizuan këto faqe. Ekzekuto përsëri Storyboard-in për t'i rigjeneruar ato."
 
 msgid "Sectioning mode"
 msgstr "Modaliteti i seksionimit"
@@ -8862,6 +8889,9 @@ msgstr "Titulli dhe të dhënat e librit vijnë me pjesën që përmban faqen 1 
 msgid "The built-in prompts are optimized for {DEFAULT_MODEL}. You switched the default LLM to <0>{savedModel}</0>, so we recommend generating new global prompt files tuned for it. You can also continue with the existing prompts."
 msgstr "Prompt-et e integruara janë optimizuar për {DEFAULT_MODEL}. E ndryshuat LLM-në e parazgjedhur në <0>{savedModel}</0>, ndaj rekomandojmë të gjeneroni skedarë të rinj prompt-esh globale të përshtatur për të. Mund të vazhdoni edhe me prompt-et ekzistuese."
 
+msgid "The combined section will be re-rendered."
+msgstr "Seksioni i kombinuar do të ri-renderizohet."
+
 msgid "The community of living organisms in a place and the way they interact with each other and their environment."
 msgstr "Bashkësia e organizmave të gjallë në një vend dhe mënyra si ndërveprojnë me njëri-tjetrin dhe mjedisin e tyre."
 
@@ -8975,6 +9005,9 @@ msgstr "Rishikimi i ruajtur i përkthimit është i vjetëruar. Ekzekutoni Rishi
 
 msgid "The section was edited after conversion — use \"Rebuild from page\" to refresh the steps."
 msgstr "Seksioni u ndryshua pas konvertimit — përdor «Rindërto nga faqja» për të rifreskuar hapat."
+
+msgid "The sections will be combined locally. Without an API key, the Storyboard will need re-running to regenerate the combined section."
+msgstr "Seksionet do të kombinohen lokalisht. Pa një çelës API-je, Storyboard-i do të duhet të ekzekutohet përsëri për të rigjeneruar seksionin e kombinuar."
 
 msgid "The storyboard must be completed before generating {stageName}. Run the Storyboard stage first."
 msgstr "Storyboard duhet të plotësohet para gjenerimit të {stageName}. Ekzekuto fazën Storyboard fillimisht."
@@ -9337,6 +9370,10 @@ msgstr "Gjurmo progresin e rishikuesit dhe gjetjet e rishikimit të kaptura nga 
 
 msgid "Translate"
 msgstr "Përkthe"
+
+msgctxt "CSS transform"
+msgid "Translate"
+msgstr "Translim"
 
 msgid "Translate text in images"
 msgstr "Përkthe tekstin në imazhe"

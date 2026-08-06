@@ -1771,6 +1771,12 @@ msgstr "Borders"
 msgid "Both"
 msgstr "Both"
 
+msgid "Both pages lose their rendering and will be re-rendered automatically."
+msgstr "Both pages lose their rendering and will be re-rendered automatically."
+
+msgid "Both pages lose their rendering. Without an API key they cannot be re-rendered, so the Storyboard will need re-running."
+msgstr "Both pages lose their rendering. Without an API key they cannot be re-rendered, so the Storyboard will need re-running."
+
 msgid "Boxed Text"
 msgstr "Boxed Text"
 
@@ -5919,6 +5925,9 @@ msgstr "of"
 msgid "Off"
 msgstr "Off"
 
+msgid "Offset"
+msgstr "Offset"
+
 #~ msgid "Older"
 #~ msgstr "Older"
 
@@ -6973,6 +6982,9 @@ msgstr "Re-run {stageLabel}?"
 msgid "Re-run speech"
 msgstr "Re-run speech"
 
+msgid "Re-run Storyboard"
+msgstr "Re-run Storyboard"
+
 msgid "Re-run these book-level stages on the assembled book:"
 msgstr "Re-run these book-level stages on the assembled book:"
 
@@ -7473,6 +7485,15 @@ msgstr "Rising ocean temperatures cause coral bleaching - when stressed corals e
 msgid "Role"
 msgstr "Role"
 
+msgid "Rotate"
+msgstr "Rotate"
+
+msgid "Rotate 90° clockwise"
+msgstr "Rotate 90° clockwise"
+
+msgid "Rotate 90° counter-clockwise"
+msgstr "Rotate 90° counter-clockwise"
+
 msgid "Row"
 msgstr "Row"
 
@@ -7678,6 +7699,9 @@ msgstr "Saving..."
 msgid "Saving…"
 msgstr "Saving…"
 
+msgid "Scale"
+msgstr "Scale"
+
 msgid "Scene 04"
 msgstr "Scene 04"
 
@@ -7846,6 +7870,9 @@ msgstr "Section Types"
 
 msgid "Sectioning"
 msgstr "Sectioning"
+
+msgid "Sectioning has changed since these pages were rendered. Re-run Storyboard to regenerate them."
+msgstr "Sectioning has changed since these pages were rendered. Re-run Storyboard to regenerate them."
 
 msgid "Sectioning mode"
 msgstr "Sectioning mode"
@@ -8861,6 +8888,9 @@ msgstr "The book's title and metadata arrive with the part that contains page 1 
 msgid "The built-in prompts are optimized for {DEFAULT_MODEL}. You switched the default LLM to <0>{savedModel}</0>, so we recommend generating new global prompt files tuned for it. You can also continue with the existing prompts."
 msgstr "The built-in prompts are optimized for {DEFAULT_MODEL}. You switched the default LLM to <0>{savedModel}</0>, so we recommend generating new global prompt files tuned for it. You can also continue with the existing prompts."
 
+msgid "The combined section will be re-rendered."
+msgstr "The combined section will be re-rendered."
+
 msgid "The community of living organisms in a place and the way they interact with each other and their environment."
 msgstr "The community of living organisms in a place and the way they interact with each other and their environment."
 
@@ -8974,6 +9004,9 @@ msgstr "The saved translation review is stale. Run Review again for the visible 
 
 msgid "The section was edited after conversion — use \"Rebuild from page\" to refresh the steps."
 msgstr "The section was edited after conversion — use \"Rebuild from page\" to refresh the steps."
+
+msgid "The sections will be combined locally. Without an API key, the Storyboard will need re-running to regenerate the combined section."
+msgstr "The sections will be combined locally. Without an API key, the Storyboard will need re-running to regenerate the combined section."
 
 msgid "The storyboard must be completed before generating {stageName}. Run the Storyboard stage first."
 msgstr "The storyboard must be completed before generating {stageName}. Run the Storyboard stage first."
@@ -9334,6 +9367,10 @@ msgstr "Total Tokens"
 msgid "Track reviewer progress and review findings captured from Preview."
 msgstr "Track reviewer progress and review findings captured from Preview."
 
+msgid "Translate"
+msgstr "Translate"
+
+msgctxt "CSS transform"
 msgid "Translate"
 msgstr "Translate"
 

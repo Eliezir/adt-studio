@@ -1,5 +1,6 @@
-import { useEffect, useRef, useCallback, useState } from "react"
-import { ArrowLeft, ArrowRight, LayoutGrid, ListTree, Table2 } from "lucide-react"
+import { useEffect, useRef, useCallback, useState, type ReactNode } from "react"
+import { ArrowLeft, ArrowRight, LayoutGrid, ListTree, RotateCcw, Table2 } from "lucide-react"
+import { Button } from "@/components/ui/button"
 import { usePages, usePage } from "@/hooks/use-pages"
 import { useStepHeader } from "../../components/StepViewRouter"
 import { useBookRun } from "@/hooks/use-book-run"
@@ -38,9 +39,14 @@ export function StoryboardView({ bookLabel, selectedPageId: selectedPageIdProp, 
   // regenerates (the page's stale rendering is cleared optimistically on re-run,
   // see queueRun). Only show the run card when idle or no data exists yet.
   const hasPageData = (pages ?? []).some((p) => p.sectionCount > 0)
+  // When idle, existing renderings outrank a stale stage status: a sectioning
+  // edit marks storyboard for re-run without touching the HTML, and pushing the
+  // run card in front of intact renderings would hide the very sections the user
+  // came back to re-render. Matches the gate in StoryboardIndex.
+  const hasRenderingData = (pages ?? []).some((p) => p.hasRendering)
   const showRunCard = storyboardRunning || storyboardState === "error"
     ? !hasPageData
-    : !storyboardDone
+    : !storyboardDone && !hasRenderingData
 
   const handleRunStoryboard = useCallback(() => {
     if (!hasApiKey || !sectioningReady || storyboardRunning) return
@@ -343,6 +349,40 @@ export function StoryboardView({ bookLabel, selectedPageId: selectedPageIdProp, 
     return () => window.removeEventListener("keydown", handleKeyDown)
   }, [selectedPageId, sectionIndex, sectionCount, canGoPrev, canGoNext, prevPageId, nextPageId, showRunCard])
 
+  // Sectioning edits mark the storyboard stale without touching the renderings,
+  // so the editor stays open on pages that are still perfectly editable — but
+  // nothing said they were now behind the sections they came from. This is that
+  // reminder, and the one place to regenerate the lot in a single pass, so a
+  // restructuring session in Sectioning costs one render rather than one per
+  // edit.
+  const storyboardStale = !storyboardDone && !storyboardRunning && hasRenderingData
+  const withStaleBanner = (content: ReactNode) =>
+    storyboardStale ? (
+      <div className="flex flex-col h-full min-h-0">
+        <div className="flex items-center justify-between gap-3 border-b border-amber-200 bg-amber-50 px-3 py-2">
+          <div className="text-xs text-amber-900">
+            <Trans>
+              Sectioning has changed since these pages were rendered. Re-run Storyboard to
+              regenerate them.
+            </Trans>
+          </div>
+          <Button
+            size="sm"
+            variant="outline"
+            className="h-7 shrink-0 border-amber-300 bg-white px-3 text-xs text-amber-900 hover:bg-amber-100"
+            onClick={handleRunStoryboard}
+            disabled={!hasApiKey || !sectioningReady || storyboardRunning}
+          >
+            <RotateCcw className="mr-1 h-3 w-3" />
+            <Trans>Re-run Storyboard</Trans>
+          </Button>
+        </div>
+        <div className="flex-1 min-h-0">{content}</div>
+      </div>
+    ) : (
+      content
+    )
+
   if (showRunCard) {
     return (
       <div className="p-4">
@@ -373,7 +413,7 @@ export function StoryboardView({ bookLabel, selectedPageId: selectedPageIdProp, 
 
   // Overview mode: show sectioning table for all pages
   if (overviewMode) {
-    return (
+    return withStaleBanner(
       <SectioningOverview
         bookLabel={bookLabel}
         pages={pageList}
@@ -444,7 +484,7 @@ export function StoryboardView({ bookLabel, selectedPageId: selectedPageIdProp, 
     )
   }
 
-  return (
+  return withStaleBanner(
     <StoryboardSectionDetail
       bookLabel={bookLabel}
       pageId={selectedPageId!}

@@ -1771,6 +1771,12 @@ msgstr "Bordes"
 msgid "Both"
 msgstr "Ambos"
 
+msgid "Both pages lose their rendering and will be re-rendered automatically."
+msgstr "Ambas páginas pierden su renderizado y se volverán a renderizar automáticamente."
+
+msgid "Both pages lose their rendering. Without an API key they cannot be re-rendered, so the Storyboard will need re-running."
+msgstr "Ambas páginas pierden su renderizado. Sin una clave de API no se pueden volver a renderizar, por lo que habrá que volver a ejecutar Storyboard."
+
 msgid "Boxed Text"
 msgstr "Texto en recuadro"
 
@@ -5919,6 +5925,9 @@ msgstr "of"
 msgid "Off"
 msgstr "Apagado"
 
+msgid "Offset"
+msgstr "Desplazamiento"
+
 #~ msgid "Older"
 #~ msgstr "Anterior"
 
@@ -6973,6 +6982,9 @@ msgstr "¿Re-ejecutar {stageLabel}?"
 msgid "Re-run speech"
 msgstr "Reejecutar audio"
 
+msgid "Re-run Storyboard"
+msgstr "Volver a ejecutar Storyboard"
+
 msgid "Re-run these book-level stages on the assembled book:"
 msgstr "Vuelve a ejecutar estas etapas de nivel de libro en el libro ensamblado:"
 
@@ -7473,6 +7485,15 @@ msgstr "El aumento de las temperaturas oceánicas causa el blanqueamiento de cor
 msgid "Role"
 msgstr "Rol"
 
+msgid "Rotate"
+msgstr "Rotar"
+
+msgid "Rotate 90° clockwise"
+msgstr "Rotar 90° en sentido horario"
+
+msgid "Rotate 90° counter-clockwise"
+msgstr "Rotar 90° en sentido antihorario"
+
 msgid "Row"
 msgstr "Fila"
 
@@ -7678,6 +7699,9 @@ msgstr "Guardando..."
 msgid "Saving…"
 msgstr "Guardando…"
 
+msgid "Scale"
+msgstr "Escala"
+
 msgid "Scene 04"
 msgstr "Escena 04"
 
@@ -7846,6 +7870,9 @@ msgstr "Tipos de sección"
 
 msgid "Sectioning"
 msgstr "Seccionamiento"
+
+msgid "Sectioning has changed since these pages were rendered. Re-run Storyboard to regenerate them."
+msgstr "La segmentación ha cambiado desde que se renderizaron estas páginas. Vuelve a ejecutar Storyboard para regenerarlas."
 
 msgid "Sectioning mode"
 msgstr "Modo de sección"
@@ -8861,6 +8888,9 @@ msgstr "El título y los metadatos del libro llegan con la parte que contiene la
 msgid "The built-in prompts are optimized for {DEFAULT_MODEL}. You switched the default LLM to <0>{savedModel}</0>, so we recommend generating new global prompt files tuned for it. You can also continue with the existing prompts."
 msgstr "Los prompts integrados están optimizados para {DEFAULT_MODEL}. Cambiaste el LLM predeterminado a <0>{savedModel}</0>, por lo que te recomendamos generar nuevos archivos de prompts globales adaptados a ese modelo. También puedes continuar con los prompts existentes."
 
+msgid "The combined section will be re-rendered."
+msgstr "La sección combinada se volverá a renderizar."
+
 msgid "The community of living organisms in a place and the way they interact with each other and their environment."
 msgstr "La comunidad de organismos vivos en un lugar y la forma en que interactúan entre sí y con su entorno."
 
@@ -8974,6 +9004,9 @@ msgstr "La revisión de traducción guardada está obsoleta. Vuelve a ejecutar R
 
 msgid "The section was edited after conversion — use \"Rebuild from page\" to refresh the steps."
 msgstr "La sección se editó después de la conversión: usa «Reconstruir desde la página» para actualizar los pasos."
+
+msgid "The sections will be combined locally. Without an API key, the Storyboard will need re-running to regenerate the combined section."
+msgstr "Las secciones se combinarán localmente. Sin una clave de API, será necesario volver a ejecutar el Storyboard para regenerar la sección combinada."
 
 msgid "The storyboard must be completed before generating {stageName}. Run the Storyboard stage first."
 msgstr "El storyboard debe completarse antes de generar {stageName}. Ejecuta la etapa de Storyboard primero."
@@ -9336,6 +9369,10 @@ msgstr "Track reviewer progress and review findings captured from Preview."
 
 msgid "Translate"
 msgstr "Traducir"
+
+msgctxt "CSS transform"
+msgid "Translate"
+msgstr "Trasladar"
 
 msgid "Translate text in images"
 msgstr "Traducir texto en imágenes"
