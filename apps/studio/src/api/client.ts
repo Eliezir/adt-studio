@@ -625,6 +625,8 @@ export interface LlmLogEntry {
     requestedPromptName?: string
     modelId: string
     cacheHit: boolean
+    /** Final status of this individual attempt. Older log entries may omit it. */
+    success?: boolean
     durationMs: number
     usage?: { inputTokens: number; outputTokens: number }
     validationErrors?: string[]
