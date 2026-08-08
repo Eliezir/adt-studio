@@ -1,4 +1,4 @@
-import { Trans } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { ArrowLeft, ArrowUpRight } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { GithubIcon } from "@/components/icons/GithubIcon";
@@ -6,6 +6,7 @@ import { Button } from "@/components/Button";
 import { ReleaseMarkdown } from "@/components/ReleaseMarkdown";
 import { cn } from "@/lib/cn";
 import { withBase } from "@/lib/href";
+import { localizeGithubRelease } from "@/lib/release-i18n";
 import {
   sectionTone,
   summarizeSections,
@@ -23,6 +24,7 @@ function anchorIdForTag(tag: string): string {
 }
 
 export function ReleasesPage({ focusTag }: { focusTag?: string }) {
+  const { i18n } = useLingui();
   const { releases, loading, error } = useStableReleases();
   const [mounted, setMounted] = useState(false);
 
@@ -31,7 +33,12 @@ export function ReleasesPage({ focusTag }: { focusTag?: string }) {
     return () => cancelAnimationFrame(id);
   }, []);
 
-  const items = useMemo(() => releases ?? [], [releases]);
+  const items = useMemo(
+    () =>
+      releases?.map((release) => localizeGithubRelease(release, i18n.locale)) ??
+      [],
+    [i18n.locale, releases],
+  );
 
   /** After items render, scroll the focused tag into view. */
   useEffect(() => {

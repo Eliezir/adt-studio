@@ -3,6 +3,7 @@ import { ArrowRight, ArrowUpRight, Sparkles, Tag } from "lucide-react";
 import { SectionEyebrow } from "@/components/SectionEyebrow";
 import { cn } from "@/lib/cn";
 import { withBase } from "@/lib/href";
+import { localizeGithubRelease } from "@/lib/release-i18n";
 import {
   firstImageFromBody,
   firstParagraphFromBody,
@@ -19,10 +20,12 @@ import {
 import { useInView } from "@/lib/useScrollProgress";
 
 export function ReleasesScene() {
-  const { t } = useLingui();
+  const { i18n, t } = useLingui();
   const { releases, loading } = useStableReleases();
   const { ref, inView: mounted } = useInView<HTMLDivElement>({ threshold: 0.2 });
-  const latest = releases?.[0];
+  const latest = releases?.[0]
+    ? localizeGithubRelease(releases[0], i18n.locale)
+    : undefined;
 
   return (
     <section
