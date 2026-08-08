@@ -260,7 +260,7 @@ describe("AI release assets", () => {
       const dryRun = path.join(root, "dry");
       await runCli([
         "--from",
-        "HEAD~1",
+        "HEAD",
         "--to",
         "HEAD",
         "--tag",
@@ -278,7 +278,7 @@ describe("AI release assets", () => {
       const textOnly = path.join(root, "text");
       await runCli([
         "--from",
-        "HEAD~1",
+        "HEAD",
         "--to",
         "HEAD",
         "--tag",
