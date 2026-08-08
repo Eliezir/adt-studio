@@ -252,9 +252,10 @@ jobs:
             echo "::error::Calculated tag $TAG already exists on origin."
             exit 1
           fi
-          # Stable `latest` is promoted only after a human publishes the draft
-          # GitHub Release. The versioned image is safe to stage beforehand.
           DOCKER_TAGS="ghcr.io/unicef/adt-studio:$TAG"
+          if [[ "$PRERELEASE" == "false" ]]; then
+            DOCKER_TAGS="$DOCKER_TAGS"$'\n'"ghcr.io/unicef/adt-studio:latest"
+          fi
           # Changelog baseline: pin the previous tag so release-note generation
           # never falls back to the repo's first commit when GitHub can't infer
           # an ancestor (stable and beta tags live on divergent branch lines).
@@ -653,18 +654,21 @@ jobs:
           elif [[ "$PRERELEASE" == "false" && -s release-assets/release-notes.md ]]; then
             NOTES_ARGS=(--notes-file release-assets/release-notes.md)
           fi
-          ASSETS=(dist/* docker-compose.yml scripts/windows-setup-and-run.bat)
+          RELEASE_COVERS=()
           if [[ "$PRERELEASE" == "false" ]]; then
             [[ -s release-assets/release-editorial.json ]] \
-              && ASSETS+=("release-assets/release-editorial.json#AI release editorial metadata")
+              && RELEASE_COVERS+=("release-assets/release-editorial.json#AI release editorial metadata")
             for cover in release-assets/release-cover-*.png; do
-              [[ -e "$cover" ]] && ASSETS+=("$cover#Release cover")
+              [[ -e "$cover" ]] && RELEASE_COVERS+=("$cover#Release cover")
             done
           fi
           gh release create "$TAG" --repo "$REPO" \
             --title "ADT Studio $TAG" \
             "${NOTES_ARGS[@]}" $PRERELEASE_FLAG "${DRAFT_FLAG[@]}" \
-            "${ASSETS[@]}"
+            dist/* \
+            docker-compose.yml \
+            scripts/windows-setup-and-run.bat \
+            "${RELEASE_COVERS[@]}"
 
           if [[ "$PRERELEASE" == "false" ]]; then
             {
@@ -672,7 +676,6 @@ jobs:
               echo "- Review and publish: https://github.com/$REPO/releases/tag/$TAG"
               echo "- The cover includes coordinated light and dark theme assets."
               echo "- Regenerate notes or cover: https://github.com/$REPO/actions/workflows/regenerate-release-assets.yml"
-              echo "- The Docker \`latest\` tag will be promoted only after publication."
             } >> "$GITHUB_STEP_SUMMARY"
           fi
 

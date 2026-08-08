@@ -188,7 +188,7 @@ Open **Actions -> Release -> Run workflow**, select the release branch, and
 choose `beta`, `beta-minor`, `beta-major`, `patch`, `minor`, or `major` from
 the **Version increment** list. Leave **Preview notes and covers only** checked
 to test the form and AI output without creating a release, tag, build, package,
-commit, or Docker image. The run uploads the English notes and coordinated
+or commit. The run uploads the English notes and coordinated
 light/dark covers as a short-lived workflow artifact. Uncheck it only when
 cutting a real release from `develop` or `main`.
 
@@ -275,10 +275,8 @@ case-insensitive, and only the head commit of the push is inspected.
 4. `finalize` commits release metadata and creates the tag. Beta releases are
    published immediately; stable releases are saved as drafts for human review.
 
-Both channels stage only their versioned Docker image during the build. When a
-human publishes a stable draft, [`promote-stable-docker.yml`](../.github/workflows/promote-stable-docker.yml)
-promotes that exact versioned image to `latest`. Beta images can never overwrite
-`latest`.
+Stable Docker releases update both their version tag and `latest`. Beta images
+publish only their version tag and cannot overwrite `latest`.
 
 ### Stable release review
 
@@ -303,7 +301,7 @@ After the workflow succeeds:
 4. Choose `notes`, `image`, or `both`, select `auto` or a stage palette, provide
    optional feedback/context, and run the regeneration from `main`.
 5. When satisfied, click **Publish release** on the draft. This is the human
-   confirmation step and triggers Docker `latest` promotion.
+   confirmation step for the Electron release notes, covers, and installers.
 
 Regeneration works only for an unpublished stable `vX.Y.Z` draft. Generated
 blocks are wrapped in hidden Markdown markers so image-only regeneration keeps
@@ -312,11 +310,10 @@ human text outside those blocks is preserved. If the draft is edited or
 published while regeneration runs, the workflow refuses to overwrite it.
 
 Only one stable draft may exist at a time. A stable draft already has a public
-protected tag, metadata commit, and versioned Docker image, so abandoning one is
-not equivalent to deleting an ordinary draft. Delete the draft, remove the
-version tag through an authorized tag-protection bypass, and revert the metadata
-commit before calculating another release. Remove the versioned GHCR image too
-if it should not remain available.
+protected tag and metadata commit, so abandoning one is not equivalent to
+deleting an ordinary draft. Delete the draft, remove the version tag through an
+authorized tag-protection bypass, and revert the metadata commit before
+calculating another release.
 
 ### Local release preview
 
