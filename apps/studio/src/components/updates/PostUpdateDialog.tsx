@@ -1,4 +1,4 @@
-import { Trans } from "@lingui/react/macro"
+import { Trans, useLingui } from "@lingui/react/macro"
 import { Sparkles } from "lucide-react"
 import type { ElementType } from "react"
 import { Button } from "@/components/ui/button"
@@ -11,6 +11,7 @@ import {
 import { ReleaseFallbackBanner } from "./ReleaseFallbackBanner"
 import { ReleaseNotesMarkdown } from "./ReleaseNotesMarkdown"
 import { formatVersion, releaseNotesHaveImage } from "./release-banner-utils"
+import { localizeReleaseNotes } from "./release-i18n"
 
 export interface PostUpdateDialogProps {
   open: boolean
@@ -57,9 +58,10 @@ export function PostUpdateContent({
   onDone,
   TitleTag = "h2",
 }: PostUpdateContentProps) {
+  const { i18n } = useLingui()
   const label = formatVersion(version)
-  const showFallbackBanner = !releaseNotesHaveImage(releaseNotes)
-  const notes = releaseNotes?.trim()
+  const notes = localizeReleaseNotes(releaseNotes, i18n.locale)?.trim()
+  const showFallbackBanner = !releaseNotesHaveImage(notes)
 
   return (
     <div className="flex h-160 max-h-[calc(100vh-2rem)] flex-col">
