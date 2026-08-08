@@ -24,7 +24,7 @@ import {
 } from "./download/shared";
 
 export function DownloadPage() {
-  const { t } = useLingui();
+  const { i18n, t } = useLingui();
   const { releases, loading, error } = useStableReleases();
   const latest: GithubRelease | undefined = releases?.[0];
   const [userPlatform, setUserPlatform] = useState<DetectedPlatform | null>(
@@ -264,7 +264,9 @@ export function DownloadPage() {
           </div>
           {latest && (
             <div className="font-mono text-[10px] text-[color:var(--color-muted-foreground)]/70">
-              <Trans>Released {formatRelativeDate(latest.published_at)}</Trans>
+              <Trans>
+                Released {formatRelativeDate(latest.published_at, i18n.locale)}
+              </Trans>
             </div>
           )}
         </div>

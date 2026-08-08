@@ -389,6 +389,9 @@ msgstr "From PDF to"
 msgid "Full control over render strategies, pruning, and filters."
 msgstr "Full control over render strategies, pruning, and filters."
 
+msgid "Full diff"
+msgstr "Full diff"
+
 msgid "Full transparency"
 msgstr "Full transparency"
 
@@ -728,7 +731,7 @@ msgstr "Reference"
 msgid "Release to upload"
 msgstr "Release to upload"
 
-#. placeholder {0}: formatRelativeDate(latest.published_at)
+#. placeholder {0}: formatRelativeDate(latest.published_at, i18n.locale)
 msgid "Released {0}"
 msgstr "Released {0}"
 

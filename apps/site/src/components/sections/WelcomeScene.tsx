@@ -13,7 +13,7 @@ import {
 import { trackEvent } from "@/lib/matomo";
 
 export function WelcomeScene() {
-  const { t } = useLingui();
+  const { i18n, t } = useLingui();
   const [mounted, setMounted] = useState(false);
   const { releases } = useStableReleases();
   const latest = releases?.[0];
@@ -62,7 +62,7 @@ export function WelcomeScene() {
                 <span className="font-mono">{latest.tag_name}</span>
                 <span className="text-[color:var(--color-muted-foreground)]/80">
                   {" · "}
-                  {formatRelativeDate(latest.published_at)}
+                  {formatRelativeDate(latest.published_at, i18n.locale)}
                 </span>
                 <span className="hidden sm:inline">
                   {" · "}

@@ -3,7 +3,10 @@ import { ArrowRight, ArrowUpRight, Sparkles, Tag } from "lucide-react";
 import { SectionEyebrow } from "@/components/SectionEyebrow";
 import { cn } from "@/lib/cn";
 import { withBase } from "@/lib/href";
-import { localizeGithubRelease } from "@/lib/release-i18n";
+import {
+  localizeGithubRelease,
+  type LocalizedGithubRelease,
+} from "@/lib/release-i18n";
 import {
   firstImageFromBody,
   firstParagraphFromBody,
@@ -15,7 +18,6 @@ import {
   formatAbsoluteDate,
   formatRelativeDate,
   useStableReleases,
-  type GithubRelease,
 } from "@/lib/useGithubReleases";
 import { useInView } from "@/lib/useScrollProgress";
 
@@ -101,12 +103,15 @@ export function ReleasesScene() {
   );
 }
 
-function HeroSpotlight({ release }: { release: GithubRelease }) {
-  const { t } = useLingui();
+function HeroSpotlight({ release }: { release: LocalizedGithubRelease }) {
+  const { i18n, t } = useLingui();
   const title = release.name?.trim() || release.tag_name;
   const cover = firstImageFromBody(release.body);
   const excerpt = firstParagraphFromBody(release.body, 240);
-  const sections = summarizeSections(release.body).slice(0, 4);
+  const sections = summarizeSections(
+    release.body,
+    release.localization?.sections,
+  ).slice(0, 4);
   const detailHref = withBase(`/releases/${encodeURIComponent(release.tag_name)}`);
 
   return (
@@ -134,10 +139,10 @@ function HeroSpotlight({ release }: { release: GithubRelease }) {
             <Trans>Latest</Trans>
           </span>
           <span aria-hidden className="opacity-50">·</span>
-          <span>{formatAbsoluteDate(release.published_at)}</span>
+          <span>{formatAbsoluteDate(release.published_at, i18n.locale)}</span>
           <span className="opacity-60">
             {" · "}
-            {formatRelativeDate(release.published_at)}
+            {formatRelativeDate(release.published_at, i18n.locale)}
           </span>
         </div>
 
@@ -158,7 +163,7 @@ function HeroSpotlight({ release }: { release: GithubRelease }) {
                 key={s.title}
                 label={s.title}
                 count={s.count}
-                tone={sectionTone(s.title)}
+                tone={sectionTone(s.kind)}
               />
             ))}
           </div>

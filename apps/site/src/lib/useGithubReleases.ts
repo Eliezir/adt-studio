@@ -162,7 +162,7 @@ export function useGithubRelease(tag: string | null): {
   return { release, loading, error };
 }
 
-export function formatRelativeDate(iso: string): string {
+export function formatRelativeDate(iso: string, locale?: string): string {
   const then = new Date(iso).getTime();
   const diff = Date.now() - then;
   const sec = Math.floor(diff / 1000);
@@ -171,12 +171,16 @@ export function formatRelativeDate(iso: string): string {
   const day = Math.floor(hr / 24);
   const month = Math.floor(day / 30);
   const year = Math.floor(day / 365);
-  if (year >= 1) return `${year}y ago`;
-  if (month >= 1) return `${month}mo ago`;
-  if (day >= 1) return `${day === 1 ? "1 day" : `${day} days`} ago`;
-  if (hr >= 1) return `${hr}h ago`;
-  if (min >= 1) return `${min}m ago`;
-  return "just now";
+  const formatter = new Intl.RelativeTimeFormat(locale, {
+    numeric: "auto",
+    style: "short",
+  });
+  if (year >= 1) return formatter.format(-year, "year");
+  if (month >= 1) return formatter.format(-month, "month");
+  if (day >= 1) return formatter.format(-day, "day");
+  if (hr >= 1) return formatter.format(-hr, "hour");
+  if (min >= 1) return formatter.format(-min, "minute");
+  return formatter.format(0, "second");
 }
 
 export function formatDownloads(n: number): string {
@@ -202,9 +206,9 @@ export function sumAllDownloads(releases: GithubRelease[] | null): number {
   return releases.reduce((acc, r) => acc + sumReleaseDownloads(r), 0);
 }
 
-export function formatAbsoluteDate(iso: string): string {
+export function formatAbsoluteDate(iso: string, locale?: string): string {
   const d = new Date(iso);
-  return d.toLocaleDateString(undefined, {
+  return d.toLocaleDateString(locale, {
     year: "numeric",
     month: "long",
     day: "numeric",

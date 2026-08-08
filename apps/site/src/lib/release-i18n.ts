@@ -2,7 +2,8 @@ import type { GithubRelease } from "./useGithubReleases";
 
 const LOCALIZATION_PATTERN = /<!--\s*adt-release-i18n\s*\n([\s\S]*?)-->/i;
 
-type LocalizedSection = {
+export type LocalizedSection = {
+  kind: string;
   heading: string;
   items: string[];
 };
@@ -11,11 +12,15 @@ export type LocalizedRelease = {
   title: string;
   summary: string;
   coverAlt: string;
-  sections: {
-    added: LocalizedSection;
-    improved: LocalizedSection;
-    fixed: LocalizedSection;
-  };
+  sections: LocalizedSection[];
+};
+
+export type LocalizedGithubRelease = GithubRelease & {
+  localization?: LocalizedRelease;
+};
+
+type LocalizationOptions = {
+  fullDiffLabel?: string;
 };
 
 type ReleaseLocalizations = {
@@ -27,7 +32,8 @@ type ReleaseLocalizations = {
 export function localizeGithubRelease(
   release: GithubRelease,
   locale: string,
-): GithubRelease {
+  options: LocalizationOptions = {},
+): LocalizedGithubRelease {
   if (!release.body) return release;
   const localizations = parseReleaseLocalizations(release.body);
   const cleanBody = stripReleaseLocalizations(release.body);
@@ -36,7 +42,9 @@ export function localizeGithubRelease(
   if (!localized) return { ...release, body: cleanBody };
   return {
     ...release,
-    body: renderLocalizedBody(cleanBody, localized),
+    name: localized.title,
+    body: renderLocalizedBody(cleanBody, localized, options),
+    localization: localized,
   };
 }
 
@@ -90,6 +98,7 @@ function resolveLocalization(
 function renderLocalizedBody(
   originalBody: string,
   localized: LocalizedRelease,
+  options: LocalizationOptions,
 ): string {
   const originalPicture = originalBody.match(
     /<picture\b[\s\S]*?<\/picture>/i,
@@ -97,8 +106,11 @@ function renderLocalizedBody(
   const picture = originalPicture
     ? replaceImageAlt(originalPicture, localized.coverAlt)
     : undefined;
-  const footer = originalBody.match(/\n---\s*\n([\s\S]*?)\s*$/)?.[1];
-  const sections = Object.values(localized.sections)
+  const originalFooter = originalBody.match(/\n---\s*\n([\s\S]*?)\s*$/)?.[1];
+  const footer = originalFooter
+    ? localizeFooter(originalFooter, options.fullDiffLabel)
+    : undefined;
+  const sections = localized.sections
     .filter((section) => section.items.length > 0)
     .map(
       (section) =>
@@ -106,13 +118,21 @@ function renderLocalizedBody(
     );
   return [
     picture,
-    `## ${localized.title}`,
     localized.summary,
     ...sections,
     footer ? `---\n\n${footer.trim()}` : undefined,
   ]
     .filter(Boolean)
     .join("\n\n");
+}
+
+function localizeFooter(footer: string, fullDiffLabel?: string): string {
+  if (!fullDiffLabel) return footer;
+  return footer.replace(
+    /(\*{0,2})Full diff(\*{0,2})(\s*:)/i,
+    (_match, opening: string, closing: string, suffix: string) =>
+      `${opening}${fullDiffLabel}${closing}${suffix}`,
+  );
 }
 
 function replaceImageAlt(picture: string, alt: string): string {
@@ -130,16 +150,17 @@ function replaceImageAlt(picture: string, alt: string): string {
 
 function parseLocalizedRelease(value: unknown): LocalizedRelease | undefined {
   if (!isRecord(value) || !isRecord(value.sections)) return undefined;
-  const added = parseSection(value.sections.added);
-  const improved = parseSection(value.sections.improved);
-  const fixed = parseSection(value.sections.fixed);
+  const sectionEntries = Object.entries(value.sections);
+  const sections = sectionEntries.flatMap(([kind, candidate]) => {
+    const parsed = parseSection(kind, candidate);
+    return parsed ? [parsed] : [];
+  });
   if (
     typeof value.title !== "string" ||
     typeof value.summary !== "string" ||
     typeof value.coverAlt !== "string" ||
-    !added ||
-    !improved ||
-    !fixed
+    sections.length === 0 ||
+    sections.length !== sectionEntries.length
   ) {
     return undefined;
   }
@@ -147,12 +168,16 @@ function parseLocalizedRelease(value: unknown): LocalizedRelease | undefined {
     title: value.title,
     summary: value.summary,
     coverAlt: value.coverAlt,
-    sections: { added, improved, fixed },
+    sections,
   };
 }
 
-function parseSection(value: unknown): LocalizedSection | undefined {
+function parseSection(
+  kind: string,
+  value: unknown,
+): LocalizedSection | undefined {
   if (
+    !kind.trim() ||
     !isRecord(value) ||
     typeof value.heading !== "string" ||
     !Array.isArray(value.items) ||
@@ -160,7 +185,7 @@ function parseSection(value: unknown): LocalizedSection | undefined {
   ) {
     return undefined;
   }
-  return { heading: value.heading, items: value.items };
+  return { kind, heading: value.heading, items: value.items };
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

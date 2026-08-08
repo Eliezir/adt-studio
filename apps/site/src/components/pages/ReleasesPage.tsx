@@ -6,7 +6,10 @@ import { Button } from "@/components/Button";
 import { ReleaseMarkdown } from "@/components/ReleaseMarkdown";
 import { cn } from "@/lib/cn";
 import { withBase } from "@/lib/href";
-import { localizeGithubRelease } from "@/lib/release-i18n";
+import {
+  localizeGithubRelease,
+  type LocalizedGithubRelease,
+} from "@/lib/release-i18n";
 import {
   sectionTone,
   summarizeSections,
@@ -16,7 +19,6 @@ import {
   formatAbsoluteDate,
   formatRelativeDate,
   useStableReleases,
-  type GithubRelease,
 } from "@/lib/useGithubReleases";
 
 function anchorIdForTag(tag: string): string {
@@ -24,7 +26,7 @@ function anchorIdForTag(tag: string): string {
 }
 
 export function ReleasesPage({ focusTag }: { focusTag?: string }) {
-  const { i18n } = useLingui();
+  const { i18n, t } = useLingui();
   const { releases, loading, error } = useStableReleases();
   const [mounted, setMounted] = useState(false);
 
@@ -33,12 +35,14 @@ export function ReleasesPage({ focusTag }: { focusTag?: string }) {
     return () => cancelAnimationFrame(id);
   }, []);
 
-  const items = useMemo(
-    () =>
-      releases?.map((release) => localizeGithubRelease(release, i18n.locale)) ??
-      [],
-    [i18n.locale, releases],
-  );
+  const items = useMemo(() => {
+    const fullDiffLabel = t`Full diff`;
+    return (
+      releases?.map((release) =>
+        localizeGithubRelease(release, i18n.locale, { fullDiffLabel }),
+      ) ?? []
+    );
+  }, [i18n.locale, releases, t]);
 
   /** After items render, scroll the focused tag into view. */
   useEffect(() => {
@@ -161,13 +165,17 @@ function ReleaseEntry({
   mounted,
   delayMs,
 }: {
-  release: GithubRelease;
+  release: LocalizedGithubRelease;
   isLatest: boolean;
   mounted: boolean;
   delayMs: number;
 }) {
+  const { i18n } = useLingui();
   const title = release.name?.trim() || release.tag_name;
-  const sections = summarizeSections(release.body).slice(0, 5);
+  const sections = summarizeSections(
+    release.body,
+    release.localization?.sections,
+  ).slice(0, 5);
   return (
     <li
       id={anchorIdForTag(release.tag_name)}
@@ -190,7 +198,7 @@ function ReleaseEntry({
           )}
         />
         <div className="font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-[color:var(--color-muted-foreground)]">
-          {formatAbsoluteDate(release.published_at)}
+          {formatAbsoluteDate(release.published_at, i18n.locale)}
         </div>
         <div className="mt-2 inline-flex items-center gap-1 rounded-md border border-[color:var(--color-border)] bg-[color:var(--color-card)] px-2 py-0.5 font-mono text-[12px] font-bold text-[color:var(--color-foreground)] shadow-sm">
           {release.tag_name}
@@ -209,7 +217,7 @@ function ReleaseEntry({
             </span>
           )}
           <span className="font-mono text-[10px] text-[color:var(--color-muted-foreground)]/80">
-            {formatRelativeDate(release.published_at)}
+            {formatRelativeDate(release.published_at, i18n.locale)}
           </span>
         </div>
 
@@ -220,7 +228,7 @@ function ReleaseEntry({
                 key={s.title}
                 label={s.title}
                 count={s.count}
-                tone={sectionTone(s.title)}
+                tone={sectionTone(s.kind)}
               />
             ))}
           </div>

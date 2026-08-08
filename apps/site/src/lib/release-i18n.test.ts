@@ -3,6 +3,7 @@ import {
   localizeGithubRelease,
   stripReleaseLocalizations,
 } from "./release-i18n";
+import { sectionTone, summarizeSections } from "./releaseSummary";
 import type { GithubRelease } from "./useGithubReleases";
 
 const metadata = {
@@ -45,25 +46,41 @@ describe("release localization", () => {
   const body = `<picture><img alt="English cover" src="https://example.com/light.png"></picture>\n\n## Creative Control\n\nEnglish notes.\n\n---\n\nFull diff: example\n\n<!-- adt-release-i18n\n${JSON.stringify(metadata)}\n-->`;
 
   it("selects an exact locale while preserving the cover and footer", () => {
-    const localized = localizeGithubRelease(githubRelease(body), "pt-BR");
+    const localized = localizeGithubRelease(githubRelease(body), "pt-BR", {
+      fullDiffLabel: "Comparação completa",
+    });
+    expect(localized.name).toBe("Controle criativo");
     expect(localized.body).toContain("<picture>");
     expect(localized.body).toContain('alt="Controle criativo"');
-    expect(localized.body).toContain("## Controle criativo");
+    expect(localized.body).not.toContain("## Controle criativo");
+    expect(localized.body).toContain("Controle criativo summary");
     expect(localized.body).toContain("### Adicionado");
     expect(localized.body).toContain("- Divida livros.");
-    expect(localized.body).toContain("Full diff: example");
+    expect(localized.body).toContain("Comparação completa: example");
     expect(localized.body).not.toContain("adt-release-i18n");
+
+    const sections = summarizeSections(
+      localized.body,
+      localized.localization?.sections,
+    );
+    expect(sections[0]).toEqual({
+      kind: "added",
+      title: "Adicionado",
+      count: 1,
+    });
+    expect(sectionTone(sections[0].kind)).toBe("added");
   });
 
   it("matches a regional locale by language", () => {
     const localized = localizeGithubRelease(githubRelease(body), "fr-CA");
-    expect(localized.body).toContain("## Contrôle créatif");
+    expect(localized.name).toBe("Contrôle créatif");
+    expect(localized.body).toContain("Contrôle créatif summary");
   });
 
   it("falls back to English and strips malformed metadata", () => {
-    expect(localizeGithubRelease(githubRelease(body), "de").body).toContain(
-      "## Creative Control",
-    );
+    const fallback = localizeGithubRelease(githubRelease(body), "de");
+    expect(fallback.name).toBe("Creative Control");
+    expect(fallback.body).toContain("Creative Control summary");
     expect(stripReleaseLocalizations(`${body}\n`)).not.toContain(
       "adt-release-i18n",
     );
