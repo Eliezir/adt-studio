@@ -1,10 +1,5 @@
-import {
-  useEffect,
-  useRef,
-  useState,
-  type ComponentType,
-  type ReactNode,
-} from "react"
+import { useState, type ComponentType, type ReactNode } from "react"
+import * as PopoverPrimitive from "@radix-ui/react-popover"
 import { cn } from "@/lib/utils"
 
 export interface ActionMenuItem {
@@ -26,9 +21,10 @@ function isSeparator(entry: ActionMenuEntry): entry is { separator: true } {
 }
 
 /**
- * Minimal dropdown menu: a toggle button plus an item list, closed on
- * outside mousedown. Shared by the tree editor row menus, the editor
- * footer buttons, and the section actions menu.
+ * Minimal dropdown menu. Its content is portalled so menus stay visible when
+ * their triggers live inside a scrolling or overflow-clipped container.
+ * Shared by the tree editor row menus, the editor footer buttons, and the
+ * section actions menu.
  */
 export function ActionMenu({
   trigger,
@@ -53,15 +49,6 @@ export function ActionMenu({
   menuClassName?: string
 }) {
   const [open, setOpen] = useState(false)
-  const ref = useRef<HTMLDivElement>(null)
-  useEffect(() => {
-    if (!open) return
-    const onDown = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
-    }
-    document.addEventListener("mousedown", onDown)
-    return () => document.removeEventListener("mousedown", onDown)
-  }, [open])
 
   // Drop hidden items, then collapse separators left dangling by the filter.
   const entries: ActionMenuEntry[] = []
@@ -79,50 +66,55 @@ export function ActionMenu({
   if (entries.length === 0) return null
 
   return (
-    <div className="relative" ref={ref} onClick={(e) => e.stopPropagation()}>
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        disabled={triggerDisabled}
-        className={triggerClassName}
-      >
-        {trigger}
-      </button>
-      {open && (
-        <div
-          className={cn(
-            "absolute top-full z-50 mt-1 min-w-[160px] rounded-md border bg-popover py-1 text-xs shadow-md",
-            align === "right" ? "right-0" : "left-0",
-            menuClassName
-          )}
-        >
-          {note}
-          {entries.map((entry, i) =>
-            isSeparator(entry) ? (
-              <div key={i} className="my-1 border-t" />
-            ) : (
-              <button
-                key={i}
-                type="button"
-                onClick={() => {
-                  setOpen(false)
-                  entry.onClick()
-                }}
-                disabled={itemsDisabled || entry.disabled}
-                className={cn(
-                  "flex w-full items-center gap-2 px-3 py-1.5 text-left hover:bg-accent transition-colors cursor-pointer disabled:opacity-30 disabled:cursor-default",
-                  entry.danger && "text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30"
-                )}
-              >
-                {entry.icon ? (
-                  <entry.icon className={cn("h-3.5 w-3.5", entry.iconClassName)} />
-                ) : null}
-                {entry.label}
-              </button>
-            )
-          )}
-        </div>
-      )}
+    <div onClick={(e) => e.stopPropagation()}>
+      <PopoverPrimitive.Root open={open} onOpenChange={setOpen}>
+        <PopoverPrimitive.Trigger asChild>
+          <button
+            type="button"
+            disabled={triggerDisabled}
+            className={triggerClassName}
+          >
+            {trigger}
+          </button>
+        </PopoverPrimitive.Trigger>
+        <PopoverPrimitive.Portal>
+          <PopoverPrimitive.Content
+            align={align === "right" ? "end" : "start"}
+            sideOffset={4}
+            collisionPadding={8}
+            className={cn(
+              "z-50 min-w-[160px] rounded-md border bg-popover py-1 text-xs shadow-md",
+              menuClassName
+            )}
+          >
+            {note}
+            {entries.map((entry, i) =>
+              isSeparator(entry) ? (
+                <div key={i} className="my-1 border-t" />
+              ) : (
+                <button
+                  key={i}
+                  type="button"
+                  onClick={() => {
+                    setOpen(false)
+                    entry.onClick()
+                  }}
+                  disabled={itemsDisabled || entry.disabled}
+                  className={cn(
+                    "flex w-full items-center gap-2 px-3 py-1.5 text-left hover:bg-accent transition-colors cursor-pointer disabled:opacity-30 disabled:cursor-default",
+                    entry.danger && "text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30"
+                  )}
+                >
+                  {entry.icon ? (
+                    <entry.icon className={cn("h-3.5 w-3.5", entry.iconClassName)} />
+                  ) : null}
+                  {entry.label}
+                </button>
+              )
+            )}
+          </PopoverPrimitive.Content>
+        </PopoverPrimitive.Portal>
+      </PopoverPrimitive.Root>
     </div>
   )
 }
