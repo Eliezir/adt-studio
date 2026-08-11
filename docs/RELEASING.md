@@ -263,7 +263,8 @@ case-insensitive, and only the head commit of the push is inspected.
 
 ## Release pipeline
 
-[`release.yml`](../.github/workflows/release.yml) has five stages:
+[`release.yml`](../.github/workflows/release.yml) has five release stages plus a
+small post-publication URL update job:
 
 1. `prepare` calculates the next version, validates the branch contract, bumps
    `apps/desktop/package.json`, and updates issue-template versions.
@@ -273,6 +274,8 @@ case-insensitive, and only the head commit of the push is inspected.
    published immediately; stable releases are first saved as factual drafts.
 5. `enrich-stable-release` optionally adds localized AI notes and light/dark
    covers to a stable draft without delaying or affecting beta releases.
+6. `canonicalize-stable-release-covers` runs when a stable draft is published
+   and replaces its temporary draft asset links with permanent tag-based URLs.
 
 Stable Docker releases update both their version tag and `latest`. Beta images
 publish only their version tag and cannot overwrite `latest`.
@@ -298,6 +301,12 @@ in a hidden `adt-release-i18n` Markdown comment, and attaches it to the draft fo
 the landing page and app. The source context, structured text and translation
 requests, image prompts, approved editorial JSON, and both covers are attached
 so reviewers can inspect how every generated asset was produced.
+
+Draft releases use GitHub's internal `untagged-*` URL until publication. The
+workflow records the draft's release ID and actual review URL, uploads the cover
+pair, and then embeds the asset URLs returned by GitHub so both themes render in
+the draft itself. Publishing the release triggers a final body update that uses
+the permanent `releases/download/vX.Y.Z/...` cover URLs.
 
 After the workflow succeeds:
 

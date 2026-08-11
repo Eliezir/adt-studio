@@ -15,6 +15,7 @@ import {
   generateLocalizations,
   inferPipelineStage,
   pairedCoverAssets,
+  replaceReleaseCoverUrls,
   resolveCoverPalette,
   runCli,
   updateReleaseBody,
@@ -355,6 +356,38 @@ describe("AI release assets", () => {
     expect(imageOnly).toContain("Books That Travel");
     expect(imageOnly).toContain("adt-release-i18n");
     expect(imageOnly).toContain('"pt-BR"');
+  });
+
+  it("replaces placeholder cover URLs with uploaded release asset URLs", () => {
+    const initial = updateReleaseBody({
+      existingBody: "Manual preface",
+      editorial,
+      localizations: releaseLocalizations,
+      from: "v0.7.4",
+      tag: "v0.7.5",
+      repo: "unicef/adt-studio",
+      coverLightUrl: "https://release-assets.invalid/cover-light.png",
+      coverDarkUrl: "https://release-assets.invalid/cover-dark.png",
+      regenerate: "both",
+    });
+    const replaced = replaceReleaseCoverUrls(initial, {
+      lightUrl:
+        "https://github.com/unicef/adt-studio/releases/download/untagged-123/cover-light.png",
+      darkUrl:
+        "https://github.com/unicef/adt-studio/releases/download/untagged-123/cover-dark.png",
+    });
+
+    expect(replaced).toContain("Manual preface");
+    expect(replaced).toContain("untagged-123/cover-light.png");
+    expect(replaced).toContain("untagged-123/cover-dark.png");
+    expect(replaced).not.toContain("release-assets.invalid");
+    expect(replaced).toContain("Books That Travel");
+    expect(() =>
+      replaceReleaseCoverUrls("No generated cover", {
+        lightUrl: "light.png",
+        darkUrl: "dark.png",
+      }),
+    ).toThrow("generated cover block");
   });
 
   it("escapes comment terminators inside embedded localization JSON", () => {

@@ -905,6 +905,51 @@ export function updateReleaseBody({
   return `${body.trim()}\n`;
 }
 
+function replaceCoverAttribute(block, pattern, value, label) {
+  let found = false;
+  const replacement = block.replace(pattern, (_match, before, after) => {
+    found = true;
+    return `${before}${escapeHtml(value)}${after}`;
+  });
+  if (!found) {
+    throw new Error(`Release cover block is missing its ${label}`);
+  }
+  return replacement;
+}
+
+export function replaceReleaseCoverUrls(body, { lightUrl, darkUrl }) {
+  const light = requireValue(lightUrl, "light cover URL");
+  const dark = requireValue(darkUrl, "dark cover URL");
+  const startIndex = body.indexOf(COVER_START);
+  const endIndex = body.indexOf(COVER_END);
+  if (startIndex < 0 || endIndex <= startIndex) {
+    throw new Error("Release notes do not contain a generated cover block");
+  }
+
+  const afterEnd = endIndex + COVER_END.length;
+  let block = body.slice(startIndex, afterEnd);
+  block = replaceCoverAttribute(
+    block,
+    /(<source\s+media="\(prefers-color-scheme: dark\)"\s+srcset=")[^"]*(")/,
+    dark,
+    "dark theme source",
+  );
+  block = replaceCoverAttribute(
+    block,
+    /(<source\s+media="\(prefers-color-scheme: light\)"\s+srcset=")[^"]*(")/,
+    light,
+    "light theme source",
+  );
+  block = replaceCoverAttribute(
+    block,
+    /(<img\b[^>]*\bsrc=")[^"]*(")/,
+    light,
+    "fallback image",
+  );
+
+  return `${body.slice(0, startIndex)}${block}${body.slice(afterEnd)}`;
+}
+
 function escapeHtml(value) {
   return String(value)
     .replaceAll("&", "&amp;")

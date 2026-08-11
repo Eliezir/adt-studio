@@ -89,13 +89,14 @@ jobs:
           REPO: ${{ github.repository }}
           TAG: ${{ inputs.release_tag }}
         run: |
-          gh api "repos/$REPO/releases/tags/$TAG" > draft.json
-          if [[ "$(jq -r '.draft' draft.json)" != "true" ]] \
-            || [[ "$(jq -r '.prerelease' draft.json)" != "false" ]]; then
+          gh release view "$TAG" --repo "$REPO" \
+            --json databaseId,url,isDraft,isPrerelease,body > draft.json
+          if [[ "$(jq -r '.isDraft' draft.json)" != "true" ]] \
+            || [[ "$(jq -r '.isPrerelease' draft.json)" != "false" ]]; then
             echo "::error::$TAG is not an unpublished stable draft."
             exit 1
           fi
-          RELEASE_ID=$(jq -r '.id' draft.json)
+          RELEASE_ID=$(jq -r '.databaseId' draft.json)
           jq -r '.body // ""' draft.json > current-release.md
           BODY_HASH=$(sha256sum current-release.md | awk '{print $1}')
           PREV_TAG=$(git tag --list 'v*' \
@@ -109,6 +110,7 @@ jobs:
           echo "release_id=$RELEASE_ID" >> "$GITHUB_OUTPUT"
           echo "body_hash=$BODY_HASH" >> "$GITHUB_OUTPUT"
           echo "prev_tag=$PREV_TAG" >> "$GITHUB_OUTPUT"
+          echo "release_url=$(jq -r '.url' draft.json)" >> "$GITHUB_OUTPUT"
 
       - name: Compose factual base notes
         env:
@@ -161,7 +163,7 @@ jobs:
             echo "::error::OPENAI_API_KEY is not configured."
             exit 1
           fi
-          COVER_URL="https://github.com/$REPO/releases/download/$TAG/$COVER_NAME"
+          COVER_URL="https://release-assets.invalid/$COVER_NAME"
           ARGS=(
             --from "$PREV_TAG"
             --to "$TAG"
@@ -194,12 +196,12 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           REPO: ${{ github.repository }}
-          TAG: ${{ inputs.release_tag }}
+          RELEASE_ID: ${{ steps.draft.outputs.release_id }}
           EXPECTED_HASH: ${{ steps.draft.outputs.body_hash }}
         run: |
-          gh api "repos/$REPO/releases/tags/$TAG" > draft-current.json
+          gh api "repos/$REPO/releases/$RELEASE_ID" > draft-current.json
           if [[ "$(jq -r '.draft' draft-current.json)" != "true" ]]; then
-            echo "::error::$TAG was published while regeneration was running."
+            echo "::error::The release was published while regeneration was running."
             exit 1
           fi
           jq -r '.body // ""' draft-current.json > body-current.md
@@ -226,7 +228,7 @@ jobs:
           fi
           # Recheck after uploading because publishing and manual edits do not
           # participate in this workflow's per-tag concurrency lock.
-          gh api "repos/$REPO/releases/tags/$TAG" > draft-before-patch.json
+          gh api "repos/$REPO/releases/$RELEASE_ID" > draft-before-patch.json
           if [[ "$(jq -r '.draft' draft-before-patch.json)" != "true" ]]; then
             if [[ "$REGENERATE" == "image" || "$REGENERATE" == "both" ]]; then
               COVER_PREFIX="${COVER_NAME%.png}-"
@@ -255,6 +257,34 @@ jobs:
             fi
             echo "::error::The draft changed before update; refusing to overwrite it."
             exit 1
+          fi
+
+          if [[ "$REGENERATE" == "image" || "$REGENERATE" == "both" ]]; then
+            gh api "repos/$REPO/releases/$RELEASE_ID/assets?per_page=100" \
+              > release-assets.json
+            LIGHT_NAME="${COVER_NAME%.png}-light.png"
+            DARK_NAME="${COVER_NAME%.png}-dark.png"
+            LIGHT_URL=$(jq -r --arg name "$LIGHT_NAME" \
+              '[.[] | select(.name == $name)] | if length == 1 then .[0].browser_download_url else empty end' \
+              release-assets.json)
+            DARK_URL=$(jq -r --arg name "$DARK_NAME" \
+              '[.[] | select(.name == $name)] | if length == 1 then .[0].browser_download_url else empty end' \
+              release-assets.json)
+            if [[ -z "$LIGHT_URL" || -z "$DARK_URL" ]]; then
+              echo "::error::Could not resolve the uploaded draft cover URLs."
+              exit 1
+            fi
+            LIGHT_URL="$LIGHT_URL" DARK_URL="$DARK_URL" node --input-type=module <<'NODE'
+          import { readFile, writeFile } from "node:fs/promises";
+          import { replaceReleaseCoverUrls } from "./scripts/generate-ai-release-assets.mjs";
+
+          const filename = "regenerated-assets/release-notes.md";
+          const body = await readFile(filename, "utf8");
+          await writeFile(filename, replaceReleaseCoverUrls(body, {
+            lightUrl: process.env.LIGHT_URL,
+            darkUrl: process.env.DARK_URL,
+          }));
+          NODE
           fi
 
           jq -n --rawfile body regenerated-assets/release-notes.md '{body: $body}' \
@@ -291,11 +321,12 @@ jobs:
           TAG: ${{ inputs.release_tag }}
           REGENERATE: ${{ inputs.regenerate }}
           COVER_PALETTE: ${{ inputs.cover_palette }}
+          RELEASE_URL: ${{ steps.draft.outputs.release_url }}
         run: |
           {
             echo "### Release assets regenerated"
             echo "- Updated: \`$REGENERATE\`"
             echo "- Cover palette: \`${COVER_PALETTE:-auto}\`"
-            echo "- Review draft: https://github.com/$REPO/releases/tag/$TAG"
+            echo "- Review draft: $RELEASE_URL"
             echo "- When satisfied, use GitHub's **Publish release** button."
           } >> "$GITHUB_STEP_SUMMARY"
