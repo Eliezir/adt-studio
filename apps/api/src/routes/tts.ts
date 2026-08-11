@@ -900,10 +900,16 @@ export function createTTSRoutes(booksDir: string, configPath?: string, taskServi
             options.targetProvider === "gemini"
               ? createGeminiTTSSynthesizer({ apiKey: geminiApiKey })
               : options.targetProvider === "azure"
-                ? createAzureTTSSynthesizer({
-                    subscriptionKey: azureSpeechKey!,
-                    region: azureSpeechRegion!,
-                  })
+                ? createAzureTTSSynthesizer(
+                    {
+                      subscriptionKey: azureSpeechKey!,
+                      region: azureSpeechRegion!,
+                    },
+                    {
+                      sampleRate: config.speech?.sample_rate,
+                      bitRate: config.speech?.bit_rate,
+                    },
+                  )
                 : options.targetProvider === "elevenlabs"
                   ? createElevenLabsTTSSynthesizer(
                       { apiKey: elevenLabsApiKey! },
