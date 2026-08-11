@@ -2,11 +2,13 @@ import fs from "node:fs"
 import os from "node:os"
 import path from "node:path"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
-import type { AppConfig, ProgressEvent } from "@adt/types"
+import { PIPELINE, type AppConfig, type ProgressEvent } from "@adt/types"
 import { createBookStorage } from "@adt/storage"
 import {
   buildStageRunnerImageClassifyConfig,
   createStageRunner,
+  processWithConcurrency,
+  RunCancelledError,
 } from "./stage-runner.js"
 
 const {
@@ -14,6 +16,7 @@ const {
   captionPageImagesMock,
   generateSpeechFileMock,
   easyReadGenerateObjectMock,
+  generateBookOutlineMock,
   renderPageMock,
   sectionPageMock,
   transcribeWithWhisperMock,
@@ -26,6 +29,7 @@ const {
       return { captions: [] }
     }),
     easyReadGenerateObjectMock: vi.fn(),
+    generateBookOutlineMock: vi.fn(),
     generateSpeechFileMock: vi.fn(),
     renderPageMock: vi.fn(async () => ({ sections: [] })),
     sectionPageMock: vi.fn(async () => ({ reasoning: "", sections: [] })),
@@ -40,6 +44,7 @@ vi.mock("@adt/pipeline", async () => {
   return {
     ...actual,
     captionPageImages: captionPageImagesMock,
+    generateBookOutline: generateBookOutlineMock,
     generateSpeechFile: generateSpeechFileMock,
     renderPage: renderPageMock,
     sectionPage: sectionPageMock,
@@ -59,6 +64,7 @@ vi.mock("@adt/llm", async () => {
 
 beforeEach(() => {
   easyReadGenerateObjectMock.mockReset()
+  generateBookOutlineMock.mockReset()
   easyReadGenerateObjectMock.mockImplementation(async (options: {
     context?: { texts?: Array<{ text: string }> }
     validate?: (raw: unknown, context: unknown) => { valid: boolean; errors: string[] }
@@ -72,6 +78,13 @@ beforeEach(() => {
     return { object, usage: { inputTokens: 1, outputTokens: 1 } }
   })
 })
+
+function pngBuffer(): Buffer {
+  return Buffer.from(
+    "iVBORw0KGgoAAAANSUhEUgAAAAQAAAAGCAYAAADkOT91AAAAH0lEQVR4AV3BwREAMAiAMMr+O1ufHsmbxSEhISEh8QGPSwQIxMxWxQAAAABJRU5ErkJggg==",
+    "base64",
+  )
+}
 
 function writeBaseConfig(configPath: string): void {
   fs.writeFileSync(
@@ -236,6 +249,24 @@ function seedEasyReadBook(booksDir: string, label: string): void {
   }
 }
 
+function readyCoreTtsEntry(id: string, text: string) {
+  return {
+    id,
+    displayText: text,
+    speechText: text,
+    changed: false,
+    transformations: [],
+    status: "ready",
+    generation: {
+      mode: "unchanged",
+      generatedAt: "2026-01-01T00:00:00.000Z",
+      enabledTransformations: [],
+      sourceTextHash: "source",
+      contextHash: "context",
+    },
+  }
+}
+
 function seedTextAndSpeechBook(booksDir: string, label: string): void {
   const storage = createBookStorage(label, booksDir)
   try {
@@ -269,6 +300,11 @@ function seedTextAndSpeechBook(booksDir: string, label: string): void {
       entries: [{ id: "pg001_t001", text: "Hello world" }],
       generatedAt: "2026-01-01T00:00:00.000Z",
     })
+    storage.putNodeData("core-tts-catalog", "en", {
+      language: "en",
+      generatedAt: "2026-01-01T00:00:00.000Z",
+      entries: [readyCoreTtsEntry("pg001_t001", "Hello world")],
+    })
   } finally {
     storage.close()
   }
@@ -299,6 +335,182 @@ describe("buildStageRunnerImageClassifyConfig", () => {
     })
     expect(imageConfig.getImageBytes).toBeTypeOf("function")
     expect(imageConfig.getImageBytes?.("pg001_im001")).toEqual(expectedBytes)
+  })
+})
+
+describe("createStageRunner assembled-book hierarchy rebuild", () => {
+  let tmpDir = ""
+
+  afterEach(() => {
+    if (tmpDir) fs.rmSync(tmpDir, { recursive: true, force: true })
+    tmpDir = ""
+  })
+
+  it("rebuilds a stale outline from stored pages before page sectioning", async () => {
+    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "stage-runner-outline-rebuild-"))
+    const booksDir = path.join(tmpDir, "books")
+    const promptsDir = path.join(tmpDir, "prompts")
+    const configPath = path.join(tmpDir, "config.yaml")
+    fs.mkdirSync(promptsDir, { recursive: true })
+    fs.writeFileSync(
+      configPath,
+      `role_types:
+  section_text: Main body text
+structure_types:
+  paragraph: Paragraph
+section_types:
+  content: Content
+`,
+    )
+
+    const storage = createBookStorage("assembled", booksDir)
+    try {
+      storage.putExtractedPage({
+        pageId: "pg001",
+        pageNumber: 1,
+        text: "Chapter One",
+        pageImage: {
+          imageId: "pg001_page",
+          buffer: pngBuffer(),
+          format: "png",
+          hash: "page-hash",
+          width: 4,
+          height: 6,
+        },
+        images: [],
+      })
+      storage.putNodeData("book-outline", "book", {
+        reasoning: "Stale part-local outline.",
+        entries: [],
+        styleClusters: [],
+      })
+      for (const step of PIPELINE.find((stage) => stage.name === "extract")!.steps) {
+        if (step.name !== "book-outline") storage.markStepCompleted(step.name)
+      }
+      // Deliberately no completed book-outline step: merge invalidation uses
+      // the step lifecycle, even when an older version remains inspectable.
+    } finally {
+      storage.close()
+    }
+
+    const rebuilt = {
+      reasoning: "Authoritative assembled-book outline.",
+      styleClusters: [
+        { styleClusterId: "chapter-style", description: "Chapter", level: 1 },
+      ],
+      entries: [
+        {
+          outlineId: "outline-001",
+          title: "Chapter One",
+          level: 1,
+          kind: "chapter",
+          pageId: "pg001",
+          pageNumber: 1,
+          sourceCandidateIds: ["pg001_hc001"],
+          parentId: null,
+          styleClusterId: "chapter-style",
+          confidence: 0.95,
+        },
+      ],
+    }
+    generateBookOutlineMock.mockResolvedValue(rebuilt)
+    sectionPageMock.mockClear()
+
+    const events: ProgressEvent[] = []
+    await createStageRunner().run(
+      "assembled",
+      {
+        booksDir,
+        apiKey: "sk-test",
+        promptsDir,
+        configPath,
+        fromStage: "sectioning",
+        toStage: "sectioning",
+      },
+      { emit: (event) => events.push(event) },
+    )
+
+    expect(generateBookOutlineMock).toHaveBeenCalledTimes(1)
+    expect(sectionPageMock).toHaveBeenCalledTimes(1)
+    expect(sectionPageMock.mock.calls[0][0]).toMatchObject({
+      outline: {
+        entries: rebuilt.entries,
+        styleClusters: rebuilt.styleClusters,
+      },
+    })
+    expect(events).toEqual(expect.arrayContaining([
+      expect.objectContaining({ type: "step-start", step: "book-outline" }),
+      expect.objectContaining({ type: "step-complete", step: "book-outline" }),
+      expect.objectContaining({ type: "step-complete", step: "page-sectioning" }),
+    ]))
+
+    const verified = createBookStorage("assembled", booksDir)
+    try {
+      expect(verified.getLatestNodeData("book-outline", "book")).toMatchObject({
+        version: 2,
+        data: rebuilt,
+      })
+      expect(verified.getStepRuns()).toEqual(expect.arrayContaining([
+        expect.objectContaining({ step: "book-outline", status: "done" }),
+        expect.objectContaining({ step: "page-sectioning", status: "done" }),
+      ]))
+    } finally {
+      verified.close()
+    }
+  })
+
+  it("does not let a partially extracted normal book bypass Extract prerequisites", async () => {
+    sectionPageMock.mockClear()
+    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "stage-runner-outline-prereqs-"))
+    const booksDir = path.join(tmpDir, "books")
+    const promptsDir = path.join(tmpDir, "prompts")
+    const configPath = path.join(tmpDir, "config.yaml")
+    fs.mkdirSync(promptsDir, { recursive: true })
+    fs.writeFileSync(
+      configPath,
+      `role_types:
+  section_text: Main body text
+structure_types:
+  paragraph: Paragraph
+section_types:
+  content: Content
+`,
+    )
+    const storage = createBookStorage("partial", booksDir)
+    try {
+      storage.putExtractedPage({
+        pageId: "pg001",
+        pageNumber: 1,
+        text: "Partial extraction",
+        pageImage: {
+          imageId: "pg001_page",
+          buffer: pngBuffer(),
+          format: "png",
+          hash: "page-hash",
+          width: 4,
+          height: 6,
+        },
+        images: [],
+      })
+      storage.markStepCompleted("extract")
+    } finally {
+      storage.close()
+    }
+
+    await expect(createStageRunner().run(
+      "partial",
+      {
+        booksDir,
+        apiKey: "sk-test",
+        promptsDir,
+        configPath,
+        fromStage: "sectioning",
+        toStage: "sectioning",
+      },
+      { emit: () => {} },
+    )).rejects.toThrow("Extract prerequisites complete")
+    expect(generateBookOutlineMock).not.toHaveBeenCalled()
+    expect(sectionPageMock).not.toHaveBeenCalled()
   })
 })
 
@@ -523,6 +735,7 @@ describe("createStageRunner storyboard render-only", () => {
     seedStoryboardBook(booksDir, "render-only")
 
     const events: ProgressEvent[] = []
+    const controller = new AbortController()
     const runner = createStageRunner()
     await runner.run(
       "render-only",
@@ -534,12 +747,16 @@ describe("createStageRunner storyboard render-only", () => {
         fromStage: "storyboard",
         toStage: "storyboard",
         renderOnly: true,
+        signal: controller.signal,
       },
       { emit: (event) => events.push(event) }
     )
 
     expect(sectionPageMock).not.toHaveBeenCalled()
     expect(renderPageMock).toHaveBeenCalledTimes(1)
+    expect(renderPageMock.mock.calls[0]?.[5]).toEqual({
+      signal: controller.signal,
+    })
     expect(
       events.some(
         (event) =>
@@ -856,6 +1073,50 @@ output_languages:
       verify.close()
     }
   })
+
+  it("prepares a separate Core TTS catalog for a same-base regional output", async () => {
+    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "stage-runner-regional-tts-"))
+    const booksDir = path.join(tmpDir, "books")
+    const promptsDir = path.join(tmpDir, "prompts")
+    const configPath = path.join(tmpDir, "config.yaml")
+    fs.mkdirSync(promptsDir, { recursive: true })
+    fs.writeFileSync(
+      configPath,
+      `role_types:
+  section_text: Main body text
+structure_types:
+  paragraph: Paragraph
+output_languages:
+  - en-GB
+`,
+    )
+    seedTextAndSpeechBook(booksDir, "regional-core-tts")
+
+    const runner = createStageRunner()
+    await runner.run(
+      "regional-core-tts",
+      {
+        booksDir,
+        apiKey: "sk-test",
+        promptsDir,
+        configPath,
+        fromStage: "translate",
+        toStage: "translate",
+      },
+      { emit: () => undefined },
+    )
+
+    const storage = createBookStorage("regional-core-tts", booksDir)
+    try {
+      expect(storage.getLatestNodeData("text-catalog-translation", "en-GB")).toBeNull()
+      expect(storage.getLatestNodeData("core-tts-catalog", "en-GB")?.data).toMatchObject({
+        language: "en-GB",
+        entries: [{ id: "pg001_t001", displayText: "Hello world" }],
+      })
+    } finally {
+      storage.close()
+    }
+  })
 })
 
 describe("createStageRunner speech Gemini partial failures", () => {
@@ -950,7 +1211,7 @@ output_languages:
     }
   })
 
-  it("keeps Gemini TTS in error state when some audio items fail", async () => {
+  it("completes the Gemini TTS step with gaps when some audio items permanently fail", async () => {
     tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "stage-runner-tts-"))
     const booksDir = path.join(tmpDir, "books")
     const promptsDir = path.join(tmpDir, "prompts")
@@ -972,8 +1233,10 @@ speech:
     )
     seedTextAndSpeechBook(booksDir, "gemini-tts-failure")
 
+    // A non-retryable error (not a 429 or a transient 5xx/empty-audio) fails
+    // the item immediately, standing in for an item that never converts.
     generateSpeechFileMock.mockRejectedValueOnce(
-      new Error("Gemini TTS response did not include audio data")
+      new Error("Gemini TTS request failed (400): request rejected")
     )
 
     const events: ProgressEvent[] = []
@@ -992,25 +1255,28 @@ speech:
       { emit: (event) => events.push(event) }
     )
 
+    // The step completes with gaps rather than erroring, so the stage finishes
+    // and downstream export isn't blocked by a stray failed item.
     expect(
       events.some(
-        (event) =>
-          event.type === "step-error" &&
-          event.step === "tts" &&
-          event.error.includes("Missing Gemini audio can be generated one by one")
+        (event) => event.type === "step-complete" && event.step === "tts"
       )
     ).toBe(true)
     expect(
       events.some(
-        (event) => event.type === "step-complete" && event.step === "tts"
+        (event) => event.type === "step-error" && event.step === "tts"
       )
     ).toBe(false)
 
     const storage = createBookStorage("gemini-tts-failure", booksDir)
     try {
       const ttsStep = storage.getStepRuns().find((step) => step.step === "tts")
-      expect(ttsStep?.status).toBe("error")
-      expect(ttsStep?.error).toContain("Missing Gemini audio can be generated one by one")
+      expect(ttsStep?.status).toBe("done")
+      // The failed item is persisted per-language for the Speech view to surface.
+      const ttsOutput = storage.getLatestNodeData("tts", "en")?.data as
+        | { failed?: Array<{ textId: string; error: string }> }
+        | undefined
+      expect(ttsOutput?.failed?.length).toBeGreaterThan(0)
     } finally {
       storage.close()
     }
@@ -1081,6 +1347,158 @@ speech:
     try {
       const ttsStep = storage.getStepRuns().find((step) => step.step === "tts")
       expect(ttsStep?.status).toBe("done")
+    } finally {
+      storage.close()
+    }
+  })
+
+  it("retries transient Gemini TTS server errors and completes the step when a retry succeeds", async () => {
+    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "stage-runner-tts-"))
+    const booksDir = path.join(tmpDir, "books")
+    const promptsDir = path.join(tmpDir, "prompts")
+    const configPath = path.join(tmpDir, "config.yaml")
+    fs.mkdirSync(promptsDir, { recursive: true })
+    fs.writeFileSync(
+      configPath,
+      `role_types:
+  section_text: Main body text
+structure_types:
+  paragraph: Paragraph
+speech:
+  default_provider: gemini
+  providers:
+    gemini:
+      languages:
+        - en
+`
+    )
+    seedTextAndSpeechBook(booksDir, "gemini-tts-transient")
+
+    // A transient 500 on the first attempt, then success — the item must not
+    // be permanently failed just because Gemini had a server-side hiccup.
+    generateSpeechFileMock
+      .mockRejectedValueOnce(
+        new Error(
+          "Gemini TTS request failed (500): An internal error has occurred. Please retry"
+        )
+      )
+      .mockResolvedValueOnce(undefined)
+
+    const events: ProgressEvent[] = []
+    const runner = createStageRunner()
+    await runner.run(
+      "gemini-tts-transient",
+      {
+        booksDir,
+        apiKey: "sk-test",
+        geminiApiKey: "gm-test",
+        promptsDir,
+        configPath,
+        fromStage: "translate",
+        toStage: "speech",
+      },
+      { emit: (event) => events.push(event) }
+    )
+
+    expect(generateSpeechFileMock).toHaveBeenCalledTimes(2)
+    expect(
+      events.some(
+        (event) => event.type === "step-complete" && event.step === "tts"
+      )
+    ).toBe(true)
+    expect(
+      events.some(
+        (event) => event.type === "step-error" && event.step === "tts"
+      )
+    ).toBe(false)
+
+    const storage = createBookStorage("gemini-tts-transient", booksDir)
+    try {
+      const ttsStep = storage.getStepRuns().find((step) => step.step === "tts")
+      expect(ttsStep?.status).toBe("done")
+    } finally {
+      storage.close()
+    }
+  })
+
+  it("stops admitting TTS items and unwinds without step errors when the run is cancelled", async () => {
+    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "stage-runner-tts-"))
+    const booksDir = path.join(tmpDir, "books")
+    const promptsDir = path.join(tmpDir, "prompts")
+    const configPath = path.join(tmpDir, "config.yaml")
+    fs.mkdirSync(promptsDir, { recursive: true })
+    fs.writeFileSync(
+      configPath,
+      `role_types:
+  section_text: Main body text
+structure_types:
+  paragraph: Paragraph
+concurrency: 1
+speech:
+  default_provider: gemini
+  providers:
+    gemini:
+      languages:
+        - en
+`
+    )
+    seedTextAndSpeechBook(booksDir, "gemini-tts-cancel")
+    // Second catalog entry so there is still work queued when the cancel lands.
+    const seedStorage = createBookStorage("gemini-tts-cancel", booksDir)
+    try {
+      seedStorage.putNodeData("text-catalog", "book", {
+        entries: [
+          { id: "pg001_t001", text: "Hello world" },
+          { id: "pg001_t002", text: "Second entry" },
+        ],
+        generatedAt: "2026-01-01T00:00:00.000Z",
+      })
+      seedStorage.putNodeData("core-tts-catalog", "en", {
+        language: "en",
+        entries: [
+          readyCoreTtsEntry("pg001_t001", "Hello world"),
+          readyCoreTtsEntry("pg001_t002", "Second entry"),
+        ],
+        generatedAt: "2026-01-01T00:00:00.000Z",
+      })
+    } finally {
+      seedStorage.close()
+    }
+
+    const controller = new AbortController()
+    generateSpeechFileMock.mockImplementation(async () => {
+      controller.abort()
+      return undefined
+    })
+
+    const events: ProgressEvent[] = []
+    const runner = createStageRunner()
+    await expect(
+      runner.run(
+        "gemini-tts-cancel",
+        {
+          booksDir,
+          apiKey: "sk-test",
+          geminiApiKey: "gm-test",
+          promptsDir,
+          configPath,
+          fromStage: "speech",
+          toStage: "speech",
+          signal: controller.signal,
+        },
+        { emit: (event) => events.push(event) }
+      )
+    ).rejects.toThrow("Run cancelled")
+
+    // The second item must never start once the cancel has landed.
+    expect(generateSpeechFileMock).toHaveBeenCalledTimes(1)
+    // A cancel is not a failure: no step-error, and no partial tts output committed.
+    expect(events.some((event) => event.type === "step-error")).toBe(false)
+    const storage = createBookStorage("gemini-tts-cancel", booksDir)
+    try {
+      expect(storage.getLatestNodeData("tts", "en")).toBeFalsy()
+      const ttsStep = storage.getStepRuns().find((step) => step.step === "tts")
+      expect(ttsStep?.status).not.toBe("error")
     } finally {
       storage.close()
     }
@@ -1162,6 +1580,178 @@ speech:
       ).toEqual([
         { word: "Hello", start: 0, end: 0.45 },
         { word: "world", start: 0.45, end: 0.9 },
+      ])
+    } finally {
+      storage.close()
+    }
+  })
+
+  it("records word timestamp failures and completes the step with gaps", async () => {
+    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "stage-runner-tts-"))
+    const booksDir = path.join(tmpDir, "books")
+    const promptsDir = path.join(tmpDir, "prompts")
+    const configPath = path.join(tmpDir, "config.yaml")
+    fs.mkdirSync(promptsDir, { recursive: true })
+    writeBaseConfig(configPath)
+    seedTextAndSpeechBook(booksDir, "speech-word-timestamps-fail")
+    fs.writeFileSync(
+      path.join(booksDir, "speech-word-timestamps-fail", "config.yaml"),
+      "speech:\n  word_highlighting: true\n",
+    )
+
+    generateSpeechFileMock.mockImplementation(async (options: {
+      bookDir: string
+      textId: string
+      language: string
+      voice: string
+      model: string
+      provider?: string
+    }) => {
+      const audioDir = path.join(options.bookDir, "audio", options.language)
+      fs.mkdirSync(audioDir, { recursive: true })
+      const fileName = `${options.textId}.mp3`
+      fs.writeFileSync(path.join(audioDir, fileName), Buffer.from("fake-audio"))
+      return {
+        textId: options.textId,
+        language: options.language,
+        fileName,
+        voice: options.voice,
+        model: options.model,
+        cached: false,
+        provider: options.provider ?? "openai",
+      }
+    })
+    // Whisper rejects this item — it must not fail the whole step.
+    transcribeWithWhisperMock.mockRejectedValue(new Error("audio_too_short"))
+
+    const events: ProgressEvent[] = []
+    const runner = createStageRunner()
+    await runner.run(
+      "speech-word-timestamps-fail",
+      {
+        booksDir,
+        apiKey: "sk-test",
+        promptsDir,
+        configPath,
+        fromStage: "translate",
+        toStage: "speech",
+      },
+      { emit: (event) => events.push(event) }
+    )
+
+    // The step completes with gaps rather than erroring, so the Speech view
+    // renders (instead of stranding the user on the landing page).
+    expect(
+      events.some(
+        (event) => event.type === "step-error" && event.step === "word-timestamps"
+      )
+    ).toBe(false)
+    expect(
+      events.some(
+        (event) => event.type === "step-complete" && event.step === "word-timestamps"
+      )
+    ).toBe(true)
+
+    // The failure is persisted so the Speech view can mark it for pruning.
+    const storage = createBookStorage("speech-word-timestamps-fail", booksDir)
+    try {
+      const row = storage.getLatestNodeData("tts-timestamps", "en")
+      expect(row).not.toBeNull()
+      const data = row?.data as {
+        entries: Record<string, unknown>
+        failed?: Array<{ textId: string; error: string }>
+      }
+      expect(data.entries.pg001_t001).toBeUndefined()
+      expect(data.failed).toEqual([
+        { textId: "pg001_t001", error: expect.stringContaining("audio_too_short") },
+      ])
+    } finally {
+      storage.close()
+    }
+  })
+
+  it("marks an empty page-batched slice as failed without calling Whisper", async () => {
+    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "stage-runner-tts-"))
+    const booksDir = path.join(tmpDir, "books")
+    const promptsDir = path.join(tmpDir, "prompts")
+    const configPath = path.join(tmpDir, "config.yaml")
+    fs.mkdirSync(promptsDir, { recursive: true })
+    writeBaseConfig(configPath)
+    seedTextAndSpeechBook(booksDir, "speech-empty-slice")
+    fs.writeFileSync(
+      path.join(booksDir, "speech-empty-slice", "config.yaml"),
+      "speech:\n  word_highlighting: true\n",
+    )
+
+    // A canonical 44-byte PCM WAV header with a zero-length data chunk — exactly
+    // what page-batched slicing writes for an entry that wasn't spoken (e.g. a
+    // bare page number).
+    const emptyWav = (): Buffer => {
+      const buf = Buffer.alloc(44)
+      buf.write("RIFF", 0)
+      buf.writeUInt32LE(36, 4)
+      buf.write("WAVE", 8)
+      buf.write("fmt ", 12)
+      buf.writeUInt32LE(16, 16)
+      buf.writeUInt16LE(1, 20) // PCM
+      buf.writeUInt16LE(1, 22) // mono
+      buf.writeUInt32LE(24000, 24)
+      buf.writeUInt32LE(48000, 28)
+      buf.writeUInt16LE(2, 32)
+      buf.writeUInt16LE(16, 34)
+      buf.write("data", 36)
+      buf.writeUInt32LE(0, 40) // zero samples
+      return buf
+    }
+
+    generateSpeechFileMock.mockImplementation(async (options: {
+      bookDir: string
+      textId: string
+      language: string
+      voice: string
+      model: string
+      provider?: string
+    }) => {
+      const audioDir = path.join(options.bookDir, "audio", options.language)
+      fs.mkdirSync(audioDir, { recursive: true })
+      const fileName = `${options.textId}.wav`
+      fs.writeFileSync(path.join(audioDir, fileName), emptyWav())
+      return {
+        textId: options.textId,
+        language: options.language,
+        fileName,
+        voice: options.voice,
+        model: options.model,
+        cached: false,
+        provider: options.provider ?? "gemini",
+      }
+    })
+
+    const runner = createStageRunner()
+    await runner.run(
+      "speech-empty-slice",
+      {
+        booksDir,
+        apiKey: "sk-test",
+        promptsDir,
+        configPath,
+        fromStage: "translate",
+        toStage: "speech",
+      },
+      { emit: () => {} }
+    )
+
+    // The empty slice is caught up front — no doomed transcription call.
+    expect(transcribeWithWhisperMock).not.toHaveBeenCalled()
+
+    const storage = createBookStorage("speech-empty-slice", booksDir)
+    try {
+      const row = storage.getLatestNodeData("tts-timestamps", "en")
+      const data = row?.data as {
+        failed?: Array<{ textId: string; error: string }>
+      }
+      expect(data.failed).toEqual([
+        { textId: "pg001_t001", error: expect.stringContaining("empty") },
       ])
     } finally {
       storage.close()
@@ -1251,5 +1841,79 @@ speech:
     } finally {
       storage.close()
     }
+  })
+})
+
+describe("processWithConcurrency launch ramp", () => {
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  it("staggers the opening wave by rampMs (one launch per interval)", async () => {
+    vi.useFakeTimers()
+    const started: number[] = []
+    // 4 items, concurrency 4 → whole wave would fire at once without a ramp.
+    const done = processWithConcurrency(
+      [0, 1, 2, 3],
+      4,
+      async (i) => {
+        started.push(i)
+      },
+      { rampMs: 100 }
+    )
+
+    // Synchronously, only the first item has launched; the loop is parked at the
+    // ramp sleep before launching #2.
+    expect(started).toEqual([0])
+    await vi.advanceTimersByTimeAsync(100)
+    expect(started).toEqual([0, 1])
+    await vi.advanceTimersByTimeAsync(100)
+    expect(started).toEqual([0, 1, 2])
+    await vi.advanceTimersByTimeAsync(100)
+    expect(started).toEqual([0, 1, 2, 3])
+    await done
+  })
+
+  it("does not ramp once the pool is full (steady state) or at concurrency 1", async () => {
+    vi.useFakeTimers()
+    const started: number[] = []
+    let resolved = false
+    // concurrency 1 → pool is full after the first launch, so the ramp guard
+    // (launched < concurrency) never fires. The run completes with only
+    // microtask flushing — no timers to advance.
+    processWithConcurrency(
+      [0, 1, 2],
+      1,
+      async (i) => {
+        started.push(i)
+      },
+      { rampMs: 100 }
+    ).then(() => {
+      resolved = true
+    })
+
+    await vi.advanceTimersByTimeAsync(0)
+    expect(started).toEqual([0, 1, 2])
+    expect(resolved).toBe(true)
+  })
+
+  it("aborts promptly during the ramp instead of waiting it out", async () => {
+    vi.useFakeTimers()
+    const controller = new AbortController()
+    const started: number[] = []
+    const done = processWithConcurrency(
+      [0, 1, 2, 3],
+      4,
+      async (i) => {
+        started.push(i)
+      },
+      { rampMs: 100, runSignal: controller.signal }
+    )
+
+    expect(started).toEqual([0]) // parked at the ramp sleep before #2
+    controller.abort()
+    await expect(done).rejects.toBeInstanceOf(RunCancelledError)
+    // The remaining wave never launched — no need to advance the ramp timer.
+    expect(started).toEqual([0])
   })
 })

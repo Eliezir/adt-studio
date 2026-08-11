@@ -64,6 +64,44 @@ const STAGE_DIRECT_DEPENDENTS: Record<StageName, StageName[]> = {
   "package": [],
 }
 
+/** Node data invalidated when the book's image set changes. Shared by the API
+ * mutation and the Studio warning so the reset behavior and user-facing stage
+ * list cannot drift apart. */
+export const IMAGE_SET_CHANGE_CLEAR_NODE_TYPES = [
+  "image-captioning",
+  "text-catalog",
+  "easy-read",
+  "text-catalog-translation",
+  "core-tts-catalog",
+  "tts",
+  "tts-timestamps",
+  "accessibility-assessment",
+] as const
+
+/** Pipeline step results invalidated by an image-set change. */
+export const IMAGE_SET_CHANGE_CLEAR_STEPS = [
+  "image-captioning",
+  "text-catalog",
+  "easy-read",
+  "catalog-translation",
+  "core-tts-catalog",
+  "image-translation",
+  "tts",
+  "word-timestamps",
+  "package-web",
+  "accessibility-assessment",
+] as const satisfies readonly StepName[]
+
+/** Ordered stages shown in the confirmation before an image-set change. */
+export const IMAGE_SET_CHANGE_CLEAR_STAGES: readonly StageName[] = STAGE_ORDER.filter(
+  (stageName) => {
+    const stage = PIPELINE.find((candidate) => candidate.name === stageName)
+    return stage?.steps.some((step) =>
+      IMAGE_SET_CHANGE_CLEAR_STEPS.includes(step.name as (typeof IMAGE_SET_CHANGE_CLEAR_STEPS)[number]),
+    )
+  },
+)
+
 for (const stage of PIPELINE) {
   STAGE_OUTPUT_NODES[stage.name] = [
     ...stage.steps.map((step) => step.name),
@@ -80,6 +118,7 @@ const NODE_CACHE_RESOURCES: Record<PipelineNodeName, readonly PipelineCacheResou
   "extract": ["books", "book", "pages"],
   "metadata": ["books", "book"],
   "book-summary": ["books", "book"],
+  "book-outline": ["book", "pages"],
   "image-filtering": ["pages"],
   "image-segmentation": ["pages"],
   "image-cropping": ["pages"],
@@ -94,6 +133,7 @@ const NODE_CACHE_RESOURCES: Record<PipelineNodeName, readonly PipelineCacheResou
   "text-catalog": ["text-catalog"],
   "easy-read": ["text-catalog"],
   "catalog-translation": ["text-catalog"],
+  "core-tts-catalog": ["text-catalog", "tts"],
   "image-translation": ["pages"],
   "tts": ["tts"],
   "word-timestamps": ["tts"],
@@ -149,6 +189,13 @@ export function getStageClearOrder(stage: StageName): StageName[] {
   return [stage, ...collectTransitiveDependents(stage)]
 }
 
+/** Every stage that consumes `stage`'s output, transitively — `stage` excluded.
+ *  Use when a stage's own output is known to be current but the outputs derived
+ *  from it are not. */
+export function getStageDependents(stage: StageName): StageName[] {
+  return collectTransitiveDependents(stage)
+}
+
 /** All node types that should be cleared when starting from `stage`. */
 export function getStageClearNodes(stage: StageName): PipelineNodeName[] {
   const seen = new Set<PipelineNodeName>()
@@ -186,6 +233,17 @@ export function getStageRerunClearNodes(
     if (index >= fromIndex && index <= toIndex) {
       for (const node of STAGE_OUTPUT_NODES[stage]) preservedNodes.add(node)
     }
+  }
+  const translateIndex = STAGE_ORDER.indexOf("translate")
+  if (translateIndex >= fromIndex && translateIndex <= toIndex) {
+    preservedNodes.add("core-tts-catalog")
+  }
+  const speechIndex = STAGE_ORDER.indexOf("speech")
+  if (speechIndex >= fromIndex && speechIndex <= toIndex) {
+    // The speech runner merges valid cached entries and manual recordings into
+    // the replacement version. Keep only the prior audio manifest available
+    // for that merge; timestamps are regenerated from the replacement output.
+    preservedNodes.add("tts")
   }
 
   if (preservedNodes.size === 0) return clearNodes

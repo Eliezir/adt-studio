@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest"
 import {
+  IMAGE_SET_CHANGE_CLEAR_NODE_TYPES,
+  IMAGE_SET_CHANGE_CLEAR_STAGES,
+  IMAGE_SET_CHANGE_CLEAR_STEPS,
   getStageClearNodes,
   getStageRerunClearNodes,
   getCacheResourcesForNode,
@@ -8,10 +11,23 @@ import {
 } from "../pipeline-effects.js"
 
 describe("pipeline effects", () => {
+  it("keeps image-set reset nodes, steps, and warning stages aligned", () => {
+    expect(IMAGE_SET_CHANGE_CLEAR_NODE_TYPES).toContain("image-captioning")
+    expect(IMAGE_SET_CHANGE_CLEAR_STEPS).toContain("image-translation")
+    expect(IMAGE_SET_CHANGE_CLEAR_STAGES).toEqual([
+      "captions",
+      "easy-read",
+      "translate",
+      "speech",
+      "package",
+    ])
+  })
+
   it("includes transitive downstream nodes in clear set", () => {
     expect(getStageClearNodes("quizzes")).toEqual([
       "quiz-generation",
       "catalog-translation",
+      "core-tts-catalog",
       "image-translation",
       "text-catalog-translation",
       "tts",
@@ -29,6 +45,15 @@ describe("pipeline effects", () => {
     expect(getStageRerunClearNodes("storyboard", "storyboard")).toContain("glossary")
   })
 
+  it("keeps merge inputs while clearing derived speech timestamps", () => {
+    const translateRerun = getStageRerunClearNodes("translate", "translate")
+    expect(translateRerun).not.toContain("core-tts-catalog")
+
+    const speechRerun = getStageRerunClearNodes("speech", "speech")
+    expect(speechRerun).not.toContain("tts")
+    expect(speechRerun).toContain("word-timestamps")
+  })
+
   it("derives stage-clear cache resources from cleared nodes", () => {
     expect(getCacheResourcesForStageClear("quizzes")).toEqual([
       "pages",
@@ -44,6 +69,7 @@ describe("pipeline effects", () => {
     expect(getCacheResourcesForStageOutput("translate")).toEqual([
       "pages",
       "text-catalog",
+      "tts",
       "step-status",
     ])
     expect(getCacheResourcesForStageOutput("speech")).toEqual([

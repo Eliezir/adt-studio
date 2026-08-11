@@ -9,6 +9,7 @@ import {
   TTSOutput,
   isTtsExcluded,
   type SpeechFileEntry,
+  type SpeechFailedEntry,
   type TTSProviderConfig,
   type TextCatalogEntry,
   type TextCatalogOutput,
@@ -19,6 +20,7 @@ import { openBookDb, createBookStorage } from "@adt/storage"
 import {
   createAzureTTSSynthesizer,
   createGeminiTTSSynthesizer,
+  createElevenLabsTTSSynthesizer,
   createTTSSynthesizer,
   type LlmLogEntry,
 } from "@adt/llm"
@@ -35,6 +37,13 @@ import {
   resolveVoice,
   generateSpeechFile,
   generateWordTimestamps,
+  getCoreTtsCatalog,
+  getReadyCoreTtsEntries,
+  findAdjacentSpeechText,
+  elevenLabsVoiceSettingsFromConfig,
+  buildElevenLabsTtsLogParams,
+  classifyElevenLabsTtsError,
+  elevenLabsTtsRetryDelayMs,
   type ProviderRouting,
 } from "@adt/pipeline"
 import { getLiveSpeechRun } from "../services/speech-progress.js"
@@ -70,7 +79,7 @@ const AUDIO_UPLOAD_FORMAT_BY_MIME: Record<string, "mp3" | "wav" | "ogg"> = {
 const AUDIO_UPLOAD_EXTENSIONS = new Set([".mp3", ".wav", ".ogg"])
 
 interface SingleItemFallbackAttempt {
-  provider: "openai" | "azure"
+  provider: "openai" | "azure" | "elevenlabs"
   model: string
   voice: string
 }
@@ -127,33 +136,16 @@ function getOutputLanguages(
 
 function getCatalogEntriesForLanguage(
   storage: ReturnType<typeof createBookStorage>,
-  sourceLanguage: string,
+  _sourceLanguage: string,
   language: string
 ): TextCatalogEntry[] {
   const normalizedLanguage = normalizeLocale(language)
-  const baseSource = getBaseLanguage(sourceLanguage)
-  const baseLanguage = getBaseLanguage(normalizedLanguage)
-
-  if (baseLanguage === baseSource) {
-    const catalogRow = storage.getLatestNodeData("text-catalog", "book")
-    if (!catalogRow) {
-      throw new HTTPException(404, { message: "Text catalog not found" })
-    }
-    return (catalogRow.data as TextCatalogOutput).entries
-  }
-
-  const legacyLanguage = normalizedLanguage.replace("-", "_")
-  const translatedRow =
-    storage.getLatestNodeData("text-catalog-translation", normalizedLanguage) ??
-    storage.getLatestNodeData("text-catalog-translation", legacyLanguage)
-
-  if (!translatedRow) {
+  if (!getCoreTtsCatalog(storage, normalizedLanguage)) {
     throw new HTTPException(404, {
-      message: `Translated text catalog not found for ${normalizedLanguage}`,
+      message: `Core TTS catalog not found for ${normalizedLanguage}`,
     })
   }
-
-  return (translatedRow.data as TextCatalogOutput).entries
+  return getReadyCoreTtsEntries(storage, normalizedLanguage)
 }
 
 function getLatestTtsEntries(
@@ -259,20 +251,71 @@ function getGeminiFallbackModel(model: string): string | null {
   return null
 }
 
+// Retries for a single-item ElevenLabs regeneration. Much lower than the batch
+// paths' ELEVENLABS_TTS_MAX_RATE_LIMIT_RETRIES (5, backing off to 30s) because
+// this runs inside an HTTP request: 2 retries at 2s + 4s absorb a transient
+// concurrency 429 while keeping the response well inside client/proxy timeouts.
+const ELEVENLABS_SINGLE_ITEM_MAX_RETRIES = 2
+
+/**
+ * The credential a given TTS provider needs for single-item regeneration, or
+ * null when the request already carries it. Returns a message naming the
+ * missing header so the UI can tell the user which key to add, rather than
+ * failing with a generic "provider not supported".
+ */
+function getMissingProviderKeyMessage(
+  provider: string,
+  keys: {
+    geminiApiKey?: string
+    openaiApiKey?: string
+    azureSpeechKey?: string
+    azureSpeechRegion?: string
+    elevenLabsApiKey?: string
+  },
+): string | null {
+  switch (provider) {
+    case "gemini":
+      return keys.geminiApiKey
+        ? null
+        : "Gemini API key required. Set X-Gemini-API-Key header."
+    case "elevenlabs":
+      return keys.elevenLabsApiKey
+        ? null
+        : "ElevenLabs API key required. Set X-ElevenLabs-API-Key header."
+    case "azure":
+      return keys.azureSpeechKey && keys.azureSpeechRegion
+        ? null
+        : "Azure Speech key and region required. Set X-Azure-Speech-Key and X-Azure-Speech-Region headers."
+    default:
+      return keys.openaiApiKey
+        ? null
+        : "OpenAI API key required. Set X-OpenAI-Key header."
+  }
+}
+
 function getSingleItemFallbackAttempts(options: {
   openaiApiKey?: string
   azureSpeechKey?: string
   azureSpeechRegion?: string
+  elevenLabsApiKey?: string
   language: string
   providerConfigs: Record<string, TTSProviderConfig>
   voiceMaps: ReturnType<typeof loadVoicesConfig>
+  defaultOpenAIModel?: string
+  /** The provider already tried as the primary attempt — excluded so a
+   *  failure isn't retried against the same provider that just failed. */
+  primaryProvider?: string
 }): SingleItemFallbackAttempt[] {
   const attempts: SingleItemFallbackAttempt[] = []
 
   if (options.openaiApiKey) {
     attempts.push({
       provider: "openai",
-      model: resolveSpeechModel("openai", options.providerConfigs),
+      model: resolveSpeechModel(
+        "openai",
+        options.providerConfigs,
+        options.defaultOpenAIModel,
+      ),
       voice: resolveVoice("openai", options.language, options.voiceMaps),
     })
   }
@@ -285,7 +328,15 @@ function getSingleItemFallbackAttempts(options: {
     })
   }
 
-  return attempts
+  if (options.elevenLabsApiKey) {
+    attempts.push({
+      provider: "elevenlabs",
+      model: resolveSpeechModel("elevenlabs", options.providerConfigs),
+      voice: resolveVoice("elevenlabs", options.language, options.voiceMaps),
+    })
+  }
+
+  return attempts.filter((attempt) => attempt.provider !== options.primaryProvider)
 }
 
 function resolveUploadedAudioFormat(file: File): "mp3" | "wav" | "ogg" {
@@ -318,15 +369,22 @@ function clearWordTimestampEntry(
 
   if (!row) return
 
-  const existing = (row.data as WordTimestampOutput).entries
-  if (!(textId in existing)) return
+  const data = row.data as WordTimestampOutput
+  const existing = data.entries
+  const failed = data.failed ?? []
+  const hasEntry = textId in existing
+  const hasFailed = failed.some((f) => f.textId === textId)
+  if (!hasEntry && !hasFailed) return
 
   const nextEntries = { ...existing }
   delete nextEntries[textId]
+  // Removing/replacing the audio makes any prior highlighting failure stale.
+  const nextFailed = failed.filter((f) => f.textId !== textId)
 
   storage.putNodeData("tts-timestamps", normalizedLanguage, {
     entries: nextEntries,
     generatedAt: new Date().toISOString(),
+    ...(nextFailed.length > 0 ? { failed: nextFailed } : {}),
   } satisfies WordTimestampOutput)
 }
 
@@ -343,6 +401,8 @@ function appendSingleTtsLog(
     success: boolean
     cached: boolean
     error?: string
+    /** Resolved provider request parameters, for the debug panel. */
+    params?: Record<string, unknown>
   }
 ): void {
   const logEntry: LlmLogEntry = {
@@ -357,6 +417,7 @@ function appendSingleTtsLog(
     errorCount: options.success ? 0 : 1,
     attempt: 1,
     durationMs: options.durationMs,
+    ...(options.params ? { params: options.params } : {}),
     messages: [{
       role: "user",
       content: [{
@@ -385,7 +446,16 @@ export function createTTSRoutes(booksDir: string, configPath?: string, taskServi
     const resolvedBooksDir = path.resolve(booksDir)
     const mapEntries = (language: string, entries: Array<{ textId: string; fileName: string; voice: string; model: string; cached: boolean; provider?: string }>) => {
       const audioDir = path.join(resolvedBooksDir, safeLabel, "audio", language)
-      return entries.map((e) => {
+      const storage = createBookStorage(safeLabel, booksDir)
+      let readyIds: Set<string>
+      try {
+        readyIds = new Set(
+          getReadyCoreTtsEntries(storage, language).map((entry) => entry.id),
+        )
+      } finally {
+        storage.close()
+      }
+      return entries.filter((entry) => readyIds.has(entry.textId)).map((e) => {
         let cacheKey: string | undefined
         try {
           cacheKey = fs.statSync(path.join(audioDir, e.fileName)).mtimeMs.toString(36)
@@ -685,11 +755,7 @@ export function createTTSRoutes(booksDir: string, configPath?: string, taskServi
     const openaiApiKey = c.req.header("X-OpenAI-Key")?.trim()
     const azureSpeechKey = c.req.header("X-Azure-Speech-Key")?.trim()
     const azureSpeechRegion = c.req.header("X-Azure-Speech-Region")?.trim()
-    if (!geminiApiKey) {
-      throw new HTTPException(400, {
-        message: "Gemini API key required. Set X-Gemini-API-Key header.",
-      })
-    }
+    const elevenLabsApiKey = c.req.header("X-ElevenLabs-API-Key")?.trim()
 
     const normalizedLanguage = normalizeLocale(parsed.data.language)
     const storage = createBookStorage(safeLabel, booksDir)
@@ -715,11 +781,20 @@ export function createTTSRoutes(booksDir: string, configPath?: string, taskServi
         defaultProvider: config.speech?.default_provider ?? "openai",
       }
       const provider = resolveProviderForLanguage(normalizedLanguage, routing)
-      if (provider !== "gemini") {
-        throw new HTTPException(400, {
-          message:
-            "Single-item audio generation is only available when Gemini is selected for that language.",
-        })
+      // The API key is validated against the *resolved* provider rather than
+      // always demanding a Gemini key: a book routed to ElevenLabs (or Azure,
+      // or OpenAI) has no Gemini key to give, and previously got turned away
+      // before this point — making single-item regeneration unreachable for
+      // every provider but Gemini.
+      const missingKeyMessage = getMissingProviderKeyMessage(provider, {
+        geminiApiKey,
+        openaiApiKey,
+        azureSpeechKey,
+        azureSpeechRegion,
+        elevenLabsApiKey,
+      })
+      if (missingKeyMessage) {
+        throw new HTTPException(400, { message: missingKeyMessage })
       }
 
       const languageEntries = getCatalogEntriesForLanguage(
@@ -727,9 +802,10 @@ export function createTTSRoutes(booksDir: string, configPath?: string, taskServi
         sourceLanguage,
         normalizedLanguage
       )
-      const textEntry = languageEntries.find(
+      const entryIndex = languageEntries.findIndex(
         (entry) => entry.id === parsed.data.textId
       )
+      const textEntry = entryIndex === -1 ? undefined : languageEntries[entryIndex]
       if (!textEntry) {
         throw new HTTPException(404, {
           message: `Text entry not found for ${parsed.data.textId} (${normalizedLanguage})`,
@@ -739,7 +815,13 @@ export function createTTSRoutes(booksDir: string, configPath?: string, taskServi
       const configDir = getConfigDir(configPath)
       const voiceMaps = loadVoicesConfig(configDir)
       const instructionsMap = loadSpeechInstructions(configDir)
-      const model = resolveSpeechModel(provider, providerConfigs, config.speech?.model)
+      const defaultSpeechModel =
+        config.speech?.model ?? config.default_speech_generation_model
+      const model = resolveSpeechModel(
+        provider,
+        providerConfigs,
+        defaultSpeechModel,
+      )
       const format = resolveSpeechFormat(provider, config.speech?.format)
       const voice = resolveVoice(
         provider,
@@ -751,15 +833,48 @@ export function createTTSRoutes(booksDir: string, configPath?: string, taskServi
         openaiApiKey,
         azureSpeechKey,
         azureSpeechRegion,
+        elevenLabsApiKey,
         language: normalizedLanguage,
         providerConfigs,
         voiceMaps,
+        defaultOpenAIModel: defaultSpeechModel,
+        primaryProvider: provider,
       })
       const bookDir = path.join(path.resolve(booksDir), safeLabel)
       const cacheDir = path.join(bookDir, ".cache")
 
+      // Request parameters recorded on the debug log entry so the settings that
+      // produced this audio are inspectable. Takes provider/model/voice per call
+      // because a fallback attempt logs a different provider than the primary.
+      // ElevenLabs only for now — the other providers' params are a separate change.
+      const logParamsFor = (
+        targetProvider: string,
+        targetModel: string,
+        targetVoice: string,
+      ): Record<string, unknown> | undefined =>
+        targetProvider === "elevenlabs"
+          ? buildElevenLabsTtsLogParams({
+              model: targetModel,
+              voice: targetVoice,
+              language: normalizedLanguage,
+              format,
+              sampleRate: config.speech?.sample_rate,
+              bitRate: config.speech?.bit_rate,
+              applyTextNormalization: config.speech?.elevenlabs_apply_text_normalization,
+              // Must match what generateEntry sends below, or the log would
+              // describe a request we didn't make.
+              previousText: config.speech?.elevenlabs_use_context
+                ? findAdjacentSpeechText(languageEntries, entryIndex, -1, config.speech)
+                : undefined,
+              nextText: config.speech?.elevenlabs_use_context
+                ? findAdjacentSpeechText(languageEntries, entryIndex, 1, config.speech)
+                : undefined,
+              ...elevenLabsVoiceSettingsFromConfig(config.speech),
+            })
+          : undefined
+
       const startMs = Date.now()
-      const generateEntry = async (options: {
+      const synthesizeEntry = async (options: {
         targetProvider: string
         targetModel: string
         targetVoice: string
@@ -771,8 +886,8 @@ export function createTTSRoutes(booksDir: string, configPath?: string, taskServi
           model: options.targetModel,
           voice: options.targetVoice,
           // Gemini embeds these in the prompt text; OpenAI uses its instructions
-          // field. Azure has no instruction channel. Mirrors stage-runner.ts so the
-          // single-item cache key matches the batch path.
+          // field. Azure has no instruction channel. Mirrors stage-runner.ts and
+          // pipeline-dag.ts so the single-item cache key matches the batch path.
           instructions:
             options.targetProvider === "openai" ||
             options.targetProvider === "gemini"
@@ -789,9 +904,81 @@ export function createTTSRoutes(booksDir: string, configPath?: string, taskServi
                     subscriptionKey: azureSpeechKey!,
                     region: azureSpeechRegion!,
                   })
-                : createTTSSynthesizer(openaiApiKey),
+                : options.targetProvider === "elevenlabs"
+                  ? createElevenLabsTTSSynthesizer(
+                      { apiKey: elevenLabsApiKey! },
+                      // Must match stage-runner.ts and pipeline-dag.ts: without
+                      // these, a regenerated entry is synthesized at ElevenLabs'
+                      // default mp3_44100_128 while the rest of the book used the
+                      // configured rates, and `logParamsFor` below (which does
+                      // read them) would report a format we never requested.
+                      {
+                        sampleRate: config.speech?.sample_rate,
+                        bitRate: config.speech?.bit_rate,
+                      },
+                    )
+                  : createTTSSynthesizer(openaiApiKey),
           provider: options.targetProvider,
+          geminiTemperature: config.speech?.temperature,
+          geminiSeed: config.speech?.seed,
+          // ElevenLabs-only: adjacent-entry context, opt-in via
+          // elevenlabs_use_context. Must resolve identically to stage-runner.ts
+          // and pipeline-dag.ts so the cache key stays in sync across paths.
+          elevenLabsPreviousText:
+            options.targetProvider === "elevenlabs" && config.speech?.elevenlabs_use_context
+              ? findAdjacentSpeechText(languageEntries, entryIndex, -1, config.speech)
+              : undefined,
+          elevenLabsNextText:
+            options.targetProvider === "elevenlabs" && config.speech?.elevenlabs_use_context
+              ? findAdjacentSpeechText(languageEntries, entryIndex, 1, config.speech)
+              : undefined,
+          elevenLabsApplyTextNormalization: config.speech?.elevenlabs_apply_text_normalization,
+          // Voice-tuning overrides. Shared helper so this path hashes the same
+          // cache key as stage-runner.ts and pipeline-dag.ts.
+          ...elevenLabsVoiceSettingsFromConfig(config.speech),
         })
+
+      /**
+       * `synthesizeEntry` plus the ElevenLabs 429/5xx retry.
+       *
+       * ElevenLabs throttles on *concurrent* requests rather than by RPM, so a
+       * user clicking regenerate while a run is in flight — or retuning a voice
+       * in quick succession, which is what the voice-tuning sliders invite —
+       * gets a 429 that both full-run paths retry but this one used to surface
+       * as an outright failure. (The cross-provider fallback below can't help:
+       * it is gated on Gemini's "did not include audio data".)
+       *
+       * The retry budget is deliberately smaller than the batch paths': this is
+       * a synchronous HTTP handler, so it absorbs the transient concurrency hit
+       * without holding the request open long enough to trip a client or proxy
+       * timeout. Wrapping here rather than at the call sites covers the fallback
+       * attempts too.
+       */
+      const generateEntry = async (options: {
+        targetProvider: string
+        targetModel: string
+        targetVoice: string
+      }): Promise<Awaited<ReturnType<typeof synthesizeEntry>>> => {
+        for (let attemptCount = 1; ; attemptCount++) {
+          try {
+            return await synthesizeEntry(options)
+          } catch (err) {
+            const message = err instanceof Error ? err.message : String(err)
+            if (
+              options.targetProvider !== "elevenlabs" ||
+              attemptCount > ELEVENLABS_SINGLE_ITEM_MAX_RETRIES ||
+              classifyElevenLabsTtsError(message) === "permanent"
+            ) {
+              throw err
+            }
+            const delayMs = elevenLabsTtsRetryDelayMs(attemptCount)
+            console.warn(
+              `[tts] ${safeLabel}: ElevenLabs TTS failed for ${textEntry.id}; retrying ${attemptCount + 1}/${ELEVENLABS_SINGLE_ITEM_MAX_RETRIES + 1} in ${delayMs}ms: ${message}`
+            )
+            await new Promise((resolve) => setTimeout(resolve, delayMs))
+          }
+        }
+      }
 
       try {
         let usedProvider = provider
@@ -842,6 +1029,7 @@ export function createTTSRoutes(booksDir: string, configPath?: string, taskServi
           durationMs: Date.now() - startMs,
           success: true,
           cached: entry.cached,
+          params: logParamsFor(usedProvider, usedModel, usedVoice),
         })
 
         const mergedEntries = mergeSpeechEntry(
@@ -870,7 +1058,7 @@ export function createTTSRoutes(booksDir: string, configPath?: string, taskServi
           if (currentStatus === "error") {
             storage.recordStepError(
               "tts",
-              `${completion.remainingItems} Gemini audio item(s) still need generation.`
+              `${completion.remainingItems} audio item(s) still need generation.`
             )
           }
         }
@@ -917,6 +1105,7 @@ export function createTTSRoutes(booksDir: string, configPath?: string, taskServi
                 durationMs: Date.now() - startMs,
                 success: true,
                 cached: entry.cached,
+                params: logParamsFor(attempt.provider, attempt.model, attempt.voice),
               })
 
               const mergedEntries = mergeSpeechEntry(
@@ -945,7 +1134,7 @@ export function createTTSRoutes(booksDir: string, configPath?: string, taskServi
                 if (currentStatus === "error") {
                   storage.recordStepError(
                     "tts",
-                    `${completion.remainingItems} Gemini audio item(s) still need generation.`
+                    `${completion.remainingItems} audio item(s) still need generation.`
                   )
                 }
               }
@@ -978,6 +1167,7 @@ export function createTTSRoutes(booksDir: string, configPath?: string, taskServi
           success: false,
           cached: false,
           error: fallbackFailureMessage,
+          params: logParamsFor(provider, model, voice),
         })
         storage.recordStepError(
           "tts",
@@ -1054,9 +1244,10 @@ export function createTTSRoutes(booksDir: string, configPath?: string, taskServi
 
     try {
       const existingRow = storage.getLatestNodeData("tts-timestamps", normalizedLanguage)
-      const existing = existingRow
-        ? (existingRow.data as WordTimestampOutput).entries
-        : {}
+      const existingData = existingRow
+        ? (existingRow.data as WordTimestampOutput)
+        : undefined
+      const existing = existingData?.entries ?? {}
 
       const updatedEntry: WordTimestampEntry = {
         textId,
@@ -1070,9 +1261,14 @@ export function createTTSRoutes(booksDir: string, configPath?: string, taskServi
         [textId]: updatedEntry,
       }
 
+      // A manual edit resolves this item — drop it from the failed list while
+      // preserving any other still-failed items.
+      const remainingFailed = (existingData?.failed ?? []).filter((f) => f.textId !== textId)
+
       storage.putNodeData("tts-timestamps", normalizedLanguage, {
         entries: merged,
         generatedAt: new Date().toISOString(),
+        ...(remainingFailed.length > 0 ? { failed: remainingFailed } : {}),
       } satisfies WordTimestampOutput)
 
       return c.json({ ok: true })
@@ -1166,18 +1362,26 @@ export function createTTSRoutes(booksDir: string, configPath?: string, taskServi
 
       // Merge into existing timestamps for this language
       const existingRow = storage.getLatestNodeData("tts-timestamps", normalizedLanguage)
-      const existing = existingRow
-        ? (existingRow.data as WordTimestampOutput).entries
-        : {}
+      const existingData = existingRow
+        ? (existingRow.data as WordTimestampOutput)
+        : undefined
+      const existing = existingData?.entries ?? {}
 
       const merged: Record<string, WordTimestampEntry> = {
         ...existing,
         [parsed.data.textId]: timestampEntry,
       }
 
+      // Successful re-transcription resolves this item — drop it from the failed
+      // list while preserving any other still-failed items.
+      const remainingFailed = (existingData?.failed ?? []).filter(
+        (f) => f.textId !== parsed.data.textId,
+      )
+
       storage.putNodeData("tts-timestamps", normalizedLanguage, {
         entries: merged,
         generatedAt: new Date().toISOString(),
+        ...(remainingFailed.length > 0 ? { failed: remainingFailed } : {}),
       } satisfies WordTimestampOutput)
 
       return c.json({ entry: timestampEntry })
@@ -1274,44 +1478,88 @@ export function createTTSRoutes(booksDir: string, configPath?: string, taskServi
           }
 
           let count = 0
+          const newlyFailed: SpeechFailedEntry[] = []
+          const succeededIds = new Set<string>()
 
           for (const ttsEntry of toTranscribe) {
-            const audioPath = path.resolve(bookDir, "audio", normalizedLanguage, ttsEntry.fileName)
-            if (!fs.existsSync(audioPath)) continue
+            try {
+              const audioPath = path.resolve(bookDir, "audio", normalizedLanguage, ttsEntry.fileName)
+              if (!fs.existsSync(audioPath)) {
+                throw new Error(`Audio file not found: ${ttsEntry.fileName}`)
+              }
 
-            const audioBuffer = Buffer.from(fs.readFileSync(audioPath))
-            const textPrompt = textMap.get(ttsEntry.textId)
-            const result = await generateWordTimestamps({
-              audioBuffer,
-              fileName: ttsEntry.fileName,
-              apiKey: openaiApiKey,
-              language: baseLanguage,
-              prompt: textPrompt,
-              cacheDir: path.join(bookDir, ".cache"),
-            })
+              const audioBuffer = Buffer.from(fs.readFileSync(audioPath))
+              const textPrompt = textMap.get(ttsEntry.textId)
+              const result = await generateWordTimestamps({
+                audioBuffer,
+                fileName: ttsEntry.fileName,
+                apiKey: openaiApiKey,
+                language: baseLanguage,
+                prompt: textPrompt,
+                cacheDir: path.join(bookDir, ".cache"),
+              })
 
-            const entry: WordTimestampEntry = {
-              textId: ttsEntry.textId,
-              language: normalizedLanguage,
-              words: result.words,
-              duration: result.duration,
+              const entry: WordTimestampEntry = {
+                textId: ttsEntry.textId,
+                language: normalizedLanguage,
+                words: result.words,
+                duration: result.duration,
+              }
+
+              // Write incrementally to avoid overwriting concurrent user edits;
+              // clear this item from the failed list on success.
+              const currentRow = storage.getLatestNodeData("tts-timestamps", normalizedLanguage)
+              const currentData = currentRow
+                ? (currentRow.data as WordTimestampOutput)
+                : undefined
+              const current = currentData?.entries ?? {}
+              const remainingFailed = (currentData?.failed ?? []).filter(
+                (f) => f.textId !== ttsEntry.textId,
+              )
+              storage.putNodeData("tts-timestamps", normalizedLanguage, {
+                entries: { ...current, [ttsEntry.textId]: entry },
+                generatedAt: new Date().toISOString(),
+                ...(remainingFailed.length > 0 ? { failed: remainingFailed } : {}),
+              } satisfies WordTimestampOutput)
+
+              succeededIds.add(ttsEntry.textId)
+              count++
+            } catch (err) {
+              // Record the failure and keep going — one bad item (e.g. an empty
+              // page-number slice) shouldn't abort the whole batch.
+              newlyFailed.push({
+                textId: ttsEntry.textId,
+                error: err instanceof Error ? err.message : String(err),
+              })
             }
-
-            // Write incrementally to avoid overwriting concurrent user edits
-            const currentRow = storage.getLatestNodeData("tts-timestamps", normalizedLanguage)
-            const current = currentRow
-              ? (currentRow.data as WordTimestampOutput).entries
-              : {}
-            storage.putNodeData("tts-timestamps", normalizedLanguage, {
-              entries: { ...current, [ttsEntry.textId]: entry },
-              generatedAt: new Date().toISOString(),
-            } satisfies WordTimestampOutput)
-
-            count++
-            emitProgress(`${count}/${toTranscribe.length}`, Math.round((count / toTranscribe.length) * 100))
+            emitProgress(
+              `${count + newlyFailed.length}/${toTranscribe.length}`,
+              Math.round(((count + newlyFailed.length) / toTranscribe.length) * 100),
+            )
           }
 
-          return { count, skipped: ttsEntries.length - toTranscribe.length }
+          // Fold this batch's failures into the persisted failed list (dropping
+          // any that succeeded in this pass).
+          if (newlyFailed.length > 0) {
+            const currentRow = storage.getLatestNodeData("tts-timestamps", normalizedLanguage)
+            const currentData = currentRow ? (currentRow.data as WordTimestampOutput) : undefined
+            const failedById = new Map<string, SpeechFailedEntry>()
+            for (const f of currentData?.failed ?? []) failedById.set(f.textId, f)
+            for (const f of newlyFailed) failedById.set(f.textId, f)
+            for (const id of succeededIds) failedById.delete(id)
+            const failed = [...failedById.values()]
+            storage.putNodeData("tts-timestamps", normalizedLanguage, {
+              entries: currentData?.entries ?? {},
+              generatedAt: new Date().toISOString(),
+              ...(failed.length > 0 ? { failed } : {}),
+            } satisfies WordTimestampOutput)
+          }
+
+          return {
+            count,
+            skipped: ttsEntries.length - toTranscribe.length,
+            failed: newlyFailed.length,
+          }
         } finally {
           storage.close()
         }

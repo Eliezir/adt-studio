@@ -12,10 +12,12 @@ import type {
   StageRunOptions,
 } from "../services/stage-service.js"
 import { createBookEventBus } from "../services/book-event-bus.js"
+import { createPageErrorDecisions } from "../services/page-error-decisions.js"
 import { createBookRoutes } from "./books.js"
 import { createStageRoutes } from "./stages.js"
 
 const mockEventBus = createBookEventBus()
+const mockDecisions = createPageErrorDecisions(mockEventBus)
 
 let tmpDir: string
 
@@ -292,6 +294,49 @@ describe("PUT /books/:label/config", () => {
     expect(
       fs.existsSync(path.join(tmpDir, "put-config", "config.yaml"))
     ).toBe(true)
+  })
+
+  it("validates and normalizes book-level model overrides", async () => {
+    createTestBook("model-overrides")
+    const app = createBookRoutes(tmpDir)
+    const res = await app.request("/books/model-overrides/config", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        config: {
+          default_model: " Anthropic:Claude-Sonnet-4-6 ",
+          default_image_generation_model: " OpenAI:DALL-E-3 ",
+          default_speech_generation_model: " TTS-1-HD ",
+        },
+      }),
+    })
+
+    expect(res.status).toBe(200)
+    expect(await res.json()).toEqual({
+      config: {
+        default_model: "anthropic:claude-sonnet-4-6",
+        default_image_generation_model: "openai:dall-e-3",
+        default_speech_generation_model: "tts-1-hd",
+      },
+    })
+  })
+
+  it("rejects invalid book-level model overrides", async () => {
+    createTestBook("invalid-model-overrides")
+    const app = createBookRoutes(tmpDir)
+    const res = await app.request("/books/invalid-model-overrides/config", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        config: {
+          default_model: "../invalid",
+          default_image_generation_model: "gpt-image-2",
+          default_speech_generation_model: "../invalid",
+        },
+      }),
+    })
+
+    expect(res.status).toBe(400)
   })
 
   it("persists image meaningfulness settings", async () => {
@@ -687,7 +732,7 @@ describe("POST /books/:label/stages/run", () => {
       },
     }
 
-    const app = createStageRoutes(stageService, mockEventBus, tmpDir, "", "")
+    const app = createStageRoutes(stageService, mockEventBus, mockDecisions, tmpDir, "", "")
     const res = await app.request(`/books/${label}/stages/run`, {
       method: "POST",
       headers: {
@@ -731,7 +776,7 @@ describe("POST /books/:label/stages/run", () => {
       },
     }
 
-    const app = createStageRoutes(stageService, mockEventBus, tmpDir, "", "")
+    const app = createStageRoutes(stageService, mockEventBus, mockDecisions, tmpDir, "", "")
     const res = await app.request(`/books/${label}/stages/run`, {
       method: "POST",
       headers: {
@@ -755,6 +800,7 @@ describe("GET /books/:label/step-status", () => {
     "extract",
     "metadata",
     "book-summary",
+    "book-outline",
     "image-filtering",
     "image-segmentation",
     "image-cropping",
@@ -797,7 +843,7 @@ describe("GET /books/:label/step-status", () => {
   }
 
   it("returns all stages/steps idle when DB is missing and no run state exists", async () => {
-    const app = createStageRoutes(mockStageService(), mockEventBus, tmpDir, "", "")
+    const app = createStageRoutes(mockStageService(), mockEventBus, mockDecisions, tmpDir, "", "")
     const res = await app.request("/books/missing-db/step-status")
     expect(res.status).toBe(200)
     const body = await res.json()
@@ -817,6 +863,7 @@ describe("GET /books/:label/step-status", () => {
     const app = createStageRoutes(
       mockStageService({ queuedStages: ["extract", "storyboard"] }),
       mockEventBus,
+      mockDecisions,
       tmpDir,
       "",
       ""
@@ -837,6 +884,7 @@ describe("GET /books/:label/step-status", () => {
         active: makeActiveRun({ status: "failed", error: "pipeline failed" }),
       }),
       mockEventBus,
+      mockDecisions,
       tmpDir,
       "",
       ""
@@ -866,6 +914,7 @@ describe("GET /books/:label/step-status", () => {
         }),
       }),
       mockEventBus,
+      mockDecisions,
       tmpDir,
       "",
       ""
@@ -888,7 +937,7 @@ describe("GET /books/:label/step-status", () => {
     } finally {
       storage.close()
     }
-    const app = createStageRoutes(mockStageService(), mockEventBus, tmpDir, "", "")
+    const app = createStageRoutes(mockStageService(), mockEventBus, mockDecisions, tmpDir, "", "")
 
     const res = await app.request("/books/extract-incomplete/step-status")
     expect(res.status).toBe(200)
@@ -903,7 +952,7 @@ describe("GET /books/:label/step-status", () => {
   it("marks extract complete when all extract steps are done", async () => {
     createTestBook("extract-complete")
     markExtractStageComplete("extract-complete")
-    const app = createStageRoutes(mockStageService(), mockEventBus, tmpDir, "", "")
+    const app = createStageRoutes(mockStageService(), mockEventBus, mockDecisions, tmpDir, "", "")
 
     const res = await app.request("/books/extract-complete/step-status")
     expect(res.status).toBe(200)
@@ -919,6 +968,7 @@ describe("GET /books/:label/step-status", () => {
     const app = createStageRoutes(
       mockStageService({ queuedStages: ["extract"] }),
       mockEventBus,
+      mockDecisions,
       tmpDir,
       "",
       ""
@@ -940,7 +990,7 @@ describe("GET /books/:label/step-status", () => {
     } finally {
       storage.close()
     }
-    const app = createStageRoutes(mockStageService(), mockEventBus, tmpDir, "", "")
+    const app = createStageRoutes(mockStageService(), mockEventBus, mockDecisions, tmpDir, "", "")
 
     const res = await app.request("/books/step-error-test/step-status")
     expect(res.status).toBe(200)
@@ -959,7 +1009,7 @@ describe("GET /books/:label/step-status", () => {
     } finally {
       storage.close()
     }
-    const app = createStageRoutes(mockStageService(), mockEventBus, tmpDir, "", "")
+    const app = createStageRoutes(mockStageService(), mockEventBus, mockDecisions, tmpDir, "", "")
 
     const res = await app.request("/books/step-running-test/step-status")
     expect(res.status).toBe(200)
@@ -977,7 +1027,7 @@ describe("GET /books/:label/step-status", () => {
     } finally {
       storage.close()
     }
-    const app = createStageRoutes(mockStageService(), mockEventBus, tmpDir, "", "")
+    const app = createStageRoutes(mockStageService(), mockEventBus, mockDecisions, tmpDir, "", "")
 
     const res = await app.request("/books/step-message-test/step-status")
     expect(res.status).toBe(200)
@@ -1001,6 +1051,7 @@ describe("GET /books/:label/step-status", () => {
         active: makeActiveRun({ fromStage: "extract", toStage: "storyboard" }),
       }),
       mockEventBus,
+      mockDecisions,
       tmpDir,
       "",
       ""
@@ -1024,6 +1075,7 @@ describe("GET /books/:label/step-status", () => {
         active: makeActiveRun({ fromStage: "extract", toStage: "storyboard" }),
       }),
       mockEventBus,
+      mockDecisions,
       tmpDir,
       "",
       ""
@@ -1041,7 +1093,7 @@ describe("GET /books/:label/step-status", () => {
   it("returns null stepErrors when no errors exist", async () => {
     createTestBook("no-errors")
     markExtractStageComplete("no-errors")
-    const app = createStageRoutes(mockStageService(), mockEventBus, tmpDir, "", "")
+    const app = createStageRoutes(mockStageService(), mockEventBus, mockDecisions, tmpDir, "", "")
 
     const res = await app.request("/books/no-errors/step-status")
     expect(res.status).toBe(200)
@@ -1057,7 +1109,7 @@ describe("GET /books/:label/step-status", () => {
     } finally {
       storage.close()
     }
-    const app = createStageRoutes(mockStageService(), mockEventBus, tmpDir, "", "")
+    const app = createStageRoutes(mockStageService(), mockEventBus, mockDecisions, tmpDir, "", "")
 
     const res = await app.request("/books/derived-error/step-status")
     expect(res.status).toBe(200)
@@ -1079,7 +1131,7 @@ describe("GET /books/:label/step-status", () => {
     } finally {
       storage.close()
     }
-    const app = createStageRoutes(mockStageService(), mockEventBus, tmpDir, "", "")
+    const app = createStageRoutes(mockStageService(), mockEventBus, mockDecisions, tmpDir, "", "")
 
     const res = await app.request("/books/skipped-steps/step-status")
     expect(res.status).toBe(200)
@@ -1091,7 +1143,7 @@ describe("GET /books/:label/step-status", () => {
     createTestBook("preview-done")
     fs.mkdirSync(path.join(tmpDir, "preview-done", "adt"), { recursive: true })
 
-    const app = createStageRoutes(mockStageService(), mockEventBus, tmpDir, "", "")
+    const app = createStageRoutes(mockStageService(), mockEventBus, mockDecisions, tmpDir, "", "")
     const res = await app.request("/books/preview-done/step-status")
     expect(res.status).toBe(200)
     const body = await res.json()
@@ -1099,7 +1151,7 @@ describe("GET /books/:label/step-status", () => {
   })
 
   it("returns 400 for invalid book labels", async () => {
-    const app = createStageRoutes(mockStageService(), mockEventBus, tmpDir, "", "")
+    const app = createStageRoutes(mockStageService(), mockEventBus, mockDecisions, tmpDir, "", "")
     const res = await app.request("/books/-bad/step-status")
     expect(res.status).toBe(400)
   })
@@ -1401,7 +1453,7 @@ describe("GET /books/:label/export-adt", () => {
 })
 
 describe("GET /books/:label/images/:imageId", () => {
-  function createBookWithImage(label: string): void {
+  function createBookWithImage(label: string, hash = "abc123"): void {
     const storage = createBookStorage(label, tmpDir)
     try {
       storage.putExtractedPage({
@@ -1412,7 +1464,7 @@ describe("GET /books/:label/images/:imageId", () => {
           imageId: `${label}_p1_page`,
           buffer: Buffer.from("fake-png-data"),
           format: "png" as const,
-          hash: "abc123",
+          hash,
           width: 800,
           height: 600,
         },
@@ -1449,8 +1501,36 @@ describe("GET /books/:label/images/:imageId", () => {
 
     expect(res.status).toBe(200)
     expect(res.headers.get("Content-Type")).toBe("image/png")
+    expect(res.headers.get("Cache-Control")).toBe("private, no-cache")
+    expect(res.headers.get("ETag")).toBe('"abc123"')
     const buf = await res.arrayBuffer()
     expect(Buffer.from(buf).toString()).toBe("fake-png-data")
+  })
+
+  it("returns 304 when the extracted image hash is unchanged", async () => {
+    createBookWithImage("img-book-etag")
+    const app = createBookRoutes(tmpDir)
+    const res = await app.request("/books/img-book-etag/images/img-book-etag_p1_page", {
+      headers: { "If-None-Match": '"abc123"' },
+    })
+
+    expect(res.status).toBe(304)
+    expect(res.headers.get("Cache-Control")).toBe("private, no-cache")
+    expect(res.headers.get("ETag")).toBe('"abc123"')
+  })
+
+  it("does not return 304 for a legacy image with an empty hash", async () => {
+    createBookWithImage("img-book-empty-hash", "")
+    const app = createBookRoutes(tmpDir)
+    const res = await app.request(
+      "/books/img-book-empty-hash/images/img-book-empty-hash_p1_page",
+      { headers: { "If-None-Match": '""' } }
+    )
+
+    expect(res.status).toBe(200)
+    expect(res.headers.get("Cache-Control")).toBe("private, no-cache")
+    expect(res.headers.get("ETag")).toBeNull()
+    expect(Buffer.from(await res.arrayBuffer()).toString()).toBe("fake-png-data")
   })
 
   it("returns 404 for nonexistent image", async () => {
@@ -1555,6 +1635,29 @@ describe("GET /books/:label/captioned-images", () => {
     const ids = body.images.map((i) => i.imageId).sort()
     expect(ids).toEqual(["pg001_im001", "pg001_im002"])
     expect(body.images.find((i) => i.imageId === "pg001_im001")?.caption).toBe("First caption")
+  })
+
+  it("uses the restored caption version instead of MAX(version)", async () => {
+    setupBook("cap-restored")
+    const storage = createBookStorage("cap-restored", tmpDir)
+    try {
+      storage.putNodeData("image-captioning", "pg001", {
+        captions: [
+          { imageId: "pg001_im001", caption: "Superseded caption", decorative: true },
+          { imageId: "pg001_im002", caption: "Newer second caption" },
+        ],
+      })
+      expect(storage.setCurrentNodeVersion("image-captioning", "pg001", 1)).toBe(true)
+    } finally {
+      storage.close()
+    }
+
+    const app = createBookRoutes(tmpDir)
+    const res = await app.request("/books/cap-restored/captioned-images")
+    expect(res.status).toBe(200)
+    const body = await res.json() as { images: Array<{ imageId: string; caption: string }> }
+    expect(body.images.find((i) => i.imageId === "pg001_im001")?.caption).toBe("First caption")
+    expect(body.images.find((i) => i.imageId === "pg001_im002")?.caption).toBe("Second caption")
   })
 
   it("returns 404 for missing book", async () => {

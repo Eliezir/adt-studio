@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto"
 import fs from "node:fs"
 import path from "node:path"
 import type sqlite from "node-sqlite3-wasm"
@@ -40,8 +41,31 @@ export function createBookStorage(label: string, booksRoot: string): Storage {
   fs.mkdirSync(paths.videosDir, { recursive: true })
 
   const db = openBookDb(paths.dbPath)
+  let transactionDepth = 0
+
+  const transaction = <T>(operation: () => T): T => {
+    // All Storage methods share this connection, so nested operations are
+    // already part of the outer transaction. The outermost call alone owns
+    // BEGIN/COMMIT/ROLLBACK.
+    if (transactionDepth > 0) return operation()
+
+    db.exec("BEGIN IMMEDIATE")
+    transactionDepth = 1
+    try {
+      const result = operation()
+      db.exec("COMMIT")
+      return result
+    } catch (err) {
+      db.exec("ROLLBACK")
+      throw err
+    } finally {
+      transactionDepth = 0
+    }
+  }
 
   return {
+    transaction,
+
     clearExtractedData(): void {
       clearImageFiles(paths.imagesDir)
       clearImageFiles(paths.debugImagesDir)
@@ -51,14 +75,10 @@ export function createBookStorage(label: string, booksRoot: string): Storage {
     clearNodesByType(nodes: string[]): void {
       if (nodes.length === 0) return
       const placeholders = nodes.map(() => "?").join(", ")
-      db.exec("BEGIN IMMEDIATE")
-      try {
+      transaction(() => {
         db.run(`DELETE FROM node_data WHERE node IN (${placeholders})`, nodes)
-        db.exec("COMMIT")
-      } catch (err) {
-        db.exec("ROLLBACK")
-        throw err
-      }
+        db.run(`DELETE FROM node_current WHERE node IN (${placeholders})`, nodes)
+      })
     },
 
     putExtractedPage(page: ExtractedPage): void {
@@ -76,6 +96,25 @@ export function createBookStorage(label: string, booksRoot: string): Storage {
       for (const img of page.images) {
         writeImage(db, paths.imagesDir, img, page.pageId, "extract")
       }
+    },
+
+    deletePage(pageId: string): void {
+      const rows = db.all("SELECT path FROM images WHERE page_id = ?", [pageId]) as Array<{
+        path: string
+      }>
+      for (const r of rows) {
+        try {
+          const filePath = path.resolve(paths.bookDir, r.path)
+          ensureWithinRoot(filePath, paths.bookDir)
+          if (fs.existsSync(filePath)) fs.rmSync(filePath)
+        } catch {
+          // Best effort — the DB rows are removed regardless.
+        }
+      }
+      db.run("DELETE FROM images WHERE page_id = ?", [pageId])
+      db.run("DELETE FROM pages WHERE page_id = ?", [pageId])
+      db.run("DELETE FROM node_data WHERE item_id = ?", [pageId])
+      db.run("DELETE FROM node_current WHERE item_id = ?", [pageId])
     },
 
     getPages(): PageData[] {
@@ -181,7 +220,7 @@ export function createBookStorage(label: string, booksRoot: string): Storage {
           cropId,
           input.pageId,
           `images/${filename}`,
-          "",
+          hashBuffer(input.buffer),
           input.width,
           input.height,
           "crop",
@@ -215,7 +254,7 @@ export function createBookStorage(label: string, booksRoot: string): Storage {
           segId,
           input.pageId,
           `images/${filename}`,
-          "",
+          hashBuffer(input.buffer),
           input.width,
           input.height,
           "segment",
@@ -248,7 +287,7 @@ export function createBookStorage(label: string, booksRoot: string): Storage {
           newImageId,
           input.pageId,
           `images/${filename}`,
-          "",
+          hashBuffer(input.buffer),
           input.width,
           input.height,
           "translate",
@@ -310,7 +349,40 @@ export function createBookStorage(label: string, booksRoot: string): Storage {
         "INSERT INTO node_data (node, item_id, version, data) VALUES (?, ?, ?, ?)",
         [node, itemId, nextVersion, JSON.stringify(data)]
       )
+      // A new write becomes the current version.
+      db.run(
+        `INSERT INTO node_current (node, item_id, version) VALUES (?, ?, ?)
+         ON CONFLICT (node, item_id) DO UPDATE SET version = excluded.version`,
+        [node, itemId, nextVersion]
+      )
       return nextVersion
+    },
+
+    /** Point (node, itemId) at an existing version. Returns false if that
+     *  version doesn't exist. Does NOT create a new version — this is how a
+     *  user rolls back to a prior version without appending a duplicate. */
+    setCurrentNodeVersion(node: string, itemId: string, version: number): boolean {
+      const exists = db.all(
+        "SELECT 1 FROM node_data WHERE node = ? AND item_id = ? AND version = ? LIMIT 1",
+        [node, itemId, version]
+      )
+      if (exists.length === 0) return false
+      db.run(
+        `INSERT INTO node_current (node, item_id, version) VALUES (?, ?, ?)
+         ON CONFLICT (node, item_id) DO UPDATE SET version = excluded.version`,
+        [node, itemId, version]
+      )
+      return true
+    },
+
+    /** The active version pointer for (node, itemId), or null when unset
+     *  (in which case current == MAX(version)). */
+    getCurrentNodeVersion(node: string, itemId: string): number | null {
+      const rows = db.all(
+        "SELECT version FROM node_current WHERE node = ? AND item_id = ?",
+        [node, itemId]
+      ) as Array<{ version: number }>
+      return rows[0]?.version ?? null
     },
 
     markStepStarted(step: string): void {
@@ -321,7 +393,15 @@ export function createBookStorage(label: string, booksRoot: string): Storage {
       )
     },
 
-    markStepCompleted(step: string): void {
+    markStepCompleted(step: string, message?: string): void {
+      if (message !== undefined) {
+        db.run(
+          `INSERT INTO step_runs (step, status, completed_at, message) VALUES (?, 'done', ?, ?)
+           ON CONFLICT (step) DO UPDATE SET status='done', completed_at=excluded.completed_at, message=excluded.message`,
+          [step, new Date().toISOString(), message]
+        )
+        return
+      }
       db.run(
         `INSERT INTO step_runs (step, status, completed_at) VALUES (?, 'done', ?)
          ON CONFLICT (step) DO UPDATE SET status='done', completed_at=excluded.completed_at`,
@@ -365,9 +445,20 @@ export function createBookStorage(label: string, booksRoot: string): Storage {
       db.run(`DELETE FROM step_runs WHERE step IN (${placeholders})`, steps)
     },
 
+    clearRunningStepRuns(): void {
+      db.run("DELETE FROM step_runs WHERE status = 'running'")
+    },
+
+    /** Returns the *current* version's row — the version pointed at by
+     *  node_current, or MAX(version) when no pointer is set (or it dangles). */
     getLatestNodeData(node: string, itemId: string): NodeDataRow | null {
       const rows = db.all(
-        "SELECT version, data FROM node_data WHERE node = ? AND item_id = ? ORDER BY version DESC LIMIT 1",
+        `SELECT nd.version AS version, nd.data AS data
+         FROM node_data nd
+         LEFT JOIN node_current nc ON nc.node = nd.node AND nc.item_id = nd.item_id
+         WHERE nd.node = ? AND nd.item_id = ?
+         ORDER BY (nd.version = nc.version) DESC, nd.version DESC
+         LIMIT 1`,
         [node, itemId]
       ) as Array<{ version: number; data: string }>
       if (rows.length === 0) return null
@@ -378,13 +469,18 @@ export function createBookStorage(label: string, booksRoot: string): Storage {
     },
 
     getNodeVersionFingerprint(excludeNodes: string[] = []): Array<{ node: string; itemId: string; version: number }> {
-      let sql = "SELECT node, item_id, MAX(version) as version FROM node_data"
+      // Fingerprint off the *current* version so switching back to an older
+      // version invalidates downstream caches / packaged output.
+      let sql = `SELECT nd.node AS node, nd.item_id AS item_id,
+                   COALESCE(nc.version, MAX(nd.version)) AS version
+                 FROM node_data nd
+                 LEFT JOIN node_current nc ON nc.node = nd.node AND nc.item_id = nd.item_id`
       const params: string[] = []
       if (excludeNodes.length > 0) {
-        sql += ` WHERE node NOT IN (${excludeNodes.map(() => "?").join(", ")})`
+        sql += ` WHERE nd.node NOT IN (${excludeNodes.map(() => "?").join(", ")})`
         params.push(...excludeNodes)
       }
-      sql += " GROUP BY node, item_id ORDER BY node, item_id"
+      sql += " GROUP BY nd.node, nd.item_id ORDER BY nd.node, nd.item_id"
       const rows = db.all(sql, params) as Array<{ node: string; item_id: string; version: number }>
       return rows.map((r) => ({ node: r.node, itemId: r.item_id, version: r.version }))
     },
@@ -464,17 +560,6 @@ export function createBookStorage(label: string, booksRoot: string): Storage {
       }
     },
 
-    deleteAllSignLanguageVideos(): void {
-      const rows = db.all("SELECT path FROM sign_language_videos") as Array<{ path: string }>
-      for (const row of rows) {
-        const filePath = path.resolve(paths.bookDir, row.path)
-        if (filePath.startsWith(paths.bookDir + path.sep)) {
-          try { fs.unlinkSync(filePath) } catch { /* file may already be gone */ }
-        }
-      }
-      db.run("DELETE FROM sign_language_videos")
-    },
-
     getSignLanguageVideoPath(videoId: string): string | null {
       const rows = db.all("SELECT path FROM sign_language_videos WHERE video_id = ?", [videoId]) as Array<{ path: string }>
       if (rows.length === 0) return null
@@ -503,6 +588,7 @@ function clearExtractedRows(db: sqlite.Database): void {
   db.exec("BEGIN IMMEDIATE")
   try {
     db.run("DELETE FROM node_data WHERE node NOT IN ('font-registry', 'font-assignment')")
+    db.run("DELETE FROM node_current WHERE node NOT IN ('font-registry', 'font-assignment')")
     db.run("DELETE FROM images")
     db.run("DELETE FROM pages")
     db.run("DELETE FROM step_runs")
@@ -555,6 +641,10 @@ function writeImage(
       image.bounds?.height ?? null,
     ]
   )
+}
+
+function hashBuffer(buffer: Buffer): string {
+  return createHash("sha256").update(buffer).digest("hex").slice(0, 16)
 }
 
 function ensureWithinRoot(target: string, root: string): void {

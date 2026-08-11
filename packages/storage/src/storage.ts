@@ -67,9 +67,13 @@ export interface SignLanguageVideoData {
 }
 
 export interface Storage {
+  /** Run all storage operations in one SQLite transaction. Nested calls join
+   *  the outer transaction. Any thrown error rolls the whole operation back. */
+  transaction<T>(operation: () => T): T
   clearExtractedData(): void
   clearNodesByType(nodes: string[]): void
   putExtractedPage(page: ExtractedPage): void
+  deletePage(pageId: string): void
 
   getPages(): PageData[]
   getPageImageBase64(pageId: string): string
@@ -93,11 +97,17 @@ export interface Storage {
 
   putNodeData(node: string, itemId: string, data: unknown): number
   getLatestNodeData(node: string, itemId: string): NodeDataRow | null
+  /** Point (node, itemId) at an existing version without creating a new one
+   *  (rollback). Returns false if that version doesn't exist. */
+  setCurrentNodeVersion(node: string, itemId: string, version: number): boolean
+  /** The active version pointer, or null when unset (current == MAX). */
+  getCurrentNodeVersion(node: string, itemId: string): number | null
 
   /** Mark a pipeline step as started (running). */
   markStepStarted(step: string): void
-  /** Mark a pipeline step as completed successfully. */
-  markStepCompleted(step: string): void
+  /** Mark a pipeline step as completed successfully. Optionally persist a
+   *  completion message (e.g. "Completed — 2 page(s) skipped"). */
+  markStepCompleted(step: string, message?: string): void
   /** Mark a pipeline step as skipped. */
   markStepSkipped(step: string): void
   /** Record a step error. Can be called multiple times (last error wins). */
@@ -108,6 +118,9 @@ export interface Storage {
   getStepRuns(): Array<{ step: string; status: string; error: string | null; message: string | null }>
   /** Clear step run records for specific steps (used when clearing downstream data). */
   clearStepRuns(steps: string[]): void
+  /** Delete step run records still marked 'running'. Used when a run is
+   *  cancelled: in-flight steps return to idle rather than showing as errored. */
+  clearRunningStepRuns(): void
 
   /** Get a compact fingerprint of all entity versions for cache invalidation. */
   getNodeVersionFingerprint(excludeNodes?: string[]): Array<{ node: string; itemId: string; version: number }>
@@ -127,8 +140,6 @@ export interface Storage {
   assignSignLanguageVideo(videoId: string, sectionId: string | null): void
   /** Delete a sign language video. */
   deleteSignLanguageVideo(videoId: string): void
-  /** Delete all sign language videos. */
-  deleteAllSignLanguageVideos(): void
   /** Get the file path for a sign language video (for serving). */
   getSignLanguageVideoPath(videoId: string): string | null
 

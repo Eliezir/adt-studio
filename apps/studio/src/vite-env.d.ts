@@ -48,6 +48,9 @@ interface ElectronWindowControls {
   minimize: () => Promise<void>
   toggleMaximize: () => Promise<boolean>
   close: () => Promise<void>
+  confirmClose: () => void
+  cancelClose: () => void
+  onCloseRequested: (cb: () => void) => () => void
   isMaximized: () => Promise<boolean>
   isFullscreen: () => Promise<boolean>
   onMaximizeChange: (cb: (isMaximized: boolean) => void) => () => void
@@ -82,6 +85,45 @@ type ElectronUpdateStatus =
   | { phase: "installing"; version: string }
   | { phase: "error"; message: string }
 
+interface ElectronAvailableRelease {
+  version: string
+  title?: string
+  description?: string
+  coverUrl?: string
+  coverAlt?: string
+  releaseDate?: string
+  releaseNotes?: string
+  totalBytes?: number
+  source?: ElectronReleaseSource
+  direction: "upgrade" | "current" | "downgrade"
+}
+
+interface ElectronReleaseSourcePullRequest {
+  number: number
+  url: string
+  headRef?: string
+  baseRef?: string
+  author?: string
+  title?: string
+}
+
+interface ElectronReleaseSourceCommit {
+  sha: string
+  url: string
+  subject?: string
+}
+
+interface ElectronReleaseSource {
+  branch?: string
+  title?: string
+  description?: string
+  coverUrl?: string
+  buildCommit?: ElectronReleaseSourceCommit
+  changeCommit?: ElectronReleaseSourceCommit
+  prs: ElectronReleaseSourcePullRequest[]
+  compare?: { label: string; url: string }
+}
+
 interface ElectronPostUpdateInfo {
   version: string
   releaseNotes?: string
@@ -94,6 +136,8 @@ interface ElectronUpdatesApi {
   install: () => Promise<void>
   installOnQuit: () => Promise<void>
   getStatus: () => Promise<ElectronUpdateStatus>
+  listVersions: (force?: boolean) => Promise<ElectronAvailableRelease[]>
+  selectVersion: (version: string) => Promise<ElectronUpdateStatus>
   getPostUpdate: () => Promise<ElectronPostUpdateInfo | null>
   onStatus: (cb: (status: ElectronUpdateStatus) => void) => () => void
 }
@@ -115,9 +159,23 @@ interface Window {
     platform?: ElectronPlatform
     /** Application version from the Electron main process. Undefined in the web build. */
     version?: string
+    /** OS languages in preference order (e.g. `["pt-BR", "en-US"]`). Undefined in the web build. */
+    systemLocales?: string[]
     /** IPC bridge for custom title bar controls. Undefined in the web build. */
     windowControls?: ElectronWindowControls
     /** IPC bridge for desktop auto-updater. Undefined in the web build. */
     updates?: ElectronUpdatesApi
+    /** IPC bridge for the first-run onboarding window. Undefined in the web build. */
+    onboarding?: ElectronOnboardingApi
   }
+}
+
+interface ElectronOnboardingApi {
+  /** Whether onboarding has been completed (persisted in the main process). */
+  getStatus: () => Promise<boolean>
+  /**
+   * Mark onboarding complete and hand off to the main app window, which opens
+   * on `startPath` (e.g. "/" or "/books/new").
+   */
+  finish: (startPath: string) => Promise<void>
 }

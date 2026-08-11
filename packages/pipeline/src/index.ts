@@ -4,7 +4,18 @@ export {
   createConsoleProgress,
 } from "./progress.js"
 export { processWithConcurrency } from "./concurrency.js"
-export { extractPDF, type ExtractOptions } from "./pdf-extraction.js"
+export {
+  extractPDF,
+  resolveFigureExtractionMode,
+  figureExtractionFlags,
+  type ExtractOptions,
+} from "./pdf-extraction.js"
+export {
+  detectSpreads,
+  type SpreadEdgeSample,
+  type SpreadSuggestion,
+  type SpreadDetectionOptions,
+} from "./spread-detection.js"
 export {
   sectionPage,
   runValidator as validatePageSectioning,
@@ -24,7 +35,12 @@ export {
 export {
   filterPageImageMeaningfulness,
   buildMeaningfulnessConfig,
+  addFigureExtractionContext,
+  buildMeaningfulnessImages,
+  deduplicateAutoFigureCandidates,
+  dedupAutoFigureCandidatesInStorage,
   type MeaningfulnessConfig,
+  type MeaningfulnessImageInput,
   type MeaningfulnessPageInput,
 } from "./image-meaningfulness.js"
 export {
@@ -61,9 +77,32 @@ export {
   type BookSummaryPageInput,
 } from "./book-summary.js"
 export {
+  generateBookOutline,
+  buildBookOutlineConfig,
+  readBookOutline,
+  outlineContextForPage,
+  BOOK_OUTLINE_NODE,
+  BOOK_OUTLINE_ITEM,
+  type BookOutlineConfig,
+  type PageOutlineContext,
+} from "./book-outline.js"
+export {
+  buildBookOutlineEvidence,
+  buildHeadingCandidates,
+  buildTocHierarchyEvidence,
+  buildProofSheets,
+  type BookOutlineEvidence,
+  type BookOutlineEvidencePage,
+  type HeadingCandidateEvidence,
+  type BookOutlineProofSheet,
+  type TocHierarchyEntryEvidence,
+} from "./book-outline-evidence.js"
+export {
   renderPage,
   buildRenderStrategyResolver,
   buildRenderContext,
+  collectReferencedImageIds,
+  collectSourcePageImages,
   GROUP_CONTAINER_STRUCTURES,
   type RenderConfig,
   type VisualRefinementConfig,
@@ -75,6 +114,12 @@ export {
   type ImageRef,
 } from "./web-rendering.js"
 export { renderSectionLlm, type VisualRefinementDeps } from "./render-llm.js"
+export {
+  inspectOrderingActivityHtml,
+  inspectOrderingSection,
+  type OrderingContract,
+  type OrderingInspection,
+} from "./ordering-contract.js"
 export {
   DEFAULT_VISUAL_REVIEW_MODEL_ID,
   runVisualReviewLoop,
@@ -112,6 +157,8 @@ export {
 export {
   captionPageImages,
   buildCaptionConfig,
+  collectCaptionImageIds,
+  groupGlossaryImageIdsByPage,
   extractImageIds,
   type CaptionConfig,
   type CaptionPageInput,
@@ -140,6 +187,7 @@ export {
   type GenerateTocOptions,
 } from "./toc-generation.js"
 export { validateSectionHtml } from "./validate-html.js"
+export { validateRetainedHeadingHierarchy } from "./validate-typography-hierarchy.js"
 export {
   generateQuiz,
   generateAllQuizzes,
@@ -151,6 +199,22 @@ export {
   type QuizPageInput,
 } from "./quiz-generation.js"
 export { buildTextCatalog } from "./text-catalog.js"
+export {
+  buildCoreTtsPreparationConfig,
+  loadCoreTtsProfiles,
+  resolveCoreTtsProfile,
+  getCoreTtsPreparationLocales,
+  prepareCoreTtsCatalog,
+  getCoreTtsCatalog,
+  getReadyCoreTtsEntries,
+  buildCoreTtsSourceContext,
+  invalidateCoreTtsForDisplayEntries,
+  invalidateCoreTtsEntriesById,
+  type CoreTtsProfiles,
+  type ResolvedCoreTtsProfile,
+  type CoreTtsPreparationLocale,
+  type CoreTtsPreparationConfig,
+} from "./core-tts.js"
 export {
   buildEasyReadConfig,
   buildEasyReadSourceBlocks,
@@ -171,20 +235,41 @@ export {
   resolveProviderForLanguage,
   resolveSpeechModel,
   resolveSpeechFormat,
+  resolveGeminiTtsRateLimit,
+  getDocumentedGeminiTtsRpm,
+  type ResolvedGeminiTtsRateLimit,
   isSpeakableText,
   stripEmojis,
   loadVoicesConfig,
   loadSpeechInstructions,
   computeSpeechCacheKey,
+  findAdjacentSpeechText,
+  elevenLabsVoiceSettingsFromConfig,
+  buildElevenLabsTtsLogParams,
+  classifyElevenLabsTtsError,
+  elevenLabsTtsRetryDelayMs,
+  parseElevenLabsErrorStatus,
+  ELEVENLABS_TTS_MAX_CONCURRENCY,
+  ELEVENLABS_TTS_MAX_RATE_LIMIT_RETRIES,
   generateSpeechFile,
+  generatePageSpeechFiles,
   generateWordTimestamps,
   type VoiceMaps,
   type InstructionsMap,
   type GenerateSpeechFileOptions,
+  type GeneratePageSpeechFilesOptions,
   type GenerateWordTimestampsOptions,
   type GenerateWordTimestampsResult,
   type ProviderRouting,
 } from "./speech.js"
+export {
+  parseWavHeader,
+  wavDurationSeconds,
+  sliceWav,
+  findQuietCutSeconds,
+  type WavInfo,
+} from "./audio-wav.js"
+export { supportsPageBatchedSpeech } from "./speech-batch.js"
 export {
   translateCatalogBatch,
   buildCatalogTranslationConfig,
@@ -249,10 +334,13 @@ export {
 export {
   packageEpub,
   type PackageEpubOptions,
-} from "./package-epub.js"
+} from "./packaging/epub.js"
+export { packageWebpub } from "./packaging/webpub.js"
+export { packagePnld, type PackagePnldOptions } from "./packaging/pnld.js"
+export { buildPreviewTailwindCss } from "./tailwind.js"
+export { htmlToXhtml } from "./html-semantics.js"
 export {
   packageAdtWeb,
-  packageWebpub,
   computePackagingInputHash,
   type PackageAdtWebOptions,
   type ComputePackagingInputHashOptions,
@@ -260,18 +348,42 @@ export {
   resolveReflowableFontChain,
   NAV_HTML,
   type RenderPageOptions,
-  buildPreviewTailwindCss,
   buildGlossaryJson,
   buildImageMap,
   buildPreferredImageAltMap,
   buildDecorativeImageIdSet,
   rewriteImageUrls,
-  htmlToXhtml,
   renderQuizHtml,
+  type QuizStyle,
   buildQuizAnswers,
   pad3,
   convertLatexToMathml,
-} from "./package-web.js"
+} from "./packaging/web.js"
+export {
+  resolveQuizPalette,
+  deriveQuizPalette,
+  paletteWithAccent,
+  DEFAULT_QUIZ_PALETTE,
+  type QuizPalette,
+} from "./quiz-palette.js"
+export {
+  tallyFontSizes,
+  mergeTallies,
+  deriveTypeScale,
+  deriveTypeScaleFromHistogram,
+  readTypeScale,
+  TYPE_SCALE_NODE,
+  TYPE_SCALE_ITEM,
+} from "./type-scale.js"
+export {
+  readTypography,
+  resolveDetectedTypography,
+  buildTypographyCss,
+  resolveTypographyCss,
+  typographyPreservationErrors,
+  TYPOGRAPHY_NODE,
+  TYPOGRAPHY_ITEM,
+} from "./typography.js"
 export {
   runAccessibilityAssessment,
   type RunAccessibilityAssessmentOptions,
@@ -288,6 +400,31 @@ export { processFixedLayoutPages, isFixedLayoutBook } from "./fixed-layout-rende
 export {
   getRenderSectioning,
   getRenderSectioningRow,
+  getSemanticSectioning,
   FIXED_LAYOUT_SECTIONING_NODE,
   PAGE_SECTIONING_NODE,
 } from "./render-sectioning.js"
+export {
+  extractEditableActivity,
+  supportsEditableActivity,
+  type ExtractResult,
+} from "./extract-editable-activity.js"
+export { buildActivityOutline, applyActivityHeader } from "./activity-outline.js"
+export {
+  readEditableActivities,
+  enabledEditableActivity,
+  remapEditableActivities,
+  maskStepperPayloads,
+  resolveEditableActivityImages,
+  renderEditableActivityHtml,
+  renderEditableActivityStaticHtml,
+  replaceStepperShellsWithStaticHtml,
+  STEPPER_VARIANT,
+  type EditableActivitiesRow,
+  type ResolveEditableActivityImageOptions,
+  type StepperPayload,
+} from "./render-editable-activity.js"
+export {
+  generateActivityFeedback,
+  type ActivityFeedbackConfig,
+} from "./activity-feedback.js"

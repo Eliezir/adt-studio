@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
-import { Home, HelpCircle, Settings, Download } from "lucide-react";
+import { Home, Settings, Download } from "lucide-react";
 import { useLingui } from "@lingui/react/macro";
 import { Button } from "@/components/ui/button";
 import { LocaleSwitcher } from "@/components/LocaleSwitcher";
@@ -70,7 +70,7 @@ export function StudioTopBar({
   return (
     <header
       className={cn(
-        "shrink-0 min-h-10 flex items-center bg-gray-700 text-white select-none",
+        "shrink-0 h-10 flex items-center bg-gray-700 text-white select-none",
         !hasWindowControls && "py-1",
       )}
       style={DRAG_REGION}
@@ -94,18 +94,6 @@ export function StudioTopBar({
         <Button
           variant="ghost"
           size="icon"
-          className="size-8 shrink-0 text-white/70 hover:text-white hover:bg-gray-600"
-          aria-label={t`How it works`}
-          title={t`How it works`}
-          asChild
-        >
-          <Link to="/onboarding">
-            <HelpCircle className="h-3.5 w-3.5" />
-          </Link>
-        </Button>
-        <Button
-          variant="ghost"
-          size="icon"
           className="relative size-8 shrink-0 text-white/70 hover:text-white hover:bg-gray-600"
           onClick={openUpdateDialog}
           aria-label={hasPendingUpdate ? t`Update available` : t`Software update`}
@@ -123,9 +111,9 @@ export function StudioTopBar({
           variant="ghost"
           size="icon"
           className="size-8 shrink-0 text-white/70 hover:text-white hover:bg-gray-600"
-          onClick={openSettings}
-          aria-label={t`API Key Settings`}
-          title={t`API Key Settings`}
+          onClick={() => openSettings()}
+          aria-label={t`Settings`}
+          title={t`Settings`}
         >
           <Settings className="h-3.5 w-3.5" />
         </Button>

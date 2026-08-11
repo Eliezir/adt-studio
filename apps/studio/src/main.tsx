@@ -6,6 +6,7 @@ import { I18nProvider } from "@lingui/react"
 import { i18n } from "@lingui/core"
 import { TooltipProvider } from "@/components/ui/tooltip"
 import { LiveRegionAnnouncer } from "@/components/a11y/LiveRegionAnnouncer"
+import { CloseGuardProvider } from "@/components/close-guard/CloseGuard"
 import { usePreviewSettingsListener } from "@/hooks/use-preview-settings-listener"
 import { messages as enMessages } from "./locales/en.po"
 import { messages as ptBRMessages } from "./locales/pt-BR.po"
@@ -14,14 +15,23 @@ import { messages as frMessages } from "./locales/fr.po"
 import { messages as sqMessages } from "./locales/sq.po"
 import { routeTree } from "./routeTree.gen"
 import "./styles/globals.css"
-import { LOCALES, activateLocale } from "./i18n/locales"
+import { LOCALES, activateLocale, getStoredLocale, matchSupportedLocale } from "./i18n/locales"
 import type { AppLocale } from "./i18n/locales"
 export { LOCALES, type AppLocale } from "./i18n/locales"
 
+// In Electron, match the OS languages against our supported locales for a
+// sensible first-launch default. Returns null on the web (no `systemLocales`).
+function detectOsLocale(): AppLocale | null {
+  const osLocales = window.api?.systemLocales
+  if (!osLocales || osLocales.length === 0) return null
+  return matchSupportedLocale(osLocales)
+}
+
+// Priority: web ?lang override → stored preference → OS language → English.
 function detectLocale(): AppLocale {
   const urlLang = new URLSearchParams(window.location.search).get("lang")
   if (urlLang && LOCALES.includes(urlLang as AppLocale)) return urlLang as AppLocale
-  return "en"
+  return getStoredLocale() ?? detectOsLocale() ?? "en"
 }
 
 i18n.load({ en: enMessages, "pt-BR": ptBRMessages, es: esMessages, fr: frMessages, sq: sqMessages })
@@ -79,7 +89,9 @@ createRoot(document.getElementById("root")!).render(
         <TooltipProvider delayDuration={300}>
           <PreviewSettingsListener />
           <LiveRegionAnnouncer>
-            <RouterProvider router={router} />
+            <CloseGuardProvider>
+              <RouterProvider router={router} />
+            </CloseGuardProvider>
           </LiveRegionAnnouncer>
         </TooltipProvider>
       </QueryClientProvider>

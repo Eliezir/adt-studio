@@ -37,6 +37,16 @@ const extraResources = [
 
 const version = process.env.APP_VERSION || require("./package.json").version;
 
+const skipTargets = new Set(
+  (process.env.SKIP_NOTARIZE || "")
+    .toUpperCase()
+    .split(/[\s,]+/)
+    .filter(Boolean),
+);
+const shouldSkip = (target) =>
+  skipTargets.has("ALL") || skipTargets.has("TRUE") || skipTargets.has(target);
+const skipMac = shouldSkip("MAC");
+
 const isBeta = version.includes("-beta");
 const appId = isBeta ? "com.nees.adt-studio.beta" : "com.nees.adt-studio";
 const productName = isBeta ? "ADT-Studio-Beta" : "ADT-Studio";
@@ -80,6 +90,7 @@ const config = {
       publisherName: [
         "Núcleo de Excelência em Tecnologias Sociais - NEES",
         "UNICEF",
+        "Elias Constantopedos"
       ],
       sign: "./scripts/sign-windows.js",
     },
@@ -100,7 +111,8 @@ const config = {
     gatekeeperAssess: false,
     entitlements: "build/entitlements.mac.plist",
     entitlementsInherit: "build/entitlements.mac.plist",
-    identity: "Developer ID Application",
+    identity: skipMac ? null : "Developer ID Application",
+    ...(skipMac ? { notarize: false } : {}),
     extraResources,
     extendInfo: {
       NSCameraUsageDescription:
@@ -116,6 +128,17 @@ const config = {
 
   dmg: {
     artifactName,
+    background: isBeta ? "build/dmg/beta-background.png" : "build/dmg/background.png",
+    iconSize: 120,
+    iconTextSize: 13,
+    window: {
+      width: 720,
+      height: 480,
+    },
+    contents: [
+      { x: 190, y: 290, type: "file" },
+      { x: 530, y: 290, type: "link", path: "/Applications" },
+    ],
   },
 
   linux: {

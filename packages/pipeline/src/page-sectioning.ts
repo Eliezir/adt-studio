@@ -5,10 +5,12 @@ import {
   type PageSectioningSection,
   type TypeDef,
   DEFAULT_LLM_MAX_RETRIES,
+  DEFAULT_LLM_MODEL_ID,
   buildPageSectioningLLMSchema,
   buildPageSectioningRefinementLLMSchema,
 } from "@adt/types"
 import type { LLMModel, ValidationResult } from "@adt/llm"
+import type { PageOutlineContext } from "./book-outline.js"
 
 // ── Types ───────────────────────────────────────────────────────
 
@@ -34,6 +36,8 @@ export interface PageSectioningInput {
   imageBase64: string
   /** All images available to place in the tree. Callers filter pruned images out. */
   availableImages: Array<{ imageId: string; imageBase64: string }>
+  /** Authoritative book-level hierarchy slice for this page, when available. */
+  outline?: PageOutlineContext | null
 }
 
 // ── LLM-facing shape (snake_case matching the prompt + schema) ──
@@ -43,6 +47,9 @@ interface LLMNode {
   role?: string | null
   text?: string | null
   image_id?: string | null
+  heading_level?: number | null
+  outline_entry_id?: string | null
+  heading_style_cluster_id?: string | null
   children?: LLMNode[] | null
 }
 
@@ -92,6 +99,10 @@ export async function sectionPage(
     roleKeys: new Set(config.roleTypes.map((t) => t.key)),
     sectionTypeKeys: new Set(config.sectionTypes.map((t) => t.key)),
     availableImageIds: new Set(input.availableImages.map((i) => i.imageId)),
+    outlineEntries: new Map(
+      (input.outline?.entries ?? []).map((entry) => [entry.outlineId, entry]),
+    ),
+    mode: config.mode,
   }
 
   // Initial generation (with built-in validation retry).
@@ -150,6 +161,7 @@ async function generateInitial(
       role_types: config.roleTypes,
       section_types: config.sectionTypes,
       mode: config.mode,
+      book_outline: input.outline ?? null,
     },
     validate: (raw) => {
       applyAutoRepairs(raw as LLMStructuringResult | null)
@@ -192,6 +204,7 @@ async function generateReview(
       role_types: config.roleTypes,
       section_types: config.sectionTypes,
       mode: config.mode,
+      book_outline: input.outline ?? null,
       max_refinements: config.maxRefinements,
       iteration,
       prior_notes: priorNotes,
@@ -240,6 +253,15 @@ export function applyAutoRepairs(raw: LLMStructuringResult | null | undefined): 
 
 const SINGLE_LETTER_ROW = /^[A-Za-zÀ-ÿ](\s+[A-Za-zÀ-ÿ])+$/
 
+// Canonicalize structure values the model reliably invents but that aren't in
+// the allowed `structure_types`. The model frequently emits "boxed_text" for a
+// bordered callout/box; "panel" (generic bordered/boxed layout) is the closest
+// valid container. Mapping here (in the pre-validation repair pass) makes the
+// value valid AND flows into the stored tree, avoiding a wasted retry.
+const STRUCTURE_ALIASES: Record<string, string> = {
+  boxed_text: "panel",
+}
+
 function repairChildren(children: LLMNode[]): LLMNode[] {
   const out: LLMNode[] = []
   for (const original of children) {
@@ -252,6 +274,15 @@ function repairChildren(children: LLMNode[]): LLMNode[] {
     // Recurse first so deeper repairs propagate up.
     if (Array.isArray(child.children)) {
       child.children = repairChildren(child.children)
+    }
+
+    // Canonicalize known invented structure synonyms (e.g. "boxed_text" → "panel")
+    // so they pass validation instead of triggering a retry.
+    if (
+      typeof child.structure === "string" &&
+      STRUCTURE_ALIASES[child.structure] !== undefined
+    ) {
+      child.structure = STRUCTURE_ALIASES[child.structure]
     }
 
     // Repair (3) — run before image_group repairs so reordering can still
@@ -320,6 +351,11 @@ interface ValidatorContext {
   roleKeys: Set<string>
   sectionTypeKeys: Set<string>
   availableImageIds: Set<string>
+  outlineEntries?: Map<
+    string,
+    { outlineId: string; level: number; styleClusterId: string; title: string }
+  >
+  mode?: "page" | "dynamic"
 }
 
 /**
@@ -337,7 +373,15 @@ export function runValidator(
     return { valid: false, errors: ["Response is missing a `sections` array."] }
   }
 
+  if (ctx.mode === "page" && result.sections.length !== 1) {
+    errors.push(
+      `Page mode requires exactly one section, but the response contains ${result.sections.length}. Merge all page content into one section.`
+    )
+  }
+
   const usedImageIds = new Set<string>()
+  const usedOutlineIds = new Set<string>()
+  const outlineEntries = ctx.outlineEntries ?? new Map()
   for (let sIdx = 0; sIdx < result.sections.length; sIdx++) {
     const section = result.sections[sIdx]
     const path = `sections[${sIdx}]`
@@ -355,7 +399,14 @@ export function runValidator(
     }
 
     for (let nIdx = 0; nIdx < section.nodes.length; nIdx++) {
-      validateNode(section.nodes[nIdx], `${path}.nodes[${nIdx}]`, ctx, usedImageIds, errors)
+      validateNode(
+        section.nodes[nIdx],
+        `${path}.nodes[${nIdx}]`,
+        ctx,
+        usedImageIds,
+        usedOutlineIds,
+        errors,
+      )
     }
   }
 
@@ -363,6 +414,12 @@ export function runValidator(
   // not relevant to the page content). Any image placed in the tree must be
   // one of the available ones, and each placed image must appear exactly
   // once — both enforced in validateNode.
+
+  for (const outlineId of outlineEntries.keys()) {
+    if (!usedOutlineIds.has(outlineId)) {
+      errors.push(`Book-outline heading "${outlineId}" is missing from the page tree.`)
+    }
+  }
 
   return { valid: errors.length === 0, errors }
 }
@@ -372,6 +429,7 @@ function validateNode(
   path: string,
   ctx: ValidatorContext,
   usedImageIds: Set<string>,
+  usedOutlineIds: Set<string>,
   errors: string[]
 ): void {
   if (!node || typeof node !== "object") {
@@ -446,7 +504,14 @@ function validateNode(
 
     if (children) {
       for (let cIdx = 0; cIdx < children.length; cIdx++) {
-        validateNode(children[cIdx], `${path}.children[${cIdx}]`, ctx, usedImageIds, errors)
+        validateNode(
+          children[cIdx],
+          `${path}.children[${cIdx}]`,
+          ctx,
+          usedImageIds,
+          usedOutlineIds,
+          errors,
+        )
       }
     }
     return
@@ -458,6 +523,77 @@ function validateNode(
       `${path}.role: invalid value "${node.role}". ` +
         `Must be one of: ${[...ctx.roleKeys].join(", ")}`
     )
+  }
+
+  const roleLevel =
+    node.role === "chapter_title"
+      ? 1
+      : node.role === "section_heading"
+        ? 2
+        : node.role === "subheading"
+          ? 3
+          : null
+  const headingLevel =
+    typeof node.heading_level === "number" ? node.heading_level : roleLevel
+  if (
+    node.heading_level != null &&
+    (!Number.isInteger(node.heading_level) || node.heading_level < 1 || node.heading_level > 6)
+  ) {
+    errors.push(`${path}.heading_level: expected an integer from 1 through 6.`)
+  }
+  if (roleLevel !== null && node.heading_level != null && node.heading_level !== roleLevel) {
+    errors.push(
+      `${path}.heading_level: role "${node.role}" requires heading level ${roleLevel}.`,
+    )
+  }
+
+  if (typeof node.outline_entry_id === "string" && node.outline_entry_id.length > 0) {
+    const outlineEntry = ctx.outlineEntries?.get(node.outline_entry_id)
+    if (!outlineEntry) {
+      errors.push(`${path}.outline_entry_id: unknown outline entry "${node.outline_entry_id}".`)
+    } else {
+      usedOutlineIds.add(node.outline_entry_id)
+      if (node.heading_level == null) {
+        errors.push(`${path}: an outline-linked heading must include heading_level.`)
+      }
+      if (headingLevel !== outlineEntry.level) {
+        errors.push(
+          `${path}: outline entry "${node.outline_entry_id}" requires heading level ${outlineEntry.level}.`,
+        )
+      }
+      const expectedRole =
+        outlineEntry.level === 1
+          ? "chapter_title"
+          : outlineEntry.level === 2
+            ? "section_heading"
+            : outlineEntry.level === 3
+              ? "subheading"
+              : "heading"
+      if (node.role !== expectedRole) {
+        errors.push(
+          `${path}: outline level ${outlineEntry.level} requires role "${expectedRole}".`,
+        )
+      }
+      if (
+        node.heading_style_cluster_id != null &&
+        node.heading_style_cluster_id !== outlineEntry.styleClusterId
+      ) {
+        errors.push(
+          `${path}: outline entry "${node.outline_entry_id}" requires style cluster ` +
+            `"${outlineEntry.styleClusterId}".`,
+        )
+      }
+      if (!node.heading_style_cluster_id) {
+        errors.push(`${path}: an outline-linked heading must include heading_style_cluster_id.`)
+      }
+    }
+    if (roleLevel === null && node.role !== "heading") {
+      errors.push(`${path}: an outline-linked node must use a heading role.`)
+    }
+  } else if (node.heading_level != null || node.heading_style_cluster_id != null) {
+    if (roleLevel === null && node.role !== "heading") {
+      errors.push(`${path}: heading metadata is only valid on heading-role leaves.`)
+    }
   }
 
   if (node.role === "image") {
@@ -579,6 +715,13 @@ function toContentNode(
     isPruned: prunedRoles.has(role),
     role,
     text: typeof node.text === "string" ? node.text : "",
+    ...(typeof node.heading_level === "number" && { headingLevel: node.heading_level }),
+    ...(typeof node.outline_entry_id === "string" &&
+      node.outline_entry_id.length > 0 && { outlineEntryId: node.outline_entry_id }),
+    ...(typeof node.heading_style_cluster_id === "string" &&
+      node.heading_style_cluster_id.length > 0 && {
+        headingStyleClusterId: node.heading_style_cluster_id,
+      }),
   }
 }
 
@@ -702,7 +845,7 @@ export function buildPageSectioningConfig(
     disabledSectionTypes: [...disabledSet],
     promptName: appConfig.page_sectioning?.prompt ?? "page_sectioning",
     refinementPromptName: "page_sectioning_refinement",
-    modelId: appConfig.page_sectioning?.model ?? "openai:gpt-5.4",
+    modelId: appConfig.page_sectioning?.model ?? appConfig.default_model ?? DEFAULT_LLM_MODEL_ID,
     maxRetries:
       appConfig.page_sectioning?.max_retries ?? DEFAULT_LLM_MAX_RETRIES,
     maxRefinements: appConfig.page_sectioning?.max_refinements ?? 0,

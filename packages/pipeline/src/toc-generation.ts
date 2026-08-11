@@ -9,15 +9,14 @@ import {
   tocLLMSchema,
   WebRenderingOutput,
   DEFAULT_LLM_MAX_RETRIES,
+  isHeadingRole,
+  headingLevelForRole,
 } from "@adt/types"
 import type { LLMModel } from "@adt/llm"
 import type { Storage, PageData } from "@adt/storage"
 import { buildLanguageContext } from "./language-context.js"
 import { stripHtml } from "./glossary.js"
-import { getRenderSectioning } from "./render-sectioning.js"
-
-/** Role values (leaves) whose text acts as a section heading for TOC. */
-const HEADING_ROLE_TYPES = new Set(["heading"])
+import { getRenderSectioning, getSemanticSectioning } from "./render-sectioning.js"
 
 export interface TocGenerationConfig {
   promptName: string
@@ -36,6 +35,7 @@ export function buildTocGenerationConfig(
     modelId:
       appConfig.toc_generation?.model ??
       appConfig.page_sectioning?.model ??
+      appConfig.default_model ??
       "openai:gpt-4.1",
     maxRetries: appConfig.toc_generation?.max_retries ?? DEFAULT_LLM_MAX_RETRIES,
     language,
@@ -48,6 +48,7 @@ interface HeadingInfo {
   title: string
   textId: string
   roleType: string
+  headingLevel: number | null
   pageNumber: number | null
 }
 
@@ -57,7 +58,7 @@ function findFirstHeading(section: PageSectioningSection): ContentNodeData | nul
   while (stack.length > 0) {
     const node = stack.shift()!
     if (node.isPruned) continue
-    if (node.role && HEADING_ROLE_TYPES.has(node.role)) return node
+    if (isHeadingRole(node.role)) return node
     if (node.children) stack.unshift(...node.children)
   }
   return null
@@ -107,11 +108,26 @@ function collectHeadingsAndToc(
     )
 
     // Collect first heading per non-pruned, rendered section.
+    let semanticSections: PageSectioningSection[] | null | undefined
     for (let i = 0; i < sectioning.sections.length; i++) {
       const section = sectioning.sections[i]
       if (section.isPruned || !renderedIndices.has(i)) continue
 
-      const heading = findFirstHeading(section)
+      let heading = findFirstHeading(section)
+      if (!heading && section.sectionType === "fixed-layout-page") {
+        // Fixed-layout pages render from a positioned tree that has no heading
+        // roles; read the semantic page-sectioning tree for the page instead.
+        if (semanticSections === undefined) {
+          semanticSections = getSemanticSectioning(storage, page.pageId)?.sections ?? null
+        }
+        for (const s of semanticSections ?? []) {
+          const h = findFirstHeading(s)
+          if (h) {
+            heading = h
+            break
+          }
+        }
+      }
       if (!heading) continue
 
       headings.push({
@@ -119,6 +135,7 @@ function collectHeadingsAndToc(
         title: heading.text ?? "",
         textId: heading.nodeId,
         roleType: heading.role ?? "heading",
+        headingLevel: heading.headingLevel ?? headingLevelForRole(heading.role),
         pageNumber: section.pageNumber,
       })
     }
@@ -162,6 +179,7 @@ export async function generateToc(
         sectionId: h.sectionId,
         title: h.title,
         textType: h.roleType,
+        ...(h.headingLevel !== null && { headingLevel: h.headingLevel }),
       })),
       // Dynamic mode ignores the original TOC even when one is present —
       // the model rewrites titles from heading text instead of mirroring
@@ -193,7 +211,7 @@ export async function generateToc(
       sectionId: e.sectionId,
       href: `${e.sectionId}.html`,
       chapterId: heading.textId,
-      level: Math.max(1, Math.min(3, e.level)),
+      level: heading.headingLevel ?? Math.max(1, Math.min(6, e.level)),
     }
   })
 

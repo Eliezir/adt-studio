@@ -3,9 +3,9 @@ import path from "node:path"
 import { createBookStorage } from "@adt/storage"
 import { createLLMModel, createPromptEngine } from "@adt/llm"
 import type { LLMModel } from "@adt/llm"
-import { renderPage, buildRenderStrategyResolver, buildBookFontsPromptContext, createTemplateEngine, loadBookConfig, createScreenshotRenderer, runVisualReviewLoop, DEFAULT_VISUAL_REVIEW_MODEL_ID, buildScreenshotHtml, SCREENSHOT_VIEWPORTS } from "@adt/pipeline"
+import { renderPage, buildRenderStrategyResolver, buildBookFontsPromptContext, readTypography, buildTypographyCss, collectReferencedImageIds, collectSourcePageImages, createTemplateEngine, loadBookConfig, createScreenshotRenderer, runVisualReviewLoop, DEFAULT_VISUAL_REVIEW_MODEL_ID, buildScreenshotHtml, SCREENSHOT_VIEWPORTS, inspectOrderingActivityHtml, validateRetainedHeadingHierarchy } from "@adt/pipeline"
 import type { VisualRefinementDeps } from "@adt/pipeline"
-import { PageSectioningOutput, WebRenderingOutput, webRenderingLLMSchema, editVerifyLLMSchema } from "@adt/types"
+import { PageSectioningOutput, WebRenderingOutput, webRenderingLLMSchema, editVerifyLLMSchema, DEFAULT_LLM_MODEL_ID } from "@adt/types"
 import { loadStyleguideContent } from "./styleguide.js"
 
 export interface ReRenderOptions {
@@ -43,6 +43,7 @@ export interface AiEditSectionOptions {
 export interface AiEditSectionResult {
   html: string
   reasoning: string
+  activityAnswers?: Record<string, string>
 }
 
 export async function reRenderPage(
@@ -56,6 +57,8 @@ export async function reRenderPage(
 
   const storage = createBookStorage(label, booksDir)
   let visualRefinement: VisualRefinementDeps | undefined
+  // Book typography (editable size-per-role map), shared with every rendered page.
+  const typography = readTypography(storage)
 
   try {
     const structuringRow = storage.getLatestNodeData("page-sectioning", pageId)
@@ -79,23 +82,7 @@ export async function reRenderPage(
     for (const img of allImages) {
       renderImages.set(img.imageId, { base64: storage.getImageBase64(img.imageId), width: img.width, height: img.height })
     }
-    // Walk the tree to find any image leaf nodeIds not already covered
-    const collectImageIds = (
-      node: { role?: string; nodeId?: string; isPruned?: boolean; children?: unknown[] },
-      out: Set<string>,
-    ): void => {
-      if (node.isPruned) return
-      if (node.role === "image" && node.nodeId) out.add(node.nodeId)
-      if (Array.isArray(node.children)) {
-        for (const c of node.children) collectImageIds(c as Parameters<typeof collectImageIds>[0], out)
-      }
-    }
-    const referencedIds = new Set<string>()
-    for (const section of sectioning.sections) {
-      if (section.isPruned) continue
-      for (const n of section.nodes) collectImageIds(n, referencedIds)
-    }
-    for (const imageId of referencedIds) {
+    for (const imageId of collectReferencedImageIds(sectioning.sections)) {
       if (!renderImages.has(imageId)) {
         const dims = storage.getImageDimensions(imageId)
         renderImages.set(imageId, { base64: storage.getImageBase64(imageId), width: dims?.width, height: dims?.height })
@@ -106,7 +93,12 @@ export async function reRenderPage(
     const config = loadBookConfig(label, booksDir, configPath)
     const resolveRenderConfig = buildRenderStrategyResolver(config)
 
-    const styleguideContent = loadStyleguideContent(config.styleguide, configPath)
+    const styleguideContent = loadStyleguideContent(
+      config.styleguide,
+      configPath,
+      booksDir,
+      label,
+    )
 
     // Create LLM model resolver (model-specific, cached)
     const cacheDir = path.join(path.resolve(booksDir), label, ".cache")
@@ -131,6 +123,13 @@ export async function reRenderPage(
     // Get page image
     const pageImageBase64 = storage.getPageImageBase64(pageId)
 
+    // Page images for content merged in from other pages (cross-page merges) —
+    // per-section provenance recorded in sourcePageIds.
+    const sourcePageImages = collectSourcePageImages(
+      sectioning.sections,
+      (id) => storage.getPageImageBase64(id)
+    )
+
     if (sectionIndex !== undefined && (sectionIndex < 0 || sectionIndex >= sectioning.sections.length)) {
       throw new Error(`Section index ${sectionIndex} out of range`)
     }
@@ -145,7 +144,9 @@ export async function reRenderPage(
         visualRefinement = {
           screenshotRenderer,
           webAssetsDir,
-          llmModel: resolveRenderModel(DEFAULT_VISUAL_REVIEW_MODEL_ID),
+          llmModel: resolveRenderModel(
+            config.default_model ?? DEFAULT_VISUAL_REVIEW_MODEL_ID,
+          ),
           storeScreenshot: (base64: string) => {
             const hash = crypto.createHash("sha256").update(base64).digest("hex").slice(0, 16)
             storage.putDebugImage(hash, Buffer.from(base64, "base64"))
@@ -173,8 +174,10 @@ export async function reRenderPage(
         pageImageBase64,
         sectioning: structuringForRender,
         images: renderImages,
+        sourcePageImages,
         styleguide: styleguideContent,
         bookFonts: buildBookFontsPromptContext(storage),
+        typography,
         userPrompt: prompt,
       },
       resolveRenderConfig,
@@ -218,6 +221,7 @@ export async function reRenderPage(
       "text-catalog",
       "easy-read",
       "text-catalog-translation",
+      "core-tts-catalog",
       "tts",
       "tts-timestamps",
       "accessibility-assessment",
@@ -227,6 +231,7 @@ export async function reRenderPage(
       "text-catalog",
       "easy-read",
       "catalog-translation",
+      "core-tts-catalog",
       "image-translation",
       "tts",
       "word-timestamps",
@@ -256,6 +261,8 @@ export async function aiEditSection(
   process.env.OPENAI_API_KEY = apiKey
 
   const storage = createBookStorage(label, booksDir)
+  // Book typography CSS so edit screenshots match the packaged book's sizes.
+  const typographyCss = buildTypographyCss(readTypography(storage))
 
   try {
     // Use provided HTML (from frontend pending state) or read from DB
@@ -277,12 +284,14 @@ export async function aiEditSection(
       }
       currentHtml = section.html
     }
+    const originalOrdering = inspectOrderingActivityHtml(currentHtml)
 
-    // Load config to get model ID for editing
+    // Load config to get model ID for editing. Same fallback chain every other
+    // "thoughtful" LLM step uses — `page_sectioning` may exist without a `model`
+    // key, so never key the fallback off the section's presence.
     const config = loadBookConfig(label, booksDir, configPath)
-    const modelId = (config as Record<string, unknown>).page_sectioning
-      ? ((config as Record<string, unknown>).page_sectioning as Record<string, unknown>).model as string
-      : "openai:gpt-4o"
+    const modelId =
+      config.page_sectioning?.model ?? config.default_model ?? DEFAULT_LLM_MODEL_ID
 
     // Build LLM model
     const cacheDir = path.join(path.resolve(booksDir), label, ".cache")
@@ -325,6 +334,7 @@ export async function aiEditSection(
         label,
         images: imagesForScreenshot,
         webAssetsDir,
+        typographyCss,
       })
       const renderer = await createScreenshotRenderer()
       try {
@@ -352,6 +362,15 @@ export async function aiEditSection(
       const errors: string[] = []
       if (!cleanedHtml.includes("<section")) {
         errors.push("Result must contain a <section> element")
+      }
+      errors.push(...validateRetainedHeadingHierarchy(currentHtml, cleanedHtml))
+      if (originalOrdering.isOrdering) {
+        const ordering = inspectOrderingActivityHtml(cleanedHtml)
+        if (!ordering.isOrdering) {
+          errors.push("AI editing must preserve the activity_ordering section type")
+        } else {
+          errors.push(...ordering.errors)
+        }
       }
       return { valid: errors.length === 0, errors, cleanedHtml }
     }
@@ -403,7 +422,7 @@ export async function aiEditSection(
       const assetsDir = webAssetsDir
       const desktopVp = SCREENSHOT_VIEWPORTS.find((v) => v.label === "desktop")!
       const verifyModel = createLLMModel({
-        modelId: DEFAULT_VISUAL_REVIEW_MODEL_ID,
+        modelId: config.default_model ?? DEFAULT_VISUAL_REVIEW_MODEL_ID,
         cacheDir,
         promptEngine,
         onLog: (entry) => storage.appendLlmLog(entry),
@@ -435,6 +454,7 @@ export async function aiEditSection(
           label,
           images: afterImages,
           webAssetsDir: assetsDir,
+          typographyCss,
         })
         const renderer = await createScreenshotRenderer()
         let desktopAfter: string
@@ -478,7 +498,12 @@ export async function aiEditSection(
       }
     }
 
-    return { html, reasoning }
+    const ordering = inspectOrderingActivityHtml(html)
+    return {
+      html,
+      reasoning,
+      ...(ordering.contract ? { activityAnswers: ordering.contract.answers } : {}),
+    }
   } finally {
     storage.close()
     if (previousKey !== undefined) {

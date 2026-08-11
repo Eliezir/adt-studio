@@ -6,6 +6,10 @@ import type {
   BookFontRole,
   BookMetadata,
   BookSummary,
+  BookOutlineAuditResponse,
+  BookTypography,
+  ActivityOutline,
+  EditableActivity,
   FontAssignmentOutput,
   ExtractionWarning,
   ReviewerPageValidationRecord,
@@ -13,6 +17,7 @@ import type {
   ReviewerValidationInstruction,
   ReviewerValidationSection,
   ReviewerValidationSession,
+  TranslationEvaluationResult,
 } from "@adt/types"
 import type { ExportFormat } from "@/components/pipeline/stages/export/export-formats"
 
@@ -138,6 +143,7 @@ export interface SplitStatus {
   mergedRanges: PageRange[]
   missingRanges: PageRange[]
   fullyMerged: boolean
+  hasMergeActivity: boolean
 }
 
 /** Preview shape returned by the import endpoints for a lightweight part
@@ -191,6 +197,16 @@ export interface AzureCredentials {
   region: string
 }
 
+/** An ElevenLabs voice as surfaced by `GET /speech-config/elevenlabs-voices`
+ *  (a trimmed projection of ElevenLabs' own `/v2/voices` payload). */
+export interface ElevenLabsVoice {
+  voice_id: string
+  name?: string
+  category?: string
+  labels?: Record<string, string>
+  verified_languages?: Array<{ language?: string; accent?: string }>
+}
+
 export interface StageRunProviderCredentials {
   anthropicApiKey?: string
   googleApiKey?: string
@@ -198,6 +214,7 @@ export interface StageRunProviderCredentials {
   customApiKey?: string
   azure?: AzureCredentials
   geminiApiKey?: string
+  elevenLabsApiKey?: string
 }
 
 export interface RunStagesOptions {
@@ -205,6 +222,9 @@ export interface RunStagesOptions {
   toStage: string
   /** When true, skip page-sectioning and only re-render from existing section data. */
   renderOnly?: boolean
+  /** How to react when a page fails inside a per-page step. The Studio sends
+   *  "ask" so page errors surface an interactive skip/stop dialog. */
+  pageErrorPolicy?: "ask" | "stop"
 }
 
 function buildApiHeaders(
@@ -233,12 +253,22 @@ function buildApiHeaders(
   if (providerCredentials?.geminiApiKey) {
     headers["X-Gemini-API-Key"] = providerCredentials.geminiApiKey
   }
+  if (providerCredentials?.elevenLabsApiKey) {
+    headers["X-ElevenLabs-API-Key"] = providerCredentials.elevenLabsApiKey
+  }
   return headers
+}
+
+export interface PendingDecision {
+  decisionId: string
+  step: string
+  pageId: string
+  error: string
 }
 
 export interface StageRunStatus {
   label: string
-  status: "idle" | "running" | "completed" | "failed"
+  status: "idle" | "running" | "cancelling" | "cancelled" | "completed" | "failed"
   fromStage?: string
   toStage?: string
   error?: string
@@ -380,6 +410,8 @@ export interface GlossaryItem {
   variations: string[]
   emojis: string[]
   pruned?: boolean
+  /** Optional image from the book's images table illustrating the term. */
+  imageId?: string
 }
 
 export interface GlossaryOutput {
@@ -450,11 +482,48 @@ export interface TextCatalogEntry {
   text: string
 }
 
+export interface CoreTtsCatalogEntry {
+  id: string
+  displayText: string
+  speechText: string | null
+  changed: boolean
+  transformations: Array<"latex-to-speech" | "language-normalization">
+  status: "ready" | "failed"
+  failureReason?: string
+  generation: {
+    mode: "generated" | "manual" | "unchanged"
+    generatedAt: string
+    enabledTransformations: Array<"latex-to-speech" | "language-normalization">
+  }
+}
+
 export interface TextCatalogResponse {
   entries: TextCatalogEntry[]
   generatedAt: string
   version: number
   translations: Record<string, { entries: TextCatalogEntry[]; version: number }>
+  speechTexts: Record<string, { entries: CoreTtsCatalogEntry[]; version: number }>
+}
+
+export interface TranslationEvaluationStatusResponse {
+  language: string
+  currentSourceCatalogVersion: number | null
+  currentTranslationVersion: number | null
+  evaluationVersion: number | null
+  evaluation: TranslationEvaluationResult | null
+  isStale: boolean
+}
+
+export interface TranslationEvaluationStatusesResponse {
+  evaluations: TranslationEvaluationStatusResponse[]
+}
+
+export interface TranslationEvaluationRunResponse {
+  status: "submitted" | "current"
+  taskId: string | null
+  label: string
+  language: string
+  version?: number | null
 }
 
 export interface EasyReadEntry {
@@ -539,6 +608,9 @@ export interface WordTimestampEntry {
 export interface WordTimestampResponse {
   entries: Record<string, WordTimestampEntry>
   generatedAt: string | null
+  /** Per-item word-timestamp failures from the last run, so the Speech view can
+   * mark them for pruning or one-by-one regeneration. */
+  failed?: { textId: string; error: string }[]
 }
 
 // --- Debug types ---
@@ -550,11 +622,17 @@ export interface LlmLogEntry {
   itemId: string
   data: {
     promptName: string
+    requestedPromptName?: string
     modelId: string
     cacheHit: boolean
+    /** Final status of this individual attempt. Older log entries may omit it. */
+    success?: boolean
     durationMs: number
     usage?: { inputTokens: number; outputTokens: number }
     validationErrors?: string[]
+    /** Resolved provider request parameters, when the call recorded them.
+     *  Free-form: keys and value types vary by call type. */
+    params?: Record<string, unknown>
     system?: string
     messages: Array<{
       role: string
@@ -604,9 +682,59 @@ export interface BookConfigResponse {
   config: Record<string, unknown>
 }
 
+export interface SpecializedModelDefaultsResponse {
+  imageGeneration: string
+  speechGeneration: string
+}
+
 export interface ActiveConfigResponse {
   merged: Record<string, unknown>
   hasBookOverride: boolean
+}
+
+export interface PromptResponse {
+  name: string
+  resolvedName?: string
+  content: string
+  source?: "book" | "global"
+  modelId?: string | null
+  version?: string
+}
+
+export interface PromptSummary {
+  name: string
+  variants: string[]
+  variantSources?: Record<string, "file" | "version" | "file+version">
+}
+
+export interface PromptListResponse {
+  prompts: PromptSummary[]
+}
+
+export interface PromptModelsResponse {
+  models: string[]
+}
+
+export interface PromptVersionSummary {
+  version: string
+  createdAt: string | null
+  content: string
+  isCurrent: boolean
+}
+
+export interface PromptVersionsResponse {
+  name: string
+  resolvedName: string
+  modelId: string | null
+  fallbackContent: string | null
+  fallbackResolvedName: string | null
+  currentVersion: string | null
+  versions: PromptVersionSummary[]
+}
+
+function promptModelQuery(modelId?: string | null): string {
+  // eslint-disable-next-line lingui/no-unlocalized-strings -- API query string, not user-visible copy.
+  return modelId ? `?model=${encodeURIComponent(modelId)}` : ""
 }
 
 export interface VersionEntry {
@@ -747,7 +875,91 @@ export const api = {
   getSourcePdfInfo: (label: string) =>
     request<{ pageCount: number }>(`/books/${label}/source-pdf/info`),
 
+  getSpreadSuggestions: (label: string) =>
+    request<{ suggestions: { lead: number; confidence: number }[] }>(
+      `/books/${label}/spread-suggestions`,
+    ),
+
+  applySpreads: (label: string, spreadPairs: number[]) =>
+    request<{ merged: number; removed: number; pageCount: number }>(
+      `/books/${label}/spreads/apply`,
+      { method: "POST", body: JSON.stringify({ spreadPairs }) },
+    ),
+
   getBookFonts: (label: string) => request<BookFontsResponse>(`/books/${label}/fonts`),
+
+  getEditableActivities: (label: string, pageId: string) =>
+    request<{
+      activities: Record<string, EditableActivity>
+      version: number
+      /** Book-derived accent used when an activity has no override. */
+      paletteAccent: string
+    }>(`/books/${label}/pages/${pageId}/editable-activities`),
+
+  updateEditableActivities: (
+    label: string,
+    pageId: string,
+    activities: Record<string, EditableActivity>,
+  ) =>
+    request<{ version: number }>(`/books/${label}/pages/${pageId}/editable-activities`, {
+      method: "PUT",
+      body: JSON.stringify({ activities }),
+    }),
+
+  getActivityStructure: (label: string, pageId: string, sectionIndex: number) =>
+    request<{
+      activity: EditableActivity | null
+      outline: ActivityOutline | null
+      errors: string[]
+      renderingVersion?: number
+    }>(`/books/${label}/pages/${pageId}/sections/${sectionIndex}/activity-structure`),
+
+  convertEditableActivity: (label: string, pageId: string, sectionIndex: number) =>
+    request<{ activity: EditableActivity; warnings: string[]; version: number }>(
+      `/books/${label}/pages/${pageId}/sections/${sectionIndex}/editable-activity/convert`,
+      { method: "POST" },
+    ),
+
+  setEditableActivityPresentation: (
+    label: string,
+    pageId: string,
+    sectionIndex: number,
+    enabled: boolean,
+  ) =>
+    request<{ version: number; enabled: boolean }>(
+      `/books/${label}/pages/${pageId}/sections/${sectionIndex}/editable-activity/presentation`,
+      { method: "POST", body: JSON.stringify({ enabled }) },
+    ),
+
+  generateEditableActivityFeedback: (
+    label: string,
+    pageId: string,
+    sectionIndex: number,
+    apiKey: string,
+    providerCredentials?: StageRunProviderCredentials,
+    // The unsaved draft, so feedback reflects what the user is editing —
+    // the server falls back to the last saved entity when omitted.
+    activity?: EditableActivity,
+  ) =>
+    request<{ feedback: Record<string, { correct?: string; incorrect?: string }> }>(
+      `/books/${label}/pages/${pageId}/sections/${sectionIndex}/editable-activity/generate-feedback`,
+      {
+        method: "POST",
+        headers: buildApiHeaders(apiKey, providerCredentials),
+        body: JSON.stringify(activity ? { activity } : {}),
+      },
+    ),
+
+  getTypography: (label: string) =>
+    request<{ data: BookTypography; version: number; isDefault: boolean; detected: BookTypography }>(
+      `/books/${label}/typography`
+    ),
+
+  updateTypography: (label: string, data: BookTypography) =>
+    request<{ version: number }>(`/books/${label}/typography`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    }),
 
   getGoogleFontsCatalog: () =>
     request<{ families: GoogleCatalogFamily[] }>("/google-fonts/catalog"),
@@ -880,6 +1092,35 @@ export const api = {
   getStagesStatus: (label: string) =>
     request<StageRunStatus>(`/books/${label}/stages/status`),
 
+  /** Cancel the active run. Queued runs are preserved and start after it unwinds;
+   *  a pending queue with no active run is cleared instead. A 404 (nothing to
+   *  cancel — the run may have finished between the click and this request)
+   *  resolves silently. */
+  cancelRun: async (label: string): Promise<void> => {
+    const res = await fetch(`${BASE_URL}/books/${label}/stages/cancel`, {
+      method: "POST",
+    })
+    if (res.ok || res.status === 404) return
+    const text = await res.text().catch(() => "")
+    throw new Error(text || `Cancel failed: ${res.status}`)
+  },
+
+  /** Resolve a pending page-error decision. A 409 (already resolved by
+   *  timeout/cancel) is treated as success — the caller drops the stale dialog. */
+  resolveDecision: async (
+    label: string,
+    body: { decisionId: string; action: "skip" | "stop"; applyToAll?: boolean },
+  ): Promise<void> => {
+    const res = await fetch(`${BASE_URL}/books/${label}/stages/decision`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    })
+    if (res.ok || res.status === 409) return
+    const text = await res.text().catch(() => "")
+    throw new Error(text || `Decision failed: ${res.status}`)
+  },
+
   getPages: (label: string) =>
     request<PageSummaryItem[]>(`/books/${label}/pages`),
 
@@ -907,6 +1148,27 @@ export const api = {
       body: JSON.stringify(data),
     }),
 
+  /**
+   * One Storyboard editor save: sectioning and rendering land in a single
+   * request so a failure can't leave the tree and the HTML disagreeing.
+   *
+   * `renderingInSync` means the stored HTML reflects this sectioning, or will
+   * shortly — the caller mirrored the edit into the rendering it is sending,
+   * needed no HTML change, or has queued a re-render of the section it touched.
+   * When true the Storyboard stage stays complete and only its dependents are
+   * marked for re-run; pass false only when the HTML cannot be brought back in
+   * sync. Requires `sectioning`, which is the only write it describes.
+   */
+  saveStoryboard: (
+    label: string,
+    pageId: string,
+    data: { sectioning?: unknown; rendering?: unknown; renderingInSync?: boolean }
+  ) =>
+    request<{ sectioningVersion: number | null; renderingVersion: number | null }>(
+      `/books/${label}/pages/${pageId}/storyboard`,
+      { method: "PUT", body: JSON.stringify(data) }
+    ),
+
   updateImageCaptioning: (label: string, pageId: string, data: unknown) =>
     request<{ version: number }>(`/books/${label}/pages/${pageId}/image-captioning`, {
       method: "PUT",
@@ -922,21 +1184,41 @@ export const api = {
       method: "POST",
     }),
 
+  splitSection: (
+    label: string,
+    pageId: string,
+    sectionIndex: number,
+    at: { beforeNodeIndex: number } | { beforeNodeId: string }
+  ) =>
+    request<{
+      splitSectionIndex: number
+      sectioningVersion: number
+      renderingVersion: number | null
+    }>(`/books/${label}/pages/${pageId}/sections/${sectionIndex}/split`, {
+      method: "POST",
+      body: JSON.stringify(at),
+    }),
+
+  /** `renderingInSync` is for callers that re-render the affected sections
+   *  themselves; it keeps the Storyboard stage from being marked stale. */
   mergeSection: (
     label: string,
     pageId: string,
     sectionIndex: number,
-    direction: "next" | "prev" = "next"
+    direction: "next" | "prev" = "next",
+    renderingInSync = false
   ) =>
     request<{
       mergedSectionIndex: number
       sectioningVersion: number
       renderingVersion: number | null
     }>(
-      `/books/${label}/pages/${pageId}/sections/${sectionIndex}/merge?direction=${direction}`,
+      `/books/${label}/pages/${pageId}/sections/${sectionIndex}/merge?direction=${direction}${renderingInSync ? "&renderingInSync=1" : ""}`,
       { method: "POST" }
     ),
 
+  /** Moves a section across a page boundary and empties both renderings. The
+   *  Storyboard is always marked stale until reRenderPages repairs both. */
   mergeSectionCrossPage: (
     label: string,
     pageId: string,
@@ -976,6 +1258,17 @@ export const api = {
       }
     ),
 
+  reRenderPages: (label: string, pageIds: string[], apiKey: string) =>
+    request<{ taskId?: string; status?: string; results?: unknown[] }>(
+      `/books/${label}/pages/re-render`,
+      {
+        method: "POST",
+        headers: { "X-OpenAI-Key": apiKey },
+        body: JSON.stringify({ pageIds }),
+        signal: AbortSignal.timeout(30_000),
+      }
+    ),
+
   aiEditSection: (
     label: string,
     pageId: string,
@@ -984,7 +1277,13 @@ export const api = {
     apiKey: string,
     currentHtml?: string,
   ) =>
-    request<{ taskId?: string; status?: string; html?: string; reasoning?: string }>(
+    request<{
+      taskId?: string
+      status?: string
+      html?: string
+      reasoning?: string
+      activityAnswers?: Record<string, string>
+    }>(
       `/books/${label}/pages/${pageId}/sections/${sectionIndex}/ai-edit`,
       {
         method: "POST",
@@ -997,6 +1296,47 @@ export const api = {
   aiEditHistory: (label: string, pageId: string, sectionIndex: number) =>
     request<{ history: AiEditHistoryTurn[] }>(
       `/books/${label}/pages/${pageId}/sections/${sectionIndex}/ai-edit-history`,
+    ),
+
+  agentLayoutMirror: (
+    label: string,
+    source: { pageId: string; sectionIndex: number },
+    targets: Array<{ pageId: string; sectionIndex: number }>,
+    apiKey: string,
+    instruction?: string,
+    providerCredentials?: StageRunProviderCredentials,
+  ) =>
+    request<{ taskId?: string; status?: string; results?: Array<{ pageId: string; sectionIndex: number; ok: boolean; version?: number; reasoning?: string; error?: string }> }>(
+      `/books/${label}/agents/layout-mirror`,
+      {
+        method: "POST",
+        headers: buildApiHeaders(apiKey, providerCredentials),
+        body: JSON.stringify({ source, targets, instruction }),
+        signal: AbortSignal.timeout(30_000),
+      },
+    ),
+
+  agentGenerateActivity: (
+    label: string,
+    anchorPageId: string,
+    description: string,
+    apiKey: string,
+    options?: { inclusiveDesign?: boolean; mode?: "auto" | "templated" | "custom" },
+    providerCredentials?: StageRunProviderCredentials,
+  ) =>
+    request<{ taskId?: string; status?: string; text?: string; touchedPageIds?: string[]; toolCalls?: Array<{ name: string; args: unknown; result: unknown; error?: string }>; stepCount?: number; finishReason?: string }>(
+      `/books/${label}/agents/generate-activity`,
+      {
+        method: "POST",
+        headers: buildApiHeaders(apiKey, providerCredentials),
+        body: JSON.stringify({
+          anchorPageId,
+          description,
+          inclusiveDesign: options?.inclusiveDesign ?? true,
+          mode: options?.mode ?? "auto",
+        }),
+        signal: AbortSignal.timeout(30_000),
+      },
     ),
 
   listBookImages: (label: string) =>
@@ -1179,6 +1519,17 @@ export const api = {
       `/books/${label}/debug/versions/${node}/${itemId}${includeData ? "?includeData=true" : ""}`
     ),
 
+  getBookOutline: (label: string) =>
+    request<BookOutlineAuditResponse | null>(`/books/${label}/book-outline`),
+
+  /** Roll an entity back to an existing version (moves the current-version
+   *  pointer; does not create a new version). */
+  restoreVersion: (label: string, node: string, itemId: string, version: number) =>
+    request<{ node: string; itemId: string; version: number }>(
+      `/books/${label}/versions/${node}/${itemId}/restore`,
+      { method: "POST", body: JSON.stringify({ version }) }
+    ),
+
   getBookConfig: (label: string) =>
     request<BookConfigResponse>(`/books/${label}/config`),
 
@@ -1188,16 +1539,60 @@ export const api = {
       body: JSON.stringify({ config }),
     }),
 
-  getPrompt: (name: string, bookLabel?: string) =>
-    request<{ name: string; content: string; source?: string }>(
-      bookLabel ? `/books/${bookLabel}/prompts/${name}` : `/prompts/${name}`
-    ),
+  listPrompts: () => request<PromptListResponse>("/prompts"),
 
-  updatePrompt: (name: string, content: string, bookLabel?: string) =>
-    request<{ name: string; content: string; source?: string }>(
-      bookLabel ? `/books/${bookLabel}/prompts/${name}` : `/prompts/${name}`,
+  listPromptModels: () => request<PromptModelsResponse>("/prompt-models"),
+
+  updatePromptModels: (models: string[]) =>
+    request<PromptModelsResponse>("/prompt-models", {
+      method: "PUT",
+      body: JSON.stringify({ models }),
+    }),
+
+  getPrompt: (name: string, bookLabel?: string, modelId?: string | null) => {
+    const query = promptModelQuery(modelId)
+    return request<PromptResponse>(
+      bookLabel ? `/books/${bookLabel}/prompts/${name}${query}` : `/prompts/${name}${query}`
+    )
+  },
+
+  updatePrompt: (name: string, content: string, bookLabel?: string, modelId?: string | null) => {
+    const query = promptModelQuery(modelId)
+    return request<PromptResponse>(
+      bookLabel ? `/books/${bookLabel}/prompts/${name}${query}` : `/prompts/${name}${query}`,
       { method: "PUT", body: JSON.stringify({ content }) },
-    ),
+    )
+  },
+
+  listPromptVersions: (name: string, modelId?: string | null, bookLabel?: string) => {
+    const query = promptModelQuery(modelId)
+    return request<PromptVersionsResponse>(
+      bookLabel ? `/books/${bookLabel}/prompts/${name}/versions${query}` : `/prompts/${name}/versions${query}`,
+    )
+  },
+
+  setPromptVersionCurrent: (
+    name: string,
+    version: string,
+    modelId?: string | null,
+    bookLabel?: string,
+  ) => {
+    const query = promptModelQuery(modelId)
+    return request<PromptResponse>(
+      bookLabel
+        ? `/books/${bookLabel}/prompts/${name}/versions/${encodeURIComponent(version)}/current${query}`
+        : `/prompts/${name}/versions/${encodeURIComponent(version)}/current${query}`,
+      { method: "PUT" },
+    )
+  },
+
+  resetPrompt: (name: string, modelId?: string | null, bookLabel?: string) => {
+    const query = promptModelQuery(modelId)
+    return request<PromptResponse>(
+      bookLabel ? `/books/${bookLabel}/prompts/${name}${query}` : `/prompts/${name}${query}`,
+      { method: "DELETE" },
+    )
+  },
 
   getTemplate: (name: string, bookLabel?: string) =>
     request<{ name: string; content: string; source?: string }>(
@@ -1243,10 +1638,13 @@ export const api = {
     request<GlossaryOutput | null>(`/books/${label}/glossary`),
 
   updateGlossary: (label: string, data: unknown) =>
-    request<{ version: number }>(`/books/${label}/glossary`, {
-      method: "PUT",
-      body: JSON.stringify(data),
-    }),
+    request<{ version: number; imageRequirementsChanged: boolean }>(
+      `/books/${label}/glossary`,
+      {
+        method: "PUT",
+        body: JSON.stringify(data),
+      },
+    ),
 
   generateGlossaryItem: (
     label: string,
@@ -1299,6 +1697,50 @@ export const api = {
       body: JSON.stringify(data),
     }),
 
+  updateCoreTtsEntry: (
+    label: string,
+    language: string,
+    entryId: string,
+    speechText: string,
+  ) =>
+    request<{ version: number; entry: CoreTtsCatalogEntry }>(
+      `/books/${label}/core-tts-catalog/${language}/${entryId}`,
+      {
+        method: "PUT",
+        body: JSON.stringify({ speechText }),
+      },
+    ),
+
+  getTranslationEvaluations: (label: string) =>
+    request<TranslationEvaluationStatusesResponse>(`/books/${label}/evaluations/translations`),
+
+  getTranslationEvaluation: (label: string, language: string) =>
+    request<TranslationEvaluationStatusResponse>(`/books/${label}/evaluations/translations/${language}`),
+
+  // The judge model is configurable, so send every provider credential the user
+  // has — the server picks the one matching the configured model.
+  runTranslationEvaluation: (
+    label: string,
+    language: string,
+    apiKey: string,
+    scope: { pageId?: string; entryIds?: string[] } = {},
+    providerCredentials?: StageRunProviderCredentials,
+  ) =>
+    request<TranslationEvaluationRunResponse>(`/books/${label}/evaluations/translations/${language}/run`, {
+      method: "POST",
+      headers: buildApiHeaders(apiKey, providerCredentials),
+      body: JSON.stringify({
+        ...(scope.pageId ? { page_id: scope.pageId } : {}),
+        ...(scope.entryIds && scope.entryIds.length > 0 ? { entry_ids: scope.entryIds } : {}),
+      }),
+    }),
+
+  acceptTranslationEvaluationItemAnyway: (label: string, language: string, entryId: string) =>
+    request<{ version: number; evaluation: TranslationEvaluationResult }>(
+      `/books/${label}/evaluations/translations/${language}/items/${encodeURIComponent(entryId)}/accept-anyway`,
+      { method: "POST" },
+    ),
+
   getStepStatus: (label: string) =>
     request<{
       stages: Record<string, string>
@@ -1306,6 +1748,8 @@ export const api = {
       error: string | null
       stepErrors: Record<string, string> | null
       stepMessages: Record<string, string> | null
+      runStatus: "idle" | "running" | "cancelling" | "cancelled" | "completed" | "failed"
+      pendingDecisions: PendingDecision[]
     }>(`/books/${label}/step-status`),
 
   getTTS: (label: string) =>
@@ -1322,6 +1766,7 @@ export const api = {
       geminiApiKey: string
       openaiApiKey?: string
       azure?: AzureCredentials
+      elevenLabsApiKey?: string
     }
   ) =>
     request<GenerateSingleTTSResponse>(`/books/${label}/tts/generate-one`, {
@@ -1331,6 +1776,7 @@ export const api = {
         ...(credentials.openaiApiKey ? { "X-OpenAI-Key": credentials.openaiApiKey } : {}),
         ...(credentials.azure?.key ? { "X-Azure-Speech-Key": credentials.azure.key } : {}),
         ...(credentials.azure?.region ? { "X-Azure-Speech-Region": credentials.azure.region } : {}),
+        ...(credentials.elevenLabsApiKey ? { "X-ElevenLabs-API-Key": credentials.elevenLabsApiKey } : {}),
       },
       body: JSON.stringify({ textId, language }),
     }),
@@ -1395,11 +1841,17 @@ export const api = {
   getTemplates: () =>
     request<{ templates: string[] }>(`/templates`),
 
-  getStyleguides: () =>
-    request<{ styleguides: string[] }>(`/styleguides`),
+  getStyleguides: (bookLabel?: string) =>
+    request<{ styleguides: string[] }>(
+      bookLabel ? `/styleguides?book=${encodeURIComponent(bookLabel)}` : `/styleguides`,
+    ),
 
-  getStyleguidePreview: (name: string) =>
-    request<{ name: string; html: string }>(`/styleguides/${name}/preview`),
+  getStyleguidePreview: (name: string, bookLabel?: string) =>
+    request<{ name: string; html: string }>(
+      `/styleguides/${encodeURIComponent(name)}/preview${
+        bookLabel ? `?book=${encodeURIComponent(bookLabel)}` : ""
+      }`,
+    ),
 
   uploadStyleguide: (file: File) => {
     const form = new FormData()
@@ -1444,19 +1896,48 @@ export const api = {
       method: "DELETE",
     }),
 
-  deleteAllSignLanguageVideos: (label: string) =>
-    request<{ ok: boolean }>(`/books/${label}/sign-language-videos`, {
-      method: "DELETE",
-    }),
-
   getGlobalConfig: () =>
     request<{ config: Record<string, unknown> }>(`/config`),
+
+  getDefaultModel: () =>
+    request<{ model: string }>(`/config/default-model`),
+
+  updateDefaultModel: (model: string) =>
+    request<{ model: string }>(`/config/default-model`, {
+      method: "PUT",
+      body: JSON.stringify({ model }),
+    }),
+
+  getSpecializedModelDefaults: () =>
+    request<SpecializedModelDefaultsResponse>(
+      `/config/specialized-model-defaults`,
+    ),
+
+  updateSpecializedModelDefaults: (
+    defaults: SpecializedModelDefaultsResponse,
+  ) =>
+    request<SpecializedModelDefaultsResponse>(
+      `/config/specialized-model-defaults`,
+      {
+        method: "PUT",
+        body: JSON.stringify(defaults),
+      },
+    ),
 
   getSpeechInstructions: () =>
     request<Record<string, string>>("/speech-config/instructions"),
 
   updateSpeechInstructions: (data: Record<string, string>) =>
     request<Record<string, string>>("/speech-config/instructions", {
+      method: "PUT",
+      body: JSON.stringify(data),
+    }),
+
+  getCoreTtsProfiles: () =>
+    request<Record<string, string>>("/speech-config/core-tts-profiles"),
+
+  updateCoreTtsProfiles: (data: Record<string, string>) =>
+    request<Record<string, string>>("/speech-config/core-tts-profiles", {
       method: "PUT",
       body: JSON.stringify(data),
     }),
@@ -1468,6 +1949,14 @@ export const api = {
     request<Record<string, Record<string, string>>>("/speech-config/voices", {
       method: "PUT",
       body: JSON.stringify(data),
+    }),
+
+  /** Human-readable names for the opaque ElevenLabs voice IDs in voices.yaml.
+   *  Returns an empty list (not an error) when no ElevenLabs key is set, so the
+   *  voice picker can fall back to a free-text input. */
+  getElevenLabsVoices: (elevenLabsApiKey?: string) =>
+    request<{ voices: ElevenLabsVoice[] }>("/speech-config/elevenlabs-voices", {
+      headers: elevenLabsApiKey ? { "X-ElevenLabs-API-Key": elevenLabsApiKey } : {},
     }),
 
   prepareExport: (
@@ -1588,6 +2077,26 @@ export const api = {
     if (!res.ok) {
       const body = await res.json().catch(() => ({ error: res.statusText }))
       throw new Error(body.error ?? `ADT export failed: ${res.status}`)
+    }
+    const buf = await res.arrayBuffer()
+    return new Blob([buf], { type: "application/zip" })
+  },
+
+  exportPnld: async (label: string): Promise<Blob | null> => {
+    if (!isDesktop()) {
+      triggerDirectDownload(`${BASE_URL}/books/${label}/export-pnld`)
+      return null
+    }
+    const url = `${BASE_URL}/books/${label}/export-pnld`
+    const res = await fetch(url, {
+      method: "GET",
+      headers: { Accept: "application/zip" },
+      mode: "cors",
+      signal: AbortSignal.timeout(1_800_000),
+    })
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({ error: res.statusText }))
+      throw new Error(body.error ?? `PNLD export failed: ${res.status}`)
     }
     const buf = await res.arrayBuffer()
     return new Blob([buf], { type: "application/zip" })

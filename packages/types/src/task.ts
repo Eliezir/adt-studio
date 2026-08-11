@@ -4,9 +4,12 @@ export const TaskKind = z.enum([
   "image-generate",
   "re-render",
   "ai-edit",
+  "layout-mirror",
+  "generate-activity",
   "package-adt",
   "prepare-export",
   "transcribe-timestamps",
+  "translation-evaluation",
   "book-summary",
   "font-assignment",
 ])
@@ -34,11 +37,15 @@ export const TaskEvent = z.discriminatedUnion("type", [
   z.object({
     type: z.literal("task-complete"),
     taskId: z.string(),
+    kind: TaskKind.optional(),
+    pageId: z.string().optional(),
     result: z.unknown().optional(),
   }),
   z.object({
     type: z.literal("task-error"),
     taskId: z.string(),
+    kind: TaskKind.optional(),
+    pageId: z.string().optional(),
     error: z.string(),
   }),
 ])
