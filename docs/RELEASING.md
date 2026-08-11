@@ -212,19 +212,16 @@ Stable releases and previews also accept editorial and cover inputs:
 
 - **Main feature** — the user-visible feature the notes and cover should lead
   with;
-- **Release context** — audience, tone, priorities, or factual clarification
-  for the notes;
-- **Image context** — visual direction, composition, or elements to avoid;
 - **Cover palette** — `auto`, `random`, `adt`, or a pipeline stage. Every cover
-  keeps ADT electric blue (`#2B7FFF`), deep navy, white, and cool blue-gray as
-  its brand foundation. A stage choice adds its product accent: Storyboard violet,
-  Quizzes orange, Captions teal, Glossary lime, Table of Contents amber, Easy
-  Read fuchsia, Language pink, Speech rose, Validation emerald, and the matching
-  colors for the remaining pipeline stages.
+  keeps ADT electric blue (`#2B7FFF`), deep navy (`#0F172A`), white (`#FFFFFF`),
+  and cool blue-gray (`#64748B`) as its brand foundation. A stage choice adds
+  its predefined product accent, such as Storyboard violet (`#7C3AED`), Quizzes
+  orange (`#EA580C`), Captions teal (`#0D9488`), or Export indigo (`#4338CA`).
+  The workflow never accepts arbitrary color input.
 
 Empty editorial fields let the model choose from the generated changelog and
 commit history. `auto` infers the stage from the main feature first, then the
-art direction, release context, generated notes, commits, and changed files.
+generated notes, commits, and changed files.
 `random` selects a stage accent deterministically from the release tag. Both
 modes keep the light/dark pair coordinated and retain the ADT brand foundation.
 Preview mode accepts only stable increments (`patch`, `minor`, or `major`),
@@ -266,14 +263,16 @@ case-insensitive, and only the head commit of the push is inspected.
 
 ## Release pipeline
 
-[`release.yml`](../.github/workflows/release.yml) has four stages:
+[`release.yml`](../.github/workflows/release.yml) has five stages:
 
 1. `prepare` calculates the next version, validates the branch contract, bumps
    `apps/desktop/package.json`, and updates issue-template versions.
 2. `desktop` builds and signs installers for Windows, macOS, and Linux.
 3. `docker` builds and publishes the combined application image to GHCR.
 4. `finalize` commits release metadata and creates the tag. Beta releases are
-   published immediately; stable releases are saved as drafts for human review.
+   published immediately; stable releases are first saved as factual drafts.
+5. `enrich-stable-release` optionally adds localized AI notes and light/dark
+   covers to a stable draft without delaying or affecting beta releases.
 
 Stable Docker releases update both their version tag and `latest`. Beta images
 publish only their version tag and cannot overwrite `latest`.
@@ -286,11 +285,19 @@ cover pair with the established release typography, glossy 3D feature tile, and
 exact version, headline, and subtitle copy. The light cover is generated first;
 the dark cover edits that result so layout, feature geometry, and typography
 remain aligned across themes.
-Create a `release-ai` GitHub Environment, allow deployments from `main` and
-`develop`, and add its `OPENAI_API_KEY` secret. Do not add required reviewers to
-this environment: the draft's **Publish release** button is the editorial
-approval gate. If the secret is absent or either API call fails, the draft is
-still created with GitHub's generated notes and no cover.
+Create a `release-ai` GitHub Environment, allow deployments from `main`, and add
+its `OPENAI_API_KEY` secret. Do not add required reviewers to this environment:
+the draft's **Publish release** button is the editorial approval gate. The
+factual draft is created before OpenAI is called. If the secret is absent or an
+API call fails, that draft remains intact and can be enriched later with the
+regeneration workflow. Beta releases never enter this environment.
+
+The visible GitHub notes remain English. The generator also creates
+`release-i18n.json` for `en`, `pt-BR`, `es`, `fr`, and `sq`, embeds the same data
+in a hidden `adt-release-i18n` Markdown comment, and attaches it to the draft for
+the landing page and app. The source context, structured text and translation
+requests, image prompts, approved editorial JSON, and both covers are attached
+so reviewers can inspect how every generated asset was produced.
 
 After the workflow succeeds:
 
@@ -299,15 +306,19 @@ After the workflow succeeds:
    together.
 3. Edit the draft directly, or open **Actions -> Regenerate release assets**.
 4. Choose `notes`, `image`, or `both`, select `auto` or a stage palette, provide
-   optional feedback/context, and run the regeneration from `main`.
+   the main feature when needed, and run the regeneration from `main`.
 5. When satisfied, click **Publish release** on the draft. This is the human
    confirmation step for the Electron release notes, covers, and installers.
 
 Regeneration works only for an unpublished stable `vX.Y.Z` draft. Generated
 blocks are wrapped in hidden Markdown markers so image-only regeneration keeps
 the notes unchanged, notes-only regeneration keeps the cover unchanged, and
-human text outside those blocks is preserved. If the draft is edited or
-published while regeneration runs, the workflow refuses to overwrite it.
+human text outside those blocks is preserved. Image-only regeneration reuses
+the approved editorial and translations without another text call. Notes-only
+regeneration preserves the existing title, cover subtitle, alt text, and visual
+concept so the unchanged cover still matches the new notes. If the draft is
+edited or published while regeneration runs, the workflow refuses to overwrite
+it and removes any newly uploaded cover pair.
 
 Only one stable draft may exist at a time. A stable draft already has a public
 protected tag and metadata commit, so abandoning one is not equivalent to
@@ -326,8 +337,6 @@ OPENAI_API_KEY=... node scripts/generate-ai-release-assets.mjs \
   --tag v0.7.5 \
   --repo unicef/adt-studio \
   --hero "PNLD export" \
-  --release-context "Write for educators and production teams" \
-  --image-context "Focus on formal distribution" \
   --palette auto \
   --output .context/release-preview
 ```
@@ -339,7 +348,7 @@ pipeline's established stage accents.
 
 The generated Markdown uses a `<picture>` element to select
 `release-cover-dark.png` or `release-cover-light.png` from the viewer's GitHub
-theme.
+theme. It also writes `release-i18n.json` beside the English Markdown.
 
 Add `--no-image` for a text-only preview or `--dry-run` to write the collected
 context and OpenAI request without making any API calls. Preview files live

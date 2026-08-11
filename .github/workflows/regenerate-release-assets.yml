@@ -20,14 +20,6 @@ on:
         description: "Main feature to emphasize (optional)"
         required: false
         type: string
-      release_context:
-        description: "Feedback or extra context for the release notes (optional)"
-        required: false
-        type: string
-      image_context:
-        description: "Feedback or extra art direction for the cover (optional)"
-        required: false
-        type: string
       cover_palette:
         description: "ADT + pipeline feature palette"
         required: true
@@ -65,7 +57,7 @@ env:
 jobs:
   regenerate:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 40
     environment: release-ai
     steps:
       - name: Validate request
@@ -134,6 +126,26 @@ jobs:
           gh api "${ARGS[@]}" --jq '.body' > release-notes-base.md
           test -s release-notes-base.md
 
+      - name: Download current AI metadata
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          TAG: ${{ inputs.release_tag }}
+          REGENERATE: ${{ inputs.regenerate }}
+        run: |
+          mkdir -p current-assets
+          gh release download "$TAG" --repo "$REPO" \
+            --pattern release-editorial.json --dir current-assets || true
+          gh release download "$TAG" --repo "$REPO" \
+            --pattern release-i18n.json --dir current-assets || true
+          if [[ "$REGENERATE" != "both" ]]; then
+            if [[ ! -s current-assets/release-editorial.json ]] \
+              || [[ ! -s current-assets/release-i18n.json ]]; then
+              echo "::error::Selective regeneration needs existing editorial and localization metadata. Regenerate both instead."
+              exit 1
+            fi
+          fi
+
       - name: Regenerate selected assets
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
@@ -142,8 +154,6 @@ jobs:
           PREV_TAG: ${{ steps.draft.outputs.prev_tag }}
           REGENERATE: ${{ inputs.regenerate }}
           HERO_FEATURE: ${{ inputs.hero_feature }}
-          RELEASE_CONTEXT: ${{ inputs.release_context }}
-          IMAGE_CONTEXT: ${{ inputs.image_context }}
           COVER_PALETTE: ${{ inputs.cover_palette }}
           COVER_NAME: release-cover-${{ github.run_id }}.png
         run: |
@@ -158,16 +168,26 @@ jobs:
             --tag "$TAG"
             --repo "$REPO"
             --hero "${HERO_FEATURE:-}"
-            --release-context "${RELEASE_CONTEXT:-}"
-            --image-context "${IMAGE_CONTEXT:-}"
             --palette "${COVER_PALETTE:-auto}"
-            --existing-notes-file current-release.md
             --regenerate "$REGENERATE"
             --cover-name "$COVER_NAME"
             --cover-url "$COVER_URL"
             --output regenerated-assets
           )
           ARGS+=(--base-notes-file release-notes-base.md)
+          if [[ "$REGENERATE" != "both" ]] \
+            || grep -q '<!-- adt-ai-notes:start -->' current-release.md \
+            || ! cmp -s current-release.md release-notes-base.md; then
+            ARGS+=(--existing-notes-file current-release.md)
+          fi
+          if [[ "$REGENERATE" == "image" ]]; then
+            ARGS+=(
+              --editorial-file current-assets/release-editorial.json
+              --localizations-file current-assets/release-i18n.json
+            )
+          elif [[ "$REGENERATE" == "notes" ]]; then
+            ARGS+=(--preserve-visuals-from current-assets/release-editorial.json)
+          fi
           node scripts/generate-ai-release-assets.mjs "${ARGS[@]}"
 
       - name: Verify draft did not change during generation
@@ -204,13 +224,19 @@ jobs:
                 "$cover#Release cover"
             done
           fi
-          gh release upload "$TAG" --repo "$REPO" --clobber \
-            "regenerated-assets/release-editorial.json#AI release editorial metadata"
-
           # Recheck after uploading because publishing and manual edits do not
           # participate in this workflow's per-tag concurrency lock.
           gh api "repos/$REPO/releases/tags/$TAG" > draft-before-patch.json
           if [[ "$(jq -r '.draft' draft-before-patch.json)" != "true" ]]; then
+            if [[ "$REGENERATE" == "image" || "$REGENERATE" == "both" ]]; then
+              COVER_PREFIX="${COVER_NAME%.png}-"
+              gh api --paginate "repos/$REPO/releases/$RELEASE_ID/assets?per_page=100" \
+                | jq -r --arg prefix "$COVER_PREFIX" \
+                  '.[] | select(.name | startswith($prefix)) | .id' \
+                | while read -r asset_id; do
+                    gh api --method DELETE "repos/$REPO/releases/assets/$asset_id"
+                  done
+            fi
             echo "::error::$TAG was published before the notes could be updated."
             exit 1
           fi
@@ -218,12 +244,36 @@ jobs:
           BEFORE_HASH=$(sha256sum body-before-patch.md | awk '{print $1}')
           EXPECTED_HASH=$(sha256sum body-current.md | awk '{print $1}')
           if [[ "$BEFORE_HASH" != "$EXPECTED_HASH" ]]; then
+            if [[ "$REGENERATE" == "image" || "$REGENERATE" == "both" ]]; then
+              COVER_PREFIX="${COVER_NAME%.png}-"
+              gh api --paginate "repos/$REPO/releases/$RELEASE_ID/assets?per_page=100" \
+                | jq -r --arg prefix "$COVER_PREFIX" \
+                  '.[] | select(.name | startswith($prefix)) | .id' \
+                | while read -r asset_id; do
+                    gh api --method DELETE "repos/$REPO/releases/assets/$asset_id"
+                  done
+            fi
             echo "::error::The draft changed before update; refusing to overwrite it."
             exit 1
           fi
 
           jq -n --rawfile body regenerated-assets/release-notes.md '{body: $body}' \
             | gh api --method PATCH "repos/$REPO/releases/$RELEASE_ID" --input - >/dev/null
+
+          gh release upload "$TAG" --repo "$REPO" --clobber \
+            "regenerated-assets/release-context.json#AI release source context" \
+            "regenerated-assets/release-editorial.json#AI release editorial metadata" \
+            "regenerated-assets/release-i18n.json#Localized release metadata"
+          if [[ "$REGENERATE" == "notes" || "$REGENERATE" == "both" ]]; then
+            gh release upload "$TAG" --repo "$REPO" --clobber \
+              "regenerated-assets/release-text-request.json#AI editorial request" \
+              "regenerated-assets/release-translation-request.json#AI translation request"
+          fi
+          if [[ "$REGENERATE" == "image" || "$REGENERATE" == "both" ]]; then
+            gh release upload "$TAG" --repo "$REPO" --clobber \
+              "regenerated-assets/release-image-prompt-light.txt#Light cover prompt" \
+              "regenerated-assets/release-image-prompt-dark.txt#Dark cover edit prompt"
+          fi
 
           if [[ "$REGENERATE" == "image" || "$REGENERATE" == "both" ]]; then
             COVER_PREFIX="${COVER_NAME%.png}-"
