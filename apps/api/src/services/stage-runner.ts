@@ -7,6 +7,8 @@ import { createLLMModel, createPromptEngine, createRateLimiter, createAdaptiveRa
 import type { LlmLogEntry, AdaptiveRateLimiter } from "@adt/llm"
 import {
   extractPDF,
+  figureExtractionFlags,
+  resolveFigureExtractionMode,
   resolveFontsCacheDir,
   buildBookFontsPromptContext,
   readTypography,
@@ -51,6 +53,14 @@ import {
   translateCatalogBatch,
   buildCatalogTranslationConfig,
   getTargetLanguages,
+  buildCoreTtsPreparationConfig,
+  loadCoreTtsProfiles,
+  resolveCoreTtsProfile,
+  getCoreTtsPreparationLocales,
+  prepareCoreTtsCatalog,
+  getCoreTtsCatalog,
+  buildCoreTtsSourceContext,
+  getReadyCoreTtsEntries,
   translateImage,
   buildImageTranslationConfig,
   loadVoicesConfig,
@@ -87,6 +97,8 @@ import {
   buildBookSummaryConfig,
   filterPageImageMeaningfulness,
   buildMeaningfulnessConfig,
+  buildMeaningfulnessImages,
+  dedupAutoFigureCandidatesInStorage,
   cropPageImages,
   applyCrops,
   buildCroppingConfig,
@@ -993,7 +1005,8 @@ async function runExtractStep(
         endPage: config.end_page,
         spreadMode: config.spread_mode,
         spreadPairs: config.spread_pairs,
-        vectorTextGrouping: config.vector_text_grouping,
+        ...figureExtractionFlags(config),
+        removeWatermarks: config.remove_watermarks === true,
         fixedLayout: isFixedLayoutBook(config),
         fontsCacheDir: resolveFontsCacheDir(booksDir),
       },
@@ -1185,6 +1198,7 @@ async function runExtractStep(
     if (!stepController.signal.aborted) {
       await runMeaningfulnessPass(
         label, pages, storage, meaningfulnessConfig, meaningfulnessModel,
+        resolveFigureExtractionMode(config) === "auto",
         effectiveConcurrency, pageResults, pageFailureDeps, progress
       )
     }
@@ -2515,7 +2529,75 @@ async function runTranslateStep(
       console.log(`[stage-run] ${label}: catalog translation complete`)
     }
 
-    // ── Step 3: Translate burned-in text in user-selected images ────
+    // ── Step 3: Prepare the independent per-language Core TTS catalogs ──
+    progress.emit({ type: "step-start", step: "core-tts-catalog" })
+    const coreTtsConfig = buildCoreTtsPreparationConfig(config)
+    const coreTtsModel = createLLMModel({
+      modelId: coreTtsConfig.modelId,
+      cacheDir,
+      promptEngine,
+      rateLimiter,
+      onLog: onLlmLog,
+      credentials: llmCredentials,
+      signal: options.signal,
+    })
+    const coreTtsConfigDir = configPath
+      ? path.join(path.dirname(configPath), "config")
+      : path.resolve(process.cwd(), "config")
+    const profiles = loadCoreTtsProfiles(coreTtsConfigDir)
+    const sourceDisplayEntries = [...catalog.entries, ...easyReadEntries]
+    const sourceCoreTts = await prepareCoreTtsCatalog({
+      entries: sourceDisplayEntries,
+      language,
+      config: coreTtsConfig,
+      profile: resolveCoreTtsProfile(language, profiles),
+      llmModel: coreTtsModel,
+      previous: getCoreTtsCatalog(storage, language),
+    })
+    storage.putNodeData("core-tts-catalog", language, sourceCoreTts)
+    const sourceContext = buildCoreTtsSourceContext(
+      sourceDisplayEntries,
+      sourceCoreTts,
+    )
+
+    let preparedLanguages = 1
+    const preparationLocales = getCoreTtsPreparationLocales(
+      outputLanguages,
+      language,
+    )
+    for (const locale of preparationLocales) {
+      const lang = locale.language
+      let targetDisplayEntries = sourceDisplayEntries
+      if (!locale.usesSourceDisplayText) {
+        const legacyLang = lang.replace("-", "_")
+        const translatedRow =
+          storage.getLatestNodeData("text-catalog-translation", lang) ??
+          storage.getLatestNodeData("text-catalog-translation", legacyLang)
+        if (!translatedRow) continue
+        targetDisplayEntries = (translatedRow.data as TextCatalogOutput).entries
+      }
+      const targetCoreTts = await prepareCoreTtsCatalog({
+        entries: targetDisplayEntries,
+        language: lang,
+        config: coreTtsConfig,
+        profile: resolveCoreTtsProfile(lang, profiles),
+        llmModel: coreTtsModel,
+        previous: getCoreTtsCatalog(storage, lang),
+        sourceContext,
+      })
+      storage.putNodeData("core-tts-catalog", lang, targetCoreTts)
+      preparedLanguages++
+      progress.emit({
+        type: "step-progress",
+        step: "core-tts-catalog",
+        message: `${preparedLanguages}/${outputLanguages.length} languages`,
+        page: preparedLanguages,
+        totalPages: outputLanguages.length,
+      })
+    }
+    progress.emit({ type: "step-complete", step: "core-tts-catalog" })
+
+    // ── Step 4: Translate burned-in text in user-selected images ────
     const imageTranslation = buildImageTranslationConfig(config)
     const imageTargetLanguages = getTargetLanguages(outputLanguages, language)
     if (
@@ -2713,21 +2795,15 @@ async function runSpeechStep(
       )
     )
 
-    // Load text catalog from storage (produced by translate stage)
-    const catalogRow = storage.getLatestNodeData("text-catalog", "book")
-    const catalog = catalogRow?.data as TextCatalogOutput | null
-    const easyReadConfig = buildEasyReadConfig(config, language)
-    const easyReadRow = storage.getLatestNodeData("easy-read", "book")
-    // Easy Read audio is generated whenever Easy Read is enabled (all
-    // languages), so include the source-language easy-read entries here too.
-    const sourceEasyReadEntries = easyReadConfig.enabled
-      ? flattenEasyReadEntries(easyReadRow?.data as EasyReadOutput | undefined)
-      : []
-
-    if (!catalog || (catalog.entries.length === 0 && sourceEasyReadEntries.length === 0)) {
+    // Core TTS is the only provider-text source. It already includes Easy Read
+    // entries and deliberately omits failed LaTeX conversions.
+    const hasCoreTtsEntries = outputLanguages.some(
+      (lang) => getReadyCoreTtsEntries(storage, lang).length > 0,
+    )
+    if (!hasCoreTtsEntries) {
       progress.emit({ type: "step-skip", step: "tts" })
       progress.emit({ type: "step-skip", step: "word-timestamps" })
-      console.log(`[stage-run] ${label}: TTS skipped (empty catalog)`)
+      console.log(`[stage-run] ${label}: TTS skipped (empty Core TTS catalog)`)
       return
     }
 
@@ -2793,8 +2869,6 @@ async function runSpeechStep(
       return synth
     }
 
-    const sourceLanguage = language
-
     interface TTSWorkItem {
       textId: string
       text: string
@@ -2830,8 +2904,6 @@ async function runSpeechStep(
     beginSpeechRun(label, ttsResultsByLang, failedByLang)
 
     for (const lang of outputLanguages) {
-      const baseSource = getBaseLanguage(sourceLanguage)
-      const baseLang = getBaseLanguage(lang)
       const existingSpeechEntries = getExistingSpeechEntries(storage, lang)
       const provider = resolveProviderForLanguage(lang, routing)
       const batchThisLanguage =
@@ -2845,20 +2917,10 @@ async function runSpeechStep(
         )
       }
 
-      let entries: TextCatalogEntry[]
-      if (baseLang === baseSource) {
-        entries = [...catalog.entries, ...sourceEasyReadEntries]
-      } else {
-        const legacyLang = lang.replace("-", "_")
-        const translatedRow =
-          storage.getLatestNodeData("text-catalog-translation", lang) ??
-          storage.getLatestNodeData("text-catalog-translation", legacyLang)
-        if (translatedRow) {
-          entries = (translatedRow.data as TextCatalogOutput).entries
-        } else {
-          console.warn(`[stage-run] ${label}: missing translated catalog for ${lang}, skipping TTS for this language`)
-          continue
-        }
+      const entries = getReadyCoreTtsEntries(storage, lang)
+      if (entries.length === 0) {
+        console.warn(`[stage-run] ${label}: no ready Core TTS entries for ${lang}, skipping TTS for this language`)
+        continue
       }
 
       const languageTextMap = new Map<string, string>()
@@ -3522,12 +3584,21 @@ async function runMeaningfulnessPass(
   storage: Storage,
   config: MeaningfulnessConfig | null,
   model: ReturnType<typeof createLLMModel> | null,
+  autoDedup: boolean,
   concurrency: number,
   results: Map<string, ImageClassificationOutput>,
   deps: PageFailureDeps,
   progress: StageRunProgress,
 ): Promise<void> {
   if (!config || !model) {
+    if (autoDedup) {
+      for (const page of pages) {
+        const existing = results.get(page.pageId)
+        if (!existing) continue
+        const updated = dedupAutoFigureCandidatesInStorage(storage, page.pageId, existing)
+        if (updated !== existing) results.set(page.pageId, updated)
+      }
+    }
     progress.emit({ type: "step-skip", step: "image-meaningfulness" })
     return
   }
@@ -3552,24 +3623,14 @@ async function runMeaningfulnessPass(
       return
     }
     try {
-      const images = storage.getPageImages(page.pageId)
-      const unprunedImageIds = new Set(
-        existing.images.filter((img) => !img.isPruned).map((img) => img.imageId)
-      )
-      const unprunedImages = images
-        .filter((img) => unprunedImageIds.has(img.imageId))
-        .map((img) => ({
-          imageId: img.imageId,
-          imageBase64: storage.getImageBase64(img.imageId),
-          width: img.width,
-          height: img.height,
-        }))
+      const unprunedImages = buildMeaningfulnessImages(storage, page.pageId, existing)
 
       if (unprunedImages.length > 0) {
         const updated = await filterPageImageMeaningfulness(
           {
             pageId: page.pageId,
             pageImageBase64: storage.getPageImageBase64(page.pageId),
+            pageText: page.text,
             images: unprunedImages,
           },
           existing,

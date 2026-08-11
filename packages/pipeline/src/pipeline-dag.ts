@@ -27,7 +27,7 @@ import type {
   WebRenderingOutput,
 } from "@adt/types"
 import { isTtsExcluded } from "@adt/types"
-import { extractPDF } from "./pdf-extraction.js"
+import { extractPDF, figureExtractionFlags, resolveFigureExtractionMode } from "./pdf-extraction.js"
 import {
   resolveFontsCacheDir,
   buildBookFontsPromptContext,
@@ -52,7 +52,12 @@ import {
   buildPageSectioningConfig,
 } from "./page-sectioning.js"
 import { classifyPageImages, buildImageClassifyConfig } from "./image-filtering.js"
-import { filterPageImageMeaningfulness, buildMeaningfulnessConfig } from "./image-meaningfulness.js"
+import {
+  buildMeaningfulnessImages,
+  dedupAutoFigureCandidatesInStorage,
+  filterPageImageMeaningfulness,
+  buildMeaningfulnessConfig,
+} from "./image-meaningfulness.js"
 import { cropPageImages, applyCrops, buildCroppingConfig, getCroppedImageId } from "./image-cropping.js"
 import { segmentPageImages, applySegmentation, segmentBoundsOnPage, buildSegmentationConfig, getSegmentedImageId } from "./image-segmentation.js"
 import { renderPage, buildRenderStrategyResolver, collectReferencedImageIds, collectSourcePageImages } from "./web-rendering.js"
@@ -65,7 +70,17 @@ import { generateAllQuizzes, buildQuizGenerationConfig, type QuizPageInput } fro
 import { buildTextCatalog } from "./text-catalog.js"
 import { buildEasyReadConfig, buildEasyReadSourceBlocks, createEmptyEasyReadOutput, generateEasyRead, flattenEasyReadEntries, isDeterministicEmptyEasyReadOutput } from "./easy-read.js"
 import { translateCatalogBatch, buildCatalogTranslationConfig, getTargetLanguages } from "./catalog-translation.js"
-import { getBaseLanguage, normalizeLocale } from "./language-context.js"
+import {
+  buildCoreTtsPreparationConfig,
+  loadCoreTtsProfiles,
+  resolveCoreTtsProfile,
+  getCoreTtsPreparationLocales,
+  prepareCoreTtsCatalog,
+  getCoreTtsCatalog,
+  buildCoreTtsSourceContext,
+  getReadyCoreTtsEntries,
+} from "./core-tts.js"
+import { normalizeLocale } from "./language-context.js"
 import {
   loadVoicesConfig,
   loadSpeechInstructions,
@@ -229,7 +244,8 @@ export async function runFullPipeline(
           endPage: endPage ?? config.end_page,
           spreadMode: config.spread_mode,
           spreadPairs: config.spread_pairs,
-          vectorTextGrouping: config.vector_text_grouping,
+          ...figureExtractionFlags(config),
+          removeWatermarks: config.remove_watermarks === true,
           // Gates the positioned-text pipeline (fixed-layout rendering is its
           // only consumer). Must match stage-runner so re-runs are consistent.
           fixedLayout: isFixedLayoutBook(config),
@@ -398,30 +414,35 @@ export async function runFullPipeline(
     })
 
     executors.set("image-meaningfulness", async (p) => {
-      if (!meaningfulnessConfig) return
-      const model = getModel(meaningfulnessConfig.modelId)
       const pages = storage.getPages()
       const totalPages = pages.length
+      if (!meaningfulnessConfig) {
+        if (resolveFigureExtractionMode(config) === "auto") {
+          for (const page of pages) {
+            const classRow = storage.getLatestNodeData("image-filtering", page.pageId)
+            if (!classRow) continue
+            dedupAutoFigureCandidatesInStorage(
+              storage, page.pageId, classRow.data as ImageClassificationOutput,
+            )
+          }
+        }
+        return
+      }
+      const model = getModel(meaningfulnessConfig.modelId)
       await processWithConcurrency(pages, effectiveConcurrency, async (page) => {
         const classRow = storage.getLatestNodeData("image-filtering", page.pageId)
         if (!classRow) return
         let imageResult = classRow.data as ImageClassificationOutput
-        const unprunedImageIds = new Set(
-          imageResult.images.filter((img) => !img.isPruned).map((img) => img.imageId)
-        )
-        const images = storage.getPageImages(page.pageId)
-        const unprunedImages = images
-          .filter((img) => unprunedImageIds.has(img.imageId))
-          .map((img) => ({
-            imageId: img.imageId,
-            imageBase64: storage.getImageBase64(img.imageId),
-            width: img.width,
-            height: img.height,
-          }))
+        const unprunedImages = buildMeaningfulnessImages(storage, page.pageId, imageResult)
         if (unprunedImages.length > 0) {
           const pageImageBase64 = storage.getPageImageBase64(page.pageId)
           imageResult = await filterPageImageMeaningfulness(
-            { pageId: page.pageId, pageImageBase64, images: unprunedImages },
+            {
+              pageId: page.pageId,
+              pageImageBase64,
+              pageText: page.text,
+              images: unprunedImages,
+            },
             imageResult,
             meaningfulnessConfig,
             model,
@@ -905,23 +926,79 @@ export async function runFullPipeline(
       }
     })
 
-    executors.set("tts", async (p) => {
+    executors.set("core-tts-catalog", async (p) => {
       const language = getLanguage(storage, config)
-      const easyReadConfig = buildEasyReadConfig(config, language)
       const outputLanguages = getOutputLanguages(config, language)
       const catalogRow = storage.getLatestNodeData("text-catalog", "book")
       if (!catalogRow) return
-      const sourceCatalog = catalogRow.data as TextCatalogOutput
+      const catalog = catalogRow.data as TextCatalogOutput
       const easyReadRow = storage.getLatestNodeData("easy-read", "book")
-      // Easy Read audio is generated for every language (source included)
-      // whenever Easy Read is enabled — target languages already carry the
-      // easy-read entries via text-catalog-translation, so gate the source
-      // side on `enabled` to match.
-      const easyReadEntries = easyReadConfig.enabled
-        ? flattenEasyReadEntries(easyReadRow?.data as EasyReadOutput | undefined)
-        : []
-      const sourceEntries = [...sourceCatalog.entries, ...easyReadEntries]
-      if (sourceEntries.length === 0) return
+      const easyReadEntries = flattenEasyReadEntries(
+        easyReadRow?.data as EasyReadOutput | undefined,
+      )
+      const sourceDisplayEntries = [...catalog.entries, ...easyReadEntries]
+      if (sourceDisplayEntries.length === 0) return
+
+      const preparationConfig = buildCoreTtsPreparationConfig(config)
+      const model = getModel(preparationConfig.modelId)
+      const profiles = loadCoreTtsProfiles(
+        options.configDir ?? path.resolve(process.cwd(), "config"),
+      )
+      const sourceCatalog = await prepareCoreTtsCatalog({
+        entries: sourceDisplayEntries,
+        language,
+        config: preparationConfig,
+        profile: resolveCoreTtsProfile(language, profiles),
+        llmModel: model,
+        previous: getCoreTtsCatalog(storage, language),
+      })
+      storage.putNodeData("core-tts-catalog", language, sourceCatalog)
+      const sourceContext = buildCoreTtsSourceContext(
+        sourceDisplayEntries,
+        sourceCatalog,
+      )
+
+      const preparationLocales = getCoreTtsPreparationLocales(
+        outputLanguages,
+        language,
+      )
+      let completed = 1
+      for (const locale of preparationLocales) {
+        const lang = locale.language
+        let displayEntries = sourceDisplayEntries
+        if (!locale.usesSourceDisplayText) {
+          const legacy = lang.replace("-", "_")
+          const row =
+            storage.getLatestNodeData("text-catalog-translation", lang) ??
+            storage.getLatestNodeData("text-catalog-translation", legacy)
+          if (!row) continue
+          displayEntries = (row.data as TextCatalogOutput).entries
+        }
+        const targetCatalog = await prepareCoreTtsCatalog({
+          entries: displayEntries,
+          language: lang,
+          config: preparationConfig,
+          profile: resolveCoreTtsProfile(lang, profiles),
+          llmModel: model,
+          previous: getCoreTtsCatalog(storage, lang),
+          sourceContext,
+        })
+        storage.putNodeData("core-tts-catalog", lang, targetCatalog)
+        completed++
+        p.emit({
+          type: "step-progress",
+          step: "core-tts-catalog",
+          message: `${completed}/${outputLanguages.length} languages`,
+          page: completed,
+          totalPages: outputLanguages.length,
+        })
+      }
+    })
+
+    executors.set("tts", async (p) => {
+      const language = getLanguage(storage, config)
+      const outputLanguages = getOutputLanguages(config, language)
+      if (!outputLanguages.some((lang) => getReadyCoreTtsEntries(storage, lang).length > 0)) return
 
       const configDir = options.configDir ?? path.resolve(process.cwd(), "config")
       const azureConfig = options.azureSpeechKey && options.azureSpeechRegion
@@ -976,24 +1053,44 @@ export async function runFullPipeline(
 
       interface TTSWorkItem { textId: string; text: string; language: string; previousText?: string; nextText?: string }
       const workItems: TTSWorkItem[] = []
+      const resultsByLang = new Map<string, SpeechFileEntry[]>()
+      for (const lang of outputLanguages) resultsByLang.set(lang, [])
       for (const lang of outputLanguages) {
-        const baseSource = getBaseLanguage(language)
-        const baseLang = getBaseLanguage(lang)
-        let entries: TextCatalogEntry[]
-        if (baseLang === baseSource) {
-          entries = sourceEntries
-        } else {
-          const legacyLang = lang.replace("-", "_")
-          const translatedRow =
-            storage.getLatestNodeData("text-catalog-translation", lang) ??
-            storage.getLatestNodeData("text-catalog-translation", legacyLang)
-          if (!translatedRow) throw new Error(`Missing translated catalog for output language: ${lang}`)
-          entries = (translatedRow.data as TextCatalogOutput).entries
-        }
+        const entries = getReadyCoreTtsEntries(storage, lang)
         const provider = resolveProviderForLanguage(lang, routing)
+        const legacyLang = lang.replace("-", "_")
+        const existingRow =
+          storage.getLatestNodeData("tts", lang) ??
+          storage.getLatestNodeData("tts", legacyLang)
+        const existingById = new Map(
+          ((existingRow?.data as TTSOutput | undefined)?.entries ?? []).map(
+            (entry) => [entry.textId, entry],
+          ),
+        )
         for (let entryIndex = 0; entryIndex < entries.length; entryIndex++) {
           const entry = entries[entryIndex]
           if (isTtsExcluded(entry.id, config.speech)) continue
+          const existing = existingById.get(entry.id)
+          if (existing?.provider === "manual") {
+            const normalizedPath = path.join(
+              path.resolve(booksRoot),
+              label,
+              "audio",
+              lang,
+              existing.fileName,
+            )
+            const legacyPath = path.join(
+              path.resolve(booksRoot),
+              label,
+              "audio",
+              legacyLang,
+              existing.fileName,
+            )
+            if (fs.existsSync(normalizedPath) || fs.existsSync(legacyPath)) {
+              resultsByLang.get(lang)!.push(existing)
+              continue
+            }
+          }
           // ElevenLabs-only: adjacent-entry context, opt-in via
           // elevenlabs_use_context. Must resolve identically to stage-runner.ts
           // so the shared cache key (computeSpeechCacheKey) stays in sync.
@@ -1011,8 +1108,6 @@ export async function runFullPipeline(
 
       const totalItems = workItems.length
       let completedItems = 0
-      const resultsByLang = new Map<string, SpeechFileEntry[]>()
-      for (const lang of outputLanguages) resultsByLang.set(lang, [])
 
       const elevenLabsVoiceSettings = elevenLabsVoiceSettingsFromConfig(config.speech)
 
