@@ -5878,6 +5878,9 @@ msgstr "Nuk ka vendosje zëri të konfiguruara."
 msgid "No voices found"
 msgstr "Nuk u gjet asnjë zë"
 
+msgid "Node actions"
+msgstr "Veprimet e nyjës"
+
 msgid "Nodes"
 msgstr "Nyje"
 
@@ -7907,6 +7910,9 @@ msgstr "Seksioni 3 · Përmbledhje"
 
 msgid "Section 3.2"
 msgstr "Seksioni 3.2"
+
+msgid "Section actions"
+msgstr "Veprimet e seksionit"
 
 msgid "Section heading"
 msgstr "Titull seksioni"

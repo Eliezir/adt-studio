@@ -1,5 +1,5 @@
 import { useState, type ComponentType, type ReactNode } from "react"
-import * as PopoverPrimitive from "@radix-ui/react-popover"
+import * as DropdownMenuPrimitive from "@radix-ui/react-dropdown-menu"
 import { cn } from "@/lib/utils"
 
 export interface ActionMenuItem {
@@ -29,6 +29,7 @@ function isSeparator(entry: ActionMenuEntry): entry is { separator: true } {
 export function ActionMenu({
   trigger,
   triggerClassName,
+  triggerAriaLabel,
   triggerDisabled,
   note,
   items,
@@ -39,6 +40,8 @@ export function ActionMenu({
   /** Content of the toggle button. */
   trigger: ReactNode
   triggerClassName: string
+  /** Accessible name for icon-only triggers. */
+  triggerAriaLabel?: string
   triggerDisabled?: boolean
   /** Optional block shown above the items (e.g. why actions are disabled). */
   note?: ReactNode
@@ -67,18 +70,19 @@ export function ActionMenu({
 
   return (
     <div onClick={(e) => e.stopPropagation()}>
-      <PopoverPrimitive.Root open={open} onOpenChange={setOpen}>
-        <PopoverPrimitive.Trigger asChild>
+      <DropdownMenuPrimitive.Root open={open} onOpenChange={setOpen}>
+        <DropdownMenuPrimitive.Trigger asChild>
           <button
             type="button"
             disabled={triggerDisabled}
             className={triggerClassName}
+            aria-label={triggerAriaLabel}
           >
             {trigger}
           </button>
-        </PopoverPrimitive.Trigger>
-        <PopoverPrimitive.Portal>
-          <PopoverPrimitive.Content
+        </DropdownMenuPrimitive.Trigger>
+        <DropdownMenuPrimitive.Portal>
+          <DropdownMenuPrimitive.Content
             align={align === "right" ? "end" : "start"}
             sideOffset={4}
             collisionPadding={8}
@@ -90,18 +94,17 @@ export function ActionMenu({
             {note}
             {entries.map((entry, i) =>
               isSeparator(entry) ? (
-                <div key={i} className="my-1 border-t" />
+                <DropdownMenuPrimitive.Separator key={i} className="my-1 border-t" />
               ) : (
-                <button
+                <DropdownMenuPrimitive.Item
                   key={i}
-                  type="button"
-                  onClick={() => {
+                  onSelect={() => {
                     setOpen(false)
                     entry.onClick()
                   }}
                   disabled={itemsDisabled || entry.disabled}
                   className={cn(
-                    "flex w-full items-center gap-2 px-3 py-1.5 text-left hover:bg-accent transition-colors cursor-pointer disabled:opacity-30 disabled:cursor-default",
+                    "flex w-full items-center gap-2 px-3 py-1.5 text-left outline-none transition-colors cursor-pointer data-[highlighted]:bg-accent data-[disabled]:opacity-30 data-[disabled]:cursor-default",
                     entry.danger && "text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30"
                   )}
                 >
@@ -109,12 +112,12 @@ export function ActionMenu({
                     <entry.icon className={cn("h-3.5 w-3.5", entry.iconClassName)} />
                   ) : null}
                   {entry.label}
-                </button>
+                </DropdownMenuPrimitive.Item>
               )
             )}
-          </PopoverPrimitive.Content>
-        </PopoverPrimitive.Portal>
-      </PopoverPrimitive.Root>
+          </DropdownMenuPrimitive.Content>
+        </DropdownMenuPrimitive.Portal>
+      </DropdownMenuPrimitive.Root>
     </div>
   )
 }
