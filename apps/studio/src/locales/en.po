@@ -6028,6 +6028,9 @@ msgstr "No voice mappings configured."
 msgid "No voices found"
 msgstr "No voices found"
 
+msgid "Node actions"
+msgstr "Node actions"
+
 msgid "Nodes"
 msgstr "Nodes"
 
@@ -8106,6 +8109,9 @@ msgstr "Section 3 · Overview"
 
 msgid "Section 3.2"
 msgstr "Section 3.2"
+
+msgid "Section actions"
+msgstr "Section actions"
 
 msgid "Section heading"
 msgstr "Section heading"
