@@ -244,6 +244,7 @@ export {
   loadSpeechInstructions,
   computeSpeechCacheKey,
   findAdjacentSpeechText,
+  buildTtsLogEntry,
   elevenLabsVoiceSettingsFromConfig,
   buildElevenLabsTtsLogParams,
   classifyElevenLabsTtsError,
