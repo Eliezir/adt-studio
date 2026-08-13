@@ -96,6 +96,51 @@ describe("release catalog version handling", () => {
     expect(parsed.source).toEqual(releaseSource);
   });
 
+  it("extracts generated covers and keeps legacy trailing localizations", () => {
+    const sourceWithoutCover = { ...releaseSource, coverUrl: undefined };
+    const light =
+      "https://github.com/unicef/adt-studio/releases/download/v0.8.0-beta.1/release-cover-light.png";
+    const dark =
+      "https://github.com/unicef/adt-studio/releases/download/v0.8.0-beta.1/release-cover-dark.png";
+    const localization = [
+      "<!-- adt-release-i18n",
+      '{"schemaVersion":1,"defaultLocale":"en","locales":{}}',
+      "-->",
+    ].join("\n");
+    const body = [
+      "<!-- adt-ai-cover:start -->",
+      "<picture>",
+      `  <source media="(prefers-color-scheme: dark)" srcset="${dark}">`,
+      `  <source media="(prefers-color-scheme: light)" srcset="${light}">`,
+      `  <img alt="Kids &amp; buddies" src="${light}">`,
+      "</picture>",
+      "<!-- adt-ai-cover:end -->",
+      "",
+      "## What's Changed",
+      "",
+      "- Existing factual note",
+      "",
+      formatReleaseSourceSection(sourceWithoutCover),
+      "",
+      localization,
+    ].join("\n");
+
+    const [parsed] = parseGitHubRelease({
+      tag_name: "v0.8.0-beta.1",
+      draft: false,
+      body,
+      assets: [],
+    });
+
+    expect(parsed.coverUrl).toBe(light);
+    expect(parsed.coverDarkUrl).toBe(dark);
+    expect(parsed.coverAlt).toBe("Kids & buddies");
+    expect(parsed.releaseNotes).toContain(localization);
+    expect(parsed.releaseNotes).not.toContain("adt-ai-cover");
+    expect(parsed.releaseNotes).not.toContain("<picture>");
+    expect(parsed.releaseNotes).not.toContain("### Release source");
+  });
+
   it("leaves release bodies without provenance untouched", () => {
     const body = "# Changes\n\nOrdinary release notes";
     const [parsed] = parseGitHubRelease({
@@ -196,6 +241,8 @@ describe("release catalog version handling", () => {
     candidate.description = "A concise beta summary.";
     candidate.coverUrl =
       "https://github.com/user-attachments/assets/cover-id";
+    candidate.coverDarkUrl =
+      "https://github.com/user-attachments/assets/cover-dark-id";
     candidate.coverAlt = "Update cover";
     const [entry] = createBetaReleaseCatalog(
       [candidate],
@@ -206,6 +253,7 @@ describe("release catalog version handling", () => {
     expect(entry.title).toBe("Clearer beta updates");
     expect(entry.description).toBe("A concise beta summary.");
     expect(entry.coverUrl).toBe(candidate.coverUrl);
+    expect(entry.coverDarkUrl).toBe(candidate.coverDarkUrl);
     expect(entry.coverAlt).toBe("Update cover");
   });
 

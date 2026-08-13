@@ -16,6 +16,7 @@ export interface AvailableRelease {
   title?: string;
   description?: string;
   coverUrl?: string;
+  coverDarkUrl?: string;
   coverAlt?: string;
   releaseDate?: string;
   releaseNotes?: string;
@@ -42,6 +43,7 @@ export interface GitHubRelease {
   title?: string;
   description?: string;
   coverUrl?: string;
+  coverDarkUrl?: string;
   coverAlt?: string;
   source?: ReleaseSource;
   assets: GitHubReleaseAsset[];
@@ -94,6 +96,7 @@ export function createBetaReleaseCatalog(
           title: release.title,
           description: release.description,
           coverUrl: release.coverUrl,
+          coverDarkUrl: release.coverDarkUrl,
           coverAlt: release.coverAlt,
           releaseDate: release.releaseDate,
           releaseNotes: release.releaseNotes,
@@ -201,13 +204,11 @@ async function requestGitHubReleases(now: number): Promise<GitHubRelease[]> {
 export function parseGitHubRelease(value: unknown): GitHubRelease[] {
   if (!isRecord(value) || typeof value.tag_name !== "string") return [];
 
-  const parsedSource =
-    typeof value.body === "string"
-      ? parseReleaseSourceSection(value.body)
-      : undefined;
-  const presentation = parsedSource
-    ? parseReleasePresentation(parsedSource.notes)
-    : undefined;
+  const body = typeof value.body === "string" ? value.body : "";
+  const extractedSource = extractReleaseSourceBlock(body);
+  const parsedSource = parseReleaseSourceSection(extractedSource.source);
+  const generatedCover = extractGeneratedReleaseCover(extractedSource.notes);
+  const presentation = parseReleasePresentation(generatedCover.notes);
 
   const assets = Array.isArray(value.assets)
     ? value.assets.flatMap((asset): GitHubReleaseAsset[] => {
@@ -230,12 +231,93 @@ export function parseGitHubRelease(value: unknown): GitHubRelease[] {
       releaseNotes: presentation?.notes,
       title: parsedSource?.source?.title ?? presentation?.title,
       description: parsedSource?.source?.description,
-      coverUrl: parsedSource?.source?.coverUrl ?? presentation?.coverUrl,
-      coverAlt: presentation?.coverAlt,
+      coverUrl:
+        generatedCover.coverUrl ??
+        parsedSource?.source?.coverUrl ??
+        presentation?.coverUrl,
+      coverDarkUrl: generatedCover.coverDarkUrl,
+      coverAlt: generatedCover.coverAlt ?? presentation?.coverAlt,
       source: parsedSource?.source,
       assets,
     },
   ];
+}
+
+const GENERATED_COVER_PATTERN =
+  /<!--\s*adt-ai-cover:start\s*-->[\s\S]*?<!--\s*adt-ai-cover:end\s*-->/i;
+const PICTURE_PATTERN = /<picture\b[\s\S]*?<\/picture>/i;
+const RELEASE_COVER_URL_PREFIX = `${RELEASE_DOWNLOAD_URL}/`;
+
+function extractReleaseSourceBlock(body: string): {
+  notes: string;
+  source: string;
+} {
+  const pattern =
+    /^### Release source[ \t]*\r?\n(?:[ \t]*\r?\n)*(?:- [^\r\n]*(?:\r?\n|$))+(?:[ \t]*\r?\n)*/m;
+  const match = body.match(pattern);
+  if (!match || match.index == null) return { notes: body, source: "" };
+  return {
+    notes:
+      `${body.slice(0, match.index)}${body.slice(match.index + match[0].length)}`.trim(),
+    source: match[0].trim(),
+  };
+}
+
+function extractGeneratedReleaseCover(body: string): {
+  notes: string;
+  coverUrl?: string;
+  coverDarkUrl?: string;
+  coverAlt?: string;
+} {
+  const picture = body.match(PICTURE_PATTERN)?.[0];
+  if (!picture) return { notes: body };
+
+  const image = picture.match(/<img\b[^>]*>/i)?.[0];
+  const sources = picture.match(/<source\b[^>]*>/gi) ?? [];
+  const lightSource = sources.find((source) =>
+    attribute(source, "media")?.includes("prefers-color-scheme: light"),
+  );
+  const darkSource = sources.find((source) =>
+    attribute(source, "media")?.includes("prefers-color-scheme: dark"),
+  );
+  const coverUrl = trustedReleaseCoverUrl(
+    attribute(lightSource ?? "", "srcset") ?? attribute(image ?? "", "src"),
+  );
+  const coverDarkUrl = trustedReleaseCoverUrl(
+    attribute(darkSource ?? "", "srcset"),
+  );
+  if (!coverUrl) return { notes: body };
+
+  const markedCover = body.match(GENERATED_COVER_PATTERN)?.[0];
+  const notes = body
+    .replace(markedCover ?? picture, "")
+    .replace(/^\s+/, "")
+    .trimEnd();
+  return {
+    notes,
+    coverUrl,
+    coverDarkUrl,
+    coverAlt: decodeHtmlAttribute(attribute(image ?? "", "alt")),
+  };
+}
+
+function attribute(tag: string, name: string): string | undefined {
+  const match = tag.match(new RegExp(`\\s${name}=(['"])(.*?)\\1`, "i"));
+  return match?.[2]?.trim() || undefined;
+}
+
+function trustedReleaseCoverUrl(value?: string): string | undefined {
+  return value?.startsWith(RELEASE_COVER_URL_PREFIX) ? value : undefined;
+}
+
+function decodeHtmlAttribute(value?: string): string | undefined {
+  return value
+    ?.replaceAll("&quot;", '"')
+    .replaceAll("&#39;", "'")
+    .replaceAll("&lt;", "<")
+    .replaceAll("&gt;", ">")
+    .replaceAll("&amp;", "&")
+    .trim();
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

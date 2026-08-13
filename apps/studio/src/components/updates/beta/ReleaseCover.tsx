@@ -28,10 +28,18 @@ export function ReleaseCover({
   const { t } = useLingui()
   const title = release.title ?? formatVersion(release.version)
   const coverUrl = trustedAssetUrl(release.coverUrl)
+  const coverDarkUrl = trustedAssetUrl(release.coverDarkUrl)
   const alt = release.coverAlt?.trim() || t`Cover for ${title}`
   const coverQuery = useQuery({
-    queryKey: ["desktop-updates", "release-cover", coverUrl],
-    queryFn: () => loadReleaseCover(coverUrl!),
+    queryKey: ["desktop-updates", "release-cover", coverUrl, coverDarkUrl],
+    queryFn: async () => {
+      await Promise.all(
+        [coverUrl, coverDarkUrl].filter(Boolean).map((url) =>
+          loadReleaseCover(url!),
+        ),
+      )
+      return { light: coverUrl!, dark: coverDarkUrl }
+    },
     enabled: Boolean(coverUrl),
     retry: false,
     staleTime: Infinity,
@@ -45,12 +53,20 @@ export function ReleaseCover({
       )}
     >
       {coverQuery.data ? (
-        <img
-          src={coverQuery.data}
-          alt={compact ? "" : alt}
-          loading={compact ? "lazy" : "eager"}
-          className="size-full object-cover"
-        />
+        <picture>
+          {coverQuery.data.dark && (
+            <source
+              media="(prefers-color-scheme: dark)"
+              srcSet={coverQuery.data.dark}
+            />
+          )}
+          <img
+            src={coverQuery.data.light}
+            alt={compact ? "" : alt}
+            loading={compact ? "lazy" : "eager"}
+            className="size-full object-cover"
+          />
+        </picture>
       ) : (
         <ReleaseFallbackBanner
           version={release.version}

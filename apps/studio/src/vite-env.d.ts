@@ -90,6 +90,7 @@ interface ElectronAvailableRelease {
   title?: string
   description?: string
   coverUrl?: string
+  coverDarkUrl?: string
   coverAlt?: string
   releaseDate?: string
   releaseNotes?: string
