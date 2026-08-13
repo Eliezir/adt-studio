@@ -43,4 +43,17 @@ Full Changelog: https://github.com/unicef/adt-studio/compare/v0.7.4-beta.3...v0.
       "https://github.com/user-attachments/assets/cover.png",
     )
   })
+
+  it("does not display release automation markers", () => {
+    render(
+      <ReleaseNotesMarkdown>{`
+<!-- adt-ai-notes:start -->
+Visible release note.
+<!-- adt-ai-notes:end -->
+      `}</ReleaseNotesMarkdown>,
+    )
+
+    expect(screen.getByText("Visible release note.")).toBeTruthy()
+    expect(screen.queryByText(/adt-ai-notes/)).toBeNull()
+  })
 })

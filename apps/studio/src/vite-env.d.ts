@@ -87,6 +87,7 @@ type ElectronUpdateStatus =
 
 interface ElectronAvailableRelease {
   version: string
+  author?: string
   title?: string
   description?: string
   coverUrl?: string

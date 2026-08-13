@@ -56,10 +56,12 @@ describe("release catalog version handling", () => {
     const [parsed] = parseGitHubRelease({
       tag_name: "v0.8.0-beta.1",
       draft: false,
+      author: { login: "release-author" },
       body,
       assets: [],
     });
 
+    expect(parsed.author).toBe("release-author");
     expect(parsed.title).toBe(releaseSource.title);
     expect(parsed.description).toBe(releaseSource.description);
     expect(parsed.coverUrl).toBe(releaseSource.coverUrl);
@@ -237,6 +239,7 @@ describe("release catalog version handling", () => {
   it("propagates provenance into beta catalog entries", () => {
     const candidate = release("v0.7.4-beta.5");
     candidate.source = releaseSource;
+    candidate.author = "release-author";
     candidate.title = "Clearer beta updates";
     candidate.description = "A concise beta summary.";
     candidate.coverUrl =
@@ -250,6 +253,7 @@ describe("release catalog version handling", () => {
       "win32",
     );
     expect(entry.source).toEqual(releaseSource);
+    expect(entry.author).toBe("release-author");
     expect(entry.title).toBe("Clearer beta updates");
     expect(entry.description).toBe("A concise beta summary.");
     expect(entry.coverUrl).toBe(candidate.coverUrl);

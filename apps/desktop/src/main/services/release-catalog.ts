@@ -13,6 +13,7 @@ export type ReleaseDirection = "upgrade" | "current" | "downgrade";
 
 export interface AvailableRelease {
   version: string;
+  author?: string;
   title?: string;
   description?: string;
   coverUrl?: string;
@@ -38,6 +39,7 @@ export interface GitHubReleaseAsset {
 export interface GitHubRelease {
   tagName: string;
   draft: boolean;
+  author?: string;
   releaseDate?: string;
   releaseNotes?: string;
   title?: string;
@@ -93,6 +95,7 @@ export function createBetaReleaseCatalog(
           tagName: release.tagName,
           updaterChannel,
           version,
+          author: release.author,
           title: release.title,
           description: release.description,
           coverUrl: release.coverUrl,
@@ -226,6 +229,10 @@ export function parseGitHubRelease(value: unknown): GitHubRelease[] {
     {
       tagName: value.tag_name,
       draft: value.draft === true,
+      author:
+        isRecord(value.author) && typeof value.author.login === "string"
+          ? value.author.login
+          : undefined,
       releaseDate:
         typeof value.published_at === "string" ? value.published_at : undefined,
       releaseNotes: presentation?.notes,

@@ -3,7 +3,11 @@ import { useQuery } from "@tanstack/react-query"
 import type { AvailableRelease } from "@/hooks/use-update-status"
 import { cn } from "@/lib/utils"
 import { ReleaseFallbackBanner } from "../ReleaseFallbackBanner"
-import { formatVersion, trustedAssetUrl } from "../release-banner-utils"
+import {
+  formatVersion,
+  RELEASE_BANNER_ASPECT,
+  trustedAssetUrl,
+} from "../release-banner-utils"
 
 interface ReleaseCoverProps {
   release: AvailableRelease
@@ -48,7 +52,8 @@ export function ReleaseCover({
   return (
     <div
       className={cn(
-        "relative aspect-video overflow-hidden rounded-lg border bg-muted",
+        "relative overflow-hidden rounded-lg border bg-muted/30",
+        RELEASE_BANNER_ASPECT,
         className,
       )}
     >
@@ -64,7 +69,7 @@ export function ReleaseCover({
             src={coverQuery.data.light}
             alt={compact ? "" : alt}
             loading={compact ? "lazy" : "eager"}
-            className="size-full object-cover"
+            className="size-full object-contain"
           />
         </picture>
       ) : (
