@@ -24,7 +24,11 @@ function release(title: string, heading: string, item: string) {
   }
 }
 
-const notes = `<picture><img src="https://example.com/light.png"></picture>\n\nEnglish notes.\n\n---\n\nFull diff: example\n\n<!-- adt-release-i18n\n${JSON.stringify(metadata)}\n-->`
+const notice = `<!-- adt-release-notice:start -->
+**Windows users: reinstall this release manually.**
+<!-- adt-release-notice:end -->`
+
+const notes = `${notice}\n\n<picture><img src="https://example.com/light.png"></picture>\n\nEnglish notes.\n\n---\n\nFull diff: example\n\n<!-- adt-release-i18n\n${JSON.stringify(metadata)}\n-->`
 
 describe("release localization", () => {
   it("localizes release cards and notes for the selected locale", () => {
@@ -45,11 +49,25 @@ describe("release localization", () => {
     expect(localized.releaseNotes).toContain("<picture>")
     expect(localized.releaseNotes).toContain("Full diff: example")
     expect(localized.releaseNotes).not.toContain("adt-release-i18n")
+    expect(localized.releaseNotes).toMatch(
+      /^<!-- adt-release-notice:start -->/,
+    )
+    expect(localized.releaseNotes).toContain(
+      "Windows users: reinstall this release manually.",
+    )
   })
 
   it("falls back to English and supports Albanian", () => {
     expect(localizeReleaseNotes(notes, "de")).toContain("Split books.")
     expect(localizeReleaseNotes(notes, "sq")).toContain("Ndani libra.")
+  })
+
+  it("preserves the release notice in post-update notes", () => {
+    const localized = localizeReleaseNotes(notes, "pt-BR")
+    expect(localized).toMatch(/^<!-- adt-release-notice:start -->/)
+    expect(localized).toContain(
+      "Windows users: reinstall this release manually.",
+    )
   })
 
   it("removes malformed metadata instead of displaying it", () => {

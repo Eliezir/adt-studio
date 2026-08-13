@@ -1,4 +1,6 @@
 const LOCALIZATION_PATTERN = /<!--\s*adt-release-i18n\s*\n([\s\S]*?)-->/i
+const RELEASE_NOTICE_PATTERN =
+  /<!--\s*adt-release-notice:start\s*-->[\s\S]*?<!--\s*adt-release-notice:end\s*-->/i
 
 type LocalizedSection = {
   heading: string
@@ -107,6 +109,7 @@ function renderLocalizedNotes(
   originalNotes: string,
   localized: LocalizedRelease,
 ): string {
+  const notice = originalNotes.match(RELEASE_NOTICE_PATTERN)?.[0]
   const picture = originalNotes.match(/<picture\b[\s\S]*?<\/picture>/i)?.[0]
   const footer = originalNotes.match(/\n---\s*\n([\s\S]*?)\s*$/)?.[1]
   const sections = Object.values(localized.sections)
@@ -116,6 +119,7 @@ function renderLocalizedNotes(
         `### ${section.heading}\n\n${section.items.map((item) => `- ${item}`).join("\n")}`,
     )
   return [
+    notice,
     picture,
     localized.summary,
     ...sections,

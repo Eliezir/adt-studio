@@ -69,6 +69,33 @@ describe("release catalog version handling", () => {
     expect(parsed.source).toEqual(releaseSource);
   });
 
+  it("keeps beta localization metadata before the provenance boundary", () => {
+    const localization = [
+      "<!-- adt-release-i18n",
+      '{"schemaVersion":1,"defaultLocale":"en","locales":{}}',
+      "-->",
+    ].join("\n");
+    const body = [
+      "## Reliable beta",
+      "",
+      "English notes",
+      "",
+      localization,
+      "",
+      formatReleaseSourceSection(releaseSource),
+    ].join("\n");
+    const [parsed] = parseGitHubRelease({
+      tag_name: "v0.8.0-beta.1",
+      draft: false,
+      body,
+      assets: [],
+    });
+
+    expect(parsed.releaseNotes).toContain(localization);
+    expect(parsed.releaseNotes).not.toContain("### Release source");
+    expect(parsed.source).toEqual(releaseSource);
+  });
+
   it("leaves release bodies without provenance untouched", () => {
     const body = "# Changes\n\nOrdinary release notes";
     const [parsed] = parseGitHubRelease({
