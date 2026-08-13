@@ -253,6 +253,7 @@ jobs:
     timeout-minutes: 15
     permissions:
       contents: write
+      pull-requests: write
     steps:
       - uses: actions/checkout@v4
         with:
@@ -311,3 +312,20 @@ jobs:
             --prerelease \
             "${NOTES_ARGS[@]}" \
             dist/*
+
+      - name: Comment staging status on PR
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          header: staging
+          number: ${{ needs.stage.outputs.pr }}
+          message: |
+            ### 🧪 Staging build ready
+
+            A beta pre-release for this PR has been published.
+
+            - **Version:** `${{ needs.stage.outputs.version }}`
+            - **Release:** [${{ needs.stage.outputs.version }}](${{ github.server_url }}/${{ github.repository }}/releases/tag/${{ needs.stage.outputs.version }})
+            - **Source:** PR #${{ needs.stage.outputs.pr }} (`${{ needs.stage.outputs.head_ref }}`) merged with `develop`
+            - **Commit:** [`${{ needs.stage.outputs.commit }}`](${{ github.server_url }}/${{ github.repository }}/commit/${{ needs.stage.outputs.commit }})
+
+            <sub>Updates in place each time staging is re-run. Removed when the PR is closed.</sub>
