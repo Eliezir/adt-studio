@@ -43,13 +43,18 @@ function githubRelease(body: string): GithubRelease {
 }
 
 describe("release localization", () => {
-  const body = `<picture><img alt="English cover" src="https://example.com/light.png"></picture>\n\n## Creative Control\n\nEnglish notes.\n\n---\n\nFull diff: example\n\n<!-- adt-release-i18n\n${JSON.stringify(metadata)}\n-->`;
+  const notice = `<!-- adt-release-notice:start -->\n**Windows users: reinstall this release manually.**\n<!-- adt-release-notice:end -->`;
+  const body = `${notice}\n\n<picture><img alt="English cover" src="https://example.com/light.png"></picture>\n\n## Creative Control\n\nEnglish notes.\n\n---\n\nFull diff: example\n\n<!-- adt-release-i18n\n${JSON.stringify(metadata)}\n-->`;
 
   it("selects an exact locale while preserving the cover and footer", () => {
     const localized = localizeGithubRelease(githubRelease(body), "pt-BR", {
       fullDiffLabel: "Comparação completa",
     });
     expect(localized.name).toBe("Controle criativo");
+    expect(localized.body).toMatch(/^<!-- adt-release-notice:start -->/);
+    expect(localized.body).toContain(
+      "Windows users: reinstall this release manually.",
+    );
     expect(localized.body).toContain("<picture>");
     expect(localized.body).toContain('alt="Controle criativo"');
     expect(localized.body).not.toContain("## Controle criativo");

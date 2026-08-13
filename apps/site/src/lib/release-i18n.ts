@@ -1,6 +1,8 @@
 import type { GithubRelease } from "./useGithubReleases";
 
 const LOCALIZATION_PATTERN = /<!--\s*adt-release-i18n\s*\n([\s\S]*?)-->/i;
+const RELEASE_NOTICE_PATTERN =
+  /<!--\s*adt-release-notice:start\s*-->[\s\S]*?<!--\s*adt-release-notice:end\s*-->/i;
 
 export type LocalizedSection = {
   kind: string;
@@ -100,6 +102,7 @@ function renderLocalizedBody(
   localized: LocalizedRelease,
   options: LocalizationOptions,
 ): string {
+  const releaseNotice = originalBody.match(RELEASE_NOTICE_PATTERN)?.[0];
   const originalPicture = originalBody.match(
     /<picture\b[\s\S]*?<\/picture>/i,
   )?.[0];
@@ -117,6 +120,7 @@ function renderLocalizedBody(
         `### ${section.heading}\n\n${section.items.map((item) => `- ${item}`).join("\n")}`,
     );
   return [
+    releaseNotice,
     picture,
     localized.summary,
     ...sections,
