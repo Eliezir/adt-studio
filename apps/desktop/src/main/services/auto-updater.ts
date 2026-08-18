@@ -217,7 +217,7 @@ export async function checkForUpdates(): Promise<UpdateStatus> {
           }
         } catch (err) {
           console.warn(
-            "Failed to load localized GitHub release notes; using updater feed notes",
+            "Failed to load the complete GitHub release notes; using updater feed notes",
             err,
           );
         }

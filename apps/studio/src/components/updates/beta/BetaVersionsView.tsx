@@ -25,7 +25,6 @@ import { ReleaseNotesMarkdown } from "../ReleaseNotesMarkdown";
 import { ReleaseSourceCard } from "./ReleaseSourceCard";
 import { filterVersionsByQuery, formatReleaseDate } from "./beta-version-utils";
 import { formatVersion } from "../release-banner-utils";
-import { localizeReleaseCopy } from "../release-i18n";
 
 interface BetaVersionsViewProps {
   status: UpdateStatus;
@@ -47,12 +46,7 @@ export function BetaVersionsView({
   const searchInput = useRef<HTMLInputElement>(null);
   const versionsQuery = useBetaUpdateVersions(currentVersion);
   const installMutation = useInstallBetaVersion();
-  const rawVersions = versionsQuery.data ?? EMPTY_RELEASES;
-  const versions = useMemo(
-    () =>
-      rawVersions.map((release) => localizeReleaseCopy(release, i18n.locale)),
-    [i18n.locale, rawVersions],
-  );
+  const versions = versionsQuery.data ?? EMPTY_RELEASES;
   const loading = versionsQuery.isLoading;
   const preparing = installMutation.isPending;
   const detectedVersion =

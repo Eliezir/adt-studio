@@ -6,7 +6,8 @@ import {
 
 describe("update release notes", () => {
   it("prefers the raw GitHub body for the matching updater version", () => {
-    const raw = "Localized notes\n\n<!-- adt-release-i18n\n{}\n-->";
+    const raw =
+      '<picture><img alt="Release cover" src="https://github.com/unicef/adt-studio/releases/download/v0.8.0/release-cover-light.png"></picture>\n\nEnglish notes';
 
     expect(
       preferredReleaseNotes(
@@ -20,7 +21,7 @@ describe("update release notes", () => {
     expect(
       preferredReleaseNotes(
         { version: "0.8.1", releaseNotes: "Updater feed notes" },
-        { version: "0.8.0", releaseNotes: "Stale localized notes" },
+        { version: "0.8.0", releaseNotes: "Stale English notes" },
       ),
     ).toBe("Updater feed notes");
   });

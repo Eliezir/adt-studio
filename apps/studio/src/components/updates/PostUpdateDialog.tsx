@@ -1,4 +1,4 @@
-import { Trans, useLingui } from "@lingui/react/macro"
+import { Trans } from "@lingui/react/macro"
 import { Sparkles } from "lucide-react"
 import type { ElementType } from "react"
 import { Button } from "@/components/ui/button"
@@ -11,7 +11,6 @@ import {
 import { ReleaseFallbackBanner } from "./ReleaseFallbackBanner"
 import { ReleaseNotesMarkdown } from "./ReleaseNotesMarkdown"
 import { formatVersion, releaseNotesHaveImage } from "./release-banner-utils"
-import { localizeReleaseCopy } from "./release-i18n"
 
 export interface PostUpdateDialogProps {
   open: boolean
@@ -58,14 +57,9 @@ export function PostUpdateContent({
   onDone,
   TitleTag = "h2",
 }: PostUpdateContentProps) {
-  const { i18n } = useLingui()
   const label = formatVersion(version)
-  const localized = localizeReleaseCopy<{
-    title?: string
-    releaseNotes?: string
-  }>({ releaseNotes }, i18n.locale)
-  const notes = localized.releaseNotes?.trim()
-  const showFallbackBanner = !releaseNotesHaveImage(notes)
+  const showFallbackBanner = !releaseNotesHaveImage(releaseNotes)
+  const notes = releaseNotes?.trim()
 
   return (
     <div className="flex h-160 max-h-[calc(100vh-2rem)] flex-col">
@@ -75,7 +69,7 @@ export function PostUpdateContent({
         </div>
         <div className="min-w-0">
           <TitleTag className="text-base font-semibold">
-            {localized.title ?? <Trans>What's new</Trans>}
+            <Trans>What's new</Trans>
           </TitleTag>
           <p className="text-sm text-muted-foreground">
             <Trans>You're now running ADT Studio {label}</Trans>
