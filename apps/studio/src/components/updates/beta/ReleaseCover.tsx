@@ -58,20 +58,25 @@ export function ReleaseCover({
       )}
     >
       {coverQuery.data ? (
-        <picture>
-          {coverQuery.data.dark && (
-            <source
-              media="(prefers-color-scheme: dark)"
-              srcSet={coverQuery.data.dark}
-            />
-          )}
+        <>
           <img
             src={coverQuery.data.light}
             alt={compact ? "" : alt}
             loading={compact ? "lazy" : "eager"}
-            className="size-full object-contain"
+            className={cn(
+              "size-full object-contain",
+              coverQuery.data.dark && "dark:hidden",
+            )}
           />
-        </picture>
+          {coverQuery.data.dark && (
+            <img
+              src={coverQuery.data.dark}
+              alt={compact ? "" : alt}
+              loading={compact ? "lazy" : "eager"}
+              className="hidden size-full object-contain dark:block"
+            />
+          )}
+        </>
       ) : (
         <ReleaseFallbackBanner
           version={release.version}

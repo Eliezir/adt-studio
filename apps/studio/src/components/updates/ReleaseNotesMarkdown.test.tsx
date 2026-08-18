@@ -56,4 +56,24 @@ Visible release note.
     expect(screen.getByText("Visible release note.")).toBeTruthy()
     expect(screen.queryByText(/adt-ai-notes/)).toBeNull()
   })
+
+  it("keeps light and dark release covers tied to the app theme", () => {
+    const { container } = render(
+      <ReleaseNotesMarkdown>{`
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://github.com/unicef/adt-studio/releases/download/v0.8.0/dark.png">
+  <source media="(prefers-color-scheme: light)" srcset="https://github.com/unicef/adt-studio/releases/download/v0.8.0/light.png">
+  <img alt="Localized &amp; accessible" src="https://github.com/unicef/adt-studio/releases/download/v0.8.0/light.png">
+</picture>
+      `}</ReleaseNotesMarkdown>,
+    )
+
+    const images = container.querySelectorAll("img")
+    expect(images).toHaveLength(2)
+    expect(images[0].getAttribute("src")).toContain("light.png")
+    expect(images[0].className).toContain("dark:hidden")
+    expect(images[1].getAttribute("src")).toContain("dark.png")
+    expect(images[1].className).toContain("dark:block")
+    expect(images[0].getAttribute("alt")).toBe("Localized & accessible")
+  })
 })

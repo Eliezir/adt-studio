@@ -1,6 +1,8 @@
 const LOCALIZATION_PATTERN = /<!--\s*adt-release-i18n\s*\n([\s\S]*?)-->/i
 const RELEASE_NOTICE_PATTERN =
   /<!--\s*adt-release-notice:start\s*-->[\s\S]*?<!--\s*adt-release-notice:end\s*-->/i
+const RELEASE_NOTES_PATTERN =
+  /(<!--\s*adt-ai-notes:start\s*-->)([\s\S]*?)(<!--\s*adt-ai-notes:end\s*-->)/i
 
 type LocalizedSection = {
   heading: string
@@ -109,18 +111,42 @@ function renderLocalizedNotes(
   originalNotes: string,
   localized: LocalizedRelease,
 ): string {
-  const notice = originalNotes.match(RELEASE_NOTICE_PATTERN)?.[0]
-  const picture = originalNotes.match(/<picture\b[\s\S]*?<\/picture>/i)?.[0]
-  const footer = originalNotes.match(/\n---\s*\n([\s\S]*?)\s*$/)?.[1]
   const sections = Object.values(localized.sections)
     .filter((section) => section.items.length > 0)
     .map(
       (section) =>
         `### ${section.heading}\n\n${section.items.map((item) => `- ${item}`).join("\n")}`,
     )
+  const generated = originalNotes.match(RELEASE_NOTES_PATTERN)
+  if (generated) {
+    const footer = generated[2].match(/\n---\s*\n([\s\S]*?)\s*$/)?.[1]
+    const content = [
+      localized.summary,
+      ...sections,
+      footer ? `---\n\n${footer.trim()}` : undefined,
+    ]
+      .filter(Boolean)
+      .join("\n\n")
+    return replacePictureAlt(
+      originalNotes.replace(
+        generated[0],
+        `${generated[1]}\n${content}\n${generated[3]}`,
+      ),
+      localized.coverAlt,
+    )
+  }
+
+  const notice = originalNotes.match(RELEASE_NOTICE_PATTERN)?.[0]
+  const pictureMatch = originalNotes.match(/<picture\b[\s\S]*?<\/picture>/i)
+  const picture = pictureMatch?.[0]
+  const preamble =
+    pictureMatch?.index != null
+      ? originalNotes.slice(0, pictureMatch.index).trim()
+      : notice
+  const footer = originalNotes.match(/\n---\s*\n([\s\S]*?)\s*$/)?.[1]
   return [
-    notice,
-    picture,
+    preamble,
+    picture ? replacePictureAlt(picture, localized.coverAlt) : undefined,
     localized.summary,
     ...sections,
     footer ? `---\n\n${footer.trim()}` : undefined,
@@ -128,6 +154,21 @@ function renderLocalizedNotes(
     .filter(Boolean)
     .join("\n\n")
 }
+
+/* eslint-disable lingui/no-unlocalized-strings -- HTML entity syntax is serialization data, not UI copy. */
+function replacePictureAlt(picture: string, alt: string): string {
+  const escaped = alt
+    .replaceAll("&", "&amp;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+  return picture.replace(
+    /(<img\b[^>]*\balt=)(["'])(.*?)(\2)/i,
+    (_match, prefix: string, quote: string) =>
+      `${prefix}${quote}${escaped}${quote}`,
+  )
+}
+/* eslint-enable lingui/no-unlocalized-strings */
 
 function parseLocalizedRelease(value: unknown): LocalizedRelease | undefined {
   if (!isRecord(value) || !isRecord(value.sections)) return undefined

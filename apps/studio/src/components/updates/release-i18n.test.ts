@@ -70,6 +70,18 @@ describe("release localization", () => {
     )
   })
 
+  it("preserves human content outside generated notes", () => {
+    const legacyWarning = "⚠️ **Windows users: reinstall manually.**"
+    const marked = `${legacyWarning}\n\n<picture><img alt="English cover" src="https://example.com/light.png"></picture>\n\nManual reviewer note.\n\n<!-- adt-ai-notes:start -->\n## English title\n\nEnglish generated notes.\n<!-- adt-ai-notes:end -->\n\n<!-- adt-release-i18n\n${JSON.stringify(metadata)}\n-->`
+
+    const localized = localizeReleaseNotes(marked, "pt-BR")
+    expect(localized).toContain(legacyWarning)
+    expect(localized).toContain("Manual reviewer note.")
+    expect(localized).toContain("Controle criativo summary")
+    expect(localized).not.toContain("English generated notes.")
+    expect(localized).toContain('alt="Controle criativo"')
+  })
+
   it("removes malformed metadata instead of displaying it", () => {
     expect(
       localizeReleaseNotes("Notes\n<!-- adt-release-i18n\nnot-json\n-->", "fr"),

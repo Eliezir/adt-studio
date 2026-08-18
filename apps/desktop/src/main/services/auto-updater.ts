@@ -47,11 +47,13 @@ export type UpdateStatus =
 type StatusListener = (status: UpdateStatus) => void;
 
 const listeners = new Set<StatusListener>();
+const RELEASE_HYDRATION_TIMEOUT_MS = 5_000;
 let lastStatus: UpdateStatus = { phase: "idle" };
 let lastInfo: UpdateInfo | null = null;
 let cancellationToken: CancellationToken | null = null;
 let betaReleases: BetaRelease[] = [];
 let activeRawReleaseNotes: RawReleaseNotes | null = null;
+let deferStableAvailability = false;
 
 function releaseNotesForInfo(info: UpdateInfo): string | undefined {
   return preferredReleaseNotes(info, activeRawReleaseNotes);
@@ -123,6 +125,7 @@ function configure(): void {
       return;
     }
     lastInfo = info;
+    if (!isBeta && deferStableAvailability) return;
     const totalBytes = info.files?.[0]?.size;
     emit({
       phase: "available",
@@ -196,24 +199,33 @@ export async function checkForUpdates(): Promise<UpdateStatus> {
     }
 
     activeRawReleaseNotes = null;
-    await autoUpdater.checkForUpdates();
-    if (lastInfo) {
-      try {
-        const release = await fetchGitHubReleaseByVersion(lastInfo.version);
-        if (release) {
-          activeRawReleaseNotes = {
-            version: lastInfo.version,
-            releaseNotes: release.rawReleaseNotes,
-          };
-          emitAvailableFromLastInfo();
+    deferStableAvailability = true;
+    try {
+      await autoUpdater.checkForUpdates();
+      if (lastInfo) {
+        try {
+          const release = await fetchGitHubReleaseByVersion(
+            lastInfo.version,
+            fetch,
+            AbortSignal.timeout(RELEASE_HYDRATION_TIMEOUT_MS),
+          );
+          if (release) {
+            activeRawReleaseNotes = {
+              version: lastInfo.version,
+              releaseNotes: release.rawReleaseNotes,
+            };
+          }
+        } catch (err) {
+          console.warn(
+            "Failed to load localized GitHub release notes; using updater feed notes",
+            err,
+          );
         }
-      } catch (err) {
-        console.warn(
-          "Failed to load localized GitHub release notes; using updater feed notes",
-          err,
-        );
       }
+    } finally {
+      deferStableAvailability = false;
     }
+    if (lastInfo) emitAvailableFromLastInfo();
     return lastStatus;
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);

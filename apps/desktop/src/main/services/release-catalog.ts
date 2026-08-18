@@ -142,6 +142,7 @@ export async function fetchBetaReleaseCatalog(
 export async function fetchGitHubReleaseByVersion(
   version: string,
   fetchImpl: typeof fetch = fetch,
+  signal?: AbortSignal,
 ): Promise<GitHubRelease | undefined> {
   const value = version.trim();
   if (!value) return undefined;
@@ -150,7 +151,7 @@ export async function fetchGitHubReleaseByVersion(
   for (const tag of candidates) {
     const response = await fetchImpl(
       `${RELEASE_BY_TAG_URL}/${encodeURIComponent(tag)}`,
-      { headers: GITHUB_HEADERS },
+      { headers: GITHUB_HEADERS, signal },
     );
     if (response.status === 404) continue;
     if (!response.ok) {
