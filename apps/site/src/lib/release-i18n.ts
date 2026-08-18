@@ -3,6 +3,8 @@ import type { GithubRelease } from "./useGithubReleases";
 const LOCALIZATION_PATTERN = /<!--\s*adt-release-i18n\s*\n([\s\S]*?)-->/i;
 const RELEASE_NOTICE_PATTERN =
   /<!--\s*adt-release-notice:start\s*-->[\s\S]*?<!--\s*adt-release-notice:end\s*-->/i;
+const RELEASE_NOTES_PATTERN =
+  /(<!--\s*adt-ai-notes:start\s*-->)([\s\S]*?)(<!--\s*adt-ai-notes:end\s*-->)/i;
 
 export type LocalizedSection = {
   kind: string;
@@ -102,26 +104,53 @@ function renderLocalizedBody(
   localized: LocalizedRelease,
   options: LocalizationOptions,
 ): string {
-  const releaseNotice = originalBody.match(RELEASE_NOTICE_PATTERN)?.[0];
-  const originalPicture = originalBody.match(
-    /<picture\b[\s\S]*?<\/picture>/i,
-  )?.[0];
-  const picture = originalPicture
-    ? replaceImageAlt(originalPicture, localized.coverAlt)
-    : undefined;
-  const originalFooter = originalBody.match(/\n---\s*\n([\s\S]*?)\s*$/)?.[1];
-  const footer = originalFooter
-    ? localizeFooter(originalFooter, options.fullDiffLabel)
-    : undefined;
   const sections = localized.sections
     .filter((section) => section.items.length > 0)
     .map(
       (section) =>
         `### ${section.heading}\n\n${section.items.map((item) => `- ${item}`).join("\n")}`,
     );
+
+  const generated = originalBody.match(RELEASE_NOTES_PATTERN);
+  if (generated) {
+    const originalFooter = generated[2].match(
+      /\n---\s*\n([\s\S]*?)\s*$/,
+    )?.[1];
+    const footer = originalFooter
+      ? localizeFooter(originalFooter, options.fullDiffLabel)
+      : undefined;
+    const content = [
+      localized.summary,
+      ...sections,
+      footer ? `---\n\n${footer.trim()}` : undefined,
+    ]
+      .filter(Boolean)
+      .join("\n\n");
+    return replaceImageAlt(
+      originalBody.replace(
+        generated[0],
+        `${generated[1]}\n${content}\n${generated[3]}`,
+      ),
+      localized.coverAlt,
+    );
+  }
+
+  const releaseNotice = originalBody.match(RELEASE_NOTICE_PATTERN)?.[0];
+  const pictureMatch = originalBody.match(/<picture\b[\s\S]*?<\/picture>/i);
+  const originalPicture = pictureMatch?.[0];
+  const preamble =
+    pictureMatch?.index != null
+      ? originalBody.slice(0, pictureMatch.index).trim()
+      : releaseNotice;
+  const originalFooter = originalBody.match(/\n---\s*\n([\s\S]*?)\s*$/)?.[1];
+  const footer = originalFooter
+    ? localizeFooter(originalFooter, options.fullDiffLabel)
+    : undefined;
   return [
-    releaseNotice,
-    picture,
+    preamble,
+    originalPicture
+      ? replaceImageAlt(originalPicture, localized.coverAlt)
+      : undefined,
     localized.summary,
     ...sections,
     footer ? `---\n\n${footer.trim()}` : undefined,

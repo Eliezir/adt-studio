@@ -195,6 +195,14 @@ export function firstParagraphFromBody(
   return `${text.slice(0, maxChars - 1).replace(/\s+\S*$/, "")}…`;
 }
 
+export function releaseExcerpt(
+  body: string | null | undefined,
+  localizedSummary?: string,
+  maxChars = 240,
+): string {
+  return localizedSummary?.trim() || firstParagraphFromBody(body, maxChars);
+}
+
 /**
  * Map a section heading like "Added" / "Fixed" / "Performance" to a chip
  * palette key. Anything we don't recognize falls back to "neutral".

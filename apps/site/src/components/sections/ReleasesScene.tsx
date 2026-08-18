@@ -9,7 +9,7 @@ import {
 } from "@/lib/release-i18n";
 import {
   firstImageFromBody,
-  firstParagraphFromBody,
+  releaseExcerpt,
   sectionTone,
   summarizeSections,
   type SectionTone,
@@ -107,7 +107,7 @@ function HeroSpotlight({ release }: { release: LocalizedGithubRelease }) {
   const { i18n, t } = useLingui();
   const title = release.name?.trim() || release.tag_name;
   const cover = firstImageFromBody(release.body);
-  const excerpt = firstParagraphFromBody(release.body, 240);
+  const excerpt = releaseExcerpt(release.body, release.localization?.summary);
   const sections = summarizeSections(
     release.body,
     release.localization?.sections,
@@ -199,13 +199,13 @@ function HeroCover({
 }) {
   if (image) {
     return (
-      <div className="pointer-events-none relative z-[1] aspect-[16/9] w-full overflow-hidden rounded-2xl border border-[color:var(--color-border)] bg-[color:var(--color-muted)]/40">
+      <div className="pointer-events-none relative z-[1] aspect-[3/2] w-full overflow-hidden rounded-2xl border border-[color:var(--color-border)] bg-[color:var(--color-muted)]/40">
         <img
           src={image}
           alt=""
           loading="lazy"
           decoding="async"
-          className="h-full w-full object-cover transition-transform duration-[900ms] ease-[cubic-bezier(0.22,1,0.36,1)] group-hover/hero:scale-[1.02]"
+          className="h-full w-full object-contain transition-transform duration-[900ms] ease-[cubic-bezier(0.22,1,0.36,1)] group-hover/hero:scale-[1.02]"
         />
       </div>
     );
@@ -213,7 +213,7 @@ function HeroCover({
   return (
     <div
       aria-hidden
-      className="pointer-events-none relative z-[1] aspect-[16/9] w-full overflow-hidden rounded-2xl border border-[color:var(--color-border)]"
+      className="pointer-events-none relative z-[1] aspect-[3/2] w-full overflow-hidden rounded-2xl border border-[color:var(--color-border)]"
     >
       <div className="absolute inset-0 [background:radial-gradient(120%_120%_at_25%_15%,color-mix(in_oklch,var(--color-primary)_30%,transparent),transparent_60%),radial-gradient(120%_120%_at_80%_80%,color-mix(in_oklch,#a855f7_22%,transparent),transparent_65%),linear-gradient(180deg,color-mix(in_oklch,var(--color-muted)_70%,transparent),color-mix(in_oklch,var(--color-card)_100%,transparent))]" />
       <div
