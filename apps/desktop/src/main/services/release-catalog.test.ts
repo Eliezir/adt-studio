@@ -1,9 +1,10 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { formatReleaseSourceSection } from "@root/scripts/release-source-notes.mjs";
 import {
   betaReleaseDownloadUrl,
   compareReleaseVersions,
   createBetaReleaseCatalog,
+  fetchGitHubReleaseByVersion,
   isBetaReleaseVersion,
   parseGitHubRelease,
   type GitHubReleaseAsset,
@@ -141,6 +142,62 @@ describe("release catalog version handling", () => {
     expect(parsed.releaseNotes).not.toContain("adt-ai-cover");
     expect(parsed.releaseNotes).not.toContain("<picture>");
     expect(parsed.releaseNotes).not.toContain("### Release source");
+    expect(parsed.rawReleaseNotes).toContain("adt-ai-cover:start");
+    expect(parsed.rawReleaseNotes).toContain("<picture>");
+    expect(parsed.rawReleaseNotes).toContain(localization);
+    expect(parsed.rawReleaseNotes).not.toContain("### Release source");
+  });
+
+  it("fetches the exact release body used by a stable updater version", async () => {
+    const fetchImpl = vi.fn<typeof fetch>().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          tag_name: "v0.8.0",
+          draft: false,
+          body: "Stable notes\n\n<!-- adt-release-i18n\n{}\n-->",
+          assets: [],
+        }),
+        { status: 200 },
+      ),
+    );
+
+    const result = await fetchGitHubReleaseByVersion("0.8.0", fetchImpl);
+
+    expect(fetchImpl).toHaveBeenCalledOnce();
+    expect(
+      String(fetchImpl.mock.calls[0][0]).endsWith("/releases/tags/v0.8.0"),
+    ).toBe(true);
+    expect(result?.rawReleaseNotes).toContain("adt-release-i18n");
+  });
+
+  it("supports staging tags that do not use the stable v prefix", async () => {
+    const fetchImpl = vi
+      .fn<typeof fetch>()
+      .mockResolvedValueOnce(new Response(null, { status: 404 }))
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            tag_name: "0.8.0-beta-pr-803",
+            draft: false,
+            body: "Staging notes",
+            assets: [],
+          }),
+          { status: 200 },
+        ),
+      );
+
+    const result = await fetchGitHubReleaseByVersion(
+      "0.8.0-beta-pr-803",
+      fetchImpl,
+    );
+
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
+    expect(
+      String(fetchImpl.mock.calls[1][0]).endsWith(
+        "/releases/tags/0.8.0-beta-pr-803",
+      ),
+    ).toBe(true);
+    expect(result?.tagName).toBe("0.8.0-beta-pr-803");
   });
 
   it("leaves release bodies without provenance untouched", () => {
@@ -247,6 +304,7 @@ describe("release catalog version handling", () => {
     candidate.coverDarkUrl =
       "https://github.com/user-attachments/assets/cover-dark-id";
     candidate.coverAlt = "Update cover";
+    candidate.rawReleaseNotes = "Raw localized update body";
     const [entry] = createBetaReleaseCatalog(
       [candidate],
       "v0.7.4-beta.1",
@@ -259,6 +317,7 @@ describe("release catalog version handling", () => {
     expect(entry.coverUrl).toBe(candidate.coverUrl);
     expect(entry.coverDarkUrl).toBe(candidate.coverDarkUrl);
     expect(entry.coverAlt).toBe("Update cover");
+    expect(entry.rawReleaseNotes).toBe(candidate.rawReleaseNotes);
   });
 
   it("excludes releases without updater metadata for the current platform", () => {

@@ -29,6 +29,7 @@ export interface AvailableRelease {
 export interface BetaRelease extends AvailableRelease {
   tagName: string;
   updaterChannel: "beta" | "latest";
+  rawReleaseNotes?: string;
 }
 
 export interface GitHubReleaseAsset {
@@ -42,6 +43,7 @@ export interface GitHubRelease {
   author?: string;
   releaseDate?: string;
   releaseNotes?: string;
+  rawReleaseNotes?: string;
   title?: string;
   description?: string;
   coverUrl?: string;
@@ -53,8 +55,15 @@ export interface GitHubRelease {
 
 const RELEASES_URL =
   "https://api.github.com/repos/unicef/adt-studio/releases?per_page=100";
+const RELEASE_BY_TAG_URL =
+  "https://api.github.com/repos/unicef/adt-studio/releases/tags";
 const RELEASE_DOWNLOAD_URL =
   "https://github.com/unicef/adt-studio/releases/download";
+const GITHUB_HEADERS = {
+  Accept: "application/vnd.github+json",
+  "User-Agent": "ADT-Studio-Updater",
+  "X-GitHub-Api-Version": "2022-11-28",
+};
 const CACHE_TTL_MS = 5 * 60 * 1000;
 
 let releaseCache: { releases: GitHubRelease[]; expiresAt: number } | undefined;
@@ -103,6 +112,7 @@ export function createBetaReleaseCatalog(
           coverAlt: release.coverAlt,
           releaseDate: release.releaseDate,
           releaseNotes: release.releaseNotes,
+          rawReleaseNotes: release.rawReleaseNotes,
           source: release.source,
           totalBytes: installerSize(release.assets, platform),
           direction:
@@ -127,6 +137,32 @@ export async function fetchBetaReleaseCatalog(
     currentVersion,
     options.platform ?? process.platform,
   );
+}
+
+export async function fetchGitHubReleaseByVersion(
+  version: string,
+  fetchImpl: typeof fetch = fetch,
+): Promise<GitHubRelease | undefined> {
+  const value = version.trim();
+  if (!value) return undefined;
+  const candidates = value.startsWith("v") ? [value] : [`v${value}`, value];
+
+  for (const tag of candidates) {
+    const response = await fetchImpl(
+      `${RELEASE_BY_TAG_URL}/${encodeURIComponent(tag)}`,
+      { headers: GITHUB_HEADERS },
+    );
+    if (response.status === 404) continue;
+    if (!response.ok) {
+      throw new Error(`GitHub release request failed (${response.status})`);
+    }
+
+    const release = parseGitHubRelease(await response.json())[0];
+    if (!release) throw new Error("GitHub release response was invalid");
+    return release;
+  }
+
+  return undefined;
 }
 
 export function betaReleaseDownloadUrl(release: BetaRelease): string {
@@ -184,11 +220,7 @@ async function fetchGitHubReleases(force: boolean): Promise<GitHubRelease[]> {
 
 async function requestGitHubReleases(now: number): Promise<GitHubRelease[]> {
   const response = await fetch(RELEASES_URL, {
-    headers: {
-      Accept: "application/vnd.github+json",
-      "User-Agent": "ADT-Studio-Updater",
-      "X-GitHub-Api-Version": "2022-11-28",
-    },
+    headers: GITHUB_HEADERS,
   });
   if (!response.ok) {
     throw new Error(`GitHub releases request failed (${response.status})`);
@@ -236,6 +268,7 @@ export function parseGitHubRelease(value: unknown): GitHubRelease[] {
       releaseDate:
         typeof value.published_at === "string" ? value.published_at : undefined,
       releaseNotes: presentation?.notes,
+      rawReleaseNotes: extractedSource.notes || undefined,
       title: parsedSource?.source?.title ?? presentation?.title,
       description: parsedSource?.source?.description,
       coverUrl:

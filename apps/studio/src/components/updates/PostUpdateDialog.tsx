@@ -11,7 +11,7 @@ import {
 import { ReleaseFallbackBanner } from "./ReleaseFallbackBanner"
 import { ReleaseNotesMarkdown } from "./ReleaseNotesMarkdown"
 import { formatVersion, releaseNotesHaveImage } from "./release-banner-utils"
-import { localizeReleaseNotes } from "./release-i18n"
+import { localizeReleaseCopy } from "./release-i18n"
 
 export interface PostUpdateDialogProps {
   open: boolean
@@ -60,7 +60,11 @@ export function PostUpdateContent({
 }: PostUpdateContentProps) {
   const { i18n } = useLingui()
   const label = formatVersion(version)
-  const notes = localizeReleaseNotes(releaseNotes, i18n.locale)?.trim()
+  const localized = localizeReleaseCopy<{
+    title?: string
+    releaseNotes?: string
+  }>({ releaseNotes }, i18n.locale)
+  const notes = localized.releaseNotes?.trim()
   const showFallbackBanner = !releaseNotesHaveImage(notes)
 
   return (
@@ -71,7 +75,7 @@ export function PostUpdateContent({
         </div>
         <div className="min-w-0">
           <TitleTag className="text-base font-semibold">
-            <Trans>What's new</Trans>
+            {localized.title ?? <Trans>What's new</Trans>}
           </TitleTag>
           <p className="text-sm text-muted-foreground">
             <Trans>You're now running ADT Studio {label}</Trans>
