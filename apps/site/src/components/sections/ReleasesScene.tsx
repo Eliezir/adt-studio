@@ -4,12 +4,8 @@ import { SectionEyebrow } from "@/components/SectionEyebrow";
 import { cn } from "@/lib/cn";
 import { withBase } from "@/lib/href";
 import {
-  localizeGithubRelease,
-  type LocalizedGithubRelease,
-} from "@/lib/release-i18n";
-import {
   firstImageFromBody,
-  releaseExcerpt,
+  firstParagraphFromBody,
   sectionTone,
   summarizeSections,
   type SectionTone,
@@ -18,16 +14,15 @@ import {
   formatAbsoluteDate,
   formatRelativeDate,
   useStableReleases,
+  type GithubRelease,
 } from "@/lib/useGithubReleases";
 import { useInView } from "@/lib/useScrollProgress";
 
 export function ReleasesScene() {
-  const { i18n, t } = useLingui();
+  const { t } = useLingui();
   const { releases, loading } = useStableReleases();
   const { ref, inView: mounted } = useInView<HTMLDivElement>({ threshold: 0.2 });
-  const latest = releases?.[0]
-    ? localizeGithubRelease(releases[0], i18n.locale)
-    : undefined;
+  const latest = releases?.[0];
 
   return (
     <section
@@ -103,15 +98,12 @@ export function ReleasesScene() {
   );
 }
 
-function HeroSpotlight({ release }: { release: LocalizedGithubRelease }) {
-  const { i18n, t } = useLingui();
+function HeroSpotlight({ release }: { release: GithubRelease }) {
+  const { t } = useLingui();
   const title = release.name?.trim() || release.tag_name;
   const cover = firstImageFromBody(release.body);
-  const excerpt = releaseExcerpt(release.body, release.localization?.summary);
-  const sections = summarizeSections(
-    release.body,
-    release.localization?.sections,
-  ).slice(0, 4);
+  const excerpt = firstParagraphFromBody(release.body, 240);
+  const sections = summarizeSections(release.body).slice(0, 4);
   const detailHref = withBase(`/releases/${encodeURIComponent(release.tag_name)}`);
 
   return (
@@ -139,10 +131,10 @@ function HeroSpotlight({ release }: { release: LocalizedGithubRelease }) {
             <Trans>Latest</Trans>
           </span>
           <span aria-hidden className="opacity-50">·</span>
-          <span>{formatAbsoluteDate(release.published_at, i18n.locale)}</span>
+          <span>{formatAbsoluteDate(release.published_at)}</span>
           <span className="opacity-60">
             {" · "}
-            {formatRelativeDate(release.published_at, i18n.locale)}
+            {formatRelativeDate(release.published_at)}
           </span>
         </div>
 
@@ -163,7 +155,7 @@ function HeroSpotlight({ release }: { release: LocalizedGithubRelease }) {
                 key={s.title}
                 label={s.title}
                 count={s.count}
-                tone={sectionTone(s.kind)}
+                tone={sectionTone(s.title)}
               />
             ))}
           </div>
@@ -199,13 +191,13 @@ function HeroCover({
 }) {
   if (image) {
     return (
-      <div className="pointer-events-none relative z-[1] aspect-[3/2] w-full overflow-hidden rounded-2xl border border-[color:var(--color-border)] bg-[color:var(--color-muted)]/40">
+      <div className="pointer-events-none relative z-[1] aspect-[16/9] w-full overflow-hidden rounded-2xl border border-[color:var(--color-border)] bg-[color:var(--color-muted)]/40">
         <img
           src={image}
           alt=""
           loading="lazy"
           decoding="async"
-          className="h-full w-full object-contain transition-transform duration-[900ms] ease-[cubic-bezier(0.22,1,0.36,1)] group-hover/hero:scale-[1.02]"
+          className="h-full w-full object-cover transition-transform duration-[900ms] ease-[cubic-bezier(0.22,1,0.36,1)] group-hover/hero:scale-[1.02]"
         />
       </div>
     );
@@ -213,7 +205,7 @@ function HeroCover({
   return (
     <div
       aria-hidden
-      className="pointer-events-none relative z-[1] aspect-[3/2] w-full overflow-hidden rounded-2xl border border-[color:var(--color-border)]"
+      className="pointer-events-none relative z-[1] aspect-[16/9] w-full overflow-hidden rounded-2xl border border-[color:var(--color-border)]"
     >
       <div className="absolute inset-0 [background:radial-gradient(120%_120%_at_25%_15%,color-mix(in_oklch,var(--color-primary)_30%,transparent),transparent_60%),radial-gradient(120%_120%_at_80%_80%,color-mix(in_oklch,#a855f7_22%,transparent),transparent_65%),linear-gradient(180deg,color-mix(in_oklch,var(--color-muted)_70%,transparent),color-mix(in_oklch,var(--color-card)_100%,transparent))]" />
       <div
