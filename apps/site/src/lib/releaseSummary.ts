@@ -67,6 +67,8 @@ export function firstImageFromBody(
 }
 
 export type ReleaseSection = {
+  /** Stable semantic identifier, e.g. "added", even when the title is translated. */
+  kind: string;
   /** Trimmed heading text, e.g. "Added", "Fixed", "Performance". */
   title: string;
   /** Bullet count under this heading (counts top-level `- ` / `* ` lines). */
@@ -84,7 +86,22 @@ export type ReleaseSection = {
  */
 export function summarizeSections(
   body: string | null | undefined,
+  localizedSections?: ReadonlyArray<{
+    kind: string;
+    heading: string;
+    items: readonly string[];
+  }>,
 ): ReleaseSection[] {
+  if (localizedSections) {
+    return localizedSections
+      .filter((section) => section.items.length > 0)
+      .map((section) => ({
+        kind: section.kind,
+        title: section.heading,
+        count: section.items.length,
+      }))
+      .slice(0, 5);
+  }
   if (!body) return [];
   const lines = body.replace(/\r\n/g, "\n").split("\n");
 
@@ -102,13 +119,15 @@ export function summarizeSections(
 
     const h3Match = /^###\s+(.+?)\s*$/.exec(raw);
     if (h3Match) {
-      current = { title: cleanHeading(h3Match[1]), count: 0 };
+      const title = cleanHeading(h3Match[1]);
+      current = { kind: title, title, count: 0 };
       h3.push(current);
       continue;
     }
     const h2Match = /^##\s+(.+?)\s*$/.exec(raw);
     if (h2Match) {
-      current = { title: cleanHeading(h2Match[1]), count: 0 };
+      const title = cleanHeading(h2Match[1]);
+      current = { kind: title, title, count: 0 };
       h2.push(current);
       continue;
     }
@@ -174,6 +193,14 @@ export function firstParagraphFromBody(
 
   if (text.length <= maxChars) return text;
   return `${text.slice(0, maxChars - 1).replace(/\s+\S*$/, "")}…`;
+}
+
+export function releaseExcerpt(
+  body: string | null | undefined,
+  localizedSummary?: string,
+  maxChars = 240,
+): string {
+  return localizedSummary?.trim() || firstParagraphFromBody(body, maxChars);
 }
 
 /**
