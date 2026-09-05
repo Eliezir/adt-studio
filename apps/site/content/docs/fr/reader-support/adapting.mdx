@@ -1,0 +1,49 @@
+---
+title: "Intégration du lecteur"
+description: "Les changements concrets, fonctionnalité par fonctionnalité, pour brancher la couche ADT dans un lecteur."
+icon: Wrench
+---
+
+Cette page part d’une structure courante : le contenu est rendu dans un cadre dont l’application possède le cycle de vie, tandis que l’application contrôle l’interface autour. Le cadre doit être same-origin, prétraité avant affichage ou exposer un pont d’injection.
+
+## Structure de l’intégration
+
+1. Une API de ressources de confiance qui lit les fichiers du package.
+2. Un contrôleur de fonctionnalités qui charge les données du livre et de la langue actuelle.
+3. Une injection dans le cadre de contenu : texte, narration et images se joignent par `data-id`.
+
+```ts
+getAdtMetadata(bookHandle)
+  → { isAdt, features, languages, paths }
+readAdtResource(bookHandle, language, resource)
+  → { status: "ok", data } | { status: "absent" | "invalid" }
+readAdtAsset(bookHandle, language, type, fileName)
+  → { status: "ok", contentType, dataUrl } | { status: "absent" | "invalid" }
+```
+
+`bookHandle` doit être opaque et créé du côté de confiance. Validez-le, ainsi que la langue, la ressource, le type et le nom de fichier au moyen de listes autorisées. N’exposez jamais un chemin brut du package au cadre.
+
+<Callout type="error" title="Protégez le chemin">
+Chaque valeur qui influence un chemin provient d’un package fourni par l’utilisateur. Résolvez chaque chemin candidat et vérifiez qu’il reste dans la racine du package avant toute lecture.
+</Callout>
+
+## Ordre d’implémentation
+
+Choisissez la langue enregistrée si elle est encore dans `languages.available`, sinon utilisez `languages.default`. Chargez en parallèle `texts`, `audios`, `videos`, `glossary` et `images` ; un sidecar absent est attendu et ne doit pas empêcher l’ouverture du livre.
+
+À chaque page, réappliquez `texts.json` aux éléments ayant un `data-id`, en préférant `_easy_read` pour la Lecture facile et en écrivant `alt` pour les images. Les ids sont locaux au package et ne servent pas d’état permanent.
+
+Lorsqu’un EPUB a des Media Overlays, gardez intact le DOM de la langue d’exportation et utilisez SMIL. Pour une autre langue, appliquez la table de texte seulement si elle préserve des limites DOM sûres ; ne remplacez jamais un élément entier contenant des cibles SMIL. Sans Media Overlay, utilisez les extraits `audios.json` au niveau du nœud lorsqu’ils existent.
+
+## Fonctionnalités et pages spéciales
+
+- Marquez les termes de glossaire et leurs `variations` dans les nœuds de texte visibles ; avant de réappliquer, retirez les anciens marqueurs, infobulles, styles et handlers.
+- Affichez les longues descriptions d’image dans une surface du lecteur, comme un zoom ou une visionneuse.
+- Résolvez l’extrait de langue des signes à partir de la section actuelle et affichez-le en picture-in-picture sans déplacer la page.
+- Détectez les activités avec `[data-section-type^="activity_"]`, masquez `#nav-container` et déléguez le bouton du lecteur au bouton embarqué. Le moteur reste propriétaire de la validation et de l’avancement.
+
+## Mise en page, recherche et vérification
+
+La référence publique est refluable, pas un contrat de mise en page fixe. Laissez le moteur de lecture contrôler la pagination fixe déclarée par les métadonnées standard. Excluez les pages ADT des anciennes heuristiques qui agrandissent les pages courtes avec de grandes images, car elles sont déjà adaptatives.
+
+Si la recherche utilise le HTML livré, appliquez la même table de texte à l’index et réindexez après un changement de langue ou de Lecture facile. Testez le même livre en WebPub et EPUB, changez de langue pendant la lecture, testez le repli sans extraits et terminez une activité. Seules les réponses de texte libre survivent à un rechargement ; la réinitialisation des quiz est attendue.

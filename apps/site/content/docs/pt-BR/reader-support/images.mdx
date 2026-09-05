@@ -1,0 +1,23 @@
+---
+title: "Descrições de imagem"
+description: "Mostre descrições longas de imagens e troque variantes localizadas quando o leitor mudar de idioma."
+icon: Image
+---
+
+Descrições longas usam o mesmo mapa de texto do restante da página. Para um nó de imagem, use a entrada de `texts.json` de seu `data-id`; depois use a descrição da página, `alt` ou `figcaption` como fallback.
+
+A apresentação natural é uma caixa de luz ou zoom, onde há espaço para leitura. Mostre-a apenas quando `features.describeImages` for `true`.
+
+## Variantes localizadas de imagem
+
+`images.json` mapeia um id de imagem para um recurso de substituição quando a própria imagem contém conteúdo traduzido, como um diagrama rotulado. Na mudança de idioma, substitua o `src` dos nós de imagem correspondentes.
+
+O mapa é opcional. `features.describeImages` pode ser `true` quando há descrições, mas não há recurso de imagem traduzido; mantenha o `src` original sempre que o mapa ou seu id estiver ausente.
+
+<PackageSnippet title="Referência do mapa de imagens localizadas" path="content/i18n/en-US/images.json" />
+
+<PackageSnippet title="Configuração do recurso de descrição de imagem" path="assets/config.json" />
+
+<Callout title="Um mapa vazio é válido">
+A exportação de referência não precisa de variantes localizadas de imagem. Mantenha a fonte original quando um id estiver ausente do mapa.
+</Callout>

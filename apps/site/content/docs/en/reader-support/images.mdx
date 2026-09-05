@@ -1,0 +1,23 @@
+---
+title: "Image descriptions"
+description: "Surface long image descriptions and swap localized image variants when a reader changes language."
+icon: Image
+---
+
+Long image descriptions use the same text map as the rest of the page. For an image node, use the `texts.json` entry for its `data-id`, then fall back to the page’s own description, `alt`, or `figcaption`.
+
+The natural presentation is an image lightbox or zoom view, where readers have space to read a longer description. Show it only when `features.describeImages` is true.
+
+## Localized image variants
+
+`images.json` maps an image id to a replacement asset when the image itself contains translated content, such as a labelled diagram. On language change, replace the `src` of the corresponding image nodes.
+
+The map is optional. `features.describeImages` can be true when the export has descriptions but no translated image asset, so leave the original `src` in place whenever the map or its id is absent.
+
+<PackageSnippet title="Localized-image map reference" path="content/i18n/en-US/images.json" />
+
+<PackageSnippet title="Image-description feature configuration" path="assets/config.json" />
+
+<Callout title="An empty map is valid">
+The reference export shown here does not need any localized image variants. Leave the original source in place when an image id is absent from the map.
+</Callout>

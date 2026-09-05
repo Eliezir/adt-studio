@@ -1,0 +1,77 @@
+---
+title: "Pacote e inicialização"
+description: "Abra um WebPub ou EPUB ADT, encontre sua camada de dados e descubra os recursos que o livro realmente contém."
+icon: FolderTree
+---
+
+WebPub e EPUB têm contêineres diferentes, mas a camada de dados ADT mantém a mesma estrutura. Resolva seu caminho-base uma vez; depois, os carregadores de recursos usam os mesmos caminhos relativos.
+
+## As duas estruturas de pacote
+
+<Tabs items={["WebPub", "EPUB"]}>
+
+<Tab value="WebPub">
+
+A camada de dados ADT fica na raiz do pacote. `manifest.json` é a fonte de verdade para a ordem de leitura, sumário, lista de páginas e metadados de apresentação.
+
+```
+webpub/
+  manifest.json
+  assets/config.json
+  content/pages.json
+  content/i18n/<lang>/
+  pg002_sec001.html …
+```
+
+</Tab>
+
+<Tab value="EPUB">
+
+EPUB é um contêiner OCF padrão. Seu documento de pacote e toda a camada de dados ADT ficam em `OEBPS/`.
+
+```
+META-INF/container.xml
+OEBPS/
+  content.opf
+  assets/config.json
+  content/pages.json
+  content/i18n/<lang>/
+  pg002_sec001.xhtml …
+```
+
+</Tab>
+
+</Tabs>
+
+## Inspecione referências de exportação
+
+Estes trechos selecionados e com destaque de sintaxe vêm de exportações ADT verificadas. São artefatos de referência, não nomes de arquivos que um leitor precisa reproduzir. Selecione um arquivo para entender sua função; o destaque é produzido durante a compilação a partir do exemplo versionado, portanto nenhum realçador é enviado ao navegador do leitor. A coleção pode crescer com outras exportações à medida que os formatos evoluem.
+
+<PackageExplorer />
+
+## Detecte um ADT
+
+Uma publicação é ADT quando tem um arquivo de configuração legível com um objeto `features` e um ponto de entrada reconhecível de WebPub ou EPUB:
+
+```ts
+const config = await readJson(join(dataBase, "assets/config.json"));
+const isAdt = Boolean(
+  config?.features && (exists("manifest.json") || exists("content.opf")),
+);
+```
+
+`dataBase` é a raiz do pacote no WebPub e `OEBPS/` no EPUB. Mantenha a detecção leve: leia um arquivo de configuração e verifique apenas os pontos de entrada esperados. As flags descrevem dados produzidos; quando uma flag é `false`, oculte o controle em vez de mostrar algo que não funciona.
+
+## Marcadores estruturais
+
+O HTML renderizado contém as informações de ligação que seu leitor precisa:
+
+| Atributo | Significado |
+|---|---|
+| `data-id` | Id do nó de conteúdo — chave para os dados de recursos |
+| `data-section-id` | Id da seção renderizada |
+| `data-section-type` | Tipo de seção, como `images_only` ou `activity_*` |
+| `data-segments` | Trechos de texto de layout fixo |
+| `data-adt-fit` | Texto de layout fixo ajustado a uma caixa |
+
+Use esses marcadores, e não nomes de arquivo, para decidir como renderizar uma página.

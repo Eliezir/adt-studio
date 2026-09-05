@@ -1,0 +1,77 @@
+---
+title: "Paquete e inicio"
+description: "Abre un WebPub o EPUB de ADT, encuentra su capa de datos y descubre las funciones que contiene el libro."
+icon: FolderTree
+---
+
+WebPub y EPUB tienen contenedores distintos, pero la capa de datos de ADT conserva la misma estructura. Resuelve su ruta base una vez; después, los cargadores de funciones usan las mismas rutas relativas.
+
+## Las dos estructuras de paquete
+
+<Tabs items={["WebPub", "EPUB"]}>
+
+<Tab value="WebPub">
+
+La capa de datos de ADT está en la raíz del paquete. `manifest.json` es la fuente de verdad para el orden de lectura, la tabla de contenidos, la lista de páginas y los metadatos de presentación.
+
+```
+webpub/
+  manifest.json
+  assets/config.json
+  content/pages.json
+  content/i18n/<lang>/
+  pg002_sec001.html …
+```
+
+</Tab>
+
+<Tab value="EPUB">
+
+EPUB es un contenedor OCF estándar. Su documento de paquete y toda la capa de datos de ADT se encuentran en `OEBPS/`.
+
+```
+META-INF/container.xml
+OEBPS/
+  content.opf
+  assets/config.json
+  content/pages.json
+  content/i18n/<lang>/
+  pg002_sec001.xhtml …
+```
+
+</Tab>
+
+</Tabs>
+
+## Inspecciona referencias de exportación
+
+Estos extractos seleccionados y con resaltado de sintaxis proceden de exportaciones de ADT verificadas. Son artefactos de referencia, no nombres de archivo que un lector deba reproducir. Selecciona un archivo para entender por qué importa; el resaltado se genera durante la compilación a partir del ejemplo versionado, por lo que no se envía ningún resaltador al navegador del lector. La colección puede crecer con más exportaciones a medida que evolucionen los formatos.
+
+<PackageExplorer />
+
+## Detecta un ADT
+
+Una publicación es ADT cuando tiene un archivo de configuración legible con un objeto `features` y un punto de entrada reconocible de WebPub o EPUB:
+
+```ts
+const config = await readJson(join(dataBase, "assets/config.json"));
+const isAdt = Boolean(
+  config?.features && (exists("manifest.json") || exists("content.opf")),
+);
+```
+
+`dataBase` es la raíz del paquete para WebPub y `OEBPS/` para EPUB. Mantén la detección ligera: lee un archivo de configuración y consulta solo los puntos de entrada esperados. Las flags describen los datos producidos; cuando una flag es `false`, oculta el control en lugar de mostrar algo que no puede funcionar.
+
+## Marcadores estructurales
+
+El HTML renderizado contiene la información de unión que necesita el lector:
+
+| Atributo | Significado |
+|---|---|
+| `data-id` | Id del nodo de contenido — clave para los datos de funciones |
+| `data-section-id` | Id de la sección renderizada |
+| `data-section-type` | Tipo de sección, como `images_only` o `activity_*` |
+| `data-segments` | Tramos de texto de diseño fijo |
+| `data-adt-fit` | Texto de diseño fijo ajustado a una caja |
+
+Usa estos marcadores, y no los nombres de archivo, para decidir cómo renderizar una página.
