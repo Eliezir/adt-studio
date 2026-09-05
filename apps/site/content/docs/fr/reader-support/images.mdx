@@ -1,0 +1,23 @@
+---
+title: "Descriptions d’image"
+description: "Affichez de longues descriptions d’image et échangez les variantes localisées lorsqu’un lecteur change de langue."
+icon: Image
+---
+
+Les descriptions longues utilisent la même table de texte que le reste de la page. Pour un nœud image, utilisez l’entrée `texts.json` de son `data-id`, puis la description de page, `alt` ou `figcaption` en repli.
+
+Une visionneuse ou un zoom est la présentation naturelle, car elle laisse de la place pour lire. Ne l’affichez que lorsque `features.describeImages` est `true`.
+
+## Variantes d’image localisées
+
+`images.json` associe un id d’image à une ressource de remplacement lorsque l’image contient elle-même du contenu traduit, comme un diagramme légendé. Lors d’un changement de langue, remplacez le `src` des nœuds image correspondants.
+
+La table est facultative. `features.describeImages` peut être `true` lorsqu’il existe des descriptions mais aucune image traduite ; conservez le `src` original si la table ou son id est absent.
+
+<PackageSnippet title="Référence de la table d’images localisées" path="content/i18n/en-US/images.json" />
+
+<PackageSnippet title="Configuration de description d’image" path="assets/config.json" />
+
+<Callout title="Une table vide est valide">
+L’export de référence n’a besoin d’aucune variante d’image localisée. Conservez la source originale lorsqu’un id manque dans la table.
+</Callout>

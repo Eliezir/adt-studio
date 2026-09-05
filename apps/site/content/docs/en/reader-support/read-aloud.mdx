@@ -1,0 +1,27 @@
+---
+title: "Read-aloud"
+description: "Play the narration clips, optionally synchronize words, and use EPUB Media Overlays where available."
+icon: AudioLines
+---
+
+`audios.json` maps each content node id to a clip. To play a page, collect the `data-id` values in the rendered document, look them up in order, and play the resulting clips sequentially.
+
+<PackageSnippet title="Narration-map reference" path="content/i18n/en-US/audios.json" />
+
+<PackageSnippet title="Read-aloud feature configuration" path="assets/config.json" />
+
+## Make playback resilient
+
+Only show the control when `features.readAloud` is true **and** the current page has clips. A feature flag tells you whether the book has narration data at all; it is not a reader preference.
+
+When Easy Read is active, prefer an `_easy_read` clip if one exists, then fall back to the normal clip. Keep ordinary sequential playback available even when word timing is absent.
+
+## Word highlighting
+
+The public V1 sidecar contract does not define word-timing data. Keep synchronization at node level for ADT narration unless your package explicitly documents a compatible extension.
+
+For EPUB, first check the OPF manifest for `media-overlay` on the content document’s `<item>`. When present, use the EPUB’s native SMIL Media Overlays instead of rebuilding synchronization from the sidecar.
+
+<Callout type="info" title="Treat synchronization as progressive enhancement">
+Narration still works without word timing. Do not block playback when the book has clips but no Media Overlays.
+</Callout>

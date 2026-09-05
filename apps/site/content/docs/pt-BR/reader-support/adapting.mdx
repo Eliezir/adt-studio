@@ -1,0 +1,49 @@
+---
+title: "Integração com leitor"
+description: "As mudanças concretas, recurso por recurso, para encaixar a camada ADT em um leitor."
+icon: Wrench
+---
+
+Esta página parte de uma estrutura comum: o conteúdo é renderizado em um frame cujo ciclo de vida pertence ao aplicativo, enquanto o aplicativo controla a interface ao redor. O frame deve ser same-origin, pré-processado antes da exibição ou oferecer uma ponte de injeção.
+
+## Estrutura da integração
+
+1. Uma API de recursos confiável que lê arquivos do pacote.
+2. Um controlador de recursos que carrega dados do livro e do idioma atual.
+3. Injeção no frame de conteúdo: texto, narração e imagens se unem por `data-id`.
+
+```ts
+getAdtMetadata(bookHandle)
+  → { isAdt, features, languages, paths }
+readAdtResource(bookHandle, language, resource)
+  → { status: "ok", data } | { status: "absent" | "invalid" }
+readAdtAsset(bookHandle, language, type, fileName)
+  → { status: "ok", contentType, dataUrl } | { status: "absent" | "invalid" }
+```
+
+`bookHandle` deve ser opaco e criado pelo lado confiável. Valide-o, assim como idioma, recurso, tipo e nome de arquivo com listas permitidas. Nunca exponha um caminho bruto do pacote ao frame.
+
+<Callout type="error" title="Proteja o caminho">
+Todo valor que influencia um caminho vem de um pacote fornecido pelo usuário. Resolva cada caminho candidato e confirme que ele continua dentro da raiz do pacote antes de ler.
+</Callout>
+
+## Ordem de implementação
+
+Escolha o idioma salvo quando ainda estiver em `languages.available`; caso contrário, use `languages.default`. Em paralelo, carregue `texts`, `audios`, `videos`, `glossary` e `images`; um sidecar ausente é esperado e não deve impedir a abertura do livro.
+
+Para cada página, reaplique `texts.json` aos elementos com `data-id`, preferindo `_easy_read` na Leitura Fácil e escrevendo `alt` para imagens. Os ids são locais ao pacote e não podem ser usados para estado permanente.
+
+Quando o EPUB tiver Media Overlays, mantenha o DOM da língua de exportação intacto e use SMIL. Para outro idioma, aplique o mapa de texto apenas quando preservar limites seguros do DOM; nunca substitua um elemento inteiro que contém alvos SMIL. Sem Media Overlay, use os clipes de `audios.json` no nível do nó quando existirem.
+
+## Recursos e páginas especiais
+
+- Marque termos do glossário e suas `variations` em nós de texto visíveis; antes de reaplicar, remova marcadores, popovers, estilos e handlers antigos.
+- Mostre descrições longas de imagem em uma superfície do leitor, como zoom ou lightbox.
+- Resolva o clipe de língua de sinais pela seção atual e mostre-o em picture-in-picture sem deslocar a página.
+- Detecte atividades com `[data-section-type^="activity_"]`, oculte `#nav-container` e delegue o botão da interface do leitor ao botão incorporado. O runtime continua sendo dono da validação e do avanço.
+
+## Layout, busca e verificação
+
+O conjunto público de referência é refluível, não um contrato de layout fixo. Deixe que o motor de leitura controle a paginação fixa declarada por metadados padrão. Exclua páginas ADT de heurísticas antigas que ampliam páginas curtas com imagens grandes, pois elas já são responsivas.
+
+Se a busca usa o HTML enviado, aplique o mesmo mapa de texto ao índice e reindexe após mudança de idioma ou Leitura Fácil. Teste o mesmo livro em WebPub e EPUB, mude o idioma no meio da leitura, teste fallback sem clipes e conclua uma atividade. Apenas respostas de texto livre sobrevivem a um recarregamento; quizzes reiniciarem é esperado.

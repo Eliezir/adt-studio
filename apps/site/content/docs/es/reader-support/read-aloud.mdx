@@ -1,0 +1,27 @@
+---
+title: "Lectura en voz alta"
+description: "Reproduce clips de narración, sincroniza palabras cuando sea posible y usa Media Overlays EPUB cuando existan."
+icon: AudioLines
+---
+
+`audios.json` asigna cada id de nodo de contenido a un clip. Para reproducir una página, reúne los `data-id` del documento renderizado, búscalos en orden y reproduce los clips resultantes secuencialmente.
+
+<PackageSnippet title="Referencia del mapa de narración" path="content/i18n/en-US/audios.json" />
+
+<PackageSnippet title="Configuración de lectura en voz alta" path="assets/config.json" />
+
+## Haz que la reproducción sea resistente
+
+Muestra el control solo cuando `features.readAloud` sea `true` **y** la página actual tenga clips. La flag indica si el libro tiene datos de narración, no una preferencia del lector.
+
+Con Lectura Fácil activa, prefiere un clip `_easy_read` cuando exista y, si no, usa el clip normal. Mantén la reproducción secuencial incluso sin tiempos por palabra.
+
+## Resaltado de palabras
+
+El contrato público V1 no define datos de tiempo por palabra. Para la narración ADT, conserva la sincronización a nivel de nodo salvo que el paquete documente una extensión compatible.
+
+En EPUB, comprueba primero `media-overlay` en el `<item>` del documento de contenido del manifiesto OPF. Cuando exista, usa los Media Overlays SMIL nativos de EPUB en lugar de reconstruir la sincronización desde sidecars.
+
+<Callout type="info" title="Trata la sincronización como mejora progresiva">
+La narración funciona sin tiempos por palabra. No bloquees la reproducción cuando el libro tenga clips pero no tenga Media Overlays.
+</Callout>

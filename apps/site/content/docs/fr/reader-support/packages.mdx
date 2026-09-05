@@ -1,0 +1,77 @@
+---
+title: "Package et démarrage"
+description: "Ouvrez un WebPub ou un EPUB ADT, trouvez sa couche de données et découvrez les fonctionnalités réellement présentes dans le livre."
+icon: FolderTree
+---
+
+WebPub et EPUB ont des conteneurs différents, mais la couche de données ADT garde la même structure. Résolvez son chemin de base une seule fois ; les chargeurs de fonctionnalités utilisent ensuite les mêmes chemins relatifs.
+
+## Les deux structures de package
+
+<Tabs items={["WebPub", "EPUB"]}>
+
+<Tab value="WebPub">
+
+La couche de données ADT se trouve à la racine du package. `manifest.json` est la source de vérité pour l’ordre de lecture, la table des matières, la liste des pages et les métadonnées de présentation.
+
+```
+webpub/
+  manifest.json
+  assets/config.json
+  content/pages.json
+  content/i18n/<lang>/
+  pg002_sec001.html …
+```
+
+</Tab>
+
+<Tab value="EPUB">
+
+EPUB est un conteneur OCF standard. Son document de package et toute la couche de données ADT se trouvent dans `OEBPS/`.
+
+```
+META-INF/container.xml
+OEBPS/
+  content.opf
+  assets/config.json
+  content/pages.json
+  content/i18n/<lang>/
+  pg002_sec001.xhtml …
+```
+
+</Tab>
+
+</Tabs>
+
+## Inspectez des références d’exportation
+
+Ces extraits choisis et colorés syntaxiquement proviennent d’exportations ADT vérifiées. Ce sont des artefacts de référence, et non des noms de fichiers qu’un lecteur doit reproduire. Sélectionnez un fichier pour comprendre son rôle ; la coloration est produite à la compilation depuis l’exemple versionné, aucun coloriseur n’est donc envoyé au navigateur du lecteur. La collection peut accueillir d’autres exportations à mesure que les formats évoluent.
+
+<PackageExplorer />
+
+## Détectez un ADT
+
+Une publication est un ADT lorsqu’elle possède un fichier de configuration lisible avec un objet `features` et un point d’entrée WebPub ou EPUB reconnaissable :
+
+```ts
+const config = await readJson(join(dataBase, "assets/config.json"));
+const isAdt = Boolean(
+  config?.features && (exists("manifest.json") || exists("content.opf")),
+);
+```
+
+`dataBase` est la racine du package pour WebPub et `OEBPS/` pour EPUB. Gardez une détection légère : lisez un fichier de configuration et vérifiez seulement les points d’entrée attendus. Les indicateurs décrivent les données produites ; lorsqu’un indicateur vaut `false`, masquez le contrôle au lieu d’afficher une commande inopérante.
+
+## Marqueurs structurels
+
+Le HTML rendu contient les informations de liaison dont votre lecteur a besoin :
+
+| Attribut | Signification |
+|---|---|
+| `data-id` | Id du nœud de contenu — clé des données de fonctionnalité |
+| `data-section-id` | Id de la section rendue |
+| `data-section-type` | Type de section, par exemple `images_only` ou `activity_*` |
+| `data-segments` | Fragments de texte à mise en page fixe |
+| `data-adt-fit` | Texte à mise en page fixe ajusté à une boîte |
+
+Utilisez ces marqueurs, et non les noms de fichiers, pour décider comment rendre une page.
