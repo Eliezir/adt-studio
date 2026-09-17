@@ -8,6 +8,7 @@ import { DEMOS, type Demo } from "@/data/demos";
 import { cn } from "@/lib/cn";
 import { trackEvent } from "@/lib/matomo";
 import { EASE_OUT, SPRING_LAYOUT } from "@/lib/motion";
+import { onTablistKeyDown } from "@/lib/a11y";
 
 function formatDuration(seconds: number): string {
   const m = Math.floor(seconds / 60);
@@ -51,6 +52,16 @@ export function Demos() {
     }
   }, [inView, reduced, activeKey]);
 
+  useEffect(() => {
+    const fromHash = () => {
+      const match = /^#demo-tab-(.+)$/.exec(window.location.hash);
+      if (match && DEMOS.some((demo) => demo.key === match[1])) setActiveKey(match[1]);
+    };
+    fromHash();
+    window.addEventListener("hashchange", fromHash);
+    return () => window.removeEventListener("hashchange", fromHash);
+  }, []);
+
   const select = useCallback((key: string) => {
     setActiveKey((previous) => {
       if (previous !== key) trackEvent("demo", "select", key);
@@ -74,7 +85,7 @@ export function Demos() {
   };
 
   return (
-    <section id="demos" ref={sectionRef} className="snap-section scroll-mt-[72px] md:scroll-mt-0 flex flex-col justify-center bg-white py-14">
+    <section id="demos" ref={sectionRef} className="scroll-mt-[72px] border-t border-ink-line bg-white py-20 sm:py-24 lg:py-28">
       <div className="mx-auto w-full max-w-[1200px] px-5 sm:px-8">
         <Reveal>
           <SectionHeading
@@ -90,7 +101,12 @@ export function Demos() {
         </Reveal>
 
         <Reveal className="mt-10 grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_360px] lg:gap-8">
-          <div className="group relative overflow-hidden rounded-2xl border border-ink-line bg-ink shadow-window">
+          <div
+            id="demo-player"
+            role="tabpanel"
+            aria-labelledby={`demo-tab-${active.key}`}
+            className="group relative overflow-hidden rounded-2xl border border-ink-line bg-ink shadow-window"
+          >
             <AnimatePresence mode="wait" initial={false}>
               <motion.video
                 key={active.key}
@@ -113,9 +129,9 @@ export function Demos() {
             </AnimatePresence>
             <div className="pointer-events-none absolute inset-x-0 bottom-0 flex items-end justify-end gap-4 sm:justify-between bg-gradient-to-t from-ink/70 to-transparent p-4 sm:p-5">
               <div className="hidden min-w-0 sm:block">
-                <p className="truncate font-display text-lg font-extrabold text-white sm:text-xl">
+                <h3 className="truncate font-display text-lg font-extrabold text-white sm:text-xl">
                   {i18n._(active.title)}
-                </p>
+                </h3>
                 <p className="text-sm text-white/75">{i18n._(active.blurb)}</p>
               </div>
               <div className="pointer-events-auto flex shrink-0 items-center gap-2">
@@ -140,19 +156,33 @@ export function Demos() {
           </div>
 
           <div className="-mt-2 sm:hidden">
-            <p className="font-display text-lg font-extrabold text-ink">{i18n._(active.title)}</p>
+            <h3 className="font-display text-lg font-extrabold text-ink">{i18n._(active.title)}</h3>
             <p className="mt-1 text-sm leading-relaxed text-ink-soft">{i18n._(active.blurb)}</p>
           </div>
 
-          <ul
+          <div
             role="tablist"
             aria-label={t`Demo clips`}
+            onKeyDown={onTablistKeyDown}
             className="flex gap-1.5 overflow-x-auto pb-2 lg:flex-col lg:overflow-visible lg:pb-0"
           >
             {DEMOS.map((demo) => {
               const isActive = demo.key === active.key;
               return (
-                <li key={demo.key} className="relative shrink-0 lg:shrink">
+                <button
+                  key={demo.key}
+                  type="button"
+                  role="tab"
+                  id={`demo-tab-${demo.key}`}
+                  aria-selected={isActive}
+                  aria-controls="demo-player"
+                  tabIndex={isActive ? 0 : -1}
+                  onClick={() => select(demo.key)}
+                  className={cn(
+                    "relative flex w-[232px] shrink-0 scroll-mt-28 items-center gap-3 rounded-xl p-2 text-left transition-colors duration-200 lg:w-full lg:shrink",
+                    isActive ? "text-ink" : "text-ink-soft hover:bg-brand-tint/60 hover:text-ink",
+                  )}
+                >
                   {isActive ? (
                     <motion.span
                       aria-hidden
@@ -161,37 +191,26 @@ export function Demos() {
                       transition={SPRING_LAYOUT}
                     />
                   ) : null}
-                  <button
-                    type="button"
-                    role="tab"
-                    aria-selected={isActive}
-                    onClick={() => select(demo.key)}
-                    className={cn(
-                      "relative flex w-[232px] items-center gap-3 rounded-xl p-2 text-left transition-colors duration-200 lg:w-full",
-                      isActive ? "text-ink" : "text-ink-soft hover:bg-brand-tint/60 hover:text-ink",
-                    )}
-                  >
-                    <img
-                      src={demoSrc(demo, "jpg")}
-                      alt=""
-                      width={80}
-                      height={45}
-                      loading="lazy"
-                      className="h-[45px] w-20 shrink-0 rounded-lg object-cover"
-                    />
-                    <span className="min-w-0 flex-1">
-                      <span className="block truncate text-[14px] font-bold leading-tight">
-                        {i18n._(demo.title)}
-                      </span>
-                      <span className="mt-0.5 block font-mono text-[11px] text-ink-mute">
-                        {formatDuration(demo.seconds)}
-                      </span>
+                  <img
+                    src={demoSrc(demo, "jpg")}
+                    alt=""
+                    width={80}
+                    height={45}
+                    loading="lazy"
+                    className="relative h-[45px] w-20 shrink-0 rounded-lg object-cover"
+                  />
+                  <span className="relative min-w-0 flex-1">
+                    <span className="block truncate text-[14px] font-bold leading-tight">
+                      {i18n._(demo.title)}
                     </span>
-                  </button>
-                </li>
+                    <span className="mt-0.5 block font-mono text-[11px] text-ink-mute">
+                      {formatDuration(demo.seconds)}
+                    </span>
+                  </span>
+                </button>
               );
             })}
-          </ul>
+          </div>
         </Reveal>
       </div>
     </section>

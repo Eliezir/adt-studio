@@ -6,6 +6,7 @@ import { SectionHeading } from "@/components/SectionHeading";
 import { PROVIDER_GROUPS, type ProviderEntry } from "@/data/providers";
 import { cn } from "@/lib/cn";
 import { EASE_OUT, SPRING_LAYOUT } from "@/lib/motion";
+import { onTablistKeyDown } from "@/lib/a11y";
 
 /* ── Hub diagram data ─────────────────────────────────────────────────────── */
 
@@ -106,12 +107,18 @@ function Hub({ active, onHover }: { active: string; onHover: (group: string | nu
 
       <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
         <motion.div
-          className="relative grid size-[88px] place-items-center rounded-[26px] border border-ink-line bg-white shadow-[0_2px_4px_rgb(18_27_43/0.06),0_24px_50px_-20px_rgb(37_99_235/0.45)] sm:size-[104px] sm:rounded-[30px]"
+          className="relative size-[88px] sm:size-[104px]"
           animate={reduced ? undefined : { scale: [1, 1.03, 1] }}
           transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
         >
-          <img src={`${import.meta.env.BASE_URL}logo.png`} alt="ADT Studio" width={56} height={56} className="size-12 rounded-2xl sm:size-14" />
-          <span aria-hidden className="absolute -inset-2 rounded-[34px] border border-brand/20" />
+          <img
+            src={`${import.meta.env.BASE_URL}logo.png`}
+            alt="ADT Studio"
+            width={104}
+            height={104}
+            className="block size-full rounded-[24px] shadow-[0_2px_4px_rgb(18_27_43/0.08),0_24px_50px_-20px_rgb(37_99_235/0.5)] sm:rounded-[28px]"
+          />
+          <span aria-hidden className="absolute -inset-2 rounded-[32px] border border-brand/20 sm:rounded-[36px]" />
         </motion.div>
       </div>
 
@@ -123,7 +130,7 @@ function Hub({ active, onHover }: { active: string; onHover: (group: string | nu
           <motion.button
             key={tile.entry.name}
             type="button"
-            className="absolute -translate-x-1/2 -translate-y-1/2 focus-visible:outline-none"
+            className="absolute -translate-x-1/2 -translate-y-1/2 rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 sm:rounded-[18px]"
             style={{ left: `${x}%`, top: `${y}%` }}
             onHoverStart={() => {
               setHovered(tile.entry.name);
@@ -205,7 +212,7 @@ export function Providers() {
     <section
       id="providers"
       ref={sectionRef}
-      className="snap-section relative scroll-mt-[72px] md:scroll-mt-0 flex flex-col justify-center overflow-hidden bg-paper py-14"
+      className="relative scroll-mt-[72px] overflow-hidden border-t border-ink-line bg-white py-20 sm:py-24 lg:py-28"
     >
       <div
         aria-hidden
@@ -232,6 +239,7 @@ export function Providers() {
             <div
               role="tablist"
               aria-label={t`Provider types`}
+              onKeyDown={onTablistKeyDown}
               className="flex flex-wrap gap-1"
               onMouseEnter={() => setPaused(true)}
               onMouseLeave={() => setPaused(false)}
@@ -244,6 +252,7 @@ export function Providers() {
                     type="button"
                     role="tab"
                     aria-selected={on}
+                    tabIndex={on ? 0 : -1}
                     onClick={() => setSelected(g.key)}
                     className={cn(
                       "relative whitespace-nowrap rounded-full px-3 py-1.5 text-[12.5px] font-bold transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand",

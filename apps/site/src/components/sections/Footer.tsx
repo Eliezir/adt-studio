@@ -51,8 +51,8 @@ const COLUMNS: LinkCol[] = [
 export function Footer() {
   const { i18n } = useLingui();
   return (
-    <footer className="snap-start bg-ink-deep text-white">
-      <div className="mx-auto w-full max-w-[1200px] px-5 pb-10 pt-16 sm:px-8">
+    <footer className="border-t border-white/10 bg-ink text-white">
+      <div className="mx-auto w-full max-w-[1200px] px-5 pb-10 pt-14 sm:px-8">
         <div className="grid grid-cols-1 gap-12 md:grid-cols-[1.3fr_1fr_1fr_1fr]">
           <div className="flex flex-col gap-5">
             <a href={withBase("/")} className="flex items-center gap-2.5">
@@ -117,7 +117,7 @@ export function Footer() {
 
         <div className="mt-14 flex flex-col gap-6 border-t border-white/10 pt-8 md:flex-row md:items-center md:justify-between">
           <div className="flex flex-wrap items-center gap-x-8 gap-y-4">
-            <span className="text-xs font-bold uppercase tracking-[0.16em] text-white/45">
+            <span className="text-xs font-bold uppercase tracking-[0.16em] text-white/55">
               <Trans>Made possible by</Trans>
             </span>
             {SUPPORTERS.map((supporter) => (
@@ -126,7 +126,6 @@ export function Footer() {
                 href={supporter.href}
                 target="_blank"
                 rel="noreferrer noopener"
-                title={supporter.name}
                 className="inline-flex items-center opacity-70 transition-opacity duration-300 hover:opacity-100"
               >
                 <img

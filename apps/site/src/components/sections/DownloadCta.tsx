@@ -30,7 +30,7 @@ export function DownloadCta() {
   const href = resolved?.asset.browser_download_url ?? withBase("/download");
 
   return (
-    <section id="download" className="snap-start scroll-mt-[72px] md:scroll-mt-0 bg-white py-20 sm:py-24">
+    <section id="download" className="relative scroll-mt-[72px] bg-[linear-gradient(to_bottom,white_50%,transparent_50%)] pt-20 pb-16 sm:pt-24 sm:pb-20">
       <div className="mx-auto w-full max-w-[1320px] px-5 sm:px-8">
         <Reveal className="noise relative overflow-hidden rounded-[40px] bg-brand px-6 py-16 text-white sm:px-12 sm:py-20 lg:px-20">
           <div
@@ -57,13 +57,13 @@ export function DownloadCta() {
           </ul>
 
           <div className="relative flex max-w-[640px] flex-col items-start gap-6">
-            <span className="inline-flex h-7 items-center rounded-full bg-white/15 px-3 text-xs font-bold uppercase tracking-[0.12em] text-white">
+            <span className="inline-flex h-7 items-center rounded-full bg-ink/25 px-3 text-xs font-bold uppercase tracking-[0.12em] text-white">
               <Trans>Download</Trans>
             </span>
             <h2 className="text-balance font-display text-[38px] font-extrabold leading-[1.02] tracking-[-0.025em] sm:text-[48px] lg:text-[58px]">
               <Trans>Start with the book on your desk.</Trans>
             </h2>
-            <p className="max-w-[520px] text-pretty text-[17px] leading-relaxed text-white/80 sm:text-lg">
+            <p className="max-w-[520px] text-pretty text-[17px] leading-relaxed text-white/95 sm:text-lg">
               <Trans>
                 Install in a minute, connect the AI provider you already pay
                 for, and convert your first PDF today. Free and open source.
@@ -84,28 +84,23 @@ export function DownloadCta() {
                 <ArrowRight className="size-4 transition-transform duration-200 group-hover:translate-x-0.5" />
               </a>
               {resolved ? (
-                <span className="font-mono text-[13px] text-white/75">
+                <span className="font-mono text-[13px] text-white/95">
                   {resolved.release.tag_name} · {formatSize(resolved.asset.size)} ·{" "}
                   {formatRelativeDate(resolved.release.published_at)}
                 </span>
               ) : detected ? (
-                <span className="text-[13px] text-white/75">{detected.subtitle}</span>
+                <span className="text-[13px] text-white/95">{detected.subtitle}</span>
               ) : null}
             </div>
 
-            <p className="text-sm text-white/70">
+            <p className="text-sm text-white/95">
               {detected ? <Trans>Also available for</Trans> : <Trans>Available for</Trans>}{" "}
-              {(detected ? others : PLATFORMS).map((item, index) => (
-                <span key={item.key}>
-                  {index > 0 ? " · " : ""}
-                  <a
-                    href={withBase("/download")}
-                    className="font-bold text-white underline-offset-4 hover:underline"
-                  >
-                    {item.label}
-                  </a>
-                </span>
-              ))}
+              <a
+                href={withBase("/download")}
+                className="font-bold text-white underline-offset-4 hover:underline"
+              >
+                {(detected ? others : PLATFORMS).map((item) => item.label).join(" · ")}
+              </a>
             </p>
           </div>
         </Reveal>

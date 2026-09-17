@@ -34,7 +34,7 @@ video:-webkit-full-screen {
   --color-ink: oklch(0.27 0.075 262);
   --color-ink-deep: oklch(0.215 0.07 262);
   --color-ink-soft: oklch(0.47 0.045 262);
-  --color-ink-mute: oklch(0.62 0.035 262);
+  --color-ink-mute: oklch(0.56 0.035 262);
   --color-ink-faint: oklch(0.905 0.014 262);
   --color-ink-line: oklch(0.938 0.01 262);
   --color-brand: oklch(0.546 0.215 262.88);
@@ -81,22 +81,17 @@ video:-webkit-full-screen {
   letter-spacing: -0.025em;
 }
 
-/* Landing: one section per viewport, snapping between them (docs keep normal scrolling). */
+/* Landing: only the hero gets a viewport as its floor. Story sections use a shared
+   vertical rhythm instead, so surface changes land next to content, not in empty fill.
+   No scroll snapping — a section taller than the viewport (common on Windows at 125%
+   scaling, where the usable height drops to ~700px) traps the scroll at its snap point. */
 @media (min-width: 768px) {
-  html.landing-snap {
-    scroll-snap-type: y proximity;
-  }
-  .snap-section,
-  .snap-start {
-    scroll-snap-align: start;
-    scroll-snap-stop: normal;
-  }
-  .snap-section {
+  .full-section {
     min-height: 100svh;
   }
 }
 @media (prefers-reduced-motion: no-preference) {
-  html.landing-snap { scroll-behavior: smooth; }
+  html.landing-smooth { scroll-behavior: smooth; }
 }
 
 /* Navbar grows in from the top on first paint (CSS-only, prerender-safe). */
