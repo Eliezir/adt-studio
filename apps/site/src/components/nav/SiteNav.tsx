@@ -193,7 +193,7 @@ export function SiteNav() {
                   type="button"
                   aria-expanded={sheet === id}
                   aria-haspopup="true"
-                  aria-controls={`nav-sheet-${id}`}
+                  aria-controls={sheet === id ? `nav-sheet-${id}` : undefined}
                   className={cn(itemClass, sheet === id && "text-brand-deep")}
                   onMouseEnter={() => openSheet(id)}
                   onFocus={() => openSheet(id)}

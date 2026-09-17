@@ -84,6 +84,8 @@ export function LocaleSwitcher({
       </button>
       <div
         role="listbox"
+        aria-label={i18n._(msg`Languages`)}
+        inert={!open}
         className={cn(
           "absolute right-0 top-full z-50 mt-2 min-w-[176px] origin-top-right overflow-hidden rounded-xl border border-[color:var(--color-border)] bg-[color:var(--color-card)] p-1 shadow-[0_20px_40px_-24px_rgba(0,0,0,0.45)] transition-all duration-200 ease-[cubic-bezier(0.22,1,0.36,1)]",
           open

@@ -34,7 +34,7 @@ video:-webkit-full-screen {
   --color-ink: oklch(0.27 0.075 262);
   --color-ink-deep: oklch(0.215 0.07 262);
   --color-ink-soft: oklch(0.47 0.045 262);
-  --color-ink-mute: oklch(0.62 0.035 262);
+  --color-ink-mute: oklch(0.56 0.035 262);
   --color-ink-faint: oklch(0.905 0.014 262);
   --color-ink-line: oklch(0.938 0.01 262);
   --color-brand: oklch(0.546 0.215 262.88);

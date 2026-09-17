@@ -21,7 +21,7 @@ function FeatureCard({
   return (
     <Reveal as="li" delay={index * 0.05} className="flex">
       <Tag
-        {...(feature.demo ? { href: withBase(`/#demos`) } : {})}
+        {...(feature.demo ? { href: withBase(`/#demo-tab-${feature.demo}`) } : {})}
         className={cn(
           "group flex w-full flex-col rounded-2xl border border-ink-line bg-white transition-[transform,box-shadow,border-color] duration-300 ease-out-quart",
           feature.demo && "hover:-translate-y-0.5 hover:border-ink-faint hover:shadow-card",

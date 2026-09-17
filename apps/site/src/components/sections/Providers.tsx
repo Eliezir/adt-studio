@@ -6,6 +6,7 @@ import { SectionHeading } from "@/components/SectionHeading";
 import { PROVIDER_GROUPS, type ProviderEntry } from "@/data/providers";
 import { cn } from "@/lib/cn";
 import { EASE_OUT, SPRING_LAYOUT } from "@/lib/motion";
+import { onTablistKeyDown } from "@/lib/a11y";
 
 /* ── Hub diagram data ─────────────────────────────────────────────────────── */
 
@@ -129,7 +130,7 @@ function Hub({ active, onHover }: { active: string; onHover: (group: string | nu
           <motion.button
             key={tile.entry.name}
             type="button"
-            className="absolute -translate-x-1/2 -translate-y-1/2 focus-visible:outline-none"
+            className="absolute -translate-x-1/2 -translate-y-1/2 rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 sm:rounded-[18px]"
             style={{ left: `${x}%`, top: `${y}%` }}
             onHoverStart={() => {
               setHovered(tile.entry.name);
@@ -238,6 +239,7 @@ export function Providers() {
             <div
               role="tablist"
               aria-label={t`Provider types`}
+              onKeyDown={onTablistKeyDown}
               className="flex flex-wrap gap-1"
               onMouseEnter={() => setPaused(true)}
               onMouseLeave={() => setPaused(false)}
@@ -250,6 +252,7 @@ export function Providers() {
                     type="button"
                     role="tab"
                     aria-selected={on}
+                    tabIndex={on ? 0 : -1}
                     onClick={() => setSelected(g.key)}
                     className={cn(
                       "relative whitespace-nowrap rounded-full px-3 py-1.5 text-[12.5px] font-bold transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand",

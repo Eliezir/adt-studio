@@ -117,7 +117,7 @@ export function Footer() {
 
         <div className="mt-14 flex flex-col gap-6 border-t border-white/10 pt-8 md:flex-row md:items-center md:justify-between">
           <div className="flex flex-wrap items-center gap-x-8 gap-y-4">
-            <span className="text-xs font-bold uppercase tracking-[0.16em] text-white/45">
+            <span className="text-xs font-bold uppercase tracking-[0.16em] text-white/55">
               <Trans>Made possible by</Trans>
             </span>
             {SUPPORTERS.map((supporter) => (
@@ -126,7 +126,6 @@ export function Footer() {
                 href={supporter.href}
                 target="_blank"
                 rel="noreferrer noopener"
-                title={supporter.name}
                 className="inline-flex items-center opacity-70 transition-opacity duration-300 hover:opacity-100"
               >
                 <img

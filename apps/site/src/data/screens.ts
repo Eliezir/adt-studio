@@ -19,7 +19,7 @@ export const SCREENS = {
   homeEmpty: {
     key: "home-empty",
     file: "home-empty",
-    alt: msg`ADT Studio home screen on first launch: a welcome card with "Add your first book" and "Import existing project" buttons, and the reader-experience features every book gains.`,
+    alt: msg`ADT Studio home screen on first launch, with the welcome card and the reader features.`,
     ...SIZE,
   },
 } satisfies Record<string, Screen>;

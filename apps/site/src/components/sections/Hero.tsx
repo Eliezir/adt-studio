@@ -278,7 +278,7 @@ export function Hero() {
           <p className="enter enter-4 relative mt-5 text-[13px] font-medium text-ink-mute">
             <Trans>macOS · Windows · Linux · Docker</Trans>
             <span className="hidden sm:inline">
-              <span className="mx-2 text-ink-faint">|</span>
+              <span aria-hidden className="mx-2 text-ink-faint">|</span>
               <Trans>AGPL-3.0, no account required</Trans>
             </span>
           </p>
@@ -328,7 +328,6 @@ export function Hero() {
               href={supporter.href}
               target="_blank"
               rel="noreferrer noopener"
-              title={supporter.name}
               className="inline-flex items-center opacity-70 grayscale transition-[opacity,filter] duration-300 hover:opacity-100 hover:grayscale-0"
             >
               <img
