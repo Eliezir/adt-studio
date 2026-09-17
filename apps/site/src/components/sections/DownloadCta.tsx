@@ -30,7 +30,7 @@ export function DownloadCta() {
   const href = resolved?.asset.browser_download_url ?? withBase("/download");
 
   return (
-    <section id="download" className="snap-start scroll-mt-[72px] md:scroll-mt-0 bg-white py-20 sm:py-24">
+    <section id="download" className="relative scroll-mt-[72px] bg-[linear-gradient(to_bottom,white_50%,transparent_50%)] pt-20 pb-16 sm:pt-24 sm:pb-20">
       <div className="mx-auto w-full max-w-[1320px] px-5 sm:px-8">
         <Reveal className="noise relative overflow-hidden rounded-[40px] bg-brand px-6 py-16 text-white sm:px-12 sm:py-20 lg:px-20">
           <div

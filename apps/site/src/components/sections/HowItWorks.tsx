@@ -93,7 +93,7 @@ function StageRail() {
       {STAGES.map((stage) => {
         const Icon = stage.icon;
         return (
-          <li key={stage.slug} className="group flex items-center gap-2.5 rounded-lg px-1.5 py-1 transition-colors hover:bg-white">
+          <li key={stage.slug} className="group flex items-center gap-2.5 rounded-lg px-1.5 py-1 transition-colors hover:bg-paper">
             <span
               className="grid size-7 shrink-0 place-items-center rounded-md text-white"
               style={{ backgroundColor: stage.hex }}
@@ -117,7 +117,7 @@ function FormatList() {
       {FORMATS.map((format) => {
         const Icon = format.icon;
         return (
-          <li key={format.name} className="flex items-center gap-3 px-4 py-2.5 transition-colors hover:bg-white">
+          <li key={format.name} className="flex items-center gap-3 px-4 py-2.5 transition-colors hover:bg-paper">
             <span
               className="grid size-9 shrink-0 place-items-center rounded-lg"
               style={{ backgroundColor: `${format.hex}1a`, color: format.hex }}
@@ -137,7 +137,7 @@ function FormatList() {
 
 export function HowItWorks() {
   return (
-    <section id="how" className="snap-section scroll-mt-[72px] md:scroll-mt-0 flex flex-col justify-center bg-white py-14">
+    <section id="how" className="scroll-mt-[72px] border-t border-ink-line bg-white py-20 sm:py-24 lg:py-28">
       <div className="mx-auto w-full max-w-[1200px] px-5 sm:px-8">
         <Reveal>
           <SectionHeading

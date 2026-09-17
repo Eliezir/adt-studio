@@ -74,7 +74,7 @@ export function Demos() {
   };
 
   return (
-    <section id="demos" ref={sectionRef} className="snap-section scroll-mt-[72px] md:scroll-mt-0 flex flex-col justify-center bg-white py-14">
+    <section id="demos" ref={sectionRef} className="scroll-mt-[72px] border-t border-ink-line bg-white py-20 sm:py-24 lg:py-28">
       <div className="mx-auto w-full max-w-[1200px] px-5 sm:px-8">
         <Reveal>
           <SectionHeading

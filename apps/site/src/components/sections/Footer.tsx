@@ -51,8 +51,8 @@ const COLUMNS: LinkCol[] = [
 export function Footer() {
   const { i18n } = useLingui();
   return (
-    <footer className="snap-start bg-ink-deep text-white">
-      <div className="mx-auto w-full max-w-[1200px] px-5 pb-10 pt-16 sm:px-8">
+    <footer className="border-t border-white/10 bg-ink text-white">
+      <div className="mx-auto w-full max-w-[1200px] px-5 pb-10 pt-14 sm:px-8">
         <div className="grid grid-cols-1 gap-12 md:grid-cols-[1.3fr_1fr_1fr_1fr]">
           <div className="flex flex-col gap-5">
             <a href={withBase("/")} className="flex items-center gap-2.5">

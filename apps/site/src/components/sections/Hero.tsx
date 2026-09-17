@@ -180,7 +180,7 @@ export function Hero() {
       id="top"
       onPointerMove={onPointerMove}
       onPointerLeave={onPointerLeave}
-      className="snap-section relative overflow-hidden"
+      className="full-section relative overflow-hidden"
     >
       <div
         aria-hidden
@@ -291,11 +291,11 @@ export function Hero() {
         <div className="relative mx-auto hidden w-full max-w-[1200px] px-5 sm:px-8 md:block">
           <div
             aria-hidden
-            className="pointer-events-none absolute -inset-x-[50vw] bottom-0 top-[18%] -z-10 bg-[linear-gradient(to_bottom,transparent,color-mix(in_oklch,var(--color-brand)_9%,white)_30%,color-mix(in_oklch,var(--color-brand)_14%,white))]"
+            className="pointer-events-none absolute -inset-x-[50vw] -bottom-8 top-[18%] -z-10 bg-[linear-gradient(to_bottom,transparent,color-mix(in_oklch,var(--color-brand)_9%,white)_30%,color-mix(in_oklch,var(--color-brand)_13%,white)_65%,white)]"
           />
           <figure
             ref={figureRef}
-            className="relative mx-auto w-full max-w-[900px] rounded-2xl ring-1 ring-ink/10 shadow-[0_2px_4px_rgb(18_27_43/0.05),0_40px_90px_-30px_rgb(18_27_43/0.45)]"
+            className="relative mx-auto w-full max-w-[900px] rounded-2xl ring-1 ring-ink/10 shadow-[0_1px_2px_rgb(18_27_43/0.05),0_16px_36px_-24px_rgb(18_27_43/0.3)]"
           >
             <motion.span
               aria-hidden
@@ -317,7 +317,7 @@ export function Hero() {
             />
           </figure>
         </div>
-        <div className="relative border-y border-ink-line bg-paper md:mt-10 lg:mt-12">
+        <div className="relative border-b border-ink-line bg-white md:mt-10 lg:mt-12">
         <div className="mx-auto flex w-full max-w-[1200px] flex-wrap items-center justify-center gap-x-10 gap-y-5 px-5 py-6 sm:px-8">
           <span className="text-xs font-bold uppercase tracking-[0.16em] text-ink-mute">
             <Trans>Built with UNICEF · Supported by</Trans>

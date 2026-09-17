@@ -58,15 +58,7 @@ export function OpenPrinciples() {
   const latest = releases?.[0];
 
   return (
-    <section id="open" className="snap-section noise relative scroll-mt-[72px] md:scroll-mt-0 flex flex-col justify-center overflow-hidden bg-ink py-14 text-white">
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0 [background:radial-gradient(55%_45%_at_15%_0%,color-mix(in_oklch,var(--color-brand)_38%,transparent),transparent_70%),radial-gradient(45%_40%_at_90%_100%,color-mix(in_oklch,var(--color-brand)_28%,transparent),transparent_70%)]"
-      />
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0 opacity-[0.07] [background-image:linear-gradient(to_right,white_1px,transparent_1px),linear-gradient(to_bottom,white_1px,transparent_1px)] [background-size:72px_72px] [mask-image:radial-gradient(70%_60%_at_50%_45%,black,transparent)]"
-      />
+    <section id="open" className="relative scroll-mt-[72px] pt-6 pb-20 text-white sm:pt-8 sm:pb-24">
       <div className="relative mx-auto w-full max-w-[1200px] px-5 sm:px-8">
         <Reveal>
           <SectionHeading

@@ -56,7 +56,7 @@ function FeatureCard({
 
 export function ReaderFeatures() {
   return (
-    <section id="features" className="snap-section scroll-mt-[72px] md:scroll-mt-0 flex flex-col justify-center bg-paper py-14">
+    <section id="features" className="scroll-mt-[72px] bg-white py-20 sm:py-24 lg:py-28">
       <div className="mx-auto w-full max-w-[1200px] px-5 sm:px-8">
         <Reveal>
           <SectionHeading
