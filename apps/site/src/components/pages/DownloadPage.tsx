@@ -77,7 +77,7 @@ export function DownloadPage() {
     <div className="relative flex min-h-screen flex-col overflow-hidden bg-[color:var(--color-background)] pt-24">
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-0 text-[color:var(--color-foreground)] opacity-[0.08] [background-image:radial-gradient(currentColor_1px,transparent_1px)] [background-size:22px_22px] [mask-image:radial-gradient(ellipse_50%_55%_at_50%_45%,black_10%,transparent_75%)]"
+        className="pointer-events-none absolute inset-0 opacity-[0.35] [background-image:linear-gradient(to_right,var(--color-ink-line)_1px,transparent_1px),linear-gradient(to_bottom,var(--color-ink-line)_1px,transparent_1px)] [background-size:64px_64px] [mask-image:radial-gradient(60%_55%_at_50%_40%,black,transparent)]"
       />
       <div
         aria-hidden
