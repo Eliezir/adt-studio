@@ -1,0 +1,51 @@
+# Kanban hand-off bot (see bot/kanban-bot.ts in adt-team). Every 5 minutes it
+# reads the Kanban Project, and for cards that moved it writes the hand-off
+# comment, assigns / unassigns and keeps the block label and Block field the
+# same. Comments come from github-actions[bot].
+#
+# Needs: secret PROJECT_TOKEN (a token that can read and write the Project)
+#        variable KANBAN_PROJECT, e.g. "unicef/46"
+name: Kanban hand-off
+
+on:
+  schedule:
+    - cron: '*/5 * * * *'
+  workflow_dispatch:
+
+permissions:
+  issues: write
+
+concurrency:
+  group: kanban-handoff
+  cancel-in-progress: false
+
+jobs:
+  handoff:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: .github/kanban
+      - name: Restore the columns seen last run
+        uses: actions/cache/restore@v4
+        with:
+          path: .kanban-state.json
+          key: kanban-state-${{ github.run_id }}
+          restore-keys: kanban-state-
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Hand-offs
+        run: node .github/kanban/kanban-bot.mjs
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          PROJECT_TOKEN: ${{ secrets.PROJECT_TOKEN }}
+          REPO: ${{ github.repository }}
+          PROJECT: ${{ vars.KANBAN_PROJECT }}
+      - name: Remember the columns for next run
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: .kanban-state.json
+          key: kanban-state-${{ github.run_id }}
