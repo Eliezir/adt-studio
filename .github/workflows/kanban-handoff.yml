@@ -1,15 +1,18 @@
-# Kanban hand-off bot (see bot/kanban-bot.ts in adt-team). Every 5 minutes it
-# reads the Kanban Project, and for cards that moved it writes the hand-off
-# comment, assigns / unassigns and keeps the block label and Block field the
-# same. Comments come from github-actions[bot].
+# Kanban hand-off bot (see bot/kanban-bot.ts in adt-team). When a card moves,
+# the Kanban relay (relay/worker.ts) starts this workflow; it reads the Project
+# and, for cards that moved, writes the hand-off comment, assigns / unassigns
+# and keeps the block label and Block field the same. Comments come from
+# github-actions[bot]. An hourly run catches anything the relay missed.
 #
 # Needs: secret PROJECT_TOKEN (a token that can read and write the Project)
 #        variable KANBAN_PROJECT, e.g. "unicef/46"
 name: Kanban hand-off
 
 on:
+  repository_dispatch:
+    types: [kanban-move]
   schedule:
-    - cron: '*/5 * * * *'
+    - cron: '17 * * * *'
   workflow_dispatch:
 
 permissions:
